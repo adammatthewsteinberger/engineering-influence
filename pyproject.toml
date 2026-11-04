@@ -20,7 +20,7 @@ cli = ["typer>=0.15,<1"]
 runtime = ["vibey-engine==4.5.0", "aio-pika>=9.5,<10", "sqlmodel>=0.0.22,<1"]
 test = [
   "hypothesis>=6.120,<7",
-  "pytest>=8.3,<9",
+  "pytest>=9.0.3,<10",
   "pytest-cov>=6,<7",
   "engineering-influence-sdk",
   "sqlmodel>=0.0.22,<1",
