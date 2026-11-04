@@ -14,6 +14,23 @@ def test_cli_accepts_empty_arguments() -> None:
     assert CliApplication().run([]) == 0
 
 
+def test_cli_starts_pipeline(capsys: pytest.CaptureFixture[str]) -> None:
+    assert CliApplication().run(
+        [
+            "pipeline",
+            "start",
+            "--slug",
+            "demo",
+            "--title",
+            "Demo",
+            "--postulate",
+            "Evidence first.",
+        ]
+    ) == 0
+
+    assert capsys.readouterr().out.strip() == '{"job_id": "local-job-1", "project_slug": "demo"}'
+
+
 def test_cli_main_exits_with_application_status(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("sys.argv", ["ei"])
     with pytest.raises(SystemExit) as error:
