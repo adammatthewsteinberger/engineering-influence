@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "engineering-influence"
+version = "0.1.0a1"
+description = "An autonomous, evidence-bounded content engineering pipeline."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { file = "LICENSE" }
+authors = [{ name = "Adam Matthew Steinberger" }]
+dependencies = [
+  "pydantic>=2.10,<3",
+]
+
+[project.optional-dependencies]
+api = ["fastapi>=0.115,<1", "uvicorn>=0.34,<1"]
+cli = ["typer>=0.15,<1"]
+runtime = ["vibey-engine==4.5.0", "aio-pika>=9.5,<10", "sqlmodel>=0.0.22,<1"]
+test = ["hypothesis>=6.120,<7", "pytest>=8.3,<9", "pytest-cov>=6,<7"]
+
+[project.scripts]
+ei = "engineering_influence.interaction.cli.main:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/engineering_influence"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers"
+
+[tool.coverage.run]
+branch = true
+source = ["engineering_influence"]
+
+[tool.coverage.report]
+fail_under = 100
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+
+[tool.uv]
+package = true
