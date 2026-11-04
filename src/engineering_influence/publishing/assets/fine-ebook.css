@@ -1,0 +1,82 @@
+/* fine-ebook.css: styles for the EPUB editions, loaded after TeX4ht's own sheet.
+   Sizes are relative and no font is embedded, so the reader's settings win.
+   The look follows the print interiors: indented paragraphs with no gaps,
+   centred chapter openers, a quiet gray panel for callouts, and a ruled box
+   for the fictional illustrations. */
+
+body { margin: 0 4%; max-width: none; padding: 0; font-family: serif; line-height: 1.45;
+  widows: 2; orphans: 2; }
+
+/* Paragraphs: book style, not web style. */
+p, p.indent, p.noindent { margin: 0; text-align: justify; hyphens: auto; -webkit-hyphens: auto;
+  adobe-hyphenate: auto; }
+p.indent { text-indent: 1.3em; }
+p.noindent { text-indent: 0; }
+p + p, p + div, div + p { margin-top: 0; }
+span.lead { font-variant: small-caps; letter-spacing: 0.05em; }
+
+/* Headings. */
+h1, h2, h3, h4, h5 { font-weight: normal; line-height: 1.25; hyphens: none; -webkit-hyphens: none;
+  page-break-after: avoid; break-after: avoid; }
+h1.partHead { font-size: 1.8em; text-align: center; margin: 30% 0 0; }
+h1.partHead .titlemark { display: block; font-size: 0.5em; font-variant: small-caps;
+  letter-spacing: 0.2em; margin-bottom: 0.6em; }
+h2.chapterHead, h2.likechapterHead { font-size: 1.6em; text-align: center; margin: 2.5em 0 1.6em; }
+h2.chapterHead .titlemark { display: block; font-size: 0.55em; font-variant: small-caps;
+  letter-spacing: 0.2em; margin-bottom: 0.5em; }
+h3.likesectionHead, h3.sectionHead { font-size: 1.2em; margin: 1.6em 0 0.6em; text-align: left; }
+h4.likesubsectionHead, h4.subsectionHead { font-size: 1.05em; font-style: italic; margin: 1.3em 0 0.5em; }
+.likesubsubsectionHead, .subsubsectionHead { font-size: 1em; font-variant: small-caps; margin: 1.1em 0 0.4em; }
+
+/* Lists. */
+ul, ol { margin: 0.6em 0 0.6em 1.4em; padding: 0; }
+li { margin-bottom: 0.3em; }
+li p.indent, li p.noindent { text-indent: 0; text-align: left; }
+
+/* Quotations and epigraphs. */
+blockquote { margin: 1em 1.5em; }
+blockquote p.indent, blockquote p.noindent { text-indent: 0; text-align: left; margin-bottom: 0.5em; }
+div.quote { margin: 1em 1.5em; font-size: 0.95em; }
+div.quote p.indent, div.quote p.noindent { text-indent: 0; text-align: left; margin-bottom: 0.5em; }
+blockquote.epigraph { margin: 0 0 2em 20%; font-style: italic; }
+blockquote.epigraph p.indent, blockquote.epigraph p.noindent { text-align: right; }
+p.epigraph-source { font-style: normal; font-variant: small-caps; letter-spacing: 0.08em;
+  font-size: 0.9em; text-align: right; }
+
+/* Callouts and fictional illustrations, as in print. */
+div.callout { margin: 1.4em 0; padding: 0.9em 1.1em; background-color: #eeeeee; border-radius: 3px;
+  font-style: italic; page-break-inside: avoid; break-inside: avoid; }
+div.callout p.indent, div.callout p.noindent { text-indent: 0; text-align: left; }
+div.callout p + p { margin-top: 0.5em; }
+div.illustration { margin: 1.4em 0; padding: 0.8em 1em; border: 1px solid #999999; border-radius: 3px; }
+div.illustration p.indent { text-indent: 1.3em; }
+p.illustration-label { font-variant: small-caps; letter-spacing: 0.12em; font-size: 0.8em;
+  color: #555555; margin-bottom: 0.5em; text-align: left; }
+
+/* Tables. */
+table { border-collapse: collapse; margin: 1.2em auto; font-size: 0.9em; }
+td { padding: 0.3em 0.45em; vertical-align: top; text-align: left; }
+td p.indent, td p.noindent { text-indent: 0; text-align: left; }
+
+/* Bibliography: hanging indent. */
+div.references p.indent, div.references p.noindent { padding-left: 1.5em; text-indent: -1.5em;
+  margin-bottom: 0.6em; text-align: left; font-size: 0.95em; }
+
+/* Front matter. Each block starts on its own screen. */
+div.titlepage { text-align: center; margin-top: 18%; }
+div.titlepage p.indent, div.titlepage p.noindent { text-indent: 0; text-align: center; margin-bottom: 0.8em; }
+div.titlepage p:first-child { font-size: 2em; line-height: 1.2; }
+div.copyright { page-break-before: always; break-before: page; margin-top: 2em; font-size: 0.85em; }
+div.copyright p.indent, div.copyright p.noindent { text-indent: 0; text-align: left; margin-bottom: 0.7em; }
+div.dedication { page-break-before: always; break-before: page; margin: 30% 10% 0; }
+div.dedication p.indent, div.dedication p.noindent { text-indent: 0; text-align: center; font-style: italic; }
+
+/* Contents: the page in the book (div.toc) and the navigation document (nav). */
+div.toc { margin-top: 1em; }
+div.toc-entry { margin: 0.7em 0 0; }
+div.toc-chapter { margin: 0.35em 0 0 1.5em; }
+nav ol { list-style-type: none; margin: 0; padding: 0; }
+nav li { margin: 0.45em 0; }
+nav ol ol { margin: 0.3em 0 0.7em 1.2em; }
+a { color: inherit; }
+div.crosslinks { display: none; }

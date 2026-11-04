@@ -3,8 +3,10 @@
 import datetime as dt
 import re
 import shutil
+from contextlib import AbstractContextManager, nullcontext
 from pathlib import Path
 
+from engineering_influence.publishing.package_assets import PackageAssets
 from engineering_influence.publishing.project_layout import ProjectLayout
 from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
 from engineering_influence.publishing.typesetting.book_loader import BookLoader
@@ -20,7 +22,7 @@ class BookBuilder:
     def __init__(
         self,
         layout: ProjectLayout,
-        assets: Path,
+        assets: Path | None = None,
         compiler: LatexCompiler | None = None,
         strict: bool = True,
     ) -> None:
@@ -30,24 +32,35 @@ class BookBuilder:
         self._loader = BookLoader(layout.root, strict)
 
     def build(self, slug: str, *, tex_only: bool = False, hardcover: bool = False) -> Path:
-        """Return the .tex path when tex_only, otherwise the finished PDF path."""
+        """Return the .tex path when tex_only, otherwise the finished PDF path.
+
+        Class files and fonts come from the assets directory given to the builder, or from
+        the assets bundled in the package.
+        """
         if not self.SLUG.fullmatch(slug):
             raise BookBuildError(f"invalid book slug: {slug!r}")
         config = self._layout.books / f"{slug}.toml"
         if not config.exists():
             raise BookBuildError(f"no such book config: {config}")
+        assets_context: AbstractContextManager[Path] = (
+            nullcontext(self._assets) if self._assets else PackageAssets().directory()
+        )
+        with assets_context as assets:
+            return self._build(config, slug, assets, tex_only, hardcover)
+
+    def _build(
+        self, config: Path, slug: str, assets: Path, tex_only: bool, hardcover: bool
+    ) -> Path:
         book = self._loader.load(config)
         build_slug = f"{slug}-hardcover" if hardcover else slug
         workdir = self._layout.build / build_slug
         workdir.mkdir(parents=True, exist_ok=True)
         if hardcover:
-            shutil.copy(
-                self._assets / "fine-book-hardcover.cls", workdir / "fine-book-hardcover.cls"
-            )
-        shutil.copy(self._assets / "fine-book.cls", workdir / "fine-book.cls")
+            shutil.copy(assets / "fine-book-hardcover.cls", workdir / "fine-book-hardcover.cls")
+        shutil.copy(assets / "fine-book.cls", workdir / "fine-book.cls")
         # The interior fonts travel with the package, so the PDF does not depend on which TeX
         # distribution built it.
-        shutil.copytree(self._assets / "fonts", workdir / "fonts", dirs_exist_ok=True)
+        shutil.copytree(assets / "fonts", workdir / "fonts", dirs_exist_ok=True)
         tex_path = workdir / f"{slug}.tex"
         tex_path.write_text(PrintDocument().render(book, hardcover=hardcover), encoding="utf-8")
         if tex_only:

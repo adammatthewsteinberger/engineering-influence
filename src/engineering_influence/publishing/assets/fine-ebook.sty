@@ -1,0 +1,71 @@
+% fine-ebook.sty: the ebook counterpart of fine-book.cls.
+%
+% scripts/build_epub.py writes a LaTeX document with this class from the same
+% chapter LaTeX that the print interior uses, then converts it to EPUB 3 with
+% tex4ebook (TeX4ht) in LuaLaTeX mode. Every command the print chapters use is
+% defined here, but in a form TeX4ht can map to clean XHTML: no drop caps, no
+% boxes drawn in TeX, no page geometry. Presentation comes from fine-ebook.css,
+% and fine-ebook.cfg maps each environment below to a classed <div>.
+\NeedsTeXFormat{LaTeX2e}
+% A package on top of the book class, not a class of its own: with TeX Live 2026 and
+% tex4ebook 0.4d, TeX4ht overflows the input stack on \title in any custom class that
+% calls \LoadClass. The document sets the options: \documentclass[11pt,oneside,openany]{book}.
+\ProvidesPackage{fine-ebook}[2026/10/28 ebook interiors for tex4ebook]
+
+\RequirePackage{fontspec}
+\RequirePackage[english]{babel}
+\setmainfont{EBGaramond}[Extension=.otf, UprightFont=*-Regular, ItalicFont=*-Italic,
+  BoldFont=*-Bold, BoldItalicFont=*-BoldItalic]
+\newfontfamily\capsfont{EBGaramond}[Extension=.otf, UprightFont=*-Regular,
+  ItalicFont=*-Italic, Letters=SmallCaps]
+\RequirePackage{graphicx}
+\RequirePackage{enumitem}
+\RequirePackage{tabularx}
+\RequirePackage{booktabs}
+\RequirePackage[normalem]{ulem}
+\RequirePackage{url}
+\urlstyle{same}
+\RequirePackage{hyperref}
+
+% Book metadata for the title and copyright pages.
+\newcommand{\booktitle}{}\newcommand{\booksubtitle}{}
+\newcommand{\bookauthor}{}\newcommand{\bookpublisher}{}
+\newcommand{\setbookmeta}[4]{%
+  \renewcommand{\booktitle}{#1}\renewcommand{\booksubtitle}{#2}%
+  \renewcommand{\bookauthor}{#3}\renewcommand{\bookpublisher}{#4}}
+
+% Numbers in words for chapter and part labels, as in print.
+\newcommand{\bookNumberWord}[1]{\ifcase#1\or One\or Two\or Three\or Four\or Five\or
+  Six\or Seven\or Eight\or Nine\or Ten\or Eleven\or Twelve\or Thirteen\or Fourteen\or
+  Fifteen\or Sixteen\or Seventeen\or Eighteen\or Nineteen\or Twenty\or Twenty-One\or
+  Twenty-Two\or Twenty-Three\or Twenty-Four\or Twenty-Five\or Twenty-Six\or
+  Twenty-Seven\or Twenty-Eight\or Twenty-Nine\or Thirty\or Thirty-One\or Thirty-Two\or
+  Thirty-Three\or Thirty-Four\or Thirty-Five\or Thirty-Six\or Thirty-Seven\or
+  Thirty-Eight\or Thirty-Nine\or Forty\else\number#1\fi}
+\renewcommand{\thepart}{\bookNumberWord{\value{part}}}
+\renewcommand{\partname}{Part}
+\renewcommand{\chaptername}{Chapter}
+
+\renewcommand{\contentsname}{Contents}
+
+% Commands the print chapters use.
+\newcommand{\chapterheadmark}[1]{}
+\newcommand{\setbooktitlehead}[1]{}
+\newcommand{\booksection}[1]{\section*{#1}}
+\newcommand{\booksubsection}[1]{\subsection*{#1}}
+\newcommand{\booksubsubsection}[1]{\subsubsection*{#1}}
+\newcommand{\opening}[2]{\textsc{#1#2}}
+\newcommand{\spacedcaps}[1]{\textsc{#1}}
+\newcommand{\ornament}[1][]{\char"2766}
+\newenvironment{callout}{\par}{\par}
+\newenvironment{illustration}{\par}{\par}
+\newcommand{\epigraphsourceline}[1]{\par #1\par}
+\newenvironment{chapterepigraph}[1]{\def\epigraphsource{#1}\par}{\par\epigraphsourceline{\epigraphsource}}
+\newenvironment{referencelist}{\par}{\par}
+\newcommand{\refentry}[1]{\par #1\par}
+
+% Front matter blocks, each mapped to a classed <div> by fine-ebook.cfg.
+\newenvironment{ebooktitlepage}{\par}{\par}
+\newenvironment{ebookcopyright}{\par}{\par}
+\newenvironment{ebookdedication}{\par}{\par}
+\newenvironment{ebookpart}{\par}{\par}
