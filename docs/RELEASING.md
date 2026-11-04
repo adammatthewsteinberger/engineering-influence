@@ -20,6 +20,16 @@ you turn it on and approve it.
    git push origin v0.1.0
    ```
 
+If pushing the tag does not start the workflow (it did not for the first release, because push-triggered
+workflows were not firing in the repository), start the same pipeline by hand for the existing tag:
+
+```bash
+gh workflow run release.yml --ref main -f tag=v0.1.0
+```
+
+The run checks out and verifies that tag, not the branch it was started from, so the guard, the tests,
+the build and the attestation are all unchanged.
+
 ## What the pipeline does
 
 | Job | Does | Stops the release if |
@@ -64,7 +74,7 @@ CI runs `actionlint` and `zizmor` (medium severity and above) on every workflow.
 
 ## What has not been exercised
 
-- The `github-release` and `pypi` jobs have never run: they need a real tag on `main`.
+- The `pypi` job has never run: it needs the trusted publishers and the variable described above.
 - The guard is tested against its own script (`tests/e2e/test_release_guard.py`).
 - `zizmor` reports two low-severity suggestions to write `./.github/workflows/…` as `$/…`.
   The documented `./` form is kept deliberately.

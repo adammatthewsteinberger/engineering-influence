@@ -59,7 +59,10 @@ def repo(tmp_path: Path) -> Path:
     return tmp_path
 
 
-def run_guard(repo: Path, tag: str) -> subprocess.CompletedProcess[str]:
+def run_guard(
+    repo: Path, tag: str, github_sha: str | None = None
+) -> subprocess.CompletedProcess[str]:
+    """Run the guard with the repository checked out at the commit under test (HEAD)."""
     return subprocess.run(
         ["sh", "-e", "-c", guard_script()],
         cwd=repo,
@@ -68,7 +71,7 @@ def run_guard(repo: Path, tag: str) -> subprocess.CompletedProcess[str]:
         env={
             "PATH": "/usr/bin:/bin:/usr/local/bin",
             "TAG": tag,
-            "GITHUB_SHA": git(repo, "rev-parse", "HEAD"),
+            "GITHUB_SHA": github_sha or git(repo, "rev-parse", "HEAD"),
         },
         check=False,
     )
@@ -138,3 +141,52 @@ def test_a_tag_that_is_not_on_main_is_refused(repo: Path) -> None:
     result = run_guard(repo, f"v{VERSION}")
 
     assert result.returncode == 1 and "is not on the main branch" in result.stderr
+
+
+def test_the_guard_judges_the_checked_out_tag_not_the_ref_that_started_the_run(repo: Path) -> None:
+    """A hand-started run has GITHUB_SHA of the dispatching branch, which can be anything."""
+    tagged = git(repo, "rev-parse", "HEAD")
+    git(repo, "commit", "-q", "--allow-empty", "-m", "work after the tag")
+    git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+    git(repo, "checkout", "-q", tagged)  # HEAD is the tagged commit, an ancestor of main
+
+    result = run_guard(
+        repo, f"v{VERSION}", github_sha=git(repo, "rev-parse", "refs/remotes/origin/main")
+    )
+
+    assert result.returncode == 0, result.stderr
+
+
+def test_a_tag_commit_off_main_is_refused_even_when_the_dispatching_ref_is_on_it(
+    repo: Path,
+) -> None:
+    main_tip = git(repo, "rev-parse", "HEAD")
+    git(
+        repo, "commit", "-q", "--allow-empty", "-m", "side work"
+    )  # HEAD, the tag's commit, leaves main
+
+    result = run_guard(repo, f"v{VERSION}", github_sha=main_tip)
+
+    assert result.returncode == 1 and "is not on the main branch" in result.stderr
+
+
+def release_triggers() -> dict[str, object]:
+    workflow = yaml.safe_load((ROOT / ".github/workflows/release.yml").read_text())
+    triggers = workflow.get("on", workflow.get(True))  # PyYAML reads a bare `on:` key as True
+    assert isinstance(triggers, dict)
+    return triggers
+
+
+def test_the_release_can_be_started_by_hand_for_an_existing_tag() -> None:
+    triggers = release_triggers()
+
+    assert triggers["push"] == {"tags": ["v*"]}
+    assert triggers["workflow_dispatch"]["inputs"]["tag"]["required"] is True
+
+
+def test_every_stage_of_the_release_uses_the_same_tag() -> None:
+    text = (ROOT / ".github/workflows/release.yml").read_text()
+    expression = "inputs.tag || github.ref_name"
+
+    assert text.count(expression) == 5  # concurrency, checkout, guard, build, release
+    assert "github.ref_name" not in text.replace(expression, "")

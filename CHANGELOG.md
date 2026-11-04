@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- The release workflow can be started by hand for an existing tag (`workflow_dispatch`), and the guard now verifies the commit of the tag being released instead of the commit that started the run.
+- CI can be started by hand.
+
 ## 0.1.0a1
 
 - Established the orphan FOSS package and initial domain boundaries.

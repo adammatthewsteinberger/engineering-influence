@@ -10,11 +10,19 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  # The same pipeline, started by hand for a tag that already exists. Use it if a tag push does not
+  # start the workflow.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: An existing tag to release, for example v0.1.0a1
+        required: true
+        type: string
 
 permissions: {}
 
 concurrency:
-  group: release-${{ github.ref_name }}
+  group: release-${{ inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -26,11 +34,12 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: refs/tags/${{ inputs.tag || github.ref_name }}
           fetch-depth: 0
           persist-credentials: false
       - name: The tag must match the code, the changelog and the main branch
         env:
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ inputs.tag || github.ref_name }}
         run: |
           set -eu
           core="$(sed -n 's/^__version__ = "\(.*\)"/\1/p' src/engineering_influence/__init__.py)"
@@ -41,7 +50,7 @@ jobs:
           # The dots in a version are regex wildcards; escape them so only this exact version matches.
           pattern="$(printf '%s' "$core" | sed 's/[][\.*^$+?(){}|]/\\&/g')"
           grep -Eq "^## \[?$pattern\]?( |$)" CHANGELOG.md || { echo "CHANGELOG.md has no '## $core' section" >&2; exit 1; }
-          git merge-base --is-ancestor "$GITHUB_SHA" origin/main || { echo "$TAG is not on the main branch" >&2; exit 1; }
+          git merge-base --is-ancestor HEAD origin/main || { echo "$TAG is not on the main branch" >&2; exit 1; }
           echo "releasing $core"
 
   build:
@@ -51,6 +60,7 @@ jobs:
     uses: ./.github/workflows/build-distribution.yml
     with:
       run_tests: true
+      ref: refs/tags/${{ inputs.tag || github.ref_name }}
 
   github-release:
     needs: build
@@ -73,7 +83,7 @@ jobs:
       - name: Create the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ inputs.tag || github.ref_name }}
         run: |
           set -eu
           flag=""
