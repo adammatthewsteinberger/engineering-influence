@@ -1,0 +1,6 @@
+{
+  "slug": "sample-essay",
+  "title": "A Sample Essay",
+  "postulates": ["Claims must be supported by evidence.", "Persuasion must not outrun truth."],
+  "stages": ["thesis", "book"]
+}

@@ -38,4 +38,6 @@ class VibeyPhaseHandler(PhaseHandlerPort):
         )
         if next_run.state is PhaseState.AWAITING_GATE:
             return worker_module.Park(dto_module.HumanGateRequest(gate.name, gate.rubric))
-        return worker_module.Success({"artifact_id": artifact.artifact_id, "content": artifact.content})
+        return worker_module.Success(
+            {"artifact_id": artifact.artifact_id, "content": artifact.content}
+        )

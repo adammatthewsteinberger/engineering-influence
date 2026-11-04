@@ -11,4 +11,3 @@ class LimitsOnMeans:
     prohibit_fabricated_evidence: bool = True
     require_bounded_spend: bool = True
     require_recoverable_side_effects: bool = True
-

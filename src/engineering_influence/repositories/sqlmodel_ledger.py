@@ -19,7 +19,9 @@ class SqlModelLedger(LedgerRepositoryInterface):
         SQLModel.metadata.create_all(self._engine)
 
     def append(self, event_name: str, payload: dict[str, object]) -> None:
-        record = LedgerEventRecord(event_name=event_name, payload_json=json.dumps(payload, sort_keys=True))
+        record = LedgerEventRecord(
+            event_name=event_name, payload_json=json.dumps(payload, sort_keys=True)
+        )
         with Session(self._engine) as session:
             session.add(record)
             session.commit()

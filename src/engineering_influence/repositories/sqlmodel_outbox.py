@@ -49,7 +49,13 @@ class SqlModelOutbox(OutboxRepositoryInterface):
                 .order_by(col(OutboxRecord.id))
             ).all()
         return [
-            (record.event_id, record.url, record.event_name, json.loads(record.payload_json), record.attempts)
+            (
+                record.event_id,
+                record.url,
+                record.event_name,
+                json.loads(record.payload_json),
+                record.attempts,
+            )
             for record in records
         ]
 

@@ -15,18 +15,21 @@ def test_cli_accepts_empty_arguments() -> None:
 
 
 def test_cli_starts_pipeline(capsys: pytest.CaptureFixture[str]) -> None:
-    assert CliApplication().run(
-        [
-            "pipeline",
-            "start",
-            "--slug",
-            "demo",
-            "--title",
-            "Demo",
-            "--postulate",
-            "Evidence first.",
-        ]
-    ) == 0
+    assert (
+        CliApplication().run(
+            [
+                "pipeline",
+                "start",
+                "--slug",
+                "demo",
+                "--title",
+                "Demo",
+                "--postulate",
+                "Evidence first.",
+            ]
+        )
+        == 0
+    )
 
     assert capsys.readouterr().out.strip() == '{"job_id": "local-job-1", "project_slug": "demo"}'
 
