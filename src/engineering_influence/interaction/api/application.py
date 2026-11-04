@@ -3,6 +3,7 @@
 
 from typing import TYPE_CHECKING, Any, cast
 
+from engineering_influence import __version__
 from engineering_influence.contracts.project_request import ProjectRequest
 from engineering_influence.controllers.project_controller import ProjectController
 from engineering_influence.errors.application_error import ApplicationError
@@ -40,7 +41,7 @@ class ApiApplication:
         """Return a FastAPI app with the public project-start contract."""
         from fastapi import Depends, FastAPI
 
-        app = FastAPI(title="engineering-influence", version="0.1.0a1")
+        app = FastAPI(title="engineering-influence", version=__version__)
         app.add_exception_handler(ApplicationError, self._render_error)
         app.add_api_route(
             "/v1/pipelines",

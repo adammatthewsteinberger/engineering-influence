@@ -673,7 +673,6 @@ wheels = [
 
 [[package]]
 name = "engineering-influence"
-version = "0.1.0a1"
 source = { editable = "." }
 dependencies = [
     { name = "pydantic" },
@@ -765,11 +764,10 @@ requires-dist = [
     { name = "vibey-engine", marker = "extra == 'runtime'", specifier = "==4.5.0" },
     { name = "vibey-engine", marker = "extra == 'test'", specifier = "==4.5.0" },
 ]
-provides-extras = ["api", "cli", "runtime", "test", "dev", "mcp", "publishing"]
+provides-extras = ["api", "cli", "dev", "mcp", "publishing", "runtime", "test"]
 
 [[package]]
 name = "engineering-influence-sdk"
-version = "0.1.0a1"
 source = { editable = "packages/engineering-influence-sdk" }
 dependencies = [
     { name = "httpx" },

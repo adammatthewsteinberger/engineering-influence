@@ -36,20 +36,27 @@ class ServeCli:
 
     def run(self, arguments: argparse.Namespace) -> int:
         """Load settings, then run the chosen process; return its exit status."""
-        from engineering_influence.infrastructure.security.env_secret_provider import (
-            EnvSecretProvider,
-        )
-        from engineering_influence.runtime.environment_settings_loader import (
-            EnvironmentSettingsLoader,
-        )
-
-        secrets = self._secrets or EnvSecretProvider()
         try:
+            from engineering_influence.infrastructure.security.env_secret_provider import (
+                EnvSecretProvider,
+            )
+            from engineering_influence.runtime.environment_settings_loader import (
+                EnvironmentSettingsLoader,
+            )
+
+            secrets = self._secrets or EnvSecretProvider()
             settings = EnvironmentSettingsLoader(secrets).load()
             if arguments.target == "api":
                 (self._run_api or self._default_api)(settings, secrets)
             else:
                 (self._run_worker or self._default_worker)(settings, secrets)
+        except ImportError as error:
+            print(
+                "error: serve needs the api and runtime extras: "
+                f"pip install 'engineering-influence[api,runtime]' ({error.name} is missing)",
+                file=sys.stderr,
+            )
+            return 1
         except (ApplicationError, ValueError) as error:
             message = error.message if isinstance(error, ApplicationError) else str(error)
             print(f"error: {message}", file=sys.stderr)

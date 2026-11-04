@@ -10,10 +10,10 @@ BLOCKED = ("PIL", "numpy", "pypdf", "pdfplumber", "markdown_it", "defusedxml")
 
 
 def run_without_extras(
-    code: str, env: dict[str, str] | None = None
+    code: str, env: dict[str, str] | None = None, blocked: tuple[str, ...] = BLOCKED
 ) -> subprocess.CompletedProcess[str]:
     """Run code in a fresh interpreter where the optional libraries cannot be imported."""
-    prelude = f"import sys\nfor name in {BLOCKED!r}:\n    sys.modules[name] = None\n"
+    prelude = f"import sys\nfor name in {blocked!r}:\n    sys.modules[name] = None\n"
     return subprocess.run(
         [sys.executable, "-c", prelude + textwrap.dedent(code)],
         capture_output=True,
@@ -82,3 +82,18 @@ def test_the_runtime_roots_import_without_the_publishing_libraries(module: str) 
     result = run_without_extras(f"import {module}")
 
     assert result.returncode == 0, result.stderr
+
+
+def test_serve_without_the_runtime_extra_explains_how_to_install_it() -> None:
+    result = run_without_extras(
+        """
+        from engineering_influence.interaction.cli.main import CliApplication
+        raise SystemExit(CliApplication().run(["serve", "worker"]))
+        """,
+        blocked=("vibey_bootstrap", "aio_pika", "sqlmodel", "uvicorn"),
+    )
+
+    assert result.returncode == 1
+    assert "pip install 'engineering-influence[api,runtime]'" in result.stderr
+    assert "is missing" in result.stderr
+    assert "Traceback" not in result.stderr

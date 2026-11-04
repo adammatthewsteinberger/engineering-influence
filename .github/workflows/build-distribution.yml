@@ -1,0 +1,64 @@
+# Build, verify and hash the distributions. Called by CI on every push and by the release
+# workflow, so a tag can only ever publish what CI has already been building all along.
+name: Build distribution
+
+on:
+  workflow_call:
+    inputs:
+      run_tests:
+        description: Also run the full unit suite (CI runs it in its own job).
+        type: boolean
+        default: false
+    outputs:
+      version:
+        description: The package version that was built.
+        value: ${{ jobs.build.outputs.version }}
+
+permissions: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.12.6"
+          python-version: "3.13"
+          enable-cache: true
+      - run: uv sync --locked --extra test --extra dev --extra runtime --extra publishing --extra api
+      - id: version
+        run: echo "version=$(uv run python -c 'import engineering_influence as e; print(e.__version__)')" >> "$GITHUB_OUTPUT"
+      - if: inputs.run_tests
+        run: uv run pytest
+      # A fixed timestamp makes the wheel and sdist byte-for-byte reproducible.
+      - name: Build both distributions
+        run: |
+          set -eu
+          SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
+          export SOURCE_DATE_EPOCH
+          uv build --out-dir dist
+          uv build --package engineering-influence-sdk --out-dir dist
+      - run: uvx twine check --strict dist/*
+      - name: Install and run the real artifacts
+        run: uv run pytest -m distribution --no-cov tests/e2e/test_distribution.py
+      - name: Software bill of materials and checksums
+        run: |
+          set -eu
+          uv export --quiet --format cyclonedx1.5 --locked --no-dev --extra api --extra runtime --extra publishing -o dist/sbom.cdx.json
+          cd dist
+          sha256sum -- *.whl *.tar.gz sbom.cdx.json > SHA256SUMS
+          cat SHA256SUMS
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14

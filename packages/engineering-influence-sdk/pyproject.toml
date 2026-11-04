@@ -4,10 +4,21 @@ build-backend = "hatchling.build"
 
 [project]
 name = "engineering-influence-sdk"
-version = "0.1.0a1"
+dynamic = ["version"]
 description = "Typed sync and async client for engineering-influence."
+readme = "README.md"
 requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE"]
+classifiers = ["Development Status :: 3 - Alpha", "Programming Language :: Python :: 3", "Typing :: Typed"]
 dependencies = ["httpx>=0.28,<1", "pydantic>=2.10,<3"]
+
+[tool.hatch.version]
+path = "src/engineering_influence_sdk/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/engineering_influence_sdk"]
+
+[project.urls]
+Source = "https://github.com/adammatthewsteinberger/engineering-influence"
+Issues = "https://github.com/adammatthewsteinberger/engineering-influence/issues"

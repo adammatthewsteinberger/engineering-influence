@@ -11,11 +11,13 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          version: "latest"
-      - uses: actions/setup-python@v5
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.12.6"
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
       - run: uv sync --extra test --extra runtime --extra dev --extra publishing
@@ -29,23 +31,25 @@ jobs:
   leak-scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
       - name: Reject private-content paths
         run: |
           ! git rev-list --objects HEAD | grep -E '(^|/)(manuscripts|living-waters|archive|prompts|chapters)/|^output/|\.(pdf|docx)$'
-      - uses: gitleaks/gitleaks-action@v2
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   provenance:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
       - run: pip install "vibey-engine==4.5.0"
@@ -62,7 +66,29 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       # Builds the image, starts Postgres, RabbitMQ, the API and a worker with throwaway
       # credentials, runs a two-stage pipeline through them and checks dead-lettering.
       - run: sh examples/compose_smoke.sh
+
+  # The same build the release uses, so a tag can only publish what CI has been building all along.
+  distribution:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/build-distribution.yml
+
+  # Static checks for the workflows themselves, including the release pipeline.
+  workflows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.12.6"
+      - run: uvx --from actionlint-py==1.7.12 actionlint
+      - run: uvx zizmor==1.32.0 --no-progress --min-severity medium .github
+

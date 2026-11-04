@@ -4,6 +4,7 @@
 import argparse
 import json
 
+from engineering_influence import __version__
 from engineering_influence.contracts.project_request import ProjectRequest
 from engineering_influence.controllers.project_controller import ProjectController
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
@@ -19,7 +20,9 @@ class CliApplication:
     def run(self, argv: list[str] | None = None) -> int:
         """Parse the command line and return its process status."""
         parser = argparse.ArgumentParser(prog="ei")
-        parser.add_argument("--version", action="version", version="engineering-influence 0.1.0a1")
+        parser.add_argument(
+            "--version", action="version", version=f"engineering-influence {__version__}"
+        )
         subparsers = parser.add_subparsers(dest="command")
         pipeline = subparsers.add_parser("pipeline")
         pipeline_subparsers = pipeline.add_subparsers(dest="pipeline_command", required=True)

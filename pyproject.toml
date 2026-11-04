@@ -4,12 +4,23 @@ build-backend = "hatchling.build"
 
 [project]
 name = "engineering-influence"
-version = "0.1.0a1"
+dynamic = ["version"]
 description = "An autonomous, evidence-bounded content engineering pipeline."
 readme = "README.md"
 requires-python = ">=3.12"
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "Adam Matthew Steinberger" }]
+keywords = ["publishing", "content-engineering", "pipeline", "epub", "kdp"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Text Processing :: Markup",
+  "Typing :: Typed",
+]
 dependencies = [
   "pydantic>=2.10,<3",
 ]
@@ -50,15 +61,37 @@ publishing = [
   "Pillow>=13.0,<14",
 ]
 
+[project.urls]
+Homepage = "https://github.com/adammatthewsteinberger/engineering-influence"
+Source = "https://github.com/adammatthewsteinberger/engineering-influence"
+Issues = "https://github.com/adammatthewsteinberger/engineering-influence/issues"
+Changelog = "https://github.com/adammatthewsteinberger/engineering-influence/blob/develop/CHANGELOG.md"
+Security = "https://github.com/adammatthewsteinberger/engineering-influence/security/policy"
+
 [project.scripts]
 ei = "engineering_influence.interaction.cli.main:main"
+
+[tool.hatch.version]
+path = "src/engineering_influence/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/engineering_influence"]
 
+# Hatch ships everything the top-level .gitignore does not name, which includes local
+# tool caches and agent configuration. Say what an sdist contains instead.
+[tool.hatch.build.targets.sdist]
+include = [
+  "/src", "/tests", "/docs", "/pyproject.toml", "/README.md", "/LICENSE",
+  "/CHANGELOG.md", "/SECURITY.md",
+]
+exclude = ["**/__pycache__", "**/*.pyc"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--strict-markers"
+addopts = "--strict-markers -m 'not distribution'"
+markers = [
+  "distribution: builds and installs the real artifacts; needs network access (pytest -m distribution)",
+]
 
 [tool.coverage.run]
 branch = true

@@ -11,4 +11,9 @@
 - Added `ei serve api` and `ei serve worker`, a Dockerfile, and `examples/docker-compose.yml` (Postgres, RabbitMQ, API, worker) with a smoke test. All settings fail closed and the compose file has no default credentials.
 - Added a worker that consumes jobs from RabbitMQ, runs each stage, records it in the ledger and enqueues the next, with malformed and failing jobs dead-lettered. `StartPipeline` now tells a job which stages follow it.
 - Fixed the RabbitMQ publisher silently dropping messages when the queue had not been declared yet.
+- Added release automation: a tag-triggered workflow that guards the tag, builds and installs the real artifacts, attests build provenance, creates the GitHub release with checksums and an SBOM, and publishes to PyPI behind an approval gate. See `docs/RELEASING.md`.
+- The version is now defined once, in `__version__`, and read by `pyproject.toml`, `ei --version` and the API. Builds are reproducible.
+- The wheel now ships `py.typed`, and the source distribution no longer includes local tool caches, git hooks or agent configuration. Added project URLs, classifiers and an SDK README.
+- `ei serve` without the `api` and `runtime` extras now says which extras to install instead of failing with a traceback.
+- Pinned every GitHub Action to a commit SHA, restricted job permissions, and added `actionlint` and `zizmor` checks.
 
