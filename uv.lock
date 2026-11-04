@@ -502,6 +502,7 @@ runtime = [
     { name = "vibey-engine" },
 ]
 test = [
+    { name = "aio-pika" },
     { name = "engineering-influence-sdk" },
     { name = "hypothesis" },
     { name = "pytest" },
@@ -512,6 +513,7 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "aio-pika", marker = "extra == 'runtime'", specifier = ">=9.5,<10" },
+    { name = "aio-pika", marker = "extra == 'test'", specifier = ">=9.5,<10" },
     { name = "engineering-influence-sdk", marker = "extra == 'test'", editable = "packages/engineering-influence-sdk" },
     { name = "fastapi", marker = "extra == 'api'", specifier = ">=0.115,<1" },
     { name = "hypothesis", marker = "extra == 'test'", specifier = ">=6.120,<7" },
