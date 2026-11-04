@@ -35,7 +35,7 @@ runtime = [
 test = [
   "hypothesis>=6.120,<7",
   "pytest>=9.0.3,<10",
-  "pytest-cov>=6,<7",
+  "pytest-cov>=6,<8",
   "engineering-influence-sdk",
   "sqlmodel>=0.0.22,<1",
   "aio-pika>=9.5,<10",
