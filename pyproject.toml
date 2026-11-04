@@ -20,6 +20,9 @@ cli = ["typer>=0.15,<1"]
 runtime = ["vibey-engine==4.5.0", "aio-pika>=9.5,<10", "sqlmodel>=0.0.22,<1"]
 test = ["hypothesis>=6.120,<7", "pytest>=8.3,<9", "pytest-cov>=6,<7"]
 dev = ["mypy>=1.14,<2", "ruff>=0.9,<1"]
+mcp = [
+    "mcp>=1.0,<2",
+]
 
 [project.scripts]
 ei = "engineering_influence.interaction.cli.main:main"
