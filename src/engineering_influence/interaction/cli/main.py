@@ -9,6 +9,7 @@ from engineering_influence.controllers.project_controller import ProjectControll
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
 from engineering_influence.interaction.cli.book_cli import BookCli
+from engineering_influence.interaction.cli.serve_cli import ServeCli
 from engineering_influence.services.start_pipeline import StartPipeline
 
 
@@ -29,9 +30,13 @@ class CliApplication:
         start.add_argument("--stage", action="append")
         book_cli = BookCli()
         book_cli.register(subparsers)
+        serve_cli = ServeCli()
+        serve_cli.register(subparsers)
         arguments = parser.parse_args(argv)
         if arguments.command == "book":
             return book_cli.run(arguments)
+        if arguments.command == "serve":
+            return serve_cli.run(arguments)
         if arguments.command == "pipeline" and arguments.pipeline_command == "start":
             ledger = InMemoryLedger()
             queue = InMemoryQueue()

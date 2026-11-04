@@ -17,7 +17,10 @@ dependencies = [
 [project.optional-dependencies]
 api = ["fastapi>=0.115,<1", "uvicorn>=0.34,<1"]
 cli = ["typer>=0.15,<1"]
-runtime = ["vibey-engine==4.5.0", "aio-pika>=9.5,<10", "sqlmodel>=0.0.22,<1"]
+runtime = [
+  "vibey-engine==4.5.0", "aio-pika>=9.5,<10", "sqlmodel>=0.0.22,<1",
+  "psycopg[binary]>=3.2,<4",
+]
 test = [
   "hypothesis>=6.120,<7",
   "pytest>=9.0.3,<10",
@@ -92,7 +95,7 @@ forbidden_modules = [
   "engineering_influence.services", "engineering_influence.controllers",
   "engineering_influence.infrastructure", "engineering_influence.repositories",
   "engineering_influence.interaction", "engineering_influence.interfaces",
-  "engineering_influence.contracts",
+  "engineering_influence.contracts", "engineering_influence.runtime",
 ]
 
 [[tool.importlinter.contracts]]
@@ -101,7 +104,7 @@ type = "forbidden"
 source_modules = ["engineering_influence.services", "engineering_influence.controllers"]
 forbidden_modules = [
   "engineering_influence.infrastructure", "engineering_influence.repositories",
-  "engineering_influence.interaction",
+  "engineering_influence.interaction", "engineering_influence.runtime",
 ]
 
 [[tool.mypy.overrides]]

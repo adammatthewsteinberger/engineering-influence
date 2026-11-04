@@ -57,3 +57,12 @@ jobs:
         run: |
           vibey-gh provenance-check --commits "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
           vibey-gh conventional-check --commits "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+
+  compose-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      # Builds the image, starts Postgres, RabbitMQ, the API and a worker with throwaway
+      # credentials, runs a two-stage pipeline through them and checks dead-lettering.
+      - run: sh examples/compose_smoke.sh

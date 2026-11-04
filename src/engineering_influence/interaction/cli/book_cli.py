@@ -1,17 +1,21 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """The `ei book` command group over the shared publishing controller."""
 
+from __future__ import annotations
+
 import argparse
 import json
 import sys
 import tomllib
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from engineering_influence.controllers.publishing_controller import PublishingController
 from engineering_influence.publishing.project_config import ProjectConfig
 from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
 from engineering_influence.publishing.typesetting.manuscript_error import ManuscriptError
+
+if TYPE_CHECKING:
+    from engineering_influence.controllers.publishing_controller import PublishingController
 
 
 class BookCli:
@@ -58,6 +62,20 @@ class BookCli:
         if arguments.book_command in ("qa", "publish") and arguments.dpi < 36:
             print("error: --dpi must be at least 36", file=sys.stderr)
             return 2
+        try:
+            from engineering_influence.controllers.publishing_controller import (
+                PublishingController,
+            )
+        except ImportError as error:
+            # Pillow, numpy and the PDF libraries come with the optional extra; the rest of
+            # `ei` (serve, pipeline) must keep working without them.
+            print(
+                "error: book commands need the publishing extra: "
+                "pip install 'engineering-influence[publishing]'"
+                f" ({error.name} is missing)",
+                file=sys.stderr,
+            )
+            return 1
         failures = 0
         try:
             controller = PublishingController(ProjectConfig.load(arguments.root))

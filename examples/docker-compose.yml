@@ -1,0 +1,78 @@
+# The full stack: Postgres, RabbitMQ, the API and a worker.
+#
+#   cp examples/.env.example examples/.env     # then fill in the three blank values
+#   docker compose -f examples/docker-compose.yml --env-file examples/.env up -d --build --wait
+#
+# Nothing here has a default credential: compose refuses to start until the values are set.
+name: engineering-influence
+
+x-app: &app
+  build:
+    context: ..
+    dockerfile: Dockerfile
+  image: engineering-influence:local
+  restart: unless-stopped
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  depends_on:
+    postgres: {condition: service_healthy}
+    rabbitmq: {condition: service_healthy}
+  environment: &app-environment
+    EI_DATABASE_URL: postgresql+psycopg://ei:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in examples/.env}@postgres:5432/ei
+    EI_RABBITMQ_URL: amqp://ei:${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD in examples/.env}@rabbitmq:5672/
+    EI_LOG_LEVEL: ${EI_LOG_LEVEL:-INFO}
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ei
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in examples/.env}
+      POSTGRES_DB: ei
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ei -d ei"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  rabbitmq:
+    image: rabbitmq:4-alpine
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ei
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD in examples/.env}
+    volumes: [rabbitmq-data:/var/lib/rabbitmq]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+
+  api:
+    <<: *app
+    command: ["serve", "api"]
+    environment:
+      <<: *app-environment
+      EI_API_KEYS: ${EI_API_KEYS:?set EI_API_KEYS in examples/.env}
+      EI_HOST: 0.0.0.0
+      EI_PORT: "8000"
+    # Published on the loopback interface only. Put a TLS-terminating proxy in front to expose it.
+    ports: ["127.0.0.1:${EI_API_PORT:-8000}:8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/health/ready', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+
+  worker:
+    <<: *app
+    command: ["serve", "worker"]
+
+volumes:
+  postgres-data:
+  rabbitmq-data:

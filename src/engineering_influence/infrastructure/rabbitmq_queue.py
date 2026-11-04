@@ -9,6 +9,7 @@ from uuid import uuid4
 
 import aio_pika
 
+from engineering_influence.infrastructure.rabbitmq_topology import RabbitMqTopology
 from engineering_influence.interfaces.queue_port import QueuePort
 
 
@@ -36,6 +37,7 @@ class RabbitMqQueueAdapter(QueuePort):
         connection = await self._connector(self._url)
         async with connection:
             channel = await connection.channel()
+            await RabbitMqTopology(self._routing_key).declare(channel)
             await channel.default_exchange.publish(
                 aio_pika.Message(body=body, delivery_mode=aio_pika.DeliveryMode.PERSISTENT),
                 routing_key=self._routing_key,

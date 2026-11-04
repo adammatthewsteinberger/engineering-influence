@@ -18,7 +18,11 @@ class StartPipeline(StartPipelineInterface):
 
     def start(self, project: Project) -> str:
         """Write `PipelineStarted`, then enqueue the first selected stage."""
-        first_stage = project.stages[0].value
-        payload: dict[str, object] = {"project_slug": project.slug, "stage": first_stage}
+        first_stage, *later_stages = (stage.value for stage in project.stages)
+        payload: dict[str, object] = {
+            "project_slug": project.slug,
+            "stage": first_stage,
+            "remaining_stages": later_stages,
+        }
         self._ledger.append("pipeline.started", payload)
         return self._queue.enqueue(f"pipeline.{first_stage}", payload)

@@ -107,3 +107,58 @@ recreate any database created before this change.
   alert yet, because no budget guard exists in this package.
 - Entry points that start the API and worker are not part of this package yet, so
   nothing builds this wiring for you.
+
+## Running the stack
+
+`ei serve api` and `ei serve worker` read their settings from the environment. A
+missing or invalid value prints which variable is wrong and exits with status 2; it
+never prints a traceback, which could carry a connection string.
+
+| Variable | Needed by | Meaning |
+|---|---|---|
+| `EI_DATABASE_URL` | both | SQLAlchemy URL, for example `postgresql+psycopg://user:pw@host:5432/db`. Required. |
+| `EI_RABBITMQ_URL` | both | `amqp://user:pw@host:5672/`. Required. |
+| `EI_API_KEYS` | API | Comma-separated keys, each at least 24 characters. Required: with none, the API will not start. |
+| `EI_QUEUE_NAME` | both | Job queue name. Default `engineering-influence.jobs`; the dead-letter queue is that name plus `.dead`. |
+| `EI_HOST`, `EI_PORT` | API | Default `127.0.0.1` and `8000`. A bare run is never reachable from the network. |
+| `EI_LOG_LEVEL` | both | `DEBUG` to `CRITICAL`. Default `INFO`. |
+| `EI_RATE_BURST`, `EI_RATE_PER_SECOND` | API | Token-bucket limits, default 30 and 10. |
+
+```bash
+cp examples/.env.example examples/.env     # fill in the three blank values
+docker compose -f examples/docker-compose.yml --env-file examples/.env up -d --build --wait
+```
+
+`examples/compose_smoke.sh` does all of this with throwaway credentials, runs a
+two-stage pipeline, checks that a malformed message is dead-lettered, and tears the
+stack down. It needs Docker and `curl`.
+
+The compose file has no default credentials and refuses to start without them. Ports
+are published on `127.0.0.1` only, and the containers run as a non-root user with a
+read-only filesystem and no capabilities.
+
+### What the worker does
+
+For each `pipeline.<stage>` job it runs the phase, appends `phase.completed` to the
+ledger, and enqueues the next stage, or appends `pipeline.completed` after the last. A
+human gate, or an automatic gate that rejects, appends `gate.awaiting` and stops the
+pipeline there.
+
+A job that is malformed, or that fails, is rejected without requeue and lands in the
+`.dead` queue, with an alert for failures. Nothing retries it automatically: inspect it
+and republish it by hand. Stopping the worker finishes the job in flight first.
+
+### Limits to know
+
+- **The runner and gate are placeholders.** `DeterministicRunner` returns a fixed line
+  of text and `NonEmptyArtifactGate` accepts anything non-blank. They let the whole
+  pipeline run offline; a model-backed runner and rubric gates implement the same ports.
+- **Delivery is at least once.** A worker that dies between writing the ledger and
+  acknowledging the job runs it again and records the stage twice.
+- **Nothing resolves a human gate yet.** There is no endpoint for it, so a pipeline that
+  reaches one stays parked.
+- **No webhook is emitted.** The outbox, signing and dispatch exist, but no service
+  creates outbox intents, and the worker does not run the dispatcher.
+- **No read API.** Progress is visible only in the ledger table and the logs.
+- **The base images are tags, not digests**, and the worker has no container
+  healthcheck; it logs a heartbeat and raises a critical alert if it stalls.

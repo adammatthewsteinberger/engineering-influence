@@ -12,16 +12,25 @@ class ExchangeFake:
 
     def __init__(self) -> None:
         self.messages: list[tuple[bytes, str]] = []
+        self.events: list[str] = []
 
     async def publish(self, message: Any, routing_key: str) -> None:
+        self.events.append("publish")
         self.messages.append((message.body, routing_key))
 
 
 class ChannelFake:
-    """Provides the default exchange."""
+    """Provides the default exchange and records queue declarations."""
 
     def __init__(self, exchange: ExchangeFake) -> None:
         self.default_exchange = exchange
+        self.declared: list[str] = []
+        self.events: list[str] = []
+        exchange.events = self.events
+
+    async def declare_queue(self, name: str, **options: Any) -> None:
+        self.declared.append(name)
+        self.events.append(f"declare:{name}")
 
 
 class ConnectionFake:
@@ -64,3 +73,15 @@ def test_rabbitmq_queue_publishes_durable_job() -> None:
         "kind": "pipeline.thesis",
         "payload": {"project_slug": "demo"},
     }
+
+
+def test_the_queue_is_declared_before_publishing_so_nothing_is_dropped() -> None:
+    exchange = ExchangeFake()
+    channel = ChannelFake(exchange)
+
+    async def connector(_: str) -> ConnectionFake:
+        return ConnectionFake(channel)
+
+    RabbitMqQueueAdapter("amqp://broker", "jobs", connector=connector).enqueue("k", {})
+
+    assert channel.events == ["declare:jobs.dead", "declare:jobs", "publish"]
