@@ -5,7 +5,9 @@ import pytest
 from engineering_influence.interaction.cli.main import CliApplication, main
 from engineering_influence.interfaces.ledger_port import LedgerPort
 from engineering_influence.interfaces.queue_port import QueuePort
-from engineering_influence.services.interfaces.start_pipeline_interface import StartPipelineInterface
+from engineering_influence.services.interfaces.start_pipeline_interface import (
+    StartPipelineInterface,
+)
 
 
 def test_cli_accepts_empty_arguments() -> None:

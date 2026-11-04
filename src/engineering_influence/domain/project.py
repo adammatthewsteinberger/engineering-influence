@@ -1,6 +1,6 @@
 """The project aggregate."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from engineering_influence.domain.governing_postulates import GoverningPostulates
 from engineering_influence.domain.limits_on_means import LimitsOnMeans
@@ -15,7 +15,7 @@ class Project:
     title: str
     postulates: GoverningPostulates
     stages: tuple[PipelineStage, ...]
-    limits: LimitsOnMeans = LimitsOnMeans()
+    limits: LimitsOnMeans = field(default_factory=LimitsOnMeans)
 
     def __post_init__(self) -> None:
         if not self.slug.strip() or not self.title.strip():
