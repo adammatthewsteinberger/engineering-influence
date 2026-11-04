@@ -218,3 +218,14 @@ def test_render_qa_defaults_to_the_real_rasterizer(
     with pytest.raises(BookBuildError, match="needs pdftoppm"):
         RenderQa(tmp_path).render(pdf, tmp_path / "qa")
     assert os.environ["PATH"] == str(tmp_path)
+
+
+def test_clearing_pages_tolerates_a_missing_directory(tmp_path: Path) -> None:
+    PageRasterizer().clear_pages(tmp_path / "absent")
+    pages = tmp_path / "pages"
+    pages.mkdir()
+    (pages / "render-0001.png").write_bytes(b"x")
+    (pages / "page-0001.png").write_bytes(b"x")
+    (pages / "notes.txt").write_text("keep")
+    PageRasterizer().clear_pages(pages)
+    assert [p.name for p in pages.iterdir()] == ["notes.txt"]
