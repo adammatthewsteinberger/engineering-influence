@@ -18,7 +18,12 @@ dependencies = [
 api = ["fastapi>=0.115,<1", "uvicorn>=0.34,<1"]
 cli = ["typer>=0.15,<1"]
 runtime = ["vibey-engine==4.5.0", "aio-pika>=9.5,<10", "sqlmodel>=0.0.22,<1"]
-test = ["hypothesis>=6.120,<7", "pytest>=8.3,<9", "pytest-cov>=6,<7"]
+test = [
+  "hypothesis>=6.120,<7",
+  "pytest>=8.3,<9",
+  "pytest-cov>=6,<7",
+  "engineering-influence-sdk",
+]
 dev = ["mypy>=1.14,<2", "ruff>=0.9,<1"]
 mcp = [
     "mcp>=1.0,<2",
@@ -36,7 +41,7 @@ addopts = "--strict-markers"
 
 [tool.coverage.run]
 branch = true
-source = ["engineering_influence"]
+source = ["engineering_influence", "engineering_influence_sdk"]
 
 [tool.coverage.report]
 fail_under = 100
@@ -51,3 +56,9 @@ strict = true
 
 [tool.uv]
 package = true
+
+[tool.uv.workspace]
+members = ["packages/engineering-influence-sdk"]
+
+[tool.uv.sources]
+engineering-influence-sdk = { workspace = true }

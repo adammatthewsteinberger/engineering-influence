@@ -7,6 +7,12 @@ resolution-markers = [
     "python_full_version < '3.14'",
 ]
 
+[manifest]
+members = [
+    "engineering-influence",
+    "engineering-influence-sdk",
+]
+
 [[package]]
 name = "aio-pika"
 version = "9.6.2"
@@ -496,6 +502,7 @@ runtime = [
     { name = "vibey-engine" },
 ]
 test = [
+    { name = "engineering-influence-sdk" },
     { name = "hypothesis" },
     { name = "pytest" },
     { name = "pytest-cov" },
@@ -504,6 +511,7 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "aio-pika", marker = "extra == 'runtime'", specifier = ">=9.5,<10" },
+    { name = "engineering-influence-sdk", marker = "extra == 'test'", editable = "packages/engineering-influence-sdk" },
     { name = "fastapi", marker = "extra == 'api'", specifier = ">=0.115,<1" },
     { name = "hypothesis", marker = "extra == 'test'", specifier = ">=6.120,<7" },
     { name = "mcp", marker = "extra == 'mcp'", specifier = ">=1.0,<2" },
@@ -518,6 +526,21 @@ requires-dist = [
     { name = "vibey-engine", marker = "extra == 'runtime'", specifier = "==4.5.0" },
 ]
 provides-extras = ["api", "cli", "runtime", "test", "dev", "mcp"]
+
+[[package]]
+name = "engineering-influence-sdk"
+version = "0.1.0a1"
+source = { editable = "packages/engineering-influence-sdk" }
+dependencies = [
+    { name = "httpx" },
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "httpx", specifier = ">=0.28,<1" },
+    { name = "pydantic", specifier = ">=2.10,<3" },
+]
 
 [[package]]
 name = "fastapi"
