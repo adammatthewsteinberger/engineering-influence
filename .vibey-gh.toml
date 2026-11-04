@@ -1,8 +1,24 @@
-[project]
-name = "engineering-influence"
+# vibey provenance for the public package.
+#
+# Deliberately conservative, mirroring the private books repository:
+#
+# - Every commit carries the Made-With trailer, added by the installed hooks.
+# - Every file under src/ carries the provenance header (`vibey-gh check --apply` adds it).
+# - [install] workflows = []: only the hooks and the CLI are installed. The pull-request,
+#   merge-train, promote, release, and AI-review workflows stay off until they are adopted
+#   deliberately (several merge or promote on their own, and the AI lanes need secrets).
+#   The repository's own CI (.github/workflows/ci.yml) runs the provenance check.
+# - [documentation] is disabled: vibey's documentation contract (agent rule files, project map,
+#   living roadmap) is adopted deliberately, not by surprise. The repository's own docs
+#   (README, AGENTS.md, docs/) are checked by review, not by this tool.
+
+[fingerprint]
+sources = ["src/**/*.py"]
 
 [documentation]
-contract = true
+enabled = false
+require_roadmap = false
 
-[fingerprints]
-sources = ["src/**/*.py"]
+[install]
+workflows = []
+pin_version = true

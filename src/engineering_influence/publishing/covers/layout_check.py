@@ -1,3 +1,4 @@
+# Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """A layout's safe areas and barcode box against KDP's published minimums."""
 
 from engineering_influence.publishing.covers.cover_layout import CoverLayout

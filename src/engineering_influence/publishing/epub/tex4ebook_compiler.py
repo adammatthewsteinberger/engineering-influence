@@ -1,3 +1,4 @@
+# Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Runs tex4ebook (TeX4ht in LuaLaTeX mode) to turn the ebook LaTeX into EPUB 3."""
 
 import subprocess  # nosec B404

@@ -38,3 +38,22 @@ jobs:
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  provenance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "vibey-engine==4.5.0"
+      # Every source file must carry the fingerprint header.
+      - run: vibey-gh check --ci
+      # Every NEW commit must carry the Made-With trailer. Pull requests are judged
+      # over their own range only; history that predates adoption is not rewritten.
+      - if: github.event_name == 'pull_request'
+        run: |
+          vibey-gh provenance-check --commits "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+          vibey-gh conventional-check --commits "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
