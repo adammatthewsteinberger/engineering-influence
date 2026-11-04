@@ -2,6 +2,7 @@
 
 import importlib
 from importlib.metadata import entry_points
+from pathlib import Path
 from typing import Any
 
 from engineering_influence.publishing.covers.cover_plugin import CoverPlugin
@@ -19,14 +20,16 @@ class CoverPluginLoader:
 
     GROUP = "engineering_influence.covers"
 
-    def load(self, registry: PainterRegistry) -> dict[str, CoverStyle]:
+    def load(self, registry: PainterRegistry, root: Path | None = None) -> dict[str, CoverStyle]:
         """Register every entry-point plugin's painters; return the merged styles by slug."""
         styles: dict[str, CoverStyle] = {}
         for entry in entry_points(group=self.GROUP):
-            styles.update(self._register(entry.load()(), entry.name, registry))
+            styles.update(self._register(entry.load()(root=root), entry.name, registry))
         return styles
 
-    def load_reference(self, reference: str, registry: PainterRegistry) -> dict[str, CoverStyle]:
+    def load_reference(
+        self, reference: str, registry: PainterRegistry, root: Path | None = None
+    ) -> dict[str, CoverStyle]:
         """Load one plugin from `module:Class`."""
         module_name, _, attribute = reference.partition(":")
         if not module_name or not attribute:
@@ -37,7 +40,7 @@ class CoverPluginLoader:
             plugin_class = getattr(importlib.import_module(module_name), attribute)
         except (ImportError, AttributeError) as error:
             raise BookBuildError(f"cannot load cover plugin {reference!r}: {error}") from error
-        return self._register(plugin_class(), reference, registry)
+        return self._register(plugin_class(root=root), reference, registry)
 
     def _register(self, plugin: Any, name: str, registry: PainterRegistry) -> dict[str, CoverStyle]:
         if not isinstance(plugin, CoverPlugin):
