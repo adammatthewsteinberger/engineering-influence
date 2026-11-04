@@ -42,7 +42,7 @@ from engineering_influence.services.interfaces.start_pipeline_interface import (
 
 PROJECT = Project("demo", "Demo", GoverningPostulates(("Evidence.",)), (PipelineStage.THESIS,))
 MANUSCRIPT = "THE-CHAPTER-TEXT-THAT-MUST-NOT-BE-LOGGED"
-SECRET = b"webhook-signing-secret-bytes"
+SECRET = b"webhook-signing-secret-bytes"  # gitleaks:allow
 
 
 class Starter(StartPipelineInterface):

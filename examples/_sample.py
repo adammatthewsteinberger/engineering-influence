@@ -28,7 +28,7 @@ class SampleGuard:
     """An API guard for the examples. Real deployments read keys from EI_API_KEYS."""
 
     # A placeholder for the examples only; never reuse it outside them.
-    API_KEY = "example-key-for-local-demos-only"
+    API_KEY = "example-key-for-local-demos-only"  # gitleaks:allow
 
     def build(self) -> ApiGuard:
         """Return a guard that accepts the example key."""
