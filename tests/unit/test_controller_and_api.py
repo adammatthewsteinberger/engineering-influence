@@ -4,6 +4,7 @@ import pytest
 
 from engineering_influence.contracts.project_request import ProjectRequest
 from engineering_influence.controllers.project_controller import ProjectController
+from engineering_influence.interaction.api.api_guard import ApiGuard
 from engineering_influence.interaction.api.application import ApiApplication
 from engineering_influence.interfaces.ledger_port import LedgerPort
 from engineering_influence.interfaces.queue_port import QueuePort
@@ -50,8 +51,8 @@ def test_controller_uses_shared_start_pipeline_service() -> None:
     assert ledger.events[0][0] == "pipeline.started"
 
 
-def test_api_returns_same_controller_contract() -> None:
-    application = ApiApplication(RecordingLedger(), RecordingQueue())
+def test_api_returns_same_controller_contract(api_guard: ApiGuard) -> None:
+    application = ApiApplication(RecordingLedger(), RecordingQueue(), api_guard)
     application.build()
 
     assert application._start(request()) == {"job_id": "job-api-1", "project_slug": "demo"}

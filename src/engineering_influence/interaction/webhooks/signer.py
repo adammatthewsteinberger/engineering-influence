@@ -14,7 +14,7 @@ class WebhookSigner:
         self._secret = secret
 
     def sign(self, payload: bytes) -> str:
-        """Return the versioned signature header value."""
+        """Return the versioned signature header value for the bare payload."""
         digest = hmac.new(self._secret, payload, hashlib.sha256).hexdigest()
         return f"v1={digest}"
 
@@ -22,3 +22,11 @@ class WebhookSigner:
         """Constant-time verify a versioned signature header."""
         expected = self.sign(payload)
         return hmac.compare_digest(expected, signature)
+
+    def sign_at(self, payload: bytes, timestamp: int) -> str:
+        """Sign ``<timestamp>.<payload>`` so a captured delivery cannot be replayed later."""
+        return self.sign(f"{timestamp}.".encode() + payload)
+
+    def verify_at(self, payload: bytes, signature: str, timestamp: int) -> bool:
+        """Constant-time verify a timestamp-bound signature."""
+        return self.verify(f"{timestamp}.".encode() + payload, signature)

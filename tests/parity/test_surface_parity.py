@@ -13,6 +13,7 @@ from engineering_influence.contracts.project_request import ProjectRequest
 from engineering_influence.controllers.project_controller import ProjectController
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
+from engineering_influence.interaction.api.api_guard import ApiGuard
 from engineering_influence.interaction.api.application import ApiApplication
 from engineering_influence.interaction.cli.main import CliApplication
 from engineering_influence.interaction.mcp.application import McpApplication
@@ -34,9 +35,12 @@ def controller_result() -> dict[str, str]:
     return controller.start(request).model_dump()
 
 
-def test_api_matches_controller() -> None:
-    app = ApiApplication(InMemoryLedger(), InMemoryQueue()).build()
-    assert TestClient(app).post("/v1/pipelines", json=ARGS).json() == controller_result()
+def test_api_matches_controller(api_guard: ApiGuard, api_key: str) -> None:
+    app = ApiApplication(InMemoryLedger(), InMemoryQueue(), api_guard).build()
+    response = TestClient(app).post(
+        "/v1/pipelines", json=ARGS, headers={"Authorization": f"Bearer {api_key}"}
+    )
+    assert response.json() == controller_result()
 
 
 def test_mcp_matches_controller() -> None:
@@ -67,16 +71,21 @@ def test_cli_matches_controller() -> None:
     assert json.loads(buffer.getvalue()) == controller_result()
 
 
-def test_sdk_matches_controller() -> None:
-    server = TestClient(ApiApplication(InMemoryLedger(), InMemoryQueue()).build())
+def test_sdk_matches_controller(api_guard: ApiGuard, api_key: str) -> None:
+    server = TestClient(ApiApplication(InMemoryLedger(), InMemoryQueue(), api_guard).build())
 
     def handler(request: httpx.Request) -> httpx.Response:
         forwarded = server.post(
-            request.url.path, content=request.content, headers={"content-type": "application/json"}
+            request.url.path,
+            content=request.content,
+            headers={
+                "content-type": "application/json",
+                "authorization": request.headers["authorization"],
+            },
         )
         return httpx.Response(forwarded.status_code, json=forwarded.json(), request=request)
 
-    client = EngineeringInfluenceClient("http://local", None, httpx.MockTransport(handler))
+    client = EngineeringInfluenceClient("http://local", api_key, httpx.MockTransport(handler))
     result = client.start_pipeline("parity", "Parity", ("Evidence first.",), ("thesis",))
     client.close()
     assert result == controller_result()

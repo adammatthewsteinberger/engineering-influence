@@ -2,20 +2,31 @@
 """Signed outbound webhook delivery."""
 
 import json
+import time
+from collections.abc import Callable
 
 import httpx
 
+from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interaction.webhooks.signer import WebhookSigner
+from engineering_influence.interfaces.outbound_url_policy_port import OutboundUrlPolicyPort
 from engineering_influence.interfaces.webhook_delivery_port import (
     WebhookDeliveryPort,
 )
 
 
 class WebhookDelivery(WebhookDeliveryPort):
-    """Send one signed event through an async HTTP client."""
+    """Send one signed, timestamped event to a destination the policy allows."""
 
-    def __init__(self, client: httpx.AsyncClient) -> None:
+    def __init__(
+        self,
+        client: httpx.AsyncClient,
+        url_policy: OutboundUrlPolicyPort,
+        clock: Callable[[], float] = time.time,
+    ) -> None:
         self._client = client
+        self._url_policy = url_policy
+        self._clock = clock
 
     async def deliver(
         self,
@@ -26,18 +37,26 @@ class WebhookDelivery(WebhookDeliveryPort):
         secret: bytes,
     ) -> int:
         """POST a signed versioned event and return the recipient status."""
+        verdict = self._url_policy.check(url)
+        if not verdict.accepted:
+            raise ApplicationError(
+                code="WEBHOOK_TARGET_REJECTED",
+                message=f"webhook destination refused: {verdict.reason}",
+            )
         body = json.dumps(
             {"id": event_id, "type": event_name, "data": payload},
             separators=(",", ":"),
             sort_keys=True,
         ).encode("utf-8")
-        signature = WebhookSigner(secret).sign(body)
+        timestamp = int(self._clock())
+        signature = WebhookSigner(secret).sign_at(body, timestamp)
         response = await self._client.post(
             url,
             content=body,
             headers={
                 "Content-Type": "application/json",
                 "X-Engineering-Influence-Signature": signature,
+                "X-Engineering-Influence-Timestamp": str(timestamp),
                 "X-Engineering-Influence-Event": event_name,
                 "X-Engineering-Influence-Event-Id": event_id,
             },

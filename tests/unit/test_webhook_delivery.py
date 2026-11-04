@@ -5,6 +5,9 @@ import json
 
 import httpx
 
+from engineering_influence.infrastructure.security.public_https_url_policy import (
+    PublicHttpsUrlPolicy,
+)
 from engineering_influence.interaction.webhooks import WebhookDelivery, WebhookSigner
 
 
@@ -15,11 +18,14 @@ def test_webhook_delivery_posts_signed_event() -> None:
         observed["body"] = request.content
         observed["signature"] = request.headers["X-Engineering-Influence-Signature"]
         observed["event"] = request.headers["X-Engineering-Influence-Event"]
+        observed["timestamp"] = request.headers["X-Engineering-Influence-Timestamp"]
         return httpx.Response(202, request=request)
 
     async def run() -> int:
         client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
-        status = await WebhookDelivery(client).deliver(
+        status = await WebhookDelivery(
+            client, PublicHttpsUrlPolicy(lambda _: ["93.184.216.34"]), lambda: 1_700_000_000.0
+        ).deliver(
             "https://receiver.test/events",
             "pipeline.started",
             "evt-1",
@@ -37,5 +43,6 @@ def test_webhook_delivery_posts_signed_event() -> None:
         "id": "evt-1",
         "type": "pipeline.started",
     }
-    assert WebhookSigner(b"secret").verify(body, str(observed["signature"]))
+    assert observed["timestamp"] == "1700000000"
+    assert WebhookSigner(b"secret").verify_at(body, str(observed["signature"]), 1_700_000_000)
     assert observed["event"] == "pipeline.started"

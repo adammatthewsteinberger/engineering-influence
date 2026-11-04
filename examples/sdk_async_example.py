@@ -3,7 +3,7 @@
 import asyncio
 
 import httpx
-from _sample import SampleProject
+from _sample import SampleGuard, SampleProject
 from engineering_influence_sdk import AsyncEngineeringInfluenceClient
 
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
@@ -12,9 +12,11 @@ from engineering_influence.interaction.api.application import ApiApplication
 
 
 async def main() -> None:
-    app = ApiApplication(InMemoryLedger(), InMemoryQueue()).build()
+    app = ApiApplication(InMemoryLedger(), InMemoryQueue(), SampleGuard().build()).build()
     project = SampleProject().load()
-    client = AsyncEngineeringInfluenceClient("http://local", None, httpx.ASGITransport(app=app))
+    client = AsyncEngineeringInfluenceClient(
+        "http://local", SampleGuard.API_KEY, httpx.ASGITransport(app=app)
+    )
     print(
         await client.start_pipeline(
             project["slug"],
