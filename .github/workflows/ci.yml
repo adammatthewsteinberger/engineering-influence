@@ -18,9 +18,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: uv sync --extra test
+      - run: uv sync --extra test --extra runtime
       - run: uv run ruff check .
-      - run: uv run mypy --strict src
+      - run: uv run mypy --strict src packages
       - run: uv run pytest --cov --cov-branch --cov-fail-under=100
 
   leak-scan:

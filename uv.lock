@@ -506,6 +506,7 @@ test = [
     { name = "hypothesis" },
     { name = "pytest" },
     { name = "pytest-cov" },
+    { name = "sqlmodel" },
 ]
 
 [package.metadata]
@@ -521,6 +522,7 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=6,<7" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.9,<1" },
     { name = "sqlmodel", marker = "extra == 'runtime'", specifier = ">=0.0.22,<1" },
+    { name = "sqlmodel", marker = "extra == 'test'", specifier = ">=0.0.22,<1" },
     { name = "typer", marker = "extra == 'cli'", specifier = ">=0.15,<1" },
     { name = "uvicorn", marker = "extra == 'api'", specifier = ">=0.34,<1" },
     { name = "vibey-engine", marker = "extra == 'runtime'", specifier = "==4.5.0" },
