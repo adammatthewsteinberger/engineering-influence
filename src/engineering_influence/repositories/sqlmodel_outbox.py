@@ -5,13 +5,13 @@ from datetime import UTC, datetime
 
 from sqlmodel import Session, SQLModel, col, create_engine, select
 
-from engineering_influence.repositories.interfaces.outbox_repository_interface import (
-    OutboxRepositoryInterface,
+from engineering_influence.interfaces.outbox_port import (
+    OutboxPort,
 )
 from engineering_influence.repositories.outbox_record import OutboxRecord
 
 
-class SqlModelOutbox(OutboxRepositoryInterface):
+class SqlModelOutbox(OutboxPort):
     """Persist idempotent webhook intents with retry metadata."""
 
     def __init__(self, database_url: str = "sqlite://") -> None:

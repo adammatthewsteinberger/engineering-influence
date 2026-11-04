@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 
 
-class OutboxRepositoryInterface(ABC):
+class OutboxPort(ABC):
     """Store delivery intents until their recipient acknowledges them."""
 
     @abstractmethod

@@ -2,14 +2,14 @@
 
 import asyncio
 
-from engineering_influence.interaction.webhooks.interfaces.delivery_interface import (
-    WebhookDeliveryInterface,
+from engineering_influence.interfaces.webhook_delivery_port import (
+    WebhookDeliveryPort,
 )
 from engineering_influence.repositories import SqlModelOutbox
 from engineering_influence.services.dispatch_outbox import DispatchOutbox
 
 
-class DeliveryFake(WebhookDeliveryInterface):
+class DeliveryFake(WebhookDeliveryPort):
     """Returns configured statuses while recording deliveries."""
 
     def __init__(self, statuses: list[int]) -> None:

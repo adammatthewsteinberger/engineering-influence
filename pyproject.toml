@@ -27,8 +27,10 @@ test = [
   "aio-pika>=9.5,<10",
   "vibey-engine==4.5.0",
   "fastapi>=0.115,<1",
+  "mcp>=1.0,<2",
+  "httpx>=0.27,<1",
 ]
-dev = ["mypy>=1.14,<2", "ruff>=0.9,<1"]
+dev = ["mypy>=1.14,<2", "ruff>=0.9,<1", "import-linter>=2.1,<3", "bandit>=1.8,<2", "pip-audit>=2.7,<3"]
 mcp = [
     "mcp>=1.0,<2",
 ]
@@ -66,3 +68,26 @@ members = ["packages/engineering-influence-sdk"]
 
 [tool.uv.sources]
 engineering-influence-sdk = { workspace = true }
+
+[tool.importlinter]
+root_package = "engineering_influence"
+
+[[tool.importlinter.contracts]]
+name = "Domain depends on nothing else"
+type = "forbidden"
+source_modules = ["engineering_influence.domain"]
+forbidden_modules = [
+  "engineering_influence.services", "engineering_influence.controllers",
+  "engineering_influence.infrastructure", "engineering_influence.repositories",
+  "engineering_influence.interaction", "engineering_influence.interfaces",
+  "engineering_influence.contracts",
+]
+
+[[tool.importlinter.contracts]]
+name = "Services and controllers never touch adapters or transports"
+type = "forbidden"
+source_modules = ["engineering_influence.services", "engineering_influence.controllers"]
+forbidden_modules = [
+  "engineering_influence.infrastructure", "engineering_influence.repositories",
+  "engineering_influence.interaction",
+]

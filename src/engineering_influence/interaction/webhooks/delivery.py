@@ -4,13 +4,13 @@ import json
 
 import httpx
 
-from engineering_influence.interaction.webhooks.interfaces.delivery_interface import (
-    WebhookDeliveryInterface,
-)
 from engineering_influence.interaction.webhooks.signer import WebhookSigner
+from engineering_influence.interfaces.webhook_delivery_port import (
+    WebhookDeliveryPort,
+)
 
 
-class WebhookDelivery(WebhookDeliveryInterface):
+class WebhookDelivery(WebhookDeliveryPort):
     """Send one signed event through an async HTTP client."""
 
     def __init__(self, client: httpx.AsyncClient) -> None:

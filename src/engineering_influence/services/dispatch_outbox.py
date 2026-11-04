@@ -1,10 +1,10 @@
 """Application service connecting outbox persistence to webhook delivery."""
 
-from engineering_influence.interaction.webhooks.interfaces.delivery_interface import (
-    WebhookDeliveryInterface,
+from engineering_influence.interfaces.outbox_port import (
+    OutboxPort,
 )
-from engineering_influence.repositories.interfaces.outbox_repository_interface import (
-    OutboxRepositoryInterface,
+from engineering_influence.interfaces.webhook_delivery_port import (
+    WebhookDeliveryPort,
 )
 from engineering_influence.services.interfaces.dispatch_outbox_interface import (
     DispatchOutboxInterface,
@@ -16,8 +16,8 @@ class DispatchOutbox(DispatchOutboxInterface):
 
     def __init__(
         self,
-        outbox: OutboxRepositoryInterface,
-        delivery: WebhookDeliveryInterface,
+        outbox: OutboxPort,
+        delivery: WebhookDeliveryPort,
     ) -> None:
         self._outbox = outbox
         self._delivery = delivery

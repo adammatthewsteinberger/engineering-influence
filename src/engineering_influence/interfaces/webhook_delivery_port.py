@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 
 
-class WebhookDeliveryInterface(ABC):
+class WebhookDeliveryPort(ABC):
     """Send one event to a signed webhook endpoint."""
 
     @abstractmethod
