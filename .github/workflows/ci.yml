@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: uv sync --extra test --extra runtime --extra dev
+      - run: uv sync --extra test --extra runtime --extra dev --extra publishing
       - run: uv run ruff check .
       - run: uv run lint-imports
       - run: uv run bandit -q -r src packages
@@ -34,7 +34,7 @@ jobs:
           fetch-depth: 0
       - name: Reject private-content paths
         run: |
-          ! git rev-list --objects --all | grep -E '(^|/)(manuscripts|living-waters)/|\.(pdf|docx)$'
+          ! git rev-list --objects HEAD | grep -E '(^|/)(manuscripts|living-waters|archive|prompts|chapters)/|^output/|\.(pdf|docx)$'
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
