@@ -324,3 +324,13 @@ def test_cli_publish_failures_name_the_failing_step(
     assert run(root, "publish", "demo", "--no-render") == 1
     err = capsys.readouterr().err
     assert "FAIL step pdf: see build/demo/release/pdf.log" in err and "missing artifact" in err
+
+
+def test_the_package_runs_as_a_module(root: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import runpy
+
+    argv = ["python -m engineering_influence", "book", "--root", str(root), "audit", "demo"]
+    monkeypatch.setattr(sys, "argv", argv)
+    with pytest.raises(SystemExit) as stop:
+        runpy.run_module("engineering_influence", run_name="__main__")
+    assert stop.value.code == 0
