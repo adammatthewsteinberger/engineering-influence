@@ -29,10 +29,20 @@ test = [
   "fastapi>=0.115,<1",
   "mcp>=1.0,<2",
   "httpx>=0.27,<1",
+  "pdfplumber>=0.11,<1",
+  "pypdf>=4.2,<7",
+  "reportlab>=4.2,<5",
 ]
 dev = ["mypy>=1.14,<2", "ruff>=0.9,<1", "import-linter>=2.1,<3", "bandit>=1.8,<2", "pip-audit>=2.7,<3"]
 mcp = [
     "mcp>=1.0,<2",
+]
+publishing = [
+  "markdown-it-py>=3.0,<4",
+  "pdfplumber>=0.11,<1",
+  "pypdf>=4.2,<7",
+  "numpy>=1.26,<3",
+  "Pillow>=10.0,<13",
 ]
 
 [project.scripts]
@@ -91,3 +101,7 @@ forbidden_modules = [
   "engineering_influence.infrastructure", "engineering_influence.repositories",
   "engineering_influence.interaction",
 ]
+
+[[tool.mypy.overrides]]
+module = ["pdfplumber", "pdfplumber.*", "reportlab.*"]
+ignore_missing_imports = true
