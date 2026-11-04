@@ -1,0 +1,8 @@
+[project]
+name = "engineering-influence"
+
+[documentation]
+contract = true
+
+[fingerprints]
+sources = ["src/**/*.py"]

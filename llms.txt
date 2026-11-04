@@ -1,0 +1,5 @@
+# engineering-influence
+
+Public software only. Private author-owned books and profiles are not part of
+this repository. Read `README.md`, `docs/ARCHITECTURE.md`, and the ADRs before
+editing domain or infrastructure code.
