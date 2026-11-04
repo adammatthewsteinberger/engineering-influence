@@ -21,3 +21,16 @@ def test_project_keeps_neutral_postulates_and_selected_stages() -> None:
 def test_empty_postulates_are_rejected() -> None:
     with pytest.raises(ValueError, match="postulates"):
         GoverningPostulates(())
+
+
+def test_blank_postulate_is_rejected() -> None:
+    with pytest.raises(ValueError, match="postulates"):
+        GoverningPostulates((" ",))
+
+
+def test_project_requires_identity_and_stage() -> None:
+    postulates = GoverningPostulates(("Evidence.",))
+    with pytest.raises(ValueError, match="slug and title"):
+        Project("", "Demo", postulates, (PipelineStage.THESIS,))
+    with pytest.raises(ValueError, match="at least one"):
+        Project("demo", "Demo", postulates, ())
