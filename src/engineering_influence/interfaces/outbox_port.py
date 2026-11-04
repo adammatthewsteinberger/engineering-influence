@@ -19,8 +19,16 @@ class OutboxPort(ABC):
 
     @abstractmethod
     def pending(self) -> list[tuple[str, str, str, dict[str, object], int]]:
-        """Return undelivered intents in append order."""
+        """Return undelivered, live intents in append order."""
 
     @abstractmethod
     def mark_delivered(self, event_id: str) -> None:
         """Mark one intent as delivered."""
+
+    @abstractmethod
+    def mark_failed(self, event_id: str) -> int:
+        """Record one failed attempt and return the total number of attempts so far."""
+
+    @abstractmethod
+    def mark_dead(self, event_id: str) -> None:
+        """Stop retrying an intent that has exhausted its attempts."""

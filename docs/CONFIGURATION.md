@@ -48,3 +48,62 @@ possible; route deliveries to untrusted URLs through an egress proxy as well.
   deployment concerns for the reverse proxy and are not implemented here.
 - `pdf_safety` is a best-effort scrubber for pass-through PDFs and is not wired
   in because the service never passes uploaded PDFs on.
+
+## Observability
+
+Wire these adapters in the process entry point. Nothing is global except what
+`vibey_bootstrap` itself keeps (counters, latency statistics, alert state).
+
+| Concern | Use |
+|---|---|
+| JSON logs | `JsonLoggingConfigurator(level).configure()`: one JSON line per record on stderr, secrets masked, `correlation_id` on every line. Safe to call twice. |
+| Correlation | `ContextVarCorrelation` plus `CorrelatingQueue(queue, correlation)` on the API side and `CorrelatedPhaseHandler(handler, correlation)` on the worker side. |
+| Request metrics | `ApiObservability(readiness, metrics, correlation)` passed to `ApiApplication`. |
+| Health | `ReadinessProbe((TcpHealthCheck("postgres", host, 5432), TcpHealthCheck("rabbitmq", host, 5672), ToolchainHealthCheck()))`. |
+| Service spans | `TracedStartPipeline`, `TracedRunPhase`, `TracedDispatchOutbox` wrap the services. |
+| Crash alerts | `ProcessCrashHooks().install()`, once per process. |
+| Worker liveness | `WorkerHeartbeat(metrics, alerts).start()`, `.record_progress()` per job, `.stop()`. |
+
+### Endpoints
+
+| Path | Auth | Purpose |
+|---|---|---|
+| `GET /health/live` | none | Always `{"status": "alive"}` while the process runs. |
+| `GET /health/ready` | none | `200 {"status": "ready"}` or `503 {"status": "unavailable"}`. It never names the failing dependency; that is in `/metrics` and the logs. |
+| `GET /metrics` | API key | Prometheus text format. Give the scraper a bearer token. |
+
+### Correlation
+
+Every request gets one id. It is the trace id of an inbound `traceparent`, else a
+well-formed `X-Request-ID` (8 to 64 characters of `A-Z a-z 0-9 . _ -`), else a new
+random one. Anything else is replaced, never echoed, because the id lands in every
+log line. The id is returned in `X-Request-ID`, copied into each queued job's
+`correlation_id` (and a `traceparent` when it is a 32-hex trace id), restored by the
+worker, and sent on outbound webhooks as `X-Request-ID` and `traceparent`.
+
+### Alerts and dead letters
+
+A webhook that fails is retried on every dispatch and counted. After
+`max_attempts` (default 5) it is dead-lettered, which stops retries, increments
+`webhook.dead_lettered` and raises an `error` alert. One bad event never blocks the
+events behind it.
+
+`vibey_bootstrap` sends only `CRITICAL` alerts at once, holds `ERROR` and `WARN`
+in a digest that nothing here drains, and only records alerts when no recipients
+are configured. So `BootstrapAlertDispatcher` always writes the alert to the log
+first, at its own level. **Alert on those log lines** (`message` starting with
+`alert:`, fields `alert_severity` and `dedup_key`) rather than relying on mail.
+
+The outbox table gained a `dead_at` column. There is no migration tool yet:
+recreate any database created before this change.
+
+### Limits to know
+
+- Log masking is by field name. A secret written into the message text itself is
+  not masked, so pass values as `extra` fields.
+- Counters and latencies are per process. Scrape every replica.
+- `ToolchainHealthCheck` and `TcpHealthCheck` check presence and reachability,
+  not that the dependency is healthy. There is no LLM-runner check and no budget
+  alert yet, because no budget guard exists in this package.
+- Entry points that start the API and worker are not part of this package yet, so
+  nothing builds this wiring for you.

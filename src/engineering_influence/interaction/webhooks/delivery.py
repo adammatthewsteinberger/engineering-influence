@@ -7,8 +7,10 @@ from collections.abc import Callable
 
 import httpx
 
+from engineering_influence.domain.trace_context import TraceContext
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interaction.webhooks.signer import WebhookSigner
+from engineering_influence.interfaces.correlation_port import CorrelationPort
 from engineering_influence.interfaces.outbound_url_policy_port import OutboundUrlPolicyPort
 from engineering_influence.interfaces.webhook_delivery_port import (
     WebhookDeliveryPort,
@@ -23,10 +25,12 @@ class WebhookDelivery(WebhookDeliveryPort):
         client: httpx.AsyncClient,
         url_policy: OutboundUrlPolicyPort,
         clock: Callable[[], float] = time.time,
+        correlation: CorrelationPort | None = None,
     ) -> None:
         self._client = client
         self._url_policy = url_policy
         self._clock = clock
+        self._correlation = correlation
 
     async def deliver(
         self,
@@ -50,15 +54,18 @@ class WebhookDelivery(WebhookDeliveryPort):
         ).encode("utf-8")
         timestamp = int(self._clock())
         signature = WebhookSigner(secret).sign_at(body, timestamp)
-        response = await self._client.post(
-            url,
-            content=body,
-            headers={
-                "Content-Type": "application/json",
-                "X-Engineering-Influence-Signature": signature,
-                "X-Engineering-Influence-Timestamp": str(timestamp),
-                "X-Engineering-Influence-Event": event_name,
-                "X-Engineering-Influence-Event-Id": event_id,
-            },
-        )
+        headers = {
+            "Content-Type": "application/json",
+            "X-Engineering-Influence-Signature": signature,
+            "X-Engineering-Influence-Timestamp": str(timestamp),
+            "X-Engineering-Influence-Event": event_name,
+            "X-Engineering-Influence-Event-Id": event_id,
+        }
+        correlation_id = self._correlation.current() if self._correlation else None
+        if correlation_id:
+            headers["X-Request-ID"] = correlation_id
+            context = TraceContext.for_correlation_id(correlation_id)
+            if context is not None:
+                headers["traceparent"] = context.header()
+        response = await self._client.post(url, content=body, headers=headers)
         return response.status_code

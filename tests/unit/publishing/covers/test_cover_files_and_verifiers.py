@@ -53,8 +53,10 @@ def test_tiff_compression_and_jpeg_dpi(tmp_path: Path) -> None:
     files = CoverFiles()
     files.save_tiff(img, tmp_path / "c.tif")
     files.save_tiff(img, tmp_path / "r.tif", compress=False)
-    assert Image.open(tmp_path / "c.tif").info["compression"] == "tiff_adobe_deflate"
-    assert Image.open(tmp_path / "r.tif").info["compression"] == "raw"
+    with Image.open(tmp_path / "c.tif") as compressed:
+        assert compressed.info["compression"] == "tiff_adobe_deflate"
+    with Image.open(tmp_path / "r.tif") as raw:
+        assert raw.info["compression"] == "raw"
     jpeg = Image.open(io.BytesIO(files.jpeg_bytes(img)))
     assert (
         jpeg.format == "JPEG"

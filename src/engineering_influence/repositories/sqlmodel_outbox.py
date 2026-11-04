@@ -47,6 +47,7 @@ class SqlModelOutbox(OutboxPort):
             records = session.exec(
                 select(OutboxRecord)
                 .where(OutboxRecord.delivered_at == None)
+                .where(OutboxRecord.dead_at == None)
                 .order_by(col(OutboxRecord.id))
             ).all()
         return [
@@ -67,6 +68,25 @@ class SqlModelOutbox(OutboxPort):
             ).one()
             record.delivered_at = datetime.now(UTC)
             record.attempts += 1
+            session.add(record)
+            session.commit()
+
+    def mark_failed(self, event_id: str) -> int:
+        with Session(self._engine) as session:
+            record = session.exec(
+                select(OutboxRecord).where(OutboxRecord.event_id == event_id)
+            ).one()
+            record.attempts += 1
+            session.add(record)
+            session.commit()
+            return record.attempts
+
+    def mark_dead(self, event_id: str) -> None:
+        with Session(self._engine) as session:
+            record = session.exec(
+                select(OutboxRecord).where(OutboxRecord.event_id == event_id)
+            ).one()
+            record.dead_at = datetime.now(UTC)
             session.add(record)
             session.commit()
 

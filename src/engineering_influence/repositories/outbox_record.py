@@ -15,5 +15,6 @@ class OutboxRecord(SQLModel, table=True):
     event_name: str
     payload_json: str
     delivered_at: datetime | None = None
+    dead_at: datetime | None = None
     attempts: int = 0
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

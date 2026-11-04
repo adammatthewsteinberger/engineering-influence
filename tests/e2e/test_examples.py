@@ -14,6 +14,7 @@ EXPECTED = {
     "mcp_example.py": "sample-essay",
     "sdk_sync_example.py": "sample-essay",
     "sdk_async_example.py": "sample-essay",
+    "observability_example.py": "job carries id: example-request-0001",
     "webhook_receiver.py": "tampered: False",
     "webhook_sender.py": "replay: duplicate ignored",
 }
