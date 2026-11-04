@@ -1,10 +1,13 @@
 """Pure-logic publishing checks: geometry, normalizer, forbidden content, LaTeX log."""
 
+from pathlib import Path
+
 import pytest
 
 from engineering_influence.publishing.forbidden_content_check import ForbiddenContentCheck
 from engineering_influence.publishing.kdp_geometry import KdpGeometry
 from engineering_influence.publishing.latex_log_check import LatexLogCheck
+from engineering_influence.publishing.path_relativizer import PathRelativizer
 from engineering_influence.publishing.text_normalizer import TextNormalizer
 
 
@@ -57,3 +60,11 @@ def test_log_reports_glyphs_and_only_significant_overfull_lines() -> None:
 
 def test_log_ignores_tiny_overfull_lines() -> None:
     assert LatexLogCheck().run("Overfull \\hbox (0.5pt too wide)") == []
+
+
+def test_relativizer_returns_root_relative_or_absolute_paths(tmp_path: Path) -> None:
+    relativizer = PathRelativizer(tmp_path / "root")
+    inside = tmp_path / "root" / "a" / "b.md"
+    outside = tmp_path / "elsewhere.md"
+    assert relativizer.relative(inside) == "a/b.md"
+    assert relativizer.relative(outside) == str(outside.resolve())
