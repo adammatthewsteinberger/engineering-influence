@@ -21,3 +21,7 @@ class MarkdownParser:
     def parse_inline(self, text: str) -> list[Token]:
         """Parse inline-only Markdown."""
         return self._md.parseInline(text)
+
+    def render_inline(self, text: str) -> str:
+        """Render inline Markdown to HTML (used to match the pages' curly quotes)."""
+        return str(self._md.renderInline(text))

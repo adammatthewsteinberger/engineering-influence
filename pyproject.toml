@@ -32,17 +32,19 @@ test = [
   "pdfplumber>=0.11,<1",
   "pypdf>=4.2,<7",
   "reportlab>=4.2,<5",
+  "defusedxml>=0.7,<1",
 ]
 dev = ["mypy>=1.14,<2", "ruff>=0.9,<1", "import-linter>=2.1,<3", "bandit>=1.8,<2", "pip-audit>=2.7,<3"]
 mcp = [
     "mcp>=1.0,<2",
 ]
 publishing = [
+  "defusedxml>=0.7,<1",
   "markdown-it-py>=3.0,<4",
   "pdfplumber>=0.11,<1",
   "pypdf>=4.2,<7",
   "numpy>=1.26,<3",
-  "Pillow>=10.0,<13",
+  "Pillow>=13.0,<14",
 ]
 
 [project.scripts]
@@ -103,5 +105,5 @@ forbidden_modules = [
 ]
 
 [[tool.mypy.overrides]]
-module = ["pdfplumber", "pdfplumber.*", "reportlab.*"]
+module = ["pdfplumber", "pdfplumber.*", "reportlab.*", "defusedxml", "defusedxml.*"]
 ignore_missing_imports = true
