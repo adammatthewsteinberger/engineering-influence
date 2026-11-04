@@ -25,6 +25,8 @@ test = [
   "engineering-influence-sdk",
   "sqlmodel>=0.0.22,<1",
   "aio-pika>=9.5,<10",
+  "vibey-engine==4.5.0",
+  "fastapi>=0.115,<1",
 ]
 dev = ["mypy>=1.14,<2", "ruff>=0.9,<1"]
 mcp = [
