@@ -21,7 +21,7 @@ printf 'POSTGRES_PASSWORD=%s\nRABBITMQ_PASSWORD=%s\nEI_API_KEYS=%s\nEI_API_PORT=
   "$(secret)" "$(secret)" "$KEY" "$PORT" > "$ENV_FILE"
 
 echo "== refuses to start without credentials"
-if docker compose -p "$PROJECT-nocreds" -f docker-compose.yml config >/dev/null 2>&1; then
+if docker compose -p "$PROJECT-nocreds" --env-file /dev/null -f docker-compose.yml config >/dev/null 2>&1; then
   echo "FAIL: compose accepted an empty environment" >&2
   exit 1
 fi
@@ -85,6 +85,10 @@ for _ in $(seq 1 30); do
 done
 test "${DEAD:-0}" -ge 1
 echo "ok: $DEAD dead-lettered"
+
+echo "== the documented curl example works against this stack"
+EI_API_KEY="$KEY" EI_BASE_URL="$BASE" sh api/run.sh >/dev/null
+echo "ok"
 
 echo "== the worker is still alive and the API still ready"
 curl -fsS "$BASE/health/ready" | grep -q ready

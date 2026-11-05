@@ -105,8 +105,8 @@ recreate any database created before this change.
 - `ToolchainHealthCheck` and `TcpHealthCheck` check presence and reachability,
   not that the dependency is healthy. There is no LLM-runner check and no budget
   alert yet, because no budget guard exists in this package.
-- Entry points that start the API and worker are not part of this package yet, so
-  nothing builds this wiring for you.
+- `ei serve api` and `ei serve worker` build this wiring for you. If you embed the
+  application in your own process, wire the adapters above yourself.
 
 ## Running the stack
 
