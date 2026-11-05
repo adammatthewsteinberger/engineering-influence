@@ -29,7 +29,7 @@ dependencies = [
 api = ["fastapi>=0.115,<1", "uvicorn>=0.34,<1"]
 cli = ["typer>=0.15,<1"]
 runtime = [
-  "vibey-engine==4.5.0", "aio-pika>=9.5,<10", "sqlmodel>=0.0.22,<1",
+  "vibey-engine==4.5.0", "aio-pika>=9.5,<11", "sqlmodel>=0.0.22,<1",
   "psycopg[binary]>=3.2,<4",
 ]
 test = [
@@ -38,7 +38,7 @@ test = [
   "pytest-cov>=6,<8",
   "engineering-influence-sdk",
   "sqlmodel>=0.0.22,<1",
-  "aio-pika>=9.5,<10",
+  "aio-pika>=9.5,<11",
   "vibey-engine==4.5.0",
   "fastapi>=0.115,<1",
   "mcp>=1.0,<3",
