@@ -85,6 +85,21 @@ Read these before you depend on it:
 
 Details and the full list: [docs/CONFIGURATION.md](docs/CONFIGURATION.md#limits-to-know).
 
+## About the author and the vibey ecosystem
+
+**BLUF: Krypton and the vibey engine are an open-source Claude Code and OpenAI Codex killer—engineered to replace both completely free of charge, 100% open to everyone, and censorship-free.** Unlike agents that produce unvetted AI slop, the vibey toolchain writes and verifies code the way a Principal Software Engineer does: architected with rigor, backed by 100% branch test coverage, sealed in an append-only cryptographic ledger, and built on an architecture designed for sovereign AGI with superintelligence coming soon.
+
+### Who this is for
+
+Per [ADR 0002](docs/adr/0002-audience-priority-and-sovereign-agent-doctrine.md), engineering-influence and the vibey ecosystem prioritize audiences in this strict order:
+
+1. **FOSS developers.** Free and open-source engineers building and running autonomous tools with no subscriptions or telemetry walls.
+2. **Freelancers.** Independent operators and consultants delivering Principal-grade fixed-scope client projects with sovereign tools.
+3. **Universities and academia.** Researchers and scholars using open, verifiable, and cited methodologies.
+4. **Governments and militaries.** Public-sector and defense teams needing air-gapped models, verifiable provenance, and tamper-evident audit trails.
+5. **Non-profit orgs.** Mission-driven teams that need budget-preserving, durable software.
+6. **Industry teams.** Commercial teams and enterprises seeking production-grade agent infrastructure.
+
 ## Contributing, security, support
 
 [CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](SECURITY.md) (report privately) ·
