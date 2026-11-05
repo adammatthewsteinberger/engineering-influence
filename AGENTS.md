@@ -1,6 +1,9 @@
 # Guidance for coding agents and contributors
 
-Read `README.md`, `docs/ARCHITECTURE.md` and `docs/adr/` before changing domain or
+This project writes complete books (fiction and non-fiction) autonomously and packages them
+for Amazon KDP. Keep that purpose in mind: every change should serve an unattended run that
+ends in a verified, KDP-ready package, and docs must stay honest about what is built
+(`docs/BOOKS_AND_KDP.md`). Read `README.md`, `docs/ARCHITECTURE.md` and `docs/adr/` before changing domain or
 infrastructure code. `llms.txt` lists the documents.
 
 ## Rules

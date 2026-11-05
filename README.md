@@ -1,15 +1,21 @@
 # engineering-influence
 
-An autonomous, evidence-bounded content-engineering pipeline. You give it a project with
-governing postulates; it runs ordered stages through typed gates and bounded runners,
-records every step in a ledger, and survives crashes because the work lives on a queue.
+**engineering-influence writes complete books, fiction and non-fiction, fully autonomously, and produces files and metadata that are ready to self-publish on Amazon KDP.**
+
+You give it a project (a title, governing postulates, the stages to run). It drafts through
+ordered stages with typed gates, records every step in a ledger, survives crashes because the
+work lives on a queue, and ends with a verified KDP package: paperback and hardcover interior
+PDFs, EPUB, covers, listing metadata and a release-readiness report. See
+[docs/BOOKS_AND_KDP.md](docs/BOOKS_AND_KDP.md) for exactly what that includes.
 
 The same behavior is reachable five ways, all over one controller layer: a **REST API**,
 an **MCP server**, a **CLI**, a **Python SDK** (sync and async) and **signed webhooks**.
 
-> **Status: alpha (`0.1.0a1`).** The runner and gate that ship are deterministic
-> placeholders, so a pipeline runs end to end but produces fixed text. See
-> [Limitations](#limitations) before you build on it.
+> **Status: alpha (`0.1.0a1`).** The orchestration and the KDP packaging and verification are
+> built and tested. The *writing* is not yet autonomous: the runner and gate that ship are
+> deterministic placeholders, so a pipeline runs end to end but produces fixed text until a
+> model-backed runner is plugged in. Nothing uploads to KDP for you (KDP has no API); a person
+> reviews and uploads. See [Limitations](#limitations).
 
 This repository holds the method and the software only. Author-owned manuscripts, profiles
 and private publishing configuration live in a separate private repository.
@@ -55,6 +61,7 @@ Optional extras: `api`, `runtime`, `cli`, `mcp`, `publishing`.
 
 | Read | For |
 |---|---|
+| [docs/BOOKS_AND_KDP.md](docs/BOOKS_AND_KDP.md) | What a finished book package is, what is built and what is not |
 | [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) | Install, run the stack, your first pipeline |
 | [docs/INTERACTIONS.md](docs/INTERACTIONS.md) | Reference for the REST API, SDK, MCP tool, CLI and webhooks |
 | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Every environment variable, security setting and operational limit |
@@ -69,7 +76,7 @@ Optional extras: `api`, `runtime`, `cli`, `mcp`, `publishing`.
 
 Read these before you depend on it:
 
-- The runner and gate are placeholders (`DeterministicRunner`, `NonEmptyArtifactGate`).
+- The writing is not autonomous yet: the runner and gate are placeholders (`DeterministicRunner`, `NonEmptyArtifactGate`).
 - Delivery is at least once: a crash between the ledger write and the acknowledgement re-runs a stage.
 - There is no read API and no endpoint to resolve a human gate; progress is in the ledger table and the logs.
 - No service emits webhooks yet, although signing, the outbox and a verifier exist.

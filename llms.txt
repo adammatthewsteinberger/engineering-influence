@@ -1,9 +1,10 @@
 # engineering-influence
 
-> An autonomous, evidence-bounded content-engineering pipeline. One controller layer is exposed as a REST API, an MCP server (tool: start_pipeline), a CLI (`ei`), a Python SDK and signed webhooks. Alpha (0.1.0a1); the runner and gate are deterministic placeholders. Public software only: author-owned books and profiles are not in this repository.
+> Writes complete books, fiction and non-fiction, fully autonomously, and produces files and metadata ready to self-publish on Amazon KDP (paperback and hardcover interiors, EPUB, covers, listing metadata, release-readiness report; a person reviews and uploads, as KDP has no API). One controller layer is exposed as a REST API, an MCP server (tool: start_pipeline), a CLI (`ei`), a Python SDK and signed webhooks. Alpha (0.1.0a1); autonomous drafting needs a model-backed runner (the shipped runner and gate are deterministic placeholders). Public software only: author-owned books and profiles are not in this repository.
 
 ## Start here
 
+- [Books and KDP](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/BOOKS_AND_KDP.md): the purpose, what a KDP-ready package contains, what is built and what is not
 - [README](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/README.md): what it is, five-minute quickstart, limitations
 - [Getting started](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/GETTING_STARTED.md): install, run the stack, first pipeline
 - [Interfaces reference](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/INTERACTIONS.md): REST, SDK, MCP, CLI and webhook contracts, error codes, signature format

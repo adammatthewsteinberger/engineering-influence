@@ -1,6 +1,7 @@
 # Interfaces reference
 
-Five interfaces sit over the same controller layer, so they accept the same request and
+Every interface starts or drives the same thing: an autonomous book-writing run that ends in a
+KDP-ready package ([details](BOOKS_AND_KDP.md)). Five interfaces sit over the same controller layer, so they accept the same request and
 return the same result. Pick by who is calling.
 
 | Interface | Process | Authenticated | Reaches the stack |

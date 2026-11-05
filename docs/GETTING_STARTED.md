@@ -1,6 +1,7 @@
 # Getting started
 
-This page takes you from nothing to a pipeline running on the full stack, then shows each
+engineering-influence writes books autonomously and packages them for Amazon KDP
+([what that means and what is built](BOOKS_AND_KDP.md)). This page takes you from nothing to a pipeline running on the full stack, then shows each
 of the five interfaces. Every command here is run by the example tests or the compose smoke
 test, so it works as written.
 

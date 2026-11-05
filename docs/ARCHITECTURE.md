@@ -1,6 +1,8 @@
 # Architecture
 
-engineering-influence is a **modular monolith**. Interactions call controllers; controllers
+engineering-influence writes complete books autonomously and packages them for Amazon KDP
+([purpose and status](BOOKS_AND_KDP.md)); this page describes the machinery that does it
+unattended. It is a **modular monolith**. Interactions call controllers; controllers
 call services; services depend on pure domain types and ports; repositories and
 infrastructure adapters implement those ports and point inward. The rules are enforced by
 tests and by `import-linter`, not by convention.
