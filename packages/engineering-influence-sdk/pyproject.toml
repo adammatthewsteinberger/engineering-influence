@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "engineering-influence-sdk"
 dynamic = ["version"]
-description = "Typed sync and async client for engineering-influence."
+description = "Typed sync and async client for engineering-influence, the autonomous KDP-ready book-writing pipeline."
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"

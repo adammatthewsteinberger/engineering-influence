@@ -1,7 +1,9 @@
 # engineering-influence-sdk
 
-A small typed Python client for the [engineering-influence](https://github.com/adammatthewsteinberger/engineering-influence)
-REST API, with a synchronous and an asynchronous flavour.
+A small typed Python client for the REST API of
+[engineering-influence](https://github.com/adammatthewsteinberger/engineering-influence), the
+autonomous book-writing pipeline (fiction and non-fiction) that produces KDP-ready
+self-publishing packages, with a synchronous and an asynchronous flavour.
 
 ```python
 from engineering_influence_sdk import EngineeringInfluenceClient

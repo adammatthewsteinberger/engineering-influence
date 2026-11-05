@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "engineering-influence"
 dynamic = ["version"]
-description = "An autonomous, evidence-bounded content engineering pipeline."
+description = "Autonomous book-writing pipeline (fiction and non-fiction) that produces KDP-ready self-publishing packages."
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"

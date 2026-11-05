@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Documentation now states the purpose everywhere: fully autonomous writing of fiction and non-fiction books, packaged ready to self-publish on Amazon KDP. Added `docs/BOOKS_AND_KDP.md` (what a KDP-ready package contains, what is built, what is not); package descriptions updated.
 - Restored a green `develop` after the Dependabot major bumps: the MCP server uses `mcp.server.mcpserver.MCPServer` (`mcp` 2.x renamed `FastMCP`) and the bounds now require `mcp>=2,<3`; the compose file mounts `/var/lib/postgresql` for PostgreSQL 18; coverage measures child processes itself (`patch = ["subprocess"]`) now that pytest-cov 7 does not.
 - Pull requests opened by Dependabot are exempt from the `Made-With:` provenance check (it cannot add the trailer); Conventional Commit checking still applies.
 - Rewrote the examples to behave like real use: `requests` and `curl` against a running API, a real MCP stdio client and server, and a stdlib webhook receiver with a sender, plus `examples/up.sh` and `down.sh` to run the stack. The example tests run them against real sockets.
