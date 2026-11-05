@@ -54,7 +54,7 @@ mcp = [
 ]
 publishing = [
   "defusedxml>=0.7,<1",
-  "markdown-it-py>=3.0,<4",
+  "markdown-it-py>=3.0,<5",
   "pdfplumber>=0.11,<1",
   "pypdf>=4.2,<7",
   "numpy>=1.26,<3",
