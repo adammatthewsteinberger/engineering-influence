@@ -41,7 +41,7 @@ test = [
   "aio-pika>=9.5,<11",
   "vibey-engine==4.5.0",
   "fastapi>=0.115,<1",
-  "mcp>=1.0,<3",
+  "mcp>=2,<3",
   "httpx>=0.27,<1",
   "pdfplumber>=0.11,<1",
   "pypdf>=4.2,<7",
@@ -50,7 +50,7 @@ test = [
 ]
 dev = ["mypy>=1.14,<3", "ruff>=0.9,<1", "import-linter>=2.1,<3", "bandit>=1.8,<2", "pip-audit>=2.7,<3"]
 mcp = [
-    "mcp>=1.0,<3",
+    "mcp>=2,<3",
 ]
 publishing = [
   "defusedxml>=0.7,<1",
@@ -96,6 +96,11 @@ markers = [
 [tool.coverage.run]
 branch = true
 source = ["engineering_influence", "engineering_influence_sdk"]
+# pytest-cov 7 no longer measures child processes on its own; tests that run `ei` in a fresh
+# interpreter (missing-extra checks) need coverage's own subprocess patch, which writes
+# per-process data files and so requires parallel mode.
+parallel = true
+patch = ["subprocess"]
 
 [tool.coverage.report]
 fail_under = 100
