@@ -32,7 +32,9 @@ services:
       POSTGRES_USER: ei
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in examples/.env}
       POSTGRES_DB: ei
-    volumes: [postgres-data:/var/lib/postgresql/data]
+    # PostgreSQL 18+ images keep a versioned data directory under /var/lib/postgresql,
+    # so the volume must mount the parent; mounting .../data makes the container exit.
+    volumes: [postgres-data:/var/lib/postgresql]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ei -d ei"]
       interval: 5s
