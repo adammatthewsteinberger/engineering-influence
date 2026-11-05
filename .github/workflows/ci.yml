@@ -58,10 +58,14 @@ jobs:
       - run: vibey-gh check --ci
       # Every NEW commit must carry the Made-With trailer. Pull requests are judged
       # over their own range only; history that predates adoption is not rewritten.
+      # Dependabot writes its own commit messages and cannot add the trailer, so pull
+      # requests that Dependabot opened are exempt from the provenance check only
+      # (conventional commits are still checked below). The PR author is used, not the
+      # pusher, so a maintainer's follow-up push to the branch does not break the PR.
+      - if: github.event_name == 'pull_request' && github.event.pull_request.user.login != 'dependabot[bot]'
+        run: vibey-gh provenance-check --commits "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
       - if: github.event_name == 'pull_request'
-        run: |
-          vibey-gh provenance-check --commits "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
-          vibey-gh conventional-check --commits "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+        run: vibey-gh conventional-check --commits "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
 
   compose-smoke:
     runs-on: ubuntu-latest

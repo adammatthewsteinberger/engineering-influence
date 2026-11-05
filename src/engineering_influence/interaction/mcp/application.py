@@ -11,16 +11,16 @@ from engineering_influence.services.start_pipeline import StartPipeline
 
 
 class McpApplication:
-    """Expose pipeline tools through the official MCP FastMCP server."""
+    """Expose pipeline tools through the official MCP SDK's `MCPServer` (mcp 2.x)."""
 
     def __init__(self, ledger: LedgerPort, queue: QueuePort) -> None:
         self._controller = ProjectController(StartPipeline(ledger, queue))
 
     def build(self) -> Any:
         """Build a server with a typed `start_pipeline` tool."""
-        from mcp.server.fastmcp import FastMCP
+        from mcp.server.mcpserver import MCPServer
 
-        server = FastMCP(
+        server = MCPServer(
             name="engineering-influence",
             instructions="Start and inspect evidence-bounded content pipelines.",
         )
