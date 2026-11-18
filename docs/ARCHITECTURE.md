@@ -52,7 +52,7 @@ The correlation id travels the whole way: request, queued job, worker log lines 
 - **Ports first.** Queue, ledger, gate, runner, outbox, clock and secrets are ports. The
   application does not know which LLM runner or queue it runs on.
 - **vibey stays behind a boundary.** [ADR 0001](adr/0001-vibey-integration-boundary.md) records
-  why: vibey 4.5.0 does not expose worker extension points, so the worker uses an
+  why: vibey-engine 0.4 does not expose worker extension points, so the worker uses an
   application-owned RabbitMQ consumer and keeps vibey as an adapter.
 - **Fail closed.** A missing key, secret or setting stops the process or refuses the request.
 - **Bounded, idempotent, observable, recoverable** side effects: every external effect has a

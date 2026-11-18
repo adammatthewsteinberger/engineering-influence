@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- CI works again. `vibey-engine` 4.5.0 was removed from PyPI (the index lists 0.3.0 and 0.4.0), which failed the provenance job, the distribution build and `uv lock`. The runtime extra now asks for `vibey-engine>=0.4,<0.5`; the provenance job installs from `uv.lock` instead of the index; `tests/unit/test_vibey_import_contract.py` names every vibey symbol the package uses.
+- CI now also runs `ruff format --check` and installs with `uv sync --locked`, which fails when `uv.lock` and `pyproject.toml` disagree.
+- Replaced the unused `cli` extra (`typer`) with `webhooks` (`httpx`, which webhook delivery imports).
+- `uv` resolves only Python 3.12 to 3.14, so a lock no longer tries to resolve Python 3.15.
 - Documentation now states the purpose everywhere: fully autonomous writing of fiction and non-fiction books, packaged ready to self-publish on Amazon KDP. Added `docs/BOOKS_AND_KDP.md` (what a KDP-ready package contains, what is built, what is not); package descriptions updated.
 - Restored a green `develop` after the Dependabot major bumps: the MCP server uses `mcp.server.mcpserver.MCPServer` (`mcp` 2.x renamed `FastMCP`) and the bounds now require `mcp>=2,<3`; the compose file mounts `/var/lib/postgresql` for PostgreSQL 18; coverage measures child processes itself (`patch = ["subprocess"]`) now that pytest-cov 7 does not.
 - Pull requests opened by Dependabot are exempt from the `Made-With:` provenance check (it cannot add the trailer); Conventional Commit checking still applies.

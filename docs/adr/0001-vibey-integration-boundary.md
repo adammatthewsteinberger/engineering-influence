@@ -5,9 +5,12 @@ Status: accepted for the alpha architecture
 ## Context
 
 The pipeline needs durable jobs, leases, gates, recovery, and workflow
-orchestration. The target runtime is vibey-engine 4.5.0.
+orchestration. The target runtime is vibey-engine 0.4 (`>=0.4,<0.5`; 4.5.0, which this ADR was first written
+against, was removed from PyPI).
 
-The local 4.5.0 source was inspected at release commit `f1cd3fe0`. Its worker
+The 4.5.0 source was inspected at release commit `f1cd3fe0`, and the claim below was
+re-checked against 0.4.0 on 2026-11-18 (no entry-point group, no handler-registration hook).
+The worker
 has a `JobDispatcher` that routes string job kinds to handlers, but the handler
 mapping is assembled inside `vibey.bootstrap.build_worker` and the package does
 not expose a third-party entry point for registering handlers or workflow

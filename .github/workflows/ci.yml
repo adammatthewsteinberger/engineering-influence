@@ -21,8 +21,10 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
-      - run: uv sync --extra test --extra runtime --extra dev --extra publishing
+      # --locked fails when uv.lock is out of step with pyproject.toml (the `uv lock --check` gate).
+      - run: uv sync --locked --extra test --extra runtime --extra dev --extra publishing
       - run: uv run ruff check .
+      - run: uv run ruff format --check .
       - run: uv run lint-imports
       - run: uv run bandit -q -r src packages
       - run: uv run pip-audit
@@ -53,9 +55,14 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
-      - run: pip install "vibey-engine==4.5.0"
+      # vibey-gh ships inside vibey-engine; install the exact version uv.lock pins instead of
+      # asking the index, which no longer lists the 4.5.0 this job used to request.
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.12.6"
+      - run: uv sync --locked --extra runtime
       # Every source file must carry the fingerprint header.
-      - run: vibey-gh check --ci
+      - run: uv run vibey-gh check --ci
       # Every NEW commit must carry the Made-With trailer. Pull requests are judged
       # over their own range only; history that predates adoption is not rewritten.
       # Dependabot writes its own commit messages and cannot add the trailer, so pull
@@ -63,9 +70,9 @@ jobs:
       # (conventional commits are still checked below). The PR author is used, not the
       # pusher, so a maintainer's follow-up push to the branch does not break the PR.
       - if: github.event_name == 'pull_request' && github.event.pull_request.user.login != 'dependabot[bot]'
-        run: vibey-gh provenance-check --commits "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+        run: uv run vibey-gh provenance-check --commits "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
       - if: github.event_name == 'pull_request'
-        run: vibey-gh conventional-check --commits "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+        run: uv run vibey-gh conventional-check --commits "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
 
   compose-smoke:
     runs-on: ubuntu-latest
