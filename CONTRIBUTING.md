@@ -20,14 +20,20 @@ Run them before you push (details in [docs/TESTING.md](docs/TESTING.md)):
 
 ```bash
 uv run ruff check .
+uv run ruff format --check .
 uv run lint-imports
 uv run bandit -q -r src packages
 uv run mypy --strict src packages
+uv run pip-audit
+uv lock --check
 uv run pytest --cov --cov-branch --cov-fail-under=100
 sh examples/compose_smoke.sh      # when you touch the runtime, compose file or examples
 ```
 
 Coverage is 100% with branches. New code arrives with its tests.
+
+The road to 1.0 is [ADR 0003](docs/adr/0003-definition-of-1-0.md); the compatibility and
+deprecation rules are [ADR 0004](docs/adr/0004-versioning-compatibility-and-deprecation.md).
 
 ## Architecture rules
 
