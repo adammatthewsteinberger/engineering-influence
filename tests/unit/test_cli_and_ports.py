@@ -2,21 +2,24 @@
 
 import pytest
 
-from engineering_influence.interactions.cli.main import CliApplication, main
 from engineering_influence.interfaces.ledger_interface import LedgerInterface
 from engineering_influence.interfaces.queue_interface import QueueInterface
+from engineering_influence.runtime.cli_runtime import CliRuntime
+from engineering_influence.runtime.main import main
 from engineering_influence.services.interfaces.start_pipeline_interface import (
     StartPipelineInterface,
 )
 
 
 def test_cli_accepts_empty_arguments() -> None:
-    assert CliApplication().run([]) == 0
+    assert CliRuntime().build().run([]) == 0
 
 
 def test_cli_starts_pipeline(capsys: pytest.CaptureFixture[str]) -> None:
     assert (
-        CliApplication().run(
+        CliRuntime()
+        .build()
+        .run(
             [
                 "pipeline",
                 "start",

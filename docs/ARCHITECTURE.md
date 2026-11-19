@@ -17,7 +17,7 @@ models/       Project, PhaseRun, Gate, Artifact, PipelineStage, GoverningPostula
 interfaces/   ports: Ledger, Queue, Runner, Gate, Outbox, WebhookDelivery, Secrets, …
 repositories/ SQLModel ledger and outbox (Postgres)
 infrastructure/ RabbitMQ queue and consumer, in-memory adapters, security, observability, vibey adapters
-runtime/      settings loader, API and worker entry points
+runtime/      composition roots (CLI, API, worker), settings loader, entry points
 publishing/   the book toolchain behind `ei book` (optional `publishing` extra)
 ```
 

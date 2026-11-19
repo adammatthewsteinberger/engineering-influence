@@ -3,6 +3,7 @@
 from fastapi.testclient import TestClient
 from starlette.requests import Request
 
+from engineering_influence.controllers.project_controller import ProjectController
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
 from engineering_influence.infrastructure.security.constant_time_api_key_verifier import (
@@ -14,6 +15,7 @@ from engineering_influence.infrastructure.security.token_bucket_rate_limiter imp
 from engineering_influence.interactions.api.api_guard import ApiGuard
 from engineering_influence.interactions.api.application import ApiApplication
 from engineering_influence.interfaces.rate_limiter_interface import RateLimiterInterface
+from engineering_influence.services.start_pipeline import StartPipeline
 
 KEY = "a-valid-api-key-0123456789"  # gitleaks:allow
 PROJECT = {"slug": "demo", "title": "Demo", "postulates": ["Evidence first."], "stages": ["thesis"]}
@@ -23,7 +25,11 @@ def client(burst: float = 100.0) -> TestClient:
     guard = ApiGuard(
         ConstantTimeApiKeyVerifier([KEY]), TokenBucketRateLimiter(burst=burst, per_second=0.0001)
     )
-    return TestClient(ApiApplication(InMemoryLedger(), InMemoryQueue(), guard).build())
+    return TestClient(
+        ApiApplication(
+            ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue())), guard
+        ).build()
+    )
 
 
 def test_a_request_without_a_key_is_unauthorized() -> None:
@@ -116,7 +122,11 @@ class RecordingLimiter(RateLimiterInterface):
 def test_a_per_key_budget_applies_after_authentication() -> None:
     limiter = RecordingLimiter(denied_prefix="key:")
     guard = ApiGuard(ConstantTimeApiKeyVerifier([KEY]), limiter)
-    api = TestClient(ApiApplication(InMemoryLedger(), InMemoryQueue(), guard).build())
+    api = TestClient(
+        ApiApplication(
+            ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue())), guard
+        ).build()
+    )
 
     response = api.post("/v1/pipelines", json=PROJECT, headers={"Authorization": f"Bearer {KEY}"})
 
@@ -127,7 +137,11 @@ def test_a_per_key_budget_applies_after_authentication() -> None:
 def test_the_raw_api_key_never_reaches_the_limiter() -> None:
     limiter = RecordingLimiter()
     guard = ApiGuard(ConstantTimeApiKeyVerifier([KEY]), limiter)
-    api = TestClient(ApiApplication(InMemoryLedger(), InMemoryQueue(), guard).build())
+    api = TestClient(
+        ApiApplication(
+            ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue())), guard
+        ).build()
+    )
 
     api.post("/v1/pipelines", json=PROJECT, headers={"Authorization": f"Bearer {KEY}"})
 
@@ -137,7 +151,11 @@ def test_the_raw_api_key_never_reaches_the_limiter() -> None:
 def test_an_unauthenticated_request_is_never_charged_to_a_key() -> None:
     limiter = RecordingLimiter()
     guard = ApiGuard(ConstantTimeApiKeyVerifier([KEY]), limiter)
-    api = TestClient(ApiApplication(InMemoryLedger(), InMemoryQueue(), guard).build())
+    api = TestClient(
+        ApiApplication(
+            ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue())), guard
+        ).build()
+    )
 
     api.post("/v1/pipelines", json=PROJECT, headers={"Authorization": "Bearer wrong"})
 

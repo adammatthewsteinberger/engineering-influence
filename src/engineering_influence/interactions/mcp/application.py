@@ -4,17 +4,16 @@
 from typing import Any
 
 from engineering_influence.contracts.project_request import ProjectRequest
-from engineering_influence.controllers.project_controller import ProjectController
-from engineering_influence.interfaces.ledger_interface import LedgerInterface
-from engineering_influence.interfaces.queue_interface import QueueInterface
-from engineering_influence.services.start_pipeline import StartPipeline
+from engineering_influence.controllers.interfaces.project_controller_interface import (
+    ProjectControllerInterface,
+)
 
 
 class McpApplication:
     """Expose pipeline tools through the official MCP SDK's `MCPServer` (mcp 2.x)."""
 
-    def __init__(self, ledger: LedgerInterface, queue: QueueInterface) -> None:
-        self._controller = ProjectController(StartPipeline(ledger, queue))
+    def __init__(self, controller: ProjectControllerInterface) -> None:
+        self._controller = controller
 
     def build(self) -> Any:
         """Build a server with a typed `start_pipeline` tool."""

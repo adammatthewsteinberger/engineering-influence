@@ -5,13 +5,12 @@ from typing import TYPE_CHECKING, Any, cast
 
 from engineering_influence import __version__
 from engineering_influence.contracts.project_request import ProjectRequest
-from engineering_influence.controllers.project_controller import ProjectController
+from engineering_influence.controllers.interfaces.project_controller_interface import (
+    ProjectControllerInterface,
+)
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interactions.api.api_observability import ApiObservability
 from engineering_influence.interactions.api.prometheus_renderer import PrometheusRenderer
-from engineering_influence.interfaces.ledger_interface import LedgerInterface
-from engineering_influence.interfaces.queue_interface import QueueInterface
-from engineering_influence.services.start_pipeline import StartPipeline
 
 if TYPE_CHECKING:
     from engineering_influence.interactions.api.api_guard import ApiGuard
@@ -27,12 +26,11 @@ class ApiApplication:
 
     def __init__(
         self,
-        ledger: LedgerInterface,
-        queue: QueueInterface,
+        controller: ProjectControllerInterface,
         guard: "ApiGuard",
         observability: ApiObservability | None = None,
     ) -> None:
-        self._controller = ProjectController(StartPipeline(ledger, queue))
+        self._controller = controller
         self._guard = guard
         self._observability = observability
         self._renderer = PrometheusRenderer()

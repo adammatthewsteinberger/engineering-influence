@@ -10,6 +10,7 @@ import tomllib
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from engineering_influence.interactions.cli.interfaces.book_cli_interface import BookCliInterface
 from engineering_influence.publishing.project_config import ProjectConfig
 from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
 from engineering_influence.publishing.typesetting.manuscript_error import ManuscriptError
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
     from engineering_influence.controllers.publishing_controller import PublishingController
 
 
-class BookCli:
+class BookCli(BookCliInterface):
     """Audit, build, and publish the books of a project.
 
     ei book [--root DIR] audit|build|epub|covers|qa|publish ...

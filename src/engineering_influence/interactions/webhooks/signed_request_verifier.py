@@ -7,7 +7,7 @@ from collections.abc import Callable
 from vibey_bootstrap.auth.webhook import WebhookDedup
 
 from engineering_influence.contracts.security_verdict import SecurityVerdict
-from engineering_influence.interactions.webhooks.signer import WebhookSigner
+from engineering_influence.interfaces.webhook_signer_interface import WebhookSignerInterface
 from engineering_influence.interfaces.webhook_verifier_interface import WebhookVerifierInterface
 
 
@@ -16,7 +16,7 @@ class SignedRequestVerifier(WebhookVerifierInterface):
 
     def __init__(
         self,
-        signer: WebhookSigner,
+        signer: WebhookSignerInterface,
         tolerance_seconds: int = 300,
         clock: Callable[[], float] = time.time,
         dedup: WebhookDedup | None = None,

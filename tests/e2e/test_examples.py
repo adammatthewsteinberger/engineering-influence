@@ -18,6 +18,7 @@ from pathlib import Path
 import pytest
 import uvicorn
 
+from engineering_influence.controllers.project_controller import ProjectController
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
 from engineering_influence.infrastructure.observability.bootstrap_metrics import BootstrapMetrics
@@ -38,6 +39,7 @@ from engineering_influence.interactions.api.api_guard import ApiGuard
 from engineering_influence.interactions.api.api_observability import ApiObservability
 from engineering_influence.interactions.api.application import ApiApplication
 from engineering_influence.services.readiness_probe import ReadinessProbe
+from engineering_influence.services.start_pipeline import StartPipeline
 
 EXAMPLES = Path(__file__).resolve().parents[2] / "examples"
 API_KEY = "test-key-for-the-example-suite-0001"  # gitleaks:allow
@@ -68,8 +70,9 @@ def api_env() -> Iterator[dict[str, str]]:
     correlation = ContextVarCorrelation()
     readiness = ReadinessProbe((ToolchainHealthCheck(("python3",)),))
     app = ApiApplication(
-        InMemoryLedger(),
-        CorrelatingQueue(InMemoryQueue(), correlation),
+        ProjectController(
+            StartPipeline(InMemoryLedger(), CorrelatingQueue(InMemoryQueue(), correlation))
+        ),
         ApiGuard(
             ConstantTimeApiKeyVerifier([API_KEY]), TokenBucketRateLimiter(burst=50, per_second=50)
         ),

@@ -15,8 +15,8 @@ from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
 from engineering_influence.interactions.api.api_guard import ApiGuard
 from engineering_influence.interactions.api.application import ApiApplication
-from engineering_influence.interactions.cli.main import CliApplication
 from engineering_influence.interactions.mcp.application import McpApplication
+from engineering_influence.runtime.cli_runtime import CliRuntime
 from engineering_influence.services.start_pipeline import StartPipeline
 
 ARGS: dict[str, Any] = {
@@ -36,7 +36,9 @@ def controller_result() -> dict[str, str]:
 
 
 def test_api_matches_controller(api_guard: ApiGuard, api_key: str) -> None:
-    app = ApiApplication(InMemoryLedger(), InMemoryQueue(), api_guard).build()
+    app = ApiApplication(
+        ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue())), api_guard
+    ).build()
     response = TestClient(app).post(
         "/v1/pipelines", json=ARGS, headers={"Authorization": f"Bearer {api_key}"}
     )
@@ -44,7 +46,9 @@ def test_api_matches_controller(api_guard: ApiGuard, api_key: str) -> None:
 
 
 def test_mcp_matches_controller() -> None:
-    server: Any = McpApplication(InMemoryLedger(), InMemoryQueue()).build()
+    server: Any = McpApplication(
+        ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue()))
+    ).build()
     tool = server._tool_manager._tools["start_pipeline"]
     result = tool.fn(ARGS["slug"], ARGS["title"], ARGS["postulates"], ARGS["stages"])
     assert result == controller_result()
@@ -53,26 +57,34 @@ def test_mcp_matches_controller() -> None:
 def test_cli_matches_controller() -> None:
     buffer = io.StringIO()
     with contextlib.redirect_stdout(buffer):
-        status = CliApplication().run(
-            [
-                "pipeline",
-                "start",
-                "--slug",
-                "parity",
-                "--title",
-                "Parity",
-                "--postulate",
-                "Evidence first.",
-                "--stage",
-                "thesis",
-            ]
+        status = (
+            CliRuntime()
+            .build()
+            .run(
+                [
+                    "pipeline",
+                    "start",
+                    "--slug",
+                    "parity",
+                    "--title",
+                    "Parity",
+                    "--postulate",
+                    "Evidence first.",
+                    "--stage",
+                    "thesis",
+                ]
+            )
         )
     assert status == 0
     assert json.loads(buffer.getvalue()) == controller_result()
 
 
 def test_sdk_matches_controller(api_guard: ApiGuard, api_key: str) -> None:
-    server = TestClient(ApiApplication(InMemoryLedger(), InMemoryQueue(), api_guard).build())
+    server = TestClient(
+        ApiApplication(
+            ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue())), api_guard
+        ).build()
+    )
 
     def handler(request: httpx.Request) -> httpx.Response:
         forwarded = server.post(

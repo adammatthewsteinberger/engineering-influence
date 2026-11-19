@@ -12,7 +12,6 @@ from PIL import Image
 from pypdf import PdfWriter
 
 from engineering_influence.controllers.publishing_controller import PublishingController
-from engineering_influence.interactions.cli.main import CliApplication
 from engineering_influence.publishing.covers.cover_builder import CoverBuilder
 from engineering_influence.publishing.epub.epub_builder import EpubBuilder
 from engineering_influence.publishing.epub.epub_verifier import EpubVerifier
@@ -24,6 +23,7 @@ from engineering_influence.publishing.qa.render_report import RenderReport
 from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
 from engineering_influence.publishing.typesetting.book_builder import BookBuilder
 from engineering_influence.publishing.typesetting.latex_compiler import LatexCompiler
+from engineering_influence.runtime.cli_runtime import CliRuntime
 
 BOOK = (
     'source = "src"\ntitle = "Demo Cover"\nsubtitle = "Sub"\nauthor = "Ann Author"\npublisher = "P"\n'
@@ -243,7 +243,7 @@ def test_controller_publishes_the_whole_pipeline(root: Path, stubs: dict[str, li
 
 
 def run(root: Path, *args: str) -> int:
-    return CliApplication().run(["book", "--root", str(root), *args])
+    return CliRuntime().build().run(["book", "--root", str(root), *args])
 
 
 def test_cli_audit(root: Path, capsys: pytest.CaptureFixture[str]) -> None:

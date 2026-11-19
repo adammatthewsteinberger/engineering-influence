@@ -13,9 +13,12 @@ The server uses in-memory adapters, so it plans a pipeline but does not reach th
 It is a local process and is not authenticated: never expose it on a network.
 """
 
+from engineering_influence.controllers.project_controller import ProjectController
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
 from engineering_influence.interactions.mcp.application import McpApplication
+from engineering_influence.services.start_pipeline import StartPipeline
 
 if __name__ == "__main__":
-    McpApplication(InMemoryLedger(), InMemoryQueue()).build().run("stdio")
+    controller = ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue()))
+    McpApplication(controller).build().run("stdio")
