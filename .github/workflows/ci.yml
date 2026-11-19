@@ -55,8 +55,8 @@ jobs:
         with:
           python-version: "3.12"
       # Cached .deb archives skip the 300 MB download on most runs. Without a cache the mirror can
-      # throttle a connection part-way through (a 17 MB package once took five minutes), so the
-      # download runs in short attempts: apt resumes partial files, a fresh connection is usually
+      # throttle a connection part-way through (a 17 MB package once took five minutes, and a whole
+      # attempt can stall), so the download runs in short two-minute attempts: apt resumes partial files, a fresh connection is usually
       # fast, and stopping a download is safe in a way that stopping an install is not.
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -77,11 +77,11 @@ jobs:
           read -r -a packages <<< "$PACKAGES"
           options=(-o "Dir::Cache::archives=$ARCHIVES" -o Acquire::Retries=3 -o Acquire::http::Timeout=30)
           sudo apt-get "${options[@]}" update
-          for attempt in 1 2 3 4; do
-            if sudo timeout 240 apt-get "${options[@]}" install -y --download-only --no-install-recommends "${packages[@]}"; then
+          for attempt in 1 2 3 4 5 6; do
+            if sudo timeout 120 apt-get "${options[@]}" install -y --download-only --no-install-recommends "${packages[@]}"; then
               break
             fi
-            [ "$attempt" -lt 4 ] || { echo "the package download kept stalling" >&2; exit 1; }
+            [ "$attempt" -lt 6 ] || { echo "the package download kept stalling" >&2; exit 1; }
             echo "download attempt $attempt stalled; trying again" >&2
           done
           sudo apt-get "${options[@]}" install -y --no-install-recommends "${packages[@]}"
