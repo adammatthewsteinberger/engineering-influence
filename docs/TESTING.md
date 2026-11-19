@@ -43,6 +43,16 @@ runs the curl example against the full stack. If you change an interface, the ex
 - The `distribution` and `toolchain` markers are deselected by default. The default suite builds no
   real PDF or EPUB; the `toolchain` job (below) does.
 
+## Architecture ratchets
+
+`tests/architecture/` enforces the structure of ADR 0006. Rules the tree already satisfies are strict.
+Rules it does not satisfy yet (every class has an interface, every folder an `interfaces/` folder,
+`publishing/` split across the layers, and so on) are ratchets: `tests/architecture/ratchet.json`
+holds each one's violation count, a count may only go down, and a change that lowers one must record
+the new number (`EI_UPDATE_RATCHET=1 uv run pytest tests/architecture/test_ratchets.py` does it).
+`tests/architecture/test_move_map.py` keeps `scripts/refactor/move_map.toml` complete against the
+tree, and `scripts/refactor/inventory.py` prints the facts the map is built from.
+
 ## The toolchain test
 
 `tests/fixtures/fixture_book/` is a small synthetic book (original text, a strict release contract,
