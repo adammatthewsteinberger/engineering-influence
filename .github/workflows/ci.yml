@@ -54,16 +54,37 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
-      # The 300 MB download has taken from 2 to over 20 minutes depending on the runner's mirror.
-      # Retries and the cap make a bad mirror recover or fail instead of hanging the job.
+      # Cached .deb archives skip the 300 MB download on most runs. Without a cache the mirror can
+      # throttle a connection part-way through (a 17 MB package once took five minutes), so the
+      # download runs in short attempts: apt resumes partial files, a fresh connection is usually
+      # fast, and stopping a download is safe in a way that stopping an install is not.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/apt-archives/*.deb
+          key: texlive-noble-${{ hashFiles('.github/workflows/ci.yml') }}
+          restore-keys: texlive-noble-
       - name: Install the TeX toolchain
         timeout-minutes: 20
-        run: |
-          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update
-          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y --no-install-recommends \
-            latexmk texlive-luatex texlive-latex-recommended texlive-latex-extra \
-            texlive-pictures texlive-fonts-recommended texlive-plain-generic \
+        env:
+          ARCHIVES: ${{ runner.temp }}/apt-archives
+          PACKAGES: >-
+            latexmk texlive-luatex texlive-latex-recommended texlive-latex-extra
+            texlive-pictures texlive-fonts-recommended texlive-plain-generic
             texlive-extra-utils epubcheck default-jre-headless
+        run: |
+          set -eu
+          mkdir -p "$ARCHIVES"
+          read -r -a packages <<< "$PACKAGES"
+          options=(-o "Dir::Cache::archives=$ARCHIVES" -o Acquire::Retries=3 -o Acquire::http::Timeout=30)
+          sudo apt-get "${options[@]}" update
+          for attempt in 1 2 3 4; do
+            if sudo timeout 240 apt-get "${options[@]}" install -y --download-only --no-install-recommends "${packages[@]}"; then
+              break
+            fi
+            [ "$attempt" -lt 4 ] || { echo "the package download kept stalling" >&2; exit 1; }
+            echo "download attempt $attempt stalled; trying again" >&2
+          done
+          sudo apt-get "${options[@]}" install -y --no-install-recommends "${packages[@]}"
       - run: uv sync --locked --extra test --extra runtime --extra publishing
       - run: uv run pytest -m toolchain -p no:cacheprovider -v
         env:
