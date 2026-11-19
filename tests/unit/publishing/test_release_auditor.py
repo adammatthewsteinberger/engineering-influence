@@ -9,8 +9,8 @@ from typing import Any
 import pytest
 from pypdf import PdfWriter
 
-from engineering_influence.publishing.readiness_report import ReadinessReport
-from engineering_influence.publishing.release_auditor import ReleaseAuditor
+from engineering_influence.models.publishing.release_readiness_report import ReleaseReadinessReport
+from engineering_influence.services.publishing.release_auditor import ReleaseAuditor
 
 TODAY = date(2026, 11, 4)
 Dump = Callable[[dict[str, Any]], str]
@@ -44,7 +44,7 @@ def audit(
     *,
     pages: int | None = 100,
     strict: bool = False,
-) -> ReadinessReport:
+) -> ReleaseReadinessReport:
     config = copy.deepcopy(VALID)
     if mutate:
         mutate(config)
@@ -63,7 +63,7 @@ def audit(
     return ReleaseAuditor(root, TODAY).audit(path, pdf=pdf, strict=strict)
 
 
-def codes(report: ReadinessReport) -> list[str]:
+def codes(report: ReleaseReadinessReport) -> list[str]:
     return [finding.code for finding in report.findings]
 
 

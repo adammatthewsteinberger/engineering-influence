@@ -61,8 +61,10 @@ mechanical before they arrive, not after.
 ### Public API
 
 The cover-plugin API is public: entry-point group `engineering_influence.covers`, and the `books`
-repository imports 13 of its classes by their deep paths. A façade `engineering_influence.covers`
-re-exports them with an `__all__`. The old `engineering_influence.publishing.covers.*` paths stay as
+repository imports 17 classes by their deep paths: 13 in its cover scripts, and `CoverBuilder`,
+`CoverPluginLoader`, `PainterRegistry` and `ProjectLayout` in its README (R0 counted only the 13;
+R3 corrected it). A façade `engineering_influence.covers` re-exports the cover classes with an
+`__all__`; `ProjectLayout`, a model, keeps a deprecated shim at its old path. The old `engineering_influence.publishing.covers.*` paths stay as
 shims that re-export the same class objects (the loader checks `isinstance(plugin, CoverPlugin)`) and
 emit a one-time `DeprecationWarning`, for one minor release (ADR 0004). The entry-point group does not
 change. These classes keep their names even where they do not end in `Interface`.

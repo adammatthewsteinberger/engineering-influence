@@ -5,10 +5,10 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
+from engineering_influence.infrastructure.publishing.package_assets import PackageAssets
 from engineering_influence.publishing.covers.font_loader import FontLoader
-from engineering_influence.publishing.package_assets import PackageAssets
-from engineering_influence.publishing.path_relativizer import PathRelativizer
 from engineering_influence.publishing.qa.page_file_number import PageFileNumber
+from engineering_influence.services.publishing.path_relativizer import PathRelativizer
 
 
 class ContactSheetBuilder:

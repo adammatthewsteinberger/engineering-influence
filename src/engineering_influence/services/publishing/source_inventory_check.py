@@ -3,7 +3,7 @@
 
 from pathlib import Path
 
-from engineering_influence.publishing.issue_recorder import IssueRecorder
+from engineering_influence.services.publishing.issue_recorder import IssueRecorder
 
 
 class SourceInventoryCheck:

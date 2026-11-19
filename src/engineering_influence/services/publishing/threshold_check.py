@@ -4,9 +4,9 @@
 from pathlib import Path
 from typing import Any
 
-from engineering_influence.publishing.audit_report import AuditReport
-from engineering_influence.publishing.issue_recorder import IssueRecorder
-from engineering_influence.publishing.manuscript_text import ManuscriptText
+from engineering_influence.models.publishing.audit_report import AuditReport
+from engineering_influence.services.publishing.issue_recorder import IssueRecorder
+from engineering_influence.services.publishing.manuscript_text import ManuscriptText
 
 
 class ThresholdCheck:

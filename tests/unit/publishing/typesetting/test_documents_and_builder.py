@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from engineering_influence.publishing.project_layout import ProjectLayout
+from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.publishing.typesetting.book import Book
 from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
 from engineering_influence.publishing.typesetting.book_builder import BookBuilder

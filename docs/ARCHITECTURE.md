@@ -18,7 +18,8 @@ interfaces/   ports: Ledger, Queue, Runner, Gate, Outbox, WebhookDelivery, Secre
 repositories/ SQLModel ledger and outbox (Postgres)
 infrastructure/ RabbitMQ queue and consumer, in-memory adapters, security, observability, vibey adapters
 runtime/      composition roots (CLI, API, worker), settings loader, entry points
-publishing/   the book toolchain behind `ei book` (optional `publishing` extra)
+publishing/   the book toolchain behind `ei book` (optional `publishing` extra); being split into the
+              layers above: the audit and check classes now live in `<layer>/publishing/`
 ```
 
 Dependencies only point inward. `services` and `controllers` never import adapters or

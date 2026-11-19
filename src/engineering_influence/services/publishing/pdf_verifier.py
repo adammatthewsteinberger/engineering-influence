@@ -7,11 +7,11 @@ from pathlib import Path
 import pdfplumber
 from pypdf import PdfReader
 
-from engineering_influence.publishing.contents_check import ContentsCheck
-from engineering_influence.publishing.forbidden_content_check import ForbiddenContentCheck
-from engineering_influence.publishing.latex_log_check import LatexLogCheck
-from engineering_influence.publishing.pdf_layout_check import PdfLayoutCheck
-from engineering_influence.publishing.pdf_structure_check import PdfStructureCheck
+from engineering_influence.services.publishing.contents_check import ContentsCheck
+from engineering_influence.services.publishing.forbidden_content_check import ForbiddenContentCheck
+from engineering_influence.services.publishing.latex_log_check import LatexLogCheck
+from engineering_influence.services.publishing.pdf_layout_check import PdfLayoutCheck
+from engineering_influence.services.publishing.pdf_structure_check import PdfStructureCheck
 
 
 class PdfVerifier:

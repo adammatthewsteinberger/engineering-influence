@@ -5,11 +5,11 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
-from engineering_influence.publishing.path_relativizer import PathRelativizer
 from engineering_influence.publishing.typesetting.book import Book
 from engineering_influence.publishing.typesetting.chapter import Chapter
 from engineering_influence.publishing.typesetting.chapter_loader import ChapterLoader
 from engineering_influence.publishing.typesetting.manuscript_error import ManuscriptError
+from engineering_influence.services.publishing.path_relativizer import PathRelativizer
 
 
 class BookLoader:

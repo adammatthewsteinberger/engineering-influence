@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 from conftest import make_book, page
 
+from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.publishing.epub.contents_page import ContentsPage
 from engineering_influence.publishing.epub.cover_image import CoverImage
 from engineering_influence.publishing.epub.css_cleaner import CssCleaner
@@ -16,7 +17,6 @@ from engineering_influence.publishing.epub.opf_editor import OpfEditor
 from engineering_influence.publishing.epub.toc_labels import TocLabels
 from engineering_influence.publishing.epub.toc_trees import TocTrees
 from engineering_influence.publishing.epub.xhtml_cleaner import XhtmlCleaner
-from engineering_influence.publishing.project_layout import ProjectLayout
 from engineering_influence.publishing.typesetting.book import Book
 from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
 from engineering_influence.publishing.typesetting.chapter import Chapter

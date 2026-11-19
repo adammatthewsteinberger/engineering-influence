@@ -4,9 +4,9 @@
 from pathlib import Path
 from typing import Any
 
-from engineering_influence.publishing.path_relativizer import PathRelativizer
-from engineering_influence.publishing.readiness_report import ReadinessReport
-from engineering_influence.publishing.text_statistics import TextStatistics
+from engineering_influence.models.publishing.release_readiness_report import ReleaseReadinessReport
+from engineering_influence.services.publishing.path_relativizer import PathRelativizer
+from engineering_influence.services.publishing.text_statistics import TextStatistics
 
 
 class ResearchCheck:
@@ -14,7 +14,7 @@ class ResearchCheck:
 
     def run(
         self,
-        report: ReadinessReport,
+        report: ReleaseReadinessReport,
         source: Path,
         release: dict[str, Any],
         severity: str,

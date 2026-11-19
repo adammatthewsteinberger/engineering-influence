@@ -12,11 +12,10 @@ from PIL import Image
 from pypdf import PdfWriter
 
 from engineering_influence.controllers.publishing_controller import PublishingController
+from engineering_influence.models.publishing.project_config import ProjectConfig
 from engineering_influence.publishing.covers.cover_builder import CoverBuilder
 from engineering_influence.publishing.epub.epub_builder import EpubBuilder
 from engineering_influence.publishing.epub.epub_verifier import EpubVerifier
-from engineering_influence.publishing.pdf_verifier import PdfVerifier
-from engineering_influence.publishing.project_config import ProjectConfig
 from engineering_influence.publishing.qa.page_record import PageRecord
 from engineering_influence.publishing.qa.render_qa import RenderQa
 from engineering_influence.publishing.qa.render_report import RenderReport
@@ -24,6 +23,7 @@ from engineering_influence.publishing.typesetting.book_build_error import BookBu
 from engineering_influence.publishing.typesetting.book_builder import BookBuilder
 from engineering_influence.publishing.typesetting.latex_compiler import LatexCompiler
 from engineering_influence.runtime.cli_runtime import CliRuntime
+from engineering_influence.services.publishing.pdf_verifier import PdfVerifier
 
 BOOK = (
     'source = "src"\ntitle = "Demo Cover"\nsubtitle = "Sub"\nauthor = "Ann Author"\npublisher = "P"\n'

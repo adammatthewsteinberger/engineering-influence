@@ -6,9 +6,9 @@ from typing import Any
 from pypdf import PdfReader, PdfWriter
 from pypdf.generic import ArrayObject, DictionaryObject, NameObject
 
-from engineering_influence.publishing.folio_reader import FolioReader
-from engineering_influence.publishing.pdf_layout_check import PdfLayoutCheck
-from engineering_influence.publishing.pdf_structure_check import PdfStructureCheck
+from engineering_influence.services.publishing.folio_reader import FolioReader
+from engineering_influence.services.publishing.pdf_layout_check import PdfLayoutCheck
+from engineering_influence.services.publishing.pdf_structure_check import PdfStructureCheck
 
 
 class FakePage:

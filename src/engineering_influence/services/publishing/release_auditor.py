@@ -7,12 +7,12 @@ from pathlib import Path
 
 from pypdf import PdfReader
 
-from engineering_influence.publishing.format_check import FormatCheck
-from engineering_influence.publishing.metadata_check import MetadataCheck
-from engineering_influence.publishing.path_relativizer import PathRelativizer
-from engineering_influence.publishing.pricing_check import PricingCheck
-from engineering_influence.publishing.readiness_report import ReadinessReport
-from engineering_influence.publishing.research_check import ResearchCheck
+from engineering_influence.models.publishing.release_readiness_report import ReleaseReadinessReport
+from engineering_influence.services.publishing.format_check import FormatCheck
+from engineering_influence.services.publishing.metadata_check import MetadataCheck
+from engineering_influence.services.publishing.path_relativizer import PathRelativizer
+from engineering_influence.services.publishing.pricing_check import PricingCheck
+from engineering_influence.services.publishing.research_check import ResearchCheck
 
 
 class ReleaseAuditor:
@@ -25,12 +25,12 @@ class ReleaseAuditor:
 
     def audit(
         self, config_path: Path, *, pdf: Path | None = None, strict: bool = False
-    ) -> ReadinessReport:
+    ) -> ReleaseReadinessReport:
         """Return the readiness report for one book config."""
         config = tomllib.loads(config_path.read_text(encoding="utf-8"))
         ref = self._relativizer.relative(config_path)
         pages = len(PdfReader(str(pdf)).pages) if pdf is not None and pdf.exists() else None
-        report = ReadinessReport(1, config_path.stem, "pass", ref, pages)
+        report = ReleaseReadinessReport(1, config_path.stem, "pass", ref, pages)
         release = config.get("release")
         if not isinstance(release, dict):
             report.add(

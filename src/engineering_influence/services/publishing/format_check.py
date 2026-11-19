@@ -3,7 +3,7 @@
 
 from typing import Any
 
-from engineering_influence.publishing.readiness_report import ReadinessReport
+from engineering_influence.models.publishing.release_readiness_report import ReleaseReadinessReport
 
 
 class FormatCheck:
@@ -11,7 +11,7 @@ class FormatCheck:
 
     def run(
         self,
-        report: ReadinessReport,
+        report: ReleaseReadinessReport,
         release: dict[str, Any],
         severity: str,
         ref: str,

@@ -4,16 +4,16 @@
 from collections.abc import Callable
 from pathlib import Path
 
+from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.publishing.covers.cover_builder import CoverBuilder
 from engineering_influence.publishing.epub.epub_builder import EpubBuilder
 from engineering_influence.publishing.epub.epub_verifier import EpubVerifier
 from engineering_influence.publishing.epub.epubcheck_runner import EpubcheckRunner
-from engineering_influence.publishing.path_relativizer import PathRelativizer
-from engineering_influence.publishing.pdf_verifier import PdfVerifier
-from engineering_influence.publishing.project_layout import ProjectLayout
 from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
 from engineering_influence.publishing.typesetting.book_builder import BookBuilder
 from engineering_influence.publishing.typesetting.book_loader import BookLoader
+from engineering_influence.services.publishing.path_relativizer import PathRelativizer
+from engineering_influence.services.publishing.pdf_verifier import PdfVerifier
 
 Step = tuple[str, list[str], Callable[[], str]]
 

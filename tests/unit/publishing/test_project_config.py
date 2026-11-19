@@ -5,15 +5,15 @@ from pathlib import Path
 
 import pytest
 
-from engineering_influence.publishing.audit_report import AuditReport
-from engineering_influence.publishing.audit_report_text import AuditReportText
+from engineering_influence.models.publishing.audit_report import AuditReport
+from engineering_influence.models.publishing.issue import Issue
+from engineering_influence.models.publishing.project_config import ProjectConfig
+from engineering_influence.models.publishing.project_layout import ProjectLayout
+from engineering_influence.models.publishing.release_readiness_report import ReleaseReadinessReport
 from engineering_influence.publishing.covers.cover_plugin import CoverPlugin
 from engineering_influence.publishing.covers.cover_plugin_loader import CoverPluginLoader
 from engineering_influence.publishing.covers.painter_registry import PainterRegistry
-from engineering_influence.publishing.issue import Issue
-from engineering_influence.publishing.project_config import ProjectConfig
-from engineering_influence.publishing.project_layout import ProjectLayout
-from engineering_influence.publishing.readiness_report import ReadinessReport
+from engineering_influence.services.publishing.audit_report_text import AuditReportText
 
 
 def test_layout_directories_can_be_renamed(tmp_path: Path) -> None:
@@ -84,7 +84,7 @@ def test_manuscript_report_text_for_passing_audits() -> None:
 
 
 def test_release_report_text() -> None:
-    report = ReadinessReport(1, "demo", "fail", "demo.toml", None)
+    report = ReleaseReadinessReport(1, "demo", "fail", "demo.toml", None)
     report.add("error", "e", "bad", "demo.toml")
     report.add("warning", "w", "meh")
     assert AuditReportText().release(report).splitlines() == [

@@ -1,8 +1,8 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Human-readable renderings of the audit reports."""
 
-from engineering_influence.publishing.audit_report import AuditReport
-from engineering_influence.publishing.readiness_report import ReadinessReport
+from engineering_influence.models.publishing.audit_report import AuditReport
+from engineering_influence.models.publishing.release_readiness_report import ReleaseReadinessReport
 
 
 class AuditReportText:
@@ -30,7 +30,7 @@ class AuditReportText:
             lines.append(f"[{report.slug}] manuscript audit passed{suffix}")
         return "\n".join(lines)
 
-    def release(self, report: ReadinessReport) -> str:
+    def release(self, report: ReleaseReadinessReport) -> str:
         """Release-readiness status and each finding."""
         lines = [
             (

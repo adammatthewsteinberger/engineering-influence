@@ -12,9 +12,8 @@ from pathlib import Path
 import pytest
 from pypdf import PdfWriter
 
-from engineering_influence.publishing.path_relativizer import PathRelativizer
-from engineering_influence.publishing.project_layout import ProjectLayout
-from engineering_influence.publishing.readiness_report import ReadinessReport
+from engineering_influence.models.publishing.project_layout import ProjectLayout
+from engineering_influence.models.publishing.release_readiness_report import ReleaseReadinessReport
 from engineering_influence.publishing.release.artifact_inventory import ArtifactInventory
 from engineering_influence.publishing.release.epub_zip_check import EpubZipCheck
 from engineering_influence.publishing.release.file_digest import FileDigest
@@ -25,6 +24,7 @@ from engineering_influence.publishing.release.page_limit_check import PageLimitC
 from engineering_influence.publishing.release.release_summary import ReleaseSummary
 from engineering_influence.publishing.release.step_recorder import StepRecorder
 from engineering_influence.publishing.release.tool_versions import ToolVersions
+from engineering_influence.services.publishing.path_relativizer import PathRelativizer
 
 
 def test_digest_matches_hashlib_across_block_boundaries(tmp_path: Path) -> None:
@@ -194,7 +194,7 @@ def test_json_report_creates_parents_and_controls_ascii(tmp_path: Path) -> None:
 
 
 def test_release_summary_flattens_findings() -> None:
-    report = ReadinessReport(
+    report = ReleaseReadinessReport(
         1, "demo", "warning", "demo.toml", None, pricing={"a": 1}, formats={"b": 2}
     )
     report.add("warning", "code", "msg", "path")

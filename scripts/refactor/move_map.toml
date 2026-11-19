@@ -1177,6 +1177,7 @@ interface_module = "engineering_influence.services.covers.interfaces.cover_build
 interface_style = "abc"
 decision = "curated"
 ports = ["CoverPluginLoaderInterface", "BuildWorkspaceInterface"]
+public_api = true
 
 [[class]]
 old = "engineering_influence.publishing.covers.cover_files"
@@ -1240,6 +1241,7 @@ interface = "CoverPluginLoaderInterface"
 interface_module = "engineering_influence.infrastructure.covers.interfaces.cover_plugin_loader_interface"
 interface_style = "abc"
 decision = "curated"
+public_api = true
 
 [[class]]
 old = "engineering_influence.publishing.covers.cover_renderer"
@@ -1424,6 +1426,7 @@ interface = "PainterRegistryInterface"
 interface_module = "engineering_influence.services.covers.interfaces.painter_registry_interface"
 interface_style = "abc"
 decision = "signal"
+public_api = true
 
 [[class]]
 old = "engineering_influence.publishing.covers.print_pdf_verifier"
@@ -2119,6 +2122,7 @@ interface = "ProjectLayoutInterface"
 interface_module = "engineering_influence.models.publishing.interfaces.project_layout_interface"
 interface_style = "abc"
 decision = "signal"
+public_api = true
 
 [[class]]
 old = "engineering_influence.publishing.qa.blank_page_detector"

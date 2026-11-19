@@ -3,9 +3,9 @@
 
 from pathlib import Path
 
-from engineering_influence.publishing.audit_report import AuditReport
-from engineering_influence.publishing.issue import Issue
-from engineering_influence.publishing.path_relativizer import PathRelativizer
+from engineering_influence.models.publishing.audit_report import AuditReport
+from engineering_influence.models.publishing.issue import Issue
+from engineering_influence.services.publishing.path_relativizer import PathRelativizer
 
 
 class IssueRecorder:

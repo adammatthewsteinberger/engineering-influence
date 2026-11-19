@@ -8,12 +8,12 @@ import pytest
 from PIL import Image
 from pypdf import PdfWriter
 
+from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.publishing.covers.cover_builder import CoverBuilder
 from engineering_influence.publishing.covers.cover_painter import CoverPainter
 from engineering_influence.publishing.covers.cover_style import CoverStyle
 from engineering_influence.publishing.covers.ebook_cover_verifier import EbookCoverVerifier
 from engineering_influence.publishing.covers.painter_registry import PainterRegistry
-from engineering_influence.publishing.project_layout import ProjectLayout
 from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
 
 FILES = (

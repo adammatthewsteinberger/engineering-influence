@@ -7,8 +7,8 @@ import shutil
 from contextlib import AbstractContextManager, nullcontext
 from pathlib import Path
 
-from engineering_influence.publishing.package_assets import PackageAssets
-from engineering_influence.publishing.project_layout import ProjectLayout
+from engineering_influence.infrastructure.publishing.package_assets import PackageAssets
+from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
 from engineering_influence.publishing.typesetting.book_loader import BookLoader
 from engineering_influence.publishing.typesetting.latex_compiler import LatexCompiler
