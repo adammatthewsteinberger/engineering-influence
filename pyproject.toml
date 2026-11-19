@@ -90,9 +90,10 @@ exclude = ["**/__pycache__", "**/*.pyc"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--strict-markers -m 'not distribution'"
+addopts = "--strict-markers -m 'not distribution and not toolchain'"
 markers = [
   "distribution: builds and installs the real artifacts; needs network access (pytest -m distribution)",
+  "toolchain: builds the fixture book with real TeX and checks a snapshot (pytest -m toolchain)",
 ]
 
 [tool.coverage.run]

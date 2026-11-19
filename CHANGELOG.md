@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added a `toolchain` CI job that builds a synthetic fixture book with real LuaLaTeX, tex4ebook and epubcheck under a strict release contract and compares it with a checked-in structural snapshot. Before this, no test built a real PDF or EPUB. See `docs/TESTING.md`.
 - Hardened the TeX toolchain before any model-written text reaches it: `latexmk` runs with `-no-shell-escape`, and both `latexmk` and `tex4ebook` get an allow-listed environment (`PATH`, `HOME`, locale, `TEXMF*` and similar) instead of a copy of the parent's, so API keys and tokens never reach a build tool.
 - A strict release (`--strict-release`, or `release.required = true` in the book config) now fails when `epubcheck` is not installed. Before, a missing validator read as a pass.
 - CI works again. `vibey-engine` 4.5.0 was removed from PyPI (the index lists 0.3.0 and 0.4.0), which failed the provenance job, the distribution build and `uv lock`. The runtime extra now asks for `vibey-engine>=0.4,<0.5`; the provenance job installs from `uv.lock` instead of the index; `tests/unit/test_vibey_import_contract.py` names every vibey symbol the package uses.

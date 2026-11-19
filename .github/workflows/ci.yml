@@ -31,6 +31,41 @@ jobs:
       - run: uv run mypy --strict src packages
       - run: uv run pytest --cov --cov-branch --cov-fail-under=100
 
+  # Builds a synthetic book with the real toolchain (LuaLaTeX, tex4ebook, epubcheck) and compares
+  # the result with a checked-in structural snapshot. The runner image is pinned because the
+  # snapshot depends on the TeX Live release; a deliberate change is accepted by re-running the
+  # test with EI_UPDATE_SNAPSHOT=1 and committing the new file (see docs/TESTING.md).
+  toolchain:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.12.6"
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install the TeX toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            latexmk texlive-luatex texlive-latex-recommended texlive-latex-extra \
+            texlive-pictures texlive-fonts-recommended texlive-plain-generic \
+            texlive-extra-utils epubcheck default-jre-headless
+      - run: uv sync --locked --extra test --extra runtime --extra publishing
+      - run: uv run pytest -m toolchain -p no:cacheprovider -v
+        env:
+          EI_SNAPSHOT_ARTIFACT_DIR: ${{ runner.temp }}/fixture-snapshot
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: fixture-snapshot
+          path: ${{ runner.temp }}/fixture-snapshot
+          if-no-files-found: ignore
+
   leak-scan:
     runs-on: ubuntu-latest
     steps:

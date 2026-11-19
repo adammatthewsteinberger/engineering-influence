@@ -1,0 +1,117 @@
+{
+  "covers": [
+    "fixture-back.tif",
+    "fixture-ebook-preview.jpg",
+    "fixture-ebook.jpg",
+    "fixture-ebook.tif",
+    "fixture-front.tif",
+    "fixture-hardcover-preview.jpg",
+    "fixture-hardcover-wrap.pdf",
+    "fixture-hardcover-wrap.tif",
+    "fixture-paperback-wrap.pdf",
+    "fixture-paperback-wrap.tif"
+  ],
+  "epub": {
+    "members": {
+      "META-INF/container.xml": "48dc4e9c19e733844861242a72429df570ef178e7c6a5b3c1666f4c03fbf90b4",
+      "OEBPS/content.opf": "a99360f73dc0a23b109afab7ef811f5df8cd2dd577617d1e5d4cebb581dfb80a",
+      "OEBPS/cover.jpg": "735c5c70789d4837ee230ddee3a60f6e61de85e75a1acf00930bae2656d61b17",
+      "OEBPS/fine-ebook.css": "41103ce63d87f1f5bfba5ccd7e8ba2146f77fbfb359e41477e381ec2c6a58839",
+      "OEBPS/fixture.css": "0ae6934150c4607ceaab5832e4edf69f7958e22ca5142a49a01bca9ffe2c6f25",
+      "OEBPS/fixture.ncx": "4d0ffc523d5480e6c18dddfbcb91a217eee65698a9131c4205bb379a7ea7e825",
+      "OEBPS/fixture.xhtml": "27bc08337ce5b0893778484f0ecdf22ff6260c1c6ae9c54480affea0260a3fb8",
+      "OEBPS/fixturech1.xhtml": "19730042276a3dca9e4c1a62e05ff991ca520431682e2fa5c8467560bf7e4624",
+      "OEBPS/fixturech2.xhtml": "6050277f6be45dc32b2537d41e3dc14d4ef0948fe0a137aa2565767971898740",
+      "OEBPS/fixturech3.xhtml": "0563f916b4a0cdab8cb98d8345a4555196074a9a178d4ccce5547ea6c29dad8b",
+      "OEBPS/fixtureli1.xhtml": "e702aeadf25af11070a7f27ab539e7383a8b3ee4b1f0a1eaae08a206eb559c98",
+      "OEBPS/fixtureli2.xhtml": "e1e063eb16528687dd6c593046b3b0a3a4b0a276c12dfdd4d22048471ac78427",
+      "OEBPS/fixtureli3.xhtml": "eea20bcbc1608e8c74e20b862e8939a49546c9158dce6d83ba14fbca205c5412",
+      "OEBPS/fixtureli4.xhtml": "497d86bb97927626f4ca5570b58b8581c8c6727d9b97f7c1e745e86ba1d01317",
+      "OEBPS/fixturepa1.xhtml": "90fa053e1cf9f243a896634a0d06d24f63a38b84c05ed822aef8fd7d248aab3f",
+      "OEBPS/fixturepa2.xhtml": "acd0d4e86cd123e6902ea262ba56e40243ca14876898468bed0a72f036c0307d",
+      "OEBPS/nav.xhtml": "cbedb6c791a9de578a6bad3d60f43e8d292881121e0e27c28fd798bdd1c5f638",
+      "mimetype": "e468e350d1143eb648f60c7b0bd6031101ec0544a361ca74ecef256ac901f48b"
+    },
+    "mimetype_first_and_stored": true
+  },
+  "hardcover_pdf": {
+    "page_text_sha256": [
+      "de8dc9acaa048e1c3db12252e6f3d2ef201032bafbc28e1d41c901b80c96bde8",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ff4fb9ff3d9b584467fc560041da94100f1d82bae677498c30a209447bee610f",
+      "bb89a615f0ccc8f36f8be974e85c5647215df28c850b6408319f887d49ed2f7a",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "17c6b759e17cb5a7b173399419c93eaafd4e71b2ef4b821cfbbc38cd74b92d0e",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "94cfbdcc3070dcd89ec69cb21ad05115dc912964bee794c3a1f91302e758d7f4",
+      "d38a96a196219d54fb372e52b039297d59d86ef8a534932fcc214645f7ff3218",
+      "361102368573f841a5abd1b3d14d3e85afa363f6559bdf4a969642d7ff8140f7",
+      "6dcdb52ee31e8559ec72f9f534f4cad7ee510d28e27d2fda456db875198f3875",
+      "487d14194390ffe2d38445b667a5871ba6b1a4443d18d40b5418690c17346279",
+      "a8c73fe1070232c70f5d9821e96840d2de51f0611f75c63d30a5c90b50cfd5b4",
+      "233278da3d42b1a8c797b22343d7c08da24f7183160c27319575ab8ec62b5ea3",
+      "5001c79e009c866b7521d314d360f0a0a926d19bc4e0b200c2577480be01601c"
+    ],
+    "pages": 16,
+    "size_pt": [
+      432.0,
+      648.0
+    ]
+  },
+  "pdf": {
+    "page_text_sha256": [
+      "de8dc9acaa048e1c3db12252e6f3d2ef201032bafbc28e1d41c901b80c96bde8",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ff4fb9ff3d9b584467fc560041da94100f1d82bae677498c30a209447bee610f",
+      "bb89a615f0ccc8f36f8be974e85c5647215df28c850b6408319f887d49ed2f7a",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "e458af2ce1344d227242a56e96783d853ccf3fe5d0a4b8f6f314bdd53c3d7d7f",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "2470f0aa1d60db9aeb9d3312fc16cf1b2a0e88f0941f6df60cc20556a61e0806",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "d38a96a196219d54fb372e52b039297d59d86ef8a534932fcc214645f7ff3218",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "469f379ff01ca50a7137023781981552553b0e2ddccf4bcfdbacba27e3f6ad50",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "451ac5bf7d77d1c1b11280e40e55e6fe3a6cc1dfae3ba8b6603044d00103c614",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "487d14194390ffe2d38445b667a5871ba6b1a4443d18d40b5418690c17346279",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "dbceb78c8d74dba34e078fe43f9e7ef0301a4e41bd5107dd40644b45fbdbf059",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "da10868a3576bf2c6be62ba5e9d525271a2220990a0c02f39fba4b68ce10ebee",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "0b00688d6a0e3097712a6351433c041bba403f6e5e8f74e52a4c284f6aceb13d"
+    ],
+    "pages": 23,
+    "size_pt": [
+      432.0,
+      648.0
+    ]
+  },
+  "report": {
+    "findings": [],
+    "problems": [],
+    "status": "pass",
+    "steps": [
+      [
+        "pdf",
+        "pass"
+      ],
+      [
+        "hardcover",
+        "pass"
+      ],
+      [
+        "covers",
+        "pass"
+      ],
+      [
+        "epub",
+        "pass"
+      ]
+    ]
+  }
+}

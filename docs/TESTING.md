@@ -40,7 +40,26 @@ runs the curl example against the full stack. If you change an interface, the ex
 
 - The 100% gate includes branches. Code that only runs in a fresh interpreter (missing optional
   extras) is measured through `patch = ["subprocess"]` in `[tool.coverage.run]`; do not remove it.
-- Only the `distribution` marker is deselected by default; no test builds a real PDF or EPUB, because CI installs no TeX toolchain.
+- The `distribution` and `toolchain` markers are deselected by default. The default suite builds no
+  real PDF or EPUB; the `toolchain` job (below) does.
+
+## The toolchain test
+
+`tests/fixtures/fixture_book/` is a small synthetic book (original text, a strict release contract,
+a KDP hardcover). The `toolchain` CI job installs LuaLaTeX, tex4ebook and epubcheck on a pinned
+`ubuntu-24.04` runner, builds it with `ei book publish fixture --strict-release`, and compares the
+result with `tests/fixtures/fixture_book/expected/snapshot.json`.
+
+- The snapshot is structural, so no PDFs live in git: page count, page size and a hash of each
+  page's text for both interiors, the sha256 of every EPUB member (the repacker is deterministic),
+  the cover file names, and the publication report's step results.
+- It is the no-behaviour-change oracle for refactors: a change that alters any typeset page, any
+  EPUB member or any gate result fails it.
+- A different TeX Live release can legitimately change the snapshot, which is why the runner image is
+  pinned. To accept a deliberate change, run `EI_UPDATE_SNAPSHOT=1 uv run pytest -m toolchain` on
+  a machine with the same toolchain (or download the `fixture-snapshot` artifact from the failed CI
+  run) and commit the new file.
+- A machine without the tools skips the test.
 
 ## Writing tests
 
