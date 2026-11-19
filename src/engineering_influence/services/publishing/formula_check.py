@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
 from engineering_influence.models.publishing.audit_report import AuditReport
 from engineering_influence.services.publishing.audit_defaults import AuditDefaults
 from engineering_influence.services.publishing.issue_recorder import IssueRecorder
@@ -12,6 +13,9 @@ from engineering_influence.services.publishing.issue_recorder import IssueRecord
 
 class FormulaCheck:
     """Warns when a formula such as 'the question is not' is overused."""
+
+    def __init__(self, files: ManuscriptSourceInterface) -> None:
+        self._files = files
 
     def run(
         self,
@@ -23,9 +27,9 @@ class FormulaCheck:
         """Count each formula and warn above the threshold."""
         threshold = int(quality.get("formula_warning_threshold", 4))
         texts = [
-            (source / entry.file).read_text(encoding="utf-8")
+            self._files.read_text(source / entry.file)
             for entry in report.entries
-            if (source / entry.file).exists()
+            if self._files.exists(source / entry.file)
         ]
         for phrase in quality.get("formula_phrases", AuditDefaults.FORMULA_PHRASES):
             pattern = re.escape(str(phrase))

@@ -9,6 +9,10 @@ from pathlib import Path
 import pytest
 from pypdf import PdfWriter
 
+from engineering_influence.infrastructure.publishing.filesystem_manuscript_source import (
+    FilesystemManuscriptSource,
+)
+from engineering_influence.infrastructure.publishing.pypdf_pdf_inspector import PypdfPdfInspector
 from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.publishing.covers.cover_builder import CoverBuilder
 from engineering_influence.publishing.epub.epub_builder import EpubBuilder
@@ -144,7 +148,14 @@ CLOCK = iter(
 def pipeline(
     layout: ProjectLayout, steps: PublishSteps, qa: RenderQa | None = None
 ) -> PublishPipeline:
-    return PublishPipeline(layout, steps, qa=qa, clock=lambda: next(CLOCK))
+    return PublishPipeline(
+        layout,
+        steps,
+        FilesystemManuscriptSource(),
+        PypdfPdfInspector(),
+        qa=qa,
+        clock=lambda: next(CLOCK),
+    )
 
 
 def test_unknown_books_are_rejected(tmp_path: Path) -> None:
@@ -291,7 +302,9 @@ def test_a_required_release_contract_tells_the_steps_to_require_epubcheck(tmp_pa
 
 def test_the_real_clock_and_default_renderer_are_used_when_not_injected(tmp_path: Path) -> None:
     layout = project(tmp_path)
-    result, _ = PublishPipeline(layout, FakeSteps(layout)).publish("demo", audit_only=True)
+    result, _ = PublishPipeline(
+        layout, FakeSteps(layout), FilesystemManuscriptSource(), PypdfPdfInspector()
+    ).publish("demo", audit_only=True)
     assert result["started_at"].endswith("+00:00")
 
 
@@ -328,7 +341,18 @@ class StubEpub(EpubBuilder):
 
 def real_steps(layout: ProjectLayout) -> tuple[PublishSteps, StubBuilder, StubCovers]:
     builder, covers = StubBuilder(layout), StubCovers(layout)
-    return PublishSteps(layout, builder, covers, StubEpub(layout)), builder, covers
+    return (
+        PublishSteps(
+            layout,
+            builder,
+            covers,
+            StubEpub(layout),
+            FilesystemManuscriptSource(),
+            PypdfPdfInspector(),
+        ),
+        builder,
+        covers,
+    )
 
 
 def test_the_step_plan_orders_the_builds(tmp_path: Path) -> None:

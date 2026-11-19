@@ -49,6 +49,8 @@ ADAPTERS = {"controllers", "repositories", "infrastructure", "interactions"}
 TYPE_ONLY = {"errors", "models", "contracts"}
 EXEMPT_FOLDERS = {"interfaces", "assets", "__pycache__"}
 STDLIB = set(sys.stdlib_module_names)
+# ADR 0006: these never appear in models, contracts or services; an adapter provides them.
+EFFECTFUL = {"PIL", "pypdf", "pdfplumber", "reportlab", "subprocess", "zipfile"}
 
 
 def load_script(name: str) -> ModuleType:
@@ -80,6 +82,7 @@ class ArchitectureMetrics:
             "interface_files_not_paired_with_a_module": self.interface_files_not_paired(),
             "interface_modules_that_break_the_declaration_rules": self.interface_rule_breaks(),
             "models_importing_beyond_models_errors_and_the_standard_library": self.model_impurities(),
+            "effectful_library_imports_in_models_contracts_and_services": self.effectful_imports(),
             "imports_that_cross_the_layer_matrix": self.matrix_crossings(),
         }
 
@@ -154,6 +157,15 @@ class ArchitectureMetrics:
                 else:
                     count += top not in STDLIB and top != "__future__"
         return count
+
+    def effectful_imports(self) -> int:
+        """Imports of PDF, imaging, process and archive libraries in the inner layers."""
+        return sum(
+            module.split(".")[0] in EFFECTFUL
+            for path in self._files
+            if self.layer(path) in {"models", "contracts", "services"}
+            for module in self._runtime_imports(path)
+        )
 
     def matrix_crossings(self) -> int:
         """Imports of this package that the layer table does not allow."""

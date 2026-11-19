@@ -4,6 +4,8 @@
 from pathlib import Path
 from typing import Any
 
+from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
+from engineering_influence.interfaces.pdf_inspector_interface import PdfInspectorInterface
 from engineering_influence.models.publishing.project_config import ProjectConfig
 from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.publishing.covers.cover_builder import CoverBuilder
@@ -38,11 +40,15 @@ class PublishingController:
     def __init__(
         self,
         config: ProjectConfig,
+        files: ManuscriptSourceInterface,
+        pdfs: PdfInspectorInterface,
         latex: LatexCompiler | None = None,
         tex4ebook: Tex4ebookCompiler | None = None,
         qa: RenderQa | None = None,
     ) -> None:
         self._config = config
+        self._files = files
+        self._pdfs = pdfs
         self._layout = config.layout()
         self._latex = latex
         self._tex4ebook = tex4ebook
@@ -56,8 +62,10 @@ class PublishingController:
     def audit(self, slug: str, *, strict_release: bool = False) -> tuple[dict[str, Any], bool, str]:
         """Return (both reports as dictionaries, whether the manuscript passes, text)."""
         config = self._book_config(slug)
-        manuscript = BookAuditor(self._config.root).audit(config)
-        release = ReleaseAuditor(self._config.root).audit(config, strict=strict_release)
+        manuscript = BookAuditor(self._config.root, self._files).audit(config)
+        release = ReleaseAuditor(self._config.root, self._files, self._pdfs).audit(
+            config, strict=strict_release
+        )
         text = AuditReportText()
         summary = f"{text.manuscript(manuscript)}\n{text.release(release)}"
         ok = not manuscript.issues and not release.errors
@@ -74,7 +82,9 @@ class PublishingController:
             return f"[{slug}] wrote {self._relative(path)}"
         log_slug = f"{slug}-hardcover" if hardcover else slug
         log = self._layout.build / log_slug / f"{slug}.log"
-        problems = PdfVerifier().verify(path, self._layout.books / f"{slug}.toml", log)
+        problems = PdfVerifier(self._pdfs, self._files).verify(
+            path, self._layout.books / f"{slug}.toml", log
+        )
         self._raise_on(slug, problems)
         return f"[{slug}] built {self._relative(path)}\n[{slug}] all checks passed"
 
@@ -119,8 +129,10 @@ class PublishingController:
             BookBuilder(self._layout, compiler=self._latex),
             self._cover_builder(),
             EpubBuilder(self._layout, compiler=self._tex4ebook),
+            self._files,
+            self._pdfs,
         )
-        pipeline = PublishPipeline(self._layout, steps, qa=self._qa)
+        pipeline = PublishPipeline(self._layout, steps, self._files, self._pdfs, qa=self._qa)
         return pipeline.publish(
             slug,
             dpi=dpi,

@@ -4,6 +4,8 @@
 from collections.abc import Callable
 from pathlib import Path
 
+from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
+from engineering_influence.interfaces.pdf_inspector_interface import PdfInspectorInterface
 from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.publishing.covers.cover_builder import CoverBuilder
 from engineering_influence.publishing.epub.epub_builder import EpubBuilder
@@ -30,8 +32,12 @@ class PublishSteps:
         builder: BookBuilder,
         covers: CoverBuilder,
         epub: EpubBuilder,
+        files: ManuscriptSourceInterface,
+        pdfs: PdfInspectorInterface,
     ) -> None:
         self._layout = layout
+        self._files = files
+        self._pdfs = pdfs
         self._builder = builder
         self._covers = covers
         self._epub = epub
@@ -78,7 +84,12 @@ class PublishSteps:
 
     def _interior(self, slug: str, pdf: Path, log_slug: str) -> str:
         log = self._layout.build / log_slug / f"{slug}.log"
-        self._raise_on(slug, PdfVerifier().verify(pdf, self._layout.books / f"{slug}.toml", log))
+        self._raise_on(
+            slug,
+            PdfVerifier(self._pdfs, self._files).verify(
+                pdf, self._layout.books / f"{slug}.toml", log
+            ),
+        )
         return f"[{slug}] built {self._relativizer.relative(pdf)}\n[{slug}] all checks passed"
 
     def _raise_on(self, slug: str, problems: list[str]) -> None:
