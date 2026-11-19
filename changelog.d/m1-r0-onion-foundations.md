@@ -1,0 +1,1 @@
+Added ADR 0006 (onion layers, interfaces and one class per file), the move map for restructuring every class (`scripts/refactor/move_map.toml`), a class inventory script, and architecture ratchets that hold each unmet structural rule at its current violation count so it can only improve. No code moved and no behaviour changed.
