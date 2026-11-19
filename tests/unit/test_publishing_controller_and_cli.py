@@ -12,7 +12,7 @@ from PIL import Image
 from pypdf import PdfWriter
 
 from engineering_influence.controllers.publishing_controller import PublishingController
-from engineering_influence.interaction.cli.main import CliApplication
+from engineering_influence.interactions.cli.main import CliApplication
 from engineering_influence.publishing.covers.cover_builder import CoverBuilder
 from engineering_influence.publishing.epub.epub_builder import EpubBuilder
 from engineering_influence.publishing.epub.epub_verifier import EpubVerifier

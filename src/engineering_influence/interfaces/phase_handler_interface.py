@@ -1,0 +1,13 @@
+# Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
+"""Worker phase-handler port."""
+
+from abc import ABC, abstractmethod
+from typing import Any
+
+
+class PhaseHandlerInterface(ABC):
+    """Handle one queued phase job for an external worker runtime."""
+
+    @abstractmethod
+    async def handle(self, job: Any) -> Any:
+        """Return the runtime's success or parked outcome."""

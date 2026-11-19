@@ -1,9 +1,9 @@
 """Workflow-definition adapter tests."""
 
-from engineering_influence.domain.governing_postulates import GoverningPostulates
-from engineering_influence.domain.pipeline_stage import PipelineStage
-from engineering_influence.domain.project import Project
 from engineering_influence.infrastructure import VibeyWorkflowAdapter
+from engineering_influence.models.governing_postulates import GoverningPostulates
+from engineering_influence.models.pipeline_stage import PipelineStage
+from engineering_influence.models.project import Project
 
 
 def test_workflow_contains_all_selected_methodology_jobs_in_order() -> None:

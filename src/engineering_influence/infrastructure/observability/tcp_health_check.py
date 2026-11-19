@@ -4,10 +4,10 @@
 import socket
 
 from engineering_influence.contracts.health_status import HealthStatus
-from engineering_influence.interfaces.health_check_port import HealthCheckPort
+from engineering_influence.interfaces.health_check_interface import HealthCheckInterface
 
 
-class TcpHealthCheck(HealthCheckPort):
+class TcpHealthCheck(HealthCheckInterface):
     """Healthy when a TCP connection to the host and port opens within the timeout."""
 
     def __init__(self, name: str, host: str, port: int, timeout_seconds: float = 2.0) -> None:

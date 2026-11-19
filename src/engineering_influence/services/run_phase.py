@@ -1,19 +1,19 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Application service for running a phase and applying its first gate."""
 
-from engineering_influence.domain.artifact import Artifact
-from engineering_influence.domain.gate import Gate
-from engineering_influence.domain.gate_kind import GateKind
-from engineering_influence.domain.phase_run import PhaseRun
-from engineering_influence.interfaces.gate_port import GatePort
-from engineering_influence.interfaces.runner_port import RunnerPort
+from engineering_influence.interfaces.gate_interface import GateInterface
+from engineering_influence.interfaces.runner_interface import RunnerInterface
+from engineering_influence.models.artifact import Artifact
+from engineering_influence.models.gate import Gate
+from engineering_influence.models.gate_kind import GateKind
+from engineering_influence.models.phase_run import PhaseRun
 from engineering_influence.services.interfaces.run_phase_interface import RunPhaseInterface
 
 
 class RunPhase(RunPhaseInterface):
     """Run one phase through an injected runner and gate evaluator."""
 
-    def __init__(self, runner: RunnerPort, gates: GatePort) -> None:
+    def __init__(self, runner: RunnerInterface, gates: GateInterface) -> None:
         self._runner = runner
         self._gates = gates
 

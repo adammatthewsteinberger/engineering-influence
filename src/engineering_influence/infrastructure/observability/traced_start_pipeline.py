@@ -3,7 +3,7 @@
 
 from vibey_bootstrap.tracing.decorators import traced
 
-from engineering_influence.domain.project import Project
+from engineering_influence.models.project import Project
 from engineering_influence.services.interfaces.start_pipeline_interface import (
     StartPipelineInterface,
 )

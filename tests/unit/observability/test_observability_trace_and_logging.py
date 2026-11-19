@@ -9,7 +9,6 @@ from typing import Any
 
 import pytest
 
-from engineering_influence.domain.trace_context import TraceContext
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
 from engineering_influence.infrastructure.observability.context_var_correlation import (
     ContextVarCorrelation,
@@ -21,7 +20,8 @@ from engineering_influence.infrastructure.observability.correlating_queue import
 from engineering_influence.infrastructure.observability.json_logging_configurator import (
     JsonLoggingConfigurator,
 )
-from engineering_influence.interfaces.phase_handler_port import PhaseHandlerPort
+from engineering_influence.interfaces.phase_handler_interface import PhaseHandlerInterface
+from engineering_influence.models.trace_context import TraceContext
 
 TRACE = "4bf92f3577b34da6a3ce929d0e0e4736"
 SPAN = "00f067aa0ba902b7"
@@ -136,7 +136,7 @@ class Job:
         self.payload = payload
 
 
-class SeenHandler(PhaseHandlerPort):
+class SeenHandler(PhaseHandlerInterface):
     """Records the correlation id active while it ran."""
 
     def __init__(self, correlation: ContextVarCorrelation) -> None:

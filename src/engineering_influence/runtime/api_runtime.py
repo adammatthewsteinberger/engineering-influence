@@ -22,10 +22,10 @@ from engineering_influence.infrastructure.security.constant_time_api_key_verifie
 from engineering_influence.infrastructure.security.token_bucket_rate_limiter import (
     TokenBucketRateLimiter,
 )
-from engineering_influence.interaction.api.api_guard import ApiGuard
-from engineering_influence.interaction.api.api_observability import ApiObservability
-from engineering_influence.interaction.api.application import ApiApplication
-from engineering_influence.interfaces.secret_provider_port import SecretProviderPort
+from engineering_influence.interactions.api.api_guard import ApiGuard
+from engineering_influence.interactions.api.api_observability import ApiObservability
+from engineering_influence.interactions.api.application import ApiApplication
+from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
 from engineering_influence.repositories.sqlmodel_ledger import SqlModelLedger
 from engineering_influence.runtime.app_settings import AppSettings
 from engineering_influence.runtime.endpoint_checks import EndpointChecks
@@ -42,7 +42,7 @@ class ApiRuntime:
     def __init__(
         self,
         settings: AppSettings,
-        secrets: SecretProviderPort,
+        secrets: SecretProviderInterface,
         server: Callable[..., None] | None = None,
     ) -> None:
         self._settings = settings

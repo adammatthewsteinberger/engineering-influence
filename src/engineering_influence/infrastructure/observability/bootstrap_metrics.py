@@ -4,10 +4,10 @@
 from vibey_bootstrap.counters import bump_counter, counter_snapshot
 from vibey_bootstrap.tracing.latency import latency_snapshot
 
-from engineering_influence.interfaces.metrics_port import MetricsPort
+from engineering_influence.interfaces.metrics_interface import MetricsInterface
 
 
-class BootstrapMetrics(MetricsPort):
+class BootstrapMetrics(MetricsInterface):
     """Counters and latencies are process-local; scrape each replica separately."""
 
     def increment(self, name: str, amount: int = 1) -> None:

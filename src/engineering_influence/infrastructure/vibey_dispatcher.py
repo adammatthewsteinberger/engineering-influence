@@ -4,10 +4,10 @@
 from importlib import import_module
 from typing import Any
 
-from engineering_influence.interfaces.handler_registry_port import HandlerRegistryPort
+from engineering_influence.interfaces.handler_registry_interface import HandlerRegistryInterface
 
 
-class VibeyHandlerRegistry(HandlerRegistryPort):
+class VibeyHandlerRegistry(HandlerRegistryInterface):
     """Own the third-party handler maps passed to vibey's dispatcher."""
 
     def __init__(self) -> None:

@@ -2,9 +2,9 @@
 
 import pytest
 
-from engineering_influence.interaction.cli.main import CliApplication, main
-from engineering_influence.interfaces.ledger_port import LedgerPort
-from engineering_influence.interfaces.queue_port import QueuePort
+from engineering_influence.interactions.cli.main import CliApplication, main
+from engineering_influence.interfaces.ledger_interface import LedgerInterface
+from engineering_influence.interfaces.queue_interface import QueueInterface
 from engineering_influence.services.interfaces.start_pipeline_interface import (
     StartPipelineInterface,
 )
@@ -42,11 +42,11 @@ def test_cli_main_exits_with_application_status(monkeypatch: pytest.MonkeyPatch)
 
 
 def test_abstract_port_bodies_are_fail_closed() -> None:
-    class LedgerProbe(LedgerPort):
+    class LedgerProbe(LedgerInterface):
         def append(self, event_name: str, payload: dict[str, object]) -> None:
             super().append(event_name, payload)
 
-    class QueueProbe(QueuePort):
+    class QueueProbe(QueueInterface):
         def enqueue(self, kind: str, payload: dict[str, object]) -> str:
             return super().enqueue(kind, payload)
 

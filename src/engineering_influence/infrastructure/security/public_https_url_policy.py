@@ -7,12 +7,14 @@ from collections.abc import Callable
 from urllib.parse import urlsplit
 
 from engineering_influence.contracts.security_verdict import SecurityVerdict
-from engineering_influence.interfaces.outbound_url_policy_port import OutboundUrlPolicyPort
+from engineering_influence.interfaces.outbound_url_policy_interface import (
+    OutboundUrlPolicyInterface,
+)
 
 Resolver = Callable[[str], list[str]]
 
 
-class PublicHttpsUrlPolicy(OutboundUrlPolicyPort):
+class PublicHttpsUrlPolicy(OutboundUrlPolicyInterface):
     """Allow only https URLs whose every resolved address is publicly routable.
 
     The check resolves the name when called. A hostile DNS server can answer

@@ -8,8 +8,8 @@ from typing import Any
 
 from vibey_bootstrap.heartbeat import start_heartbeat
 
-from engineering_influence.interfaces.alert_port import AlertPort
-from engineering_influence.interfaces.metrics_port import MetricsPort
+from engineering_influence.interfaces.alert_interface import AlertInterface
+from engineering_influence.interfaces.metrics_interface import MetricsInterface
 
 
 class WorkerHeartbeat:
@@ -22,8 +22,8 @@ class WorkerHeartbeat:
 
     def __init__(
         self,
-        metrics: MetricsPort,
-        alerts: AlertPort,
+        metrics: MetricsInterface,
+        alerts: AlertInterface,
         heartbeat_seconds: float = 300.0,
         silence_seconds: float = 1800.0,
         check_seconds: float = 60.0,

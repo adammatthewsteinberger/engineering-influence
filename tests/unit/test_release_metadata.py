@@ -9,9 +9,9 @@ import pytest
 import engineering_influence
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
-from engineering_influence.interaction.api.api_guard import ApiGuard
-from engineering_influence.interaction.api.application import ApiApplication
-from engineering_influence.interaction.cli.main import CliApplication
+from engineering_influence.interactions.api.api_guard import ApiGuard
+from engineering_influence.interactions.api.application import ApiApplication
+from engineering_influence.interactions.cli.main import CliApplication
 
 ROOT = Path(__file__).resolve().parents[2]
 

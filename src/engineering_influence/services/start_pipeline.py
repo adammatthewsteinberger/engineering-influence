@@ -1,9 +1,9 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Start-pipeline application service."""
 
-from engineering_influence.domain.project import Project
-from engineering_influence.interfaces.ledger_port import LedgerPort
-from engineering_influence.interfaces.queue_port import QueuePort
+from engineering_influence.interfaces.ledger_interface import LedgerInterface
+from engineering_influence.interfaces.queue_interface import QueueInterface
+from engineering_influence.models.project import Project
 from engineering_influence.services.interfaces.start_pipeline_interface import (
     StartPipelineInterface,
 )
@@ -12,7 +12,7 @@ from engineering_influence.services.interfaces.start_pipeline_interface import (
 class StartPipeline(StartPipelineInterface):
     """Coordinates the first durable pipeline event and job."""
 
-    def __init__(self, ledger: LedgerPort, queue: QueuePort) -> None:
+    def __init__(self, ledger: LedgerInterface, queue: QueueInterface) -> None:
         self._ledger = ledger
         self._queue = queue
 

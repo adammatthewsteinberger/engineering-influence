@@ -72,7 +72,7 @@ Changelog = "https://github.com/adammatthewsteinberger/engineering-influence/blo
 Security = "https://github.com/adammatthewsteinberger/engineering-influence/security/policy"
 
 [project.scripts]
-ei = "engineering_influence.interaction.cli.main:main"
+ei = "engineering_influence.interactions.cli.main:main"
 
 [tool.hatch.version]
 path = "src/engineering_influence/__init__.py"
@@ -131,13 +131,13 @@ engineering-influence-sdk = { workspace = true }
 root_package = "engineering_influence"
 
 [[tool.importlinter.contracts]]
-name = "Domain depends on nothing else"
+name = "Models depend on nothing else"
 type = "forbidden"
-source_modules = ["engineering_influence.domain"]
+source_modules = ["engineering_influence.models"]
 forbidden_modules = [
   "engineering_influence.services", "engineering_influence.controllers",
   "engineering_influence.infrastructure", "engineering_influence.repositories",
-  "engineering_influence.interaction", "engineering_influence.interfaces",
+  "engineering_influence.interactions", "engineering_influence.interfaces",
   "engineering_influence.contracts", "engineering_influence.runtime",
 ]
 
@@ -147,7 +147,7 @@ type = "forbidden"
 source_modules = ["engineering_influence.services", "engineering_influence.controllers"]
 forbidden_modules = [
   "engineering_influence.infrastructure", "engineering_influence.repositories",
-  "engineering_influence.interaction", "engineering_influence.runtime",
+  "engineering_influence.interactions", "engineering_influence.runtime",
 ]
 
 [[tool.mypy.overrides]]

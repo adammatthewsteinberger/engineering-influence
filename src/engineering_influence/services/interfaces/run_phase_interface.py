@@ -3,9 +3,9 @@
 
 from abc import ABC, abstractmethod
 
-from engineering_influence.domain.artifact import Artifact
-from engineering_influence.domain.gate import Gate
-from engineering_influence.domain.phase_run import PhaseRun
+from engineering_influence.models.artifact import Artifact
+from engineering_influence.models.gate import Gate
+from engineering_influence.models.phase_run import PhaseRun
 
 
 class RunPhaseInterface(ABC):

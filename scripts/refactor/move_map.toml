@@ -162,6 +162,7 @@ interface = "GateInterface"
 interface_module = "engineering_influence.models.interfaces.gate_interface"
 interface_style = "abc"
 decision = "signal"
+note = "GateInterface clashes with the GatePort interface (interfaces/gate_interface.py); rename one before R8"
 
 [[class]]
 old = "engineering_influence.domain.gate_kind"
@@ -746,7 +747,7 @@ decision = "signal"
 note = "constructs services; composition moves to runtime in R2"
 
 [[class]]
-old = "engineering_influence.interaction.webhooks.delivery"
+old = "engineering_influence.interactions.webhooks.delivery"
 name = "WebhookDelivery"
 new = "engineering_influence.infrastructure.webhooks.delivery"
 new_name = "WebhookDelivery"
@@ -756,6 +757,7 @@ interface = "WebhookDeliveryInterface"
 interface_module = "engineering_influence.infrastructure.webhooks.interfaces.delivery_interface"
 interface_style = "abc"
 decision = "curated"
+note = "R1 renamed interaction to interactions; R2 moves it to infrastructure. Its WebhookDeliveryInterface clashes with the WebhookDeliveryPort interface (interfaces/webhook_delivery_interface.py); it already implements that port, so reuse it"
 
 [[class]]
 old = "engineering_influence.interaction.webhooks.signed_request_verifier"
@@ -770,7 +772,7 @@ interface_style = "abc"
 decision = "signal"
 
 [[class]]
-old = "engineering_influence.interaction.webhooks.signer"
+old = "engineering_influence.interactions.webhooks.signer"
 name = "WebhookSigner"
 new = "engineering_influence.infrastructure.webhooks.signer"
 new_name = "WebhookSigner"
@@ -780,6 +782,7 @@ interface = "WebhookSignerInterface"
 interface_module = "engineering_influence.infrastructure.webhooks.interfaces.signer_interface"
 interface_style = "abc"
 decision = "curated"
+note = "R1 renamed interaction to interactions; R2 moves it to infrastructure"
 
 [[class]]
 old = "engineering_influence.interfaces.alert_port"

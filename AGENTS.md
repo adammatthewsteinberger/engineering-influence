@@ -8,7 +8,7 @@ infrastructure code. `llms.txt` lists the documents.
 
 ## Rules
 
-- Keep `domain/` pure. External effects go behind a port in `interfaces/` with an adapter in
+- Keep `models/` pure. External effects go behind a port in `interfaces/` with an adapter in
   `infrastructure/` or `repositories/`.
 - One class per file; no loose production functions; interfaces in sibling `interfaces/` folders.
 - Layers point inward: transports call controllers, controllers call services. `uv run lint-imports` enforces it.

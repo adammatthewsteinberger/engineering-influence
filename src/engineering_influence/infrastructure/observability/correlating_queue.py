@@ -1,15 +1,15 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Queue decorator that carries the correlation id into every job."""
 
-from engineering_influence.domain.trace_context import TraceContext
-from engineering_influence.interfaces.correlation_port import CorrelationPort
-from engineering_influence.interfaces.queue_port import QueuePort
+from engineering_influence.interfaces.correlation_interface import CorrelationInterface
+from engineering_influence.interfaces.queue_interface import QueueInterface
+from engineering_influence.models.trace_context import TraceContext
 
 
-class CorrelatingQueue(QueuePort):
+class CorrelatingQueue(QueueInterface):
     """Stamp ``correlation_id`` (and ``traceparent``) onto a copy of each payload."""
 
-    def __init__(self, inner: QueuePort, correlation: CorrelationPort) -> None:
+    def __init__(self, inner: QueueInterface, correlation: CorrelationInterface) -> None:
         self._inner = inner
         self._correlation = correlation
 

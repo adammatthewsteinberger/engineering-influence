@@ -5,7 +5,7 @@ import logging
 
 from engineering_influence.contracts.health_status import HealthStatus
 from engineering_influence.contracts.readiness_report import ReadinessReport
-from engineering_influence.interfaces.health_check_port import HealthCheckPort
+from engineering_influence.interfaces.health_check_interface import HealthCheckInterface
 from engineering_influence.services.interfaces.readiness_probe_interface import (
     ReadinessProbeInterface,
 )
@@ -16,7 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 class ReadinessProbe(ReadinessProbeInterface):
     """Run every check; a check that raises counts as unhealthy, never as an error."""
 
-    def __init__(self, checks: tuple[HealthCheckPort, ...]) -> None:
+    def __init__(self, checks: tuple[HealthCheckInterface, ...]) -> None:
         self._checks = checks
 
     def check(self) -> ReadinessReport:
@@ -25,7 +25,7 @@ class ReadinessProbe(ReadinessProbeInterface):
         return ReadinessReport(ready=all(status.healthy for status in statuses), checks=statuses)
 
     @staticmethod
-    def _run(check: HealthCheckPort) -> HealthStatus:
+    def _run(check: HealthCheckInterface) -> HealthStatus:
         try:
             status = check.check()
         except Exception as error:  # noqa: BLE001 - a broken check must not break the probe

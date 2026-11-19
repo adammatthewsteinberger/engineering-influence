@@ -11,14 +11,14 @@ from engineering_influence.contracts.job_outcome import JobOutcome
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.infrastructure.deterministic_runner import DeterministicRunner
 from engineering_influence.infrastructure.non_empty_artifact_gate import NonEmptyArtifactGate
-from engineering_influence.interfaces.ledger_port import LedgerPort
-from engineering_influence.interfaces.queue_port import QueuePort
-from engineering_influence.interfaces.runner_port import RunnerPort
+from engineering_influence.interfaces.ledger_interface import LedgerInterface
+from engineering_influence.interfaces.queue_interface import QueueInterface
+from engineering_influence.interfaces.runner_interface import RunnerInterface
 from engineering_influence.services.process_job import ProcessJob
 from engineering_influence.services.run_phase import RunPhase
 
 
-class Ledger(LedgerPort):
+class Ledger(LedgerInterface):
     def __init__(self) -> None:
         self.events: list[tuple[str, dict[str, object]]] = []
         self.threads: list[str] = []
@@ -28,7 +28,7 @@ class Ledger(LedgerPort):
         self.events.append((event_name, payload))
 
 
-class Queue(QueuePort):
+class Queue(QueueInterface):
     def __init__(self) -> None:
         self.jobs: list[tuple[str, dict[str, object]]] = []
 
@@ -37,7 +37,7 @@ class Queue(QueuePort):
         return f"job-{len(self.jobs)}"
 
 
-class LoopHostileQueue(QueuePort):
+class LoopHostileQueue(QueueInterface):
     """Behaves like the RabbitMQ adapter: it starts its own event loop to publish."""
 
     def __init__(self) -> None:
@@ -51,13 +51,13 @@ class LoopHostileQueue(QueuePort):
         return "job"
 
 
-class BlankRunner(RunnerPort):
+class BlankRunner(RunnerInterface):
     async def run(self, phase: str, context: dict[str, object]) -> str:
         return "   "
 
 
 def service(
-    queue: QueuePort | None = None, runner: RunnerPort | None = None
+    queue: QueueInterface | None = None, runner: RunnerInterface | None = None
 ) -> tuple[ProcessJob, Ledger, Any]:
     ledger = Ledger()
     queue = queue or Queue()

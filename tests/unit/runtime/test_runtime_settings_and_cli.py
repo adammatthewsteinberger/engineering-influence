@@ -9,9 +9,9 @@ import pytest
 
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.infrastructure.security.env_secret_provider import EnvSecretProvider
-from engineering_influence.interaction.cli.main import CliApplication
-from engineering_influence.interaction.cli.serve_cli import ServeCli
-from engineering_influence.interfaces.secret_provider_port import SecretProviderPort
+from engineering_influence.interactions.cli.main import CliApplication
+from engineering_influence.interactions.cli.serve_cli import ServeCli
+from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
 from engineering_influence.runtime.app_settings import AppSettings
 from engineering_influence.runtime.endpoint_checks import EndpointChecks
 from engineering_influence.runtime.environment_settings_loader import EnvironmentSettingsLoader
@@ -20,7 +20,7 @@ DB = "postgresql+psycopg://svc:s3cretpw@db.internal:5432/ei"
 MQ = "amqp://svc:rabbitpw@mq.internal:5672/"
 
 
-class MappingSecrets(SecretProviderPort):
+class MappingSecrets(SecretProviderInterface):
     def __init__(self, values: Mapping[str, str]) -> None:
         self._values = values
 
@@ -192,7 +192,7 @@ def test_a_value_error_also_exits_2(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_a_startup_failure_inside_the_runner_exits_2(monkeypatch: pytest.MonkeyPatch) -> None:
-    def failing(_: AppSettings, __: SecretProviderPort) -> None:
+    def failing(_: AppSettings, __: SecretProviderInterface) -> None:
         raise ApplicationError("SECRET_MISSING", "required secret EI_API_KEYS is not configured")
 
     serve = ServeCli(MappingSecrets(REQUIRED), run_api=failing)

@@ -47,7 +47,7 @@ Be exact about today's state (alpha `0.1.0a1`):
 
 So today you can run the full orchestration end to end and produce KDP-ready packaging from
 a manuscript; fully autonomous drafting arrives when a real runner is plugged into the
-`RunnerPort`. This page is updated as each row changes.
+`RunnerInterface`. This page is updated as each row changes.
 
 ## Fiction and non-fiction
 
