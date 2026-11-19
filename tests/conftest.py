@@ -8,7 +8,7 @@ from engineering_influence.infrastructure.security.constant_time_api_key_verifie
 from engineering_influence.infrastructure.security.token_bucket_rate_limiter import (
     TokenBucketRateLimiter,
 )
-from engineering_influence.interaction.api.api_guard import ApiGuard
+from engineering_influence.interactions.api.api_guard import ApiGuard
 
 TEST_API_KEY = "test-api-key-0123456789abcdef"  # gitleaks:allow
 

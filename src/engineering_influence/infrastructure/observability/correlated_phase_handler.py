@@ -3,14 +3,14 @@
 
 from typing import Any
 
-from engineering_influence.interfaces.correlation_port import CorrelationPort
-from engineering_influence.interfaces.phase_handler_port import PhaseHandlerPort
+from engineering_influence.interfaces.correlation_interface import CorrelationInterface
+from engineering_influence.interfaces.phase_handler_interface import PhaseHandlerInterface
 
 
-class CorrelatedPhaseHandler(PhaseHandlerPort):
+class CorrelatedPhaseHandler(PhaseHandlerInterface):
     """Run the inner handler inside the id the job was queued with."""
 
-    def __init__(self, inner: PhaseHandlerPort, correlation: CorrelationPort) -> None:
+    def __init__(self, inner: PhaseHandlerInterface, correlation: CorrelationInterface) -> None:
         self._inner = inner
         self._correlation = correlation
 

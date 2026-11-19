@@ -3,10 +3,10 @@
 
 from abc import ABC, abstractmethod
 
-from engineering_influence.interfaces.ledger_port import LedgerPort
+from engineering_influence.interfaces.ledger_interface import LedgerInterface
 
 
-class LedgerRepositoryInterface(LedgerPort, ABC):
+class LedgerRepositoryInterface(LedgerInterface, ABC):
     """Append-only event repository with readback for recovery."""
 
     @abstractmethod

@@ -6,9 +6,9 @@ from engineering_influence.contracts.project_request import ProjectRequest
 from engineering_influence.controllers.interfaces.project_controller_interface import (
     ProjectControllerInterface,
 )
-from engineering_influence.domain.governing_postulates import GoverningPostulates
-from engineering_influence.domain.pipeline_stage import PipelineStage
-from engineering_influence.domain.project import Project
+from engineering_influence.models.governing_postulates import GoverningPostulates
+from engineering_influence.models.pipeline_stage import PipelineStage
+from engineering_influence.models.project import Project
 from engineering_influence.services.interfaces.start_pipeline_interface import (
     StartPipelineInterface,
 )

@@ -1,24 +1,24 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Application ports."""
 
-from engineering_influence.interfaces.gate_port import GatePort
-from engineering_influence.interfaces.handler_registry_port import HandlerRegistryPort
-from engineering_influence.interfaces.ledger_port import LedgerPort
-from engineering_influence.interfaces.outbox_port import OutboxPort
-from engineering_influence.interfaces.phase_handler_port import PhaseHandlerPort
-from engineering_influence.interfaces.queue_port import QueuePort
-from engineering_influence.interfaces.runner_port import RunnerPort
-from engineering_influence.interfaces.webhook_delivery_port import WebhookDeliveryPort
-from engineering_influence.interfaces.workflow_port import WorkflowPort
+from engineering_influence.interfaces.gate_interface import GateInterface
+from engineering_influence.interfaces.handler_registry_interface import HandlerRegistryInterface
+from engineering_influence.interfaces.ledger_interface import LedgerInterface
+from engineering_influence.interfaces.outbox_interface import OutboxInterface
+from engineering_influence.interfaces.phase_handler_interface import PhaseHandlerInterface
+from engineering_influence.interfaces.queue_interface import QueueInterface
+from engineering_influence.interfaces.runner_interface import RunnerInterface
+from engineering_influence.interfaces.webhook_delivery_interface import WebhookDeliveryInterface
+from engineering_influence.interfaces.workflow_interface import WorkflowInterface
 
 __all__ = [
-    "GatePort",
-    "HandlerRegistryPort",
-    "LedgerPort",
-    "OutboxPort",
-    "PhaseHandlerPort",
-    "QueuePort",
-    "RunnerPort",
-    "WebhookDeliveryPort",
-    "WorkflowPort",
+    "GateInterface",
+    "HandlerRegistryInterface",
+    "LedgerInterface",
+    "OutboxInterface",
+    "PhaseHandlerInterface",
+    "QueueInterface",
+    "RunnerInterface",
+    "WebhookDeliveryInterface",
+    "WorkflowInterface",
 ]

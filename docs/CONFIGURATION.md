@@ -32,7 +32,7 @@ timestamp window and replays, in that order: `SignedRequestVerifier` does.
 
 ## Outbound destinations
 
-`WebhookDelivery` requires an `OutboundUrlPolicyPort`. `PublicHttpsUrlPolicy`
+`WebhookDelivery` requires an `OutboundUrlPolicyInterface`. `PublicHttpsUrlPolicy`
 allows only `https` URLs without embedded credentials whose every resolved
 address is publicly routable, which blocks loopback, private ranges and cloud
 metadata addresses. It resolves the name when called, so DNS rebinding is still

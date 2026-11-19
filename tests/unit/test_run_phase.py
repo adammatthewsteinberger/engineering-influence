@@ -4,23 +4,23 @@ import asyncio
 
 import pytest
 
-from engineering_influence.domain.gate import Gate
-from engineering_influence.domain.gate_kind import GateKind
-from engineering_influence.domain.phase_run import PhaseRun
-from engineering_influence.domain.phase_state import PhaseState
-from engineering_influence.interfaces.gate_port import GatePort
-from engineering_influence.interfaces.runner_port import RunnerPort
+from engineering_influence.interfaces.gate_interface import GateInterface
+from engineering_influence.interfaces.runner_interface import RunnerInterface
+from engineering_influence.models.gate import Gate
+from engineering_influence.models.gate_kind import GateKind
+from engineering_influence.models.phase_run import PhaseRun
+from engineering_influence.models.phase_state import PhaseState
 from engineering_influence.services.run_phase import RunPhase
 
 
-class RunnerFake(RunnerPort):
+class RunnerFake(RunnerInterface):
     """Returns deterministic phase content."""
 
     async def run(self, phase: str, context: dict[str, object]) -> str:
         return f"{phase}:{context['project_slug']}"
 
 
-class GateFake(GatePort):
+class GateFake(GateInterface):
     """Returns a configured automatic-gate decision."""
 
     def __init__(self, accepted: bool) -> None:

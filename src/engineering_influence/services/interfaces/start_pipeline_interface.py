@@ -3,7 +3,7 @@
 
 from abc import ABC, abstractmethod
 
-from engineering_influence.domain.project import Project
+from engineering_influence.models.project import Project
 
 
 class StartPipelineInterface(ABC):

@@ -4,7 +4,7 @@
 import os
 from collections.abc import Mapping
 
-from engineering_influence.interfaces.secret_provider_port import SecretProviderPort
+from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
 from engineering_influence.runtime.app_settings import AppSettings
 
 _LEVELS = frozenset({"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"})
@@ -18,7 +18,7 @@ class EnvironmentSettingsLoader:
     """
 
     def __init__(
-        self, secrets: SecretProviderPort, environ: Mapping[str, str] | None = None
+        self, secrets: SecretProviderInterface, environ: Mapping[str, str] | None = None
     ) -> None:
         self._secrets = secrets
         self._environ = os.environ if environ is None else environ

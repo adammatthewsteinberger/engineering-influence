@@ -31,15 +31,15 @@ from engineering_influence.infrastructure.security.public_https_url_policy impor
 from engineering_influence.infrastructure.security.token_bucket_rate_limiter import (
     TokenBucketRateLimiter,
 )
-from engineering_influence.interaction.api.api_guard import ApiGuard
-from engineering_influence.interaction.api.api_observability import ApiObservability
-from engineering_influence.interaction.api.application import ApiApplication
-from engineering_influence.interaction.api.request_context_middleware import (
+from engineering_influence.interactions.api.api_guard import ApiGuard
+from engineering_influence.interactions.api.api_observability import ApiObservability
+from engineering_influence.interactions.api.application import ApiApplication
+from engineering_influence.interactions.api.request_context_middleware import (
     RequestContextMiddleware,
 )
-from engineering_influence.interaction.webhooks import WebhookDelivery
-from engineering_influence.interfaces.health_check_port import HealthCheckPort
-from engineering_influence.interfaces.metrics_port import MetricsPort
+from engineering_influence.interactions.webhooks import WebhookDelivery
+from engineering_influence.interfaces.health_check_interface import HealthCheckInterface
+from engineering_influence.interfaces.metrics_interface import MetricsInterface
 from engineering_influence.services.readiness_probe import ReadinessProbe
 
 KEY = "a-valid-api-key-0123456789"  # gitleaks:allow
@@ -48,7 +48,7 @@ PROJECT = {"slug": "demo", "title": "Demo", "postulates": ["Evidence first."], "
 TRACE = "4bf92f3577b34da6a3ce929d0e0e4736"
 
 
-class CountingMetrics(MetricsPort):
+class CountingMetrics(MetricsInterface):
     """Deterministic in-memory metrics."""
 
     def __init__(self) -> None:
@@ -64,7 +64,7 @@ class CountingMetrics(MetricsPort):
         return {}
 
 
-class Toggle(HealthCheckPort):
+class Toggle(HealthCheckInterface):
     """A dependency whose health the test controls."""
 
     def __init__(self, healthy: bool = True) -> None:

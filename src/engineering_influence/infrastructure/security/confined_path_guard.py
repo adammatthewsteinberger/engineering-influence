@@ -6,10 +6,10 @@ from pathlib import Path
 from vibey_bootstrap.path_safety import confine_to_root, sanitize_path_segment
 
 from engineering_influence.errors.application_error import ApplicationError
-from engineering_influence.interfaces.path_guard_port import PathGuardPort
+from engineering_influence.interfaces.path_guard_interface import PathGuardInterface
 
 
-class ConfinedPathGuard(PathGuardPort):
+class ConfinedPathGuard(PathGuardInterface):
     """Resolve caller paths against a root and refuse any that leave it."""
 
     def confine(self, raw: str | Path, root: Path) -> Path:

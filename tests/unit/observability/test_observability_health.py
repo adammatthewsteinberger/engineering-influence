@@ -10,7 +10,7 @@ from engineering_influence.infrastructure.observability.tcp_health_check import 
 from engineering_influence.infrastructure.observability.toolchain_health_check import (
     ToolchainHealthCheck,
 )
-from engineering_influence.interfaces.health_check_port import HealthCheckPort
+from engineering_influence.interfaces.health_check_interface import HealthCheckInterface
 from engineering_influence.services.readiness_probe import ReadinessProbe
 
 
@@ -81,7 +81,7 @@ def test_the_default_locator_uses_the_real_path() -> None:
     assert not ToolchainHealthCheck(("definitely-not-installed-xyz",)).check().healthy
 
 
-class Fixed(HealthCheckPort):
+class Fixed(HealthCheckInterface):
     """A check with a canned result."""
 
     def __init__(self, name: str, healthy: bool) -> None:
@@ -98,7 +98,7 @@ class Fixed(HealthCheckPort):
         )
 
 
-class Exploding(HealthCheckPort):
+class Exploding(HealthCheckInterface):
     """A check that raises, as a buggy third-party client might."""
 
     @property

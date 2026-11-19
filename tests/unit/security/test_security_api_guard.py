@@ -11,9 +11,9 @@ from engineering_influence.infrastructure.security.constant_time_api_key_verifie
 from engineering_influence.infrastructure.security.token_bucket_rate_limiter import (
     TokenBucketRateLimiter,
 )
-from engineering_influence.interaction.api.api_guard import ApiGuard
-from engineering_influence.interaction.api.application import ApiApplication
-from engineering_influence.interfaces.rate_limiter_port import RateLimiterPort
+from engineering_influence.interactions.api.api_guard import ApiGuard
+from engineering_influence.interactions.api.application import ApiApplication
+from engineering_influence.interfaces.rate_limiter_interface import RateLimiterInterface
 
 KEY = "a-valid-api-key-0123456789"  # gitleaks:allow
 PROJECT = {"slug": "demo", "title": "Demo", "postulates": ["Evidence first."], "stages": ["thesis"]}
@@ -101,7 +101,7 @@ def test_rate_limit_response_is_retryable() -> None:
     assert limited.json()["code"] == "RATE_LIMITED"
 
 
-class RecordingLimiter(RateLimiterPort):
+class RecordingLimiter(RateLimiterInterface):
     """Admits everything except keys with a denied prefix, and records what it was asked."""
 
     def __init__(self, denied_prefix: str = "") -> None:

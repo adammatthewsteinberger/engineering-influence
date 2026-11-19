@@ -3,13 +3,13 @@
 
 import logging
 
-from engineering_influence.interfaces.alert_port import AlertPort
-from engineering_influence.interfaces.metrics_port import MetricsPort
-from engineering_influence.interfaces.outbox_port import (
-    OutboxPort,
+from engineering_influence.interfaces.alert_interface import AlertInterface
+from engineering_influence.interfaces.metrics_interface import MetricsInterface
+from engineering_influence.interfaces.outbox_interface import (
+    OutboxInterface,
 )
-from engineering_influence.interfaces.webhook_delivery_port import (
-    WebhookDeliveryPort,
+from engineering_influence.interfaces.webhook_delivery_interface import (
+    WebhookDeliveryInterface,
 )
 from engineering_influence.services.interfaces.dispatch_outbox_interface import (
     DispatchOutboxInterface,
@@ -23,10 +23,10 @@ class DispatchOutbox(DispatchOutboxInterface):
 
     def __init__(
         self,
-        outbox: OutboxPort,
-        delivery: WebhookDeliveryPort,
-        metrics: MetricsPort,
-        alerts: AlertPort,
+        outbox: OutboxInterface,
+        delivery: WebhookDeliveryInterface,
+        metrics: MetricsInterface,
+        alerts: AlertInterface,
         max_attempts: int = 5,
     ) -> None:
         if max_attempts < 1:

@@ -7,18 +7,18 @@ from uuid import uuid4
 from vibey.application.worker import Park, Success
 
 from engineering_influence.infrastructure.vibey_phase_handler import VibeyPhaseHandler
-from engineering_influence.interfaces.gate_port import GatePort
-from engineering_influence.interfaces.runner_port import RunnerPort
+from engineering_influence.interfaces.gate_interface import GateInterface
+from engineering_influence.interfaces.runner_interface import RunnerInterface
 
 
-class RunnerFake(RunnerPort):
+class RunnerFake(RunnerInterface):
     """Returns a deterministic artifact."""
 
     async def run(self, phase: str, context: dict[str, object]) -> str:
         return f"content:{phase}"
 
 
-class GateFake(GatePort):
+class GateFake(GateInterface):
     """Returns a configured gate decision."""
 
     def __init__(self, accepted: bool) -> None:

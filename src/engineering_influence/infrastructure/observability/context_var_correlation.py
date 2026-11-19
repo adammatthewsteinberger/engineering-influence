@@ -5,10 +5,10 @@ from contextlib import AbstractContextManager
 
 from vibey_bootstrap.logging.correlation import correlation_scope, get_correlation_id
 
-from engineering_influence.interfaces.correlation_port import CorrelationPort
+from engineering_influence.interfaces.correlation_interface import CorrelationInterface
 
 
-class ContextVarCorrelation(CorrelationPort):
+class ContextVarCorrelation(CorrelationInterface):
     """Correlation that follows async tasks and, with copied context, worker threads."""
 
     def current(self) -> str | None:

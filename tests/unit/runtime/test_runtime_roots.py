@@ -17,7 +17,7 @@ from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.infrastructure.observability.process_crash_hooks import ProcessCrashHooks
 from engineering_influence.infrastructure.observability.worker_heartbeat import WorkerHeartbeat
 from engineering_influence.infrastructure.rabbitmq_job_consumer import RabbitMqJobConsumer
-from engineering_influence.interfaces.secret_provider_port import SecretProviderPort
+from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
 from engineering_influence.repositories.sqlmodel_ledger import SqlModelLedger
 from engineering_influence.runtime.api_runtime import ApiRuntime
 from engineering_influence.runtime.app_settings import AppSettings
@@ -34,7 +34,7 @@ PROJECT = {
 UNREACHABLE_BROKER = "amqp://svc:rabbitpw@127.0.0.1:1/"
 
 
-class Secrets(SecretProviderPort):
+class Secrets(SecretProviderInterface):
     def __init__(self, values: Mapping[str, str]) -> None:
         self._values = values
 
@@ -48,7 +48,7 @@ class Secrets(SecretProviderPort):
 def api_runtime(request: pytest.FixtureRequest) -> Any:
     """Build an ApiRuntime and close its database pool afterwards."""
 
-    def make(settings: AppSettings, secrets: SecretProviderPort) -> ApiRuntime:
+    def make(settings: AppSettings, secrets: SecretProviderInterface) -> ApiRuntime:
         runtime = ApiRuntime(settings, secrets)
         request.addfinalizer(runtime.close)
         return runtime

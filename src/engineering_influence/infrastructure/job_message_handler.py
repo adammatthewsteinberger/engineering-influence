@@ -7,9 +7,9 @@ from typing import Any
 from pydantic import ValidationError
 
 from engineering_influence.contracts.job_message import JobMessage
-from engineering_influence.interfaces.alert_port import AlertPort
-from engineering_influence.interfaces.correlation_port import CorrelationPort
-from engineering_influence.interfaces.metrics_port import MetricsPort
+from engineering_influence.interfaces.alert_interface import AlertInterface
+from engineering_influence.interfaces.correlation_interface import CorrelationInterface
+from engineering_influence.interfaces.metrics_interface import MetricsInterface
 from engineering_influence.services.interfaces.process_job_interface import ProcessJobInterface
 
 _LOGGER = logging.getLogger(__name__)
@@ -26,9 +26,9 @@ class JobMessageHandler:
     def __init__(
         self,
         process_job: ProcessJobInterface,
-        metrics: MetricsPort,
-        alerts: AlertPort,
-        correlation: CorrelationPort,
+        metrics: MetricsInterface,
+        alerts: AlertInterface,
+        correlation: CorrelationInterface,
     ) -> None:
         self._process_job = process_job
         self._metrics = metrics

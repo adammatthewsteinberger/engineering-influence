@@ -5,10 +5,10 @@ import shutil
 from collections.abc import Callable
 
 from engineering_influence.contracts.health_status import HealthStatus
-from engineering_influence.interfaces.health_check_port import HealthCheckPort
+from engineering_influence.interfaces.health_check_interface import HealthCheckInterface
 
 
-class ToolchainHealthCheck(HealthCheckPort):
+class ToolchainHealthCheck(HealthCheckInterface):
     """Healthy when every required executable is on the PATH."""
 
     def __init__(

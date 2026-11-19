@@ -2,7 +2,7 @@
 
 import pytest
 
-from engineering_influence.domain import Artifact, Gate, GateKind
+from engineering_influence.models import Artifact, Gate, GateKind
 
 
 def test_artifact_keeps_gate_kind_and_rubric() -> None:

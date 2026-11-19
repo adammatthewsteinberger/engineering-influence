@@ -12,7 +12,7 @@ from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.infrastructure.security.public_https_url_policy import (
     PublicHttpsUrlPolicy,
 )
-from engineering_influence.interaction.webhooks import (
+from engineering_influence.interactions.webhooks import (
     SignedRequestVerifier,
     WebhookDelivery,
     WebhookSigner,

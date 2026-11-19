@@ -1,10 +1,10 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Deterministic in-memory queue for local CLI and tests."""
 
-from engineering_influence.interfaces.queue_port import QueuePort
+from engineering_influence.interfaces.queue_interface import QueueInterface
 
 
-class InMemoryQueue(QueuePort):
+class InMemoryQueue(QueueInterface):
     """Queue adapter that records jobs and returns stable local identifiers."""
 
     def __init__(self) -> None:

@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock
 
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
-from engineering_influence.interaction.mcp.application import McpApplication
+from engineering_influence.interactions.mcp.application import McpApplication
 
 
 def test_mcp_exposes_start_pipeline_tool() -> None:

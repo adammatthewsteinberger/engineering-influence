@@ -9,10 +9,10 @@ from vibey_bootstrap.ingress.classifier import AttachmentClassifier
 from vibey_bootstrap.ingress.zip_safety import enforce_zip_safety_limits
 
 from engineering_influence.contracts.security_verdict import SecurityVerdict
-from engineering_influence.interfaces.upload_inspector_port import UploadInspectorPort
+from engineering_influence.interfaces.upload_inspector_interface import UploadInspectorInterface
 
 
-class AttachmentUploadInspector(UploadInspectorPort):
+class AttachmentUploadInspector(UploadInspectorInterface):
     """Run the four ingress gates, then inspect archives before anything extracts them."""
 
     def __init__(

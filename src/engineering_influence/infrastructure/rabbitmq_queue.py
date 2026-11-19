@@ -10,10 +10,10 @@ from uuid import uuid4
 import aio_pika
 
 from engineering_influence.infrastructure.rabbitmq_topology import RabbitMqTopology
-from engineering_influence.interfaces.queue_port import QueuePort
+from engineering_influence.interfaces.queue_interface import QueueInterface
 
 
-class RabbitMqQueueAdapter(QueuePort):
+class RabbitMqQueueAdapter(QueueInterface):
     """Publish durable jobs through a RabbitMQ default exchange."""
 
     def __init__(

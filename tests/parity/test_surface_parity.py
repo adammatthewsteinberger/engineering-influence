@@ -13,10 +13,10 @@ from engineering_influence.contracts.project_request import ProjectRequest
 from engineering_influence.controllers.project_controller import ProjectController
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
-from engineering_influence.interaction.api.api_guard import ApiGuard
-from engineering_influence.interaction.api.application import ApiApplication
-from engineering_influence.interaction.cli.main import CliApplication
-from engineering_influence.interaction.mcp.application import McpApplication
+from engineering_influence.interactions.api.api_guard import ApiGuard
+from engineering_influence.interactions.api.application import ApiApplication
+from engineering_influence.interactions.cli.main import CliApplication
+from engineering_influence.interactions.mcp.application import McpApplication
 from engineering_influence.services.start_pipeline import StartPipeline
 
 ARGS: dict[str, Any] = {

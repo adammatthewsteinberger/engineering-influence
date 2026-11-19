@@ -10,10 +10,10 @@ tests and by `import-linter`, not by convention.
 ## Layers
 
 ```text
-interaction/  REST · MCP · CLI · webhooks     transports: parse input, call a controller
+interactions/ REST · MCP · CLI · webhooks     transports: parse input, call a controller
 controllers/  ProjectController, PublishingController
 services/     StartPipeline, RunPhase, ProcessJob, DispatchOutbox, ReadinessProbe
-domain/       Project, PhaseRun, Gate, Artifact, PipelineStage, GoverningPostulates   (pure)
+models/       Project, PhaseRun, Gate, Artifact, PipelineStage, GoverningPostulates   (pure)
 interfaces/   ports: Ledger, Queue, Runner, Gate, Outbox, WebhookDelivery, Secrets, …
 repositories/ SQLModel ledger and outbox (Postgres)
 infrastructure/ RabbitMQ queue and consumer, in-memory adapters, security, observability, vibey adapters
@@ -57,7 +57,7 @@ The correlation id travels the whole way: request, queued job, worker log lines 
 - **Fail closed.** A missing key, secret or setting stops the process or refuses the request.
 - **Bounded, idempotent, observable, recoverable** side effects: every external effect has a
   timeout or budget, a ledger entry and a path back after a crash.
-- **The domain is pure.** `PhaseRun` is a state machine; nothing in `domain/` performs I/O.
+- **The domain is pure.** `PhaseRun` is a state machine; nothing in `models/` performs I/O.
 
 ## Data
 
@@ -82,8 +82,8 @@ The correlation id travels the whole way: request, queued job, worker log lines 
 
 To add an integration, write a **port**, an **adapter**, an ADR when the choice is
 architectural, and failure/recovery tests (see [CONTRIBUTING.md](../CONTRIBUTING.md)).
-Typical swaps: a model-backed `RunnerPort` and rubric `GatePort` in place of the placeholders;
-another `QueuePort`; another `LedgerPort`.
+Typical swaps: a model-backed `RunnerInterface` and rubric `GateInterface` in place of the placeholders;
+another `QueueInterface`; another `LedgerInterface`.
 
 ## Not built yet
 

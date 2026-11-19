@@ -5,16 +5,16 @@ import asyncio
 import pytest
 
 from engineering_influence.errors.application_error import ApplicationError
-from engineering_influence.interfaces.alert_port import AlertPort
-from engineering_influence.interfaces.metrics_port import MetricsPort
-from engineering_influence.interfaces.webhook_delivery_port import (
-    WebhookDeliveryPort,
+from engineering_influence.interfaces.alert_interface import AlertInterface
+from engineering_influence.interfaces.metrics_interface import MetricsInterface
+from engineering_influence.interfaces.webhook_delivery_interface import (
+    WebhookDeliveryInterface,
 )
 from engineering_influence.repositories import SqlModelOutbox
 from engineering_influence.services.dispatch_outbox import DispatchOutbox
 
 
-class DeliveryFake(WebhookDeliveryPort):
+class DeliveryFake(WebhookDeliveryInterface):
     """Returns configured outcomes (a status, or an exception to raise) while recording calls."""
 
     def __init__(self, outcomes: list[int | Exception]) -> None:
@@ -36,7 +36,7 @@ class DeliveryFake(WebhookDeliveryPort):
         return outcome
 
 
-class MetricsFake(MetricsPort):
+class MetricsFake(MetricsInterface):
     """Counts increments in memory."""
 
     def __init__(self) -> None:
@@ -52,7 +52,7 @@ class MetricsFake(MetricsPort):
         return {}
 
 
-class AlertsFake(AlertPort):
+class AlertsFake(AlertInterface):
     """Records alerts."""
 
     def __init__(self) -> None:
