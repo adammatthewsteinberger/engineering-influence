@@ -16,6 +16,8 @@ from typing import Any
 
 from pypdf import PdfReader
 
+from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
+from engineering_influence.interfaces.pdf_inspector_interface import PdfInspectorInterface
 from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.publishing.qa.render_qa import RenderQa
 from engineering_influence.publishing.release.artifact_inventory import ArtifactInventory
@@ -41,11 +43,15 @@ class PublishPipeline:
         self,
         layout: ProjectLayout,
         steps: PublishSteps,
+        files: ManuscriptSourceInterface,
+        pdfs: PdfInspectorInterface,
         qa: RenderQa | None = None,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
         self._layout = layout
         self._steps = steps
+        self._files = files
+        self._pdfs = pdfs
         self._qa = qa or RenderQa(layout.root)
         self._clock = clock or (lambda: datetime.now(UTC))
         self._relativizer = PathRelativizer(layout.root)
@@ -76,8 +82,10 @@ class PublishPipeline:
             isinstance(release, dict) and bool(release.get("required", False))
         )
 
-        audit_report = BookAuditor(self._layout.root).audit(config)
-        release_report = ReleaseAuditor(self._layout.root).audit(config, strict=strict)
+        audit_report = BookAuditor(self._layout.root, self._files).audit(config)
+        release_report = ReleaseAuditor(self._layout.root, self._files, self._pdfs).audit(
+            config, strict=strict
+        )
         audit_path = report_dir / "manuscript-audit.json"
         release_path = report_dir / "release-readiness.json"
         self._json.write(audit_path, audit_report.as_dict())
@@ -187,7 +195,9 @@ class PublishPipeline:
     def _recheck_release(
         self, result: dict[str, Any], config: Path, pdf: Path, strict: bool, release_path: Path
     ) -> None:
-        report = ReleaseAuditor(self._layout.root).audit(config, pdf=pdf, strict=strict)
+        report = ReleaseAuditor(self._layout.root, self._files, self._pdfs).audit(
+            config, pdf=pdf, strict=strict
+        )
         self._json.write(release_path, report.as_dict())
         result["release_readiness"] = ReleaseSummary().of(
             report, self._relativizer.relative(release_path)

@@ -5,6 +5,7 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
+from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
 from engineering_influence.models.publishing.audit_report import AuditReport
 from engineering_influence.models.publishing.entry import Entry
 from engineering_influence.services.publishing.chapter_opening_check import ChapterOpeningCheck
@@ -26,13 +27,14 @@ class BookAuditor:
     whether a paragraph is beautiful or a claim is wise.
     """
 
-    def __init__(self, root: Path) -> None:
+    def __init__(self, root: Path, files: ManuscriptSourceInterface) -> None:
         self._root = root
+        self._files = files
         self._relativizer = PathRelativizer(root)
 
     def audit(self, config_path: Path) -> AuditReport:
         """Return the audit report for one book config."""
-        config = tomllib.loads(config_path.read_text(encoding="utf-8"))
+        config = tomllib.loads(self._files.read_text(config_path))
         source = self._root / config["source"]
         quality = config.get("quality", {})
         report = AuditReport(
@@ -52,11 +54,11 @@ class BookAuditor:
                 )
             seen.add(file)
             self._audit_entry(report, recorder, quality, source, kind, file, style, number)
-        found = SourceInventoryCheck().run(
+        found = SourceInventoryCheck(self._files).run(
             recorder, source, [file for _, file, _, _ in configured], ignored
         )
         ThresholdCheck().run(report, recorder, quality, source, len(found), len(ignored))
-        FormulaCheck().run(report, recorder, quality, source)
+        FormulaCheck(self._files).run(report, recorder, quality, source)
         report.finish()
         return report
 
@@ -72,13 +74,13 @@ class BookAuditor:
         number: int | None,
     ) -> None:
         path = source / file
-        if not path.exists():
+        if not self._files.exists(path):
             recorder.record(
                 "error", "missing-source", f"configured source file does not exist: {file}", path
             )
             return
         try:
-            text = path.read_text(encoding="utf-8")
+            text = self._files.read_text(path)
         except OSError as exc:
             recorder.record("error", "unreadable-source", f"cannot read {file}: {exc}", path)
             return

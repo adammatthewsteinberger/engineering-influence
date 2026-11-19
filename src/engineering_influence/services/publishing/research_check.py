@@ -4,6 +4,7 @@
 from pathlib import Path
 from typing import Any
 
+from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
 from engineering_influence.models.publishing.release_readiness_report import ReleaseReadinessReport
 from engineering_influence.services.publishing.path_relativizer import PathRelativizer
 from engineering_influence.services.publishing.text_statistics import TextStatistics
@@ -11,6 +12,9 @@ from engineering_influence.services.publishing.text_statistics import TextStatis
 
 class ResearchCheck:
     """Counts words and URLs in the configured research files."""
+
+    def __init__(self, files: ManuscriptSourceInterface) -> None:
+        self._files = files
 
     def run(
         self,
@@ -26,10 +30,10 @@ class ResearchCheck:
         missing: list[str] = []
         for name in (str(item) for item in release.get("required_research_files", [])):
             path = source / name
-            if not path.exists():
+            if not self._files.exists(path):
                 missing.append(name)
                 continue
-            text = path.read_text(encoding="utf-8")
+            text = self._files.read_text(path)
             words += stats.words(text)
             urls += stats.urls(text)
         for name in missing:

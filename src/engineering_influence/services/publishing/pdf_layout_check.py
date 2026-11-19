@@ -1,16 +1,17 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Layout checks: margins, blank-page runs; also collects page text and folios."""
 
-from typing import Any
+from collections.abc import Sequence
 
+from engineering_influence.models.publishing.pdf_page import PdfPage
 from engineering_influence.services.publishing.folio_reader import FolioReader
 from engineering_influence.services.publishing.kdp_geometry import KdpGeometry
 
 
 class PdfLayoutCheck:
-    """Walks pdfplumber pages and reports margin and blank-page violations."""
+    """Walks the pages of a PDF and reports margin and blank-page violations."""
 
-    def run(self, pages: list[Any]) -> tuple[list[str], list[str], list[str | None]]:
+    def run(self, pages: Sequence[PdfPage]) -> tuple[list[str], list[str], list[str | None]]:
         """Return (problems, page texts, printed folios)."""
         geometry = KdpGeometry()
         count = len(pages)
@@ -22,10 +23,9 @@ class PdfLayoutCheck:
         folios: list[str | None] = []
         blank_run = 0
         for index, page in enumerate(pages):
-            texts.append(page.extract_text(x_tolerance=1.5) or "")
+            texts.append(page.text)
             folios.append(reader.read(page))
-            chars = page.chars
-            if not chars:
+            if page.text_box is None:
                 blank_run += 1
                 if blank_run > 2:
                     problems.append(
@@ -33,10 +33,7 @@ class PdfLayoutCheck:
                     )
                 continue
             blank_run = 0
-            x0 = min(c["x0"] for c in chars)
-            x1 = max(c["x1"] for c in chars)
-            top = min(c["top"] for c in chars)
-            bottom = max(c["bottom"] for c in chars)
+            x0, x1, top, bottom = page.text_box
             recto = index % 2 == 0
             inside = x0 if recto else page.width - x1
             outside = page.width - x1 if recto else x0

@@ -4,6 +4,10 @@
 from engineering_influence.controllers.project_controller import ProjectController
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
+from engineering_influence.infrastructure.publishing.filesystem_manuscript_source import (
+    FilesystemManuscriptSource,
+)
+from engineering_influence.infrastructure.publishing.pypdf_pdf_inspector import PypdfPdfInspector
 from engineering_influence.interactions.cli.book_cli import BookCli
 from engineering_influence.interactions.cli.cli_application import CliApplication
 from engineering_influence.interactions.cli.interfaces.cli_application_interface import (
@@ -21,4 +25,5 @@ class CliRuntime(CliRuntimeInterface):
     def build(self) -> CliApplicationInterface:
         """Wire the controller, the book commands and the server commands."""
         controller = ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue()))
-        return CliApplication(controller, BookCli(), ServeCli(ServeStarter()))
+        book_cli = BookCli(FilesystemManuscriptSource(), PypdfPdfInspector())
+        return CliApplication(controller, book_cli, ServeCli(ServeStarter()))

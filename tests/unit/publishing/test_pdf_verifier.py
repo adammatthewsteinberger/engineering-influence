@@ -4,6 +4,10 @@ from pathlib import Path
 
 from reportlab.pdfgen import canvas
 
+from engineering_influence.infrastructure.publishing.filesystem_manuscript_source import (
+    FilesystemManuscriptSource,
+)
+from engineering_influence.infrastructure.publishing.pypdf_pdf_inspector import PypdfPdfInspector
 from engineering_influence.services.publishing.pdf_verifier import PdfVerifier
 
 CONFIG = 'title = "Test Book"\nedition = "First Edition"\n'
@@ -33,7 +37,12 @@ def book(path: Path) -> None:
 def test_clean_book_passes(tmp_path: Path) -> None:
     (tmp_path / "b.toml").write_text(CONFIG, encoding="utf-8")
     book(tmp_path / "b.pdf")
-    assert PdfVerifier().verify(tmp_path / "b.pdf", tmp_path / "b.toml") == []
+    assert (
+        PdfVerifier(PypdfPdfInspector(), FilesystemManuscriptSource()).verify(
+            tmp_path / "b.pdf", tmp_path / "b.toml"
+        )
+        == []
+    )
 
 
 def test_log_problems_are_included_when_log_exists(tmp_path: Path) -> None:
@@ -41,10 +50,17 @@ def test_log_problems_are_included_when_log_exists(tmp_path: Path) -> None:
     book(tmp_path / "b.pdf")
     log = tmp_path / "b.log"
     log.write_text("Overfull \\hbox (9.0pt too wide)", encoding="utf-8")
-    problems = PdfVerifier().verify(tmp_path / "b.pdf", tmp_path / "b.toml", log)
+    problems = PdfVerifier(PypdfPdfInspector(), FilesystemManuscriptSource()).verify(
+        tmp_path / "b.pdf", tmp_path / "b.toml", log
+    )
     assert problems == ["1 overfull lines (worst 9.0pt)"]
     missing = tmp_path / "absent.log"
-    assert PdfVerifier().verify(tmp_path / "b.pdf", tmp_path / "b.toml", missing) == []
+    assert (
+        PdfVerifier(PypdfPdfInspector(), FilesystemManuscriptSource()).verify(
+            tmp_path / "b.pdf", tmp_path / "b.toml", missing
+        )
+        == []
+    )
 
 
 def test_book_without_contents_stops_before_the_log(tmp_path: Path) -> None:
@@ -52,5 +68,7 @@ def test_book_without_contents_stops_before_the_log(tmp_path: Path) -> None:
     make_pdf(tmp_path / "b.pdf", [[(100, 500, "First Edition")]])
     log = tmp_path / "b.log"
     log.write_text("Overfull \\hbox (9.0pt too wide)", encoding="utf-8")
-    problems = PdfVerifier().verify(tmp_path / "b.pdf", tmp_path / "b.toml", log)
+    problems = PdfVerifier(PypdfPdfInspector(), FilesystemManuscriptSource()).verify(
+        tmp_path / "b.pdf", tmp_path / "b.toml", log
+    )
     assert problems == ["no Contents page found"]

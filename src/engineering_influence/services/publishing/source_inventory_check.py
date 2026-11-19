@@ -3,11 +3,15 @@
 
 from pathlib import Path
 
+from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
 from engineering_influence.services.publishing.issue_recorder import IssueRecorder
 
 
 class SourceInventoryCheck:
     """Finds unlisted sources and ignore entries that name missing files."""
+
+    def __init__(self, files: ManuscriptSourceInterface) -> None:
+        self._files = files
 
     def run(
         self,
@@ -17,7 +21,7 @@ class SourceInventoryCheck:
         ignored: list[str],
     ) -> set[str]:
         """Record inventory issues and return the Markdown file names found."""
-        found = {path.name for path in source.glob("*.md")}
+        found = self._files.markdown_names(source)
         for name in sorted(found - (set(listed) | set(ignored))):
             recorder.record(
                 "error",

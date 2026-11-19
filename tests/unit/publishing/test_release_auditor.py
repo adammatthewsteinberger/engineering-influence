@@ -9,6 +9,10 @@ from typing import Any
 import pytest
 from pypdf import PdfWriter
 
+from engineering_influence.infrastructure.publishing.filesystem_manuscript_source import (
+    FilesystemManuscriptSource,
+)
+from engineering_influence.infrastructure.publishing.pypdf_pdf_inspector import PypdfPdfInspector
 from engineering_influence.models.publishing.release_readiness_report import ReleaseReadinessReport
 from engineering_influence.services.publishing.release_auditor import ReleaseAuditor
 
@@ -60,7 +64,9 @@ def audit(
             writer.write(handle)
     path = root / "demo.toml"
     path.write_text(dump(config), encoding="utf-8")
-    return ReleaseAuditor(root, TODAY).audit(path, pdf=pdf, strict=strict)
+    return ReleaseAuditor(root, FilesystemManuscriptSource(), PypdfPdfInspector(), TODAY).audit(
+        path, pdf=pdf, strict=strict
+    )
 
 
 def codes(report: ReleaseReadinessReport) -> list[str]:
@@ -224,7 +230,9 @@ def test_no_pdf_argument_and_no_ebook_price(tmp_path: Path, dump: Dump) -> None:
     change(config)
     path = tmp_path / "demo.toml"
     path.write_text(dump(config), encoding="utf-8")
-    report = ReleaseAuditor(tmp_path, TODAY).audit(path)
+    report = ReleaseAuditor(
+        tmp_path, FilesystemManuscriptSource(), PypdfPdfInspector(), TODAY
+    ).audit(path)
     assert "ebook-price-missing" in codes(report)
     assert report.pricing["estimated_ebook_royalty"] is None
     assert report.formats["page_count"] is None
@@ -235,5 +243,5 @@ def test_default_today_is_used_when_not_injected(tmp_path: Path, dump: Dump) -> 
     (tmp_path / "src" / "research.md").write_text("x", "utf-8")
     path = tmp_path / "demo.toml"
     path.write_text(dump(VALID), encoding="utf-8")
-    report = ReleaseAuditor(tmp_path).audit(path)
+    report = ReleaseAuditor(tmp_path, FilesystemManuscriptSource(), PypdfPdfInspector()).audit(path)
     assert isinstance(report.pricing["verified_age_days"], int)

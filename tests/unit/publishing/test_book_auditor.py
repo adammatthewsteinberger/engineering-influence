@@ -4,6 +4,9 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from engineering_influence.infrastructure.publishing.filesystem_manuscript_source import (
+    FilesystemManuscriptSource,
+)
 from engineering_influence.models.publishing.audit_report import AuditReport
 from engineering_influence.services.publishing.book_auditor import BookAuditor
 from engineering_influence.services.publishing.config_entries import ConfigEntries
@@ -20,7 +23,7 @@ def build(root: Path, dump: Dump, files: dict[str, str], config: dict[str, Any])
     config = {"source": "src", **config}
     path = root / "demo.toml"
     path.write_text(dump(config), encoding="utf-8")
-    return BookAuditor(root).audit(path)
+    return BookAuditor(root, FilesystemManuscriptSource()).audit(path)
 
 
 def codes(report: AuditReport) -> list[str]:

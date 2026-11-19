@@ -12,6 +12,10 @@ from PIL import Image
 from pypdf import PdfWriter
 
 from engineering_influence.controllers.publishing_controller import PublishingController
+from engineering_influence.infrastructure.publishing.filesystem_manuscript_source import (
+    FilesystemManuscriptSource,
+)
+from engineering_influence.infrastructure.publishing.pypdf_pdf_inspector import PypdfPdfInspector
 from engineering_influence.models.publishing.project_config import ProjectConfig
 from engineering_influence.publishing.covers.cover_builder import CoverBuilder
 from engineering_influence.publishing.epub.epub_builder import EpubBuilder
@@ -103,7 +107,9 @@ def stubs(monkeypatch: pytest.MonkeyPatch, root: Path) -> dict[str, list[Any]]:
 
 
 def controller(root: Path, **kwargs: Any) -> PublishingController:
-    return PublishingController(ProjectConfig.load(root), **kwargs)
+    return PublishingController(
+        ProjectConfig.load(root), FilesystemManuscriptSource(), PypdfPdfInspector(), **kwargs
+    )
 
 
 class FakeQa(RenderQa):

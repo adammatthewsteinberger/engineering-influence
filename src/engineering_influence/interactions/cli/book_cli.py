@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from engineering_influence.interactions.cli.interfaces.book_cli_interface import BookCliInterface
+from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
+from engineering_influence.interfaces.pdf_inspector_interface import PdfInspectorInterface
 from engineering_influence.models.publishing.project_config import ProjectConfig
 from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
 from engineering_influence.publishing.typesetting.manuscript_error import ManuscriptError
@@ -26,6 +28,10 @@ class BookCli(BookCliInterface):
     """
 
     ERRORS = (BookBuildError, ManuscriptError, OSError, ValueError, tomllib.TOMLDecodeError)
+
+    def __init__(self, files: ManuscriptSourceInterface, pdfs: PdfInspectorInterface) -> None:
+        self._files = files
+        self._pdfs = pdfs
 
     def register(self, subparsers: Any) -> None:
         """Add the `book` command and its subcommands."""
@@ -79,7 +85,9 @@ class BookCli(BookCliInterface):
             return 1
         failures = 0
         try:
-            controller = PublishingController(ProjectConfig.load(arguments.root))
+            controller = PublishingController(
+                ProjectConfig.load(arguments.root), self._files, self._pdfs
+            )
             handler = getattr(self, f"_{arguments.book_command}")
             if arguments.book_command == "qa":
                 return int(handler(controller, arguments))
