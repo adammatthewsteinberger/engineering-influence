@@ -54,10 +54,13 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
+      # A slow mirror once held this step for over twenty minutes; retries and timeouts make a bad
+      # mirror fail fast or recover, instead of hanging the job.
       - name: Install the TeX toolchain
+        timeout-minutes: 12
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y --no-install-recommends \
             latexmk texlive-luatex texlive-latex-recommended texlive-latex-extra \
             texlive-pictures texlive-fonts-recommended texlive-plain-generic \
             texlive-extra-utils epubcheck default-jre-headless
