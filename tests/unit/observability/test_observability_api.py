@@ -13,6 +13,7 @@ from fastapi.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 
 from engineering_influence.contracts.health_status import HealthStatus
+from engineering_influence.controllers.project_controller import ProjectController
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
 from engineering_influence.infrastructure.observability.context_var_correlation import (
@@ -31,16 +32,17 @@ from engineering_influence.infrastructure.security.public_https_url_policy impor
 from engineering_influence.infrastructure.security.token_bucket_rate_limiter import (
     TokenBucketRateLimiter,
 )
+from engineering_influence.infrastructure.webhooks import WebhookDelivery
 from engineering_influence.interactions.api.api_guard import ApiGuard
 from engineering_influence.interactions.api.api_observability import ApiObservability
 from engineering_influence.interactions.api.application import ApiApplication
 from engineering_influence.interactions.api.request_context_middleware import (
     RequestContextMiddleware,
 )
-from engineering_influence.interactions.webhooks import WebhookDelivery
 from engineering_influence.interfaces.health_check_interface import HealthCheckInterface
 from engineering_influence.interfaces.metrics_interface import MetricsInterface
 from engineering_influence.services.readiness_probe import ReadinessProbe
+from engineering_influence.services.start_pipeline import StartPipeline
 
 KEY = "a-valid-api-key-0123456789"  # gitleaks:allow
 AUTH = {"Authorization": f"Bearer {KEY}"}
@@ -95,8 +97,11 @@ class Harness:
             ReadinessProbe((self.dependency,)), self.metrics, self.correlation
         )
         application = ApiApplication(
-            InMemoryLedger(),
-            CorrelatingQueue(self.inner_queue, self.correlation),
+            ProjectController(
+                StartPipeline(
+                    InMemoryLedger(), CorrelatingQueue(self.inner_queue, self.correlation)
+                )
+            ),
             guard,
             observability,
         )
@@ -281,7 +286,11 @@ def test_request_logs_carry_the_correlation_id(harness: Harness, json_log: io.St
 
 def test_without_observability_there_are_no_extra_routes() -> None:
     guard = ApiGuard(ConstantTimeApiKeyVerifier([KEY]), TokenBucketRateLimiter(100, 100))
-    client = TestClient(ApiApplication(InMemoryLedger(), InMemoryQueue(), guard).build())
+    client = TestClient(
+        ApiApplication(
+            ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue())), guard
+        ).build()
+    )
 
     assert client.get("/health/live").status_code == 404
     assert "x-request-id" not in client.post("/v1/pipelines", json=PROJECT, headers=AUTH).headers

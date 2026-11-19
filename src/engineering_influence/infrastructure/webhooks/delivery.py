@@ -8,7 +8,7 @@ from collections.abc import Callable
 import httpx
 
 from engineering_influence.errors.application_error import ApplicationError
-from engineering_influence.interactions.webhooks.signer import WebhookSigner
+from engineering_influence.infrastructure.webhooks.signer import WebhookSigner
 from engineering_influence.interfaces.correlation_interface import CorrelationInterface
 from engineering_influence.interfaces.outbound_url_policy_interface import (
     OutboundUrlPolicyInterface,

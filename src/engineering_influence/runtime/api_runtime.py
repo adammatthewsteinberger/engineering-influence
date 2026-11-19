@@ -4,6 +4,7 @@
 from collections.abc import Callable
 from typing import Any
 
+from engineering_influence.controllers.project_controller import ProjectController
 from engineering_influence.infrastructure.observability.bootstrap_metrics import BootstrapMetrics
 from engineering_influence.infrastructure.observability.context_var_correlation import (
     ContextVarCorrelation,
@@ -30,6 +31,7 @@ from engineering_influence.repositories.sqlmodel_ledger import SqlModelLedger
 from engineering_influence.runtime.app_settings import AppSettings
 from engineering_influence.runtime.endpoint_checks import EndpointChecks
 from engineering_influence.services.readiness_probe import ReadinessProbe
+from engineering_influence.services.start_pipeline import StartPipeline
 
 
 class ApiRuntime:
@@ -68,7 +70,8 @@ class ApiRuntime:
         readiness = ReadinessProbe(tuple(check for check in checks if check is not None))
         observability = ApiObservability(readiness, BootstrapMetrics(), correlation)
         self._ledger = SqlModelLedger(self._settings.database_url)
-        return ApiApplication(self._ledger, queue, guard, observability).build()
+        controller = ProjectController(StartPipeline(self._ledger, queue))
+        return ApiApplication(controller, guard, observability).build()
 
     def run(self) -> None:
         """Configure logging, build the app, and serve until stopped."""

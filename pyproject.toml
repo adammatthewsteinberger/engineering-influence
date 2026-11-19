@@ -72,7 +72,7 @@ Changelog = "https://github.com/adammatthewsteinberger/engineering-influence/blo
 Security = "https://github.com/adammatthewsteinberger/engineering-influence/security/policy"
 
 [project.scripts]
-ei = "engineering_influence.interactions.cli.main:main"
+ei = "engineering_influence.runtime.main:main"
 
 [tool.hatch.version]
 path = "src/engineering_influence/__init__.py"
@@ -129,6 +129,21 @@ engineering-influence-sdk = { workspace = true }
 
 [tool.importlinter]
 root_package = "engineering_influence"
+
+[[tool.importlinter.contracts]]
+name = "Layers point inward"
+type = "layers"
+containers = ["engineering_influence"]
+layers = [
+  "runtime",
+  "interactions",
+  "controllers | repositories | infrastructure",
+  "services",
+  "interfaces",
+  "contracts",
+  "models",
+  "errors",
+]
 
 [[tool.importlinter.contracts]]
 name = "Models depend on nothing else"

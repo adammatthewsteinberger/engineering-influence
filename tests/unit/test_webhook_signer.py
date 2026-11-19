@@ -2,7 +2,7 @@
 
 import pytest
 
-from engineering_influence.interactions.webhooks import WebhookSigner
+from engineering_influence.infrastructure.webhooks import WebhookSigner
 
 
 def test_webhook_signer_round_trip() -> None:

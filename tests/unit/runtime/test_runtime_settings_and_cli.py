@@ -9,12 +9,13 @@ import pytest
 
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.infrastructure.security.env_secret_provider import EnvSecretProvider
-from engineering_influence.interactions.cli.main import CliApplication
 from engineering_influence.interactions.cli.serve_cli import ServeCli
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
 from engineering_influence.runtime.app_settings import AppSettings
+from engineering_influence.runtime.cli_runtime import CliRuntime
 from engineering_influence.runtime.endpoint_checks import EndpointChecks
 from engineering_influence.runtime.environment_settings_loader import EnvironmentSettingsLoader
+from engineering_influence.runtime.serve_starter import ServeStarter
 
 DB = "postgresql+psycopg://svc:s3cretpw@db.internal:5432/ei"
 MQ = "amqp://svc:rabbitpw@mq.internal:5672/"
@@ -141,9 +142,11 @@ class Calls:
 
 def cli(calls: Calls, values: Mapping[str, str]) -> ServeCli:
     return ServeCli(
-        MappingSecrets(values),
-        run_api=lambda settings, _: calls.api.append(settings),
-        run_worker=lambda settings, _: calls.worker.append(settings),
+        ServeStarter(
+            MappingSecrets(values),
+            run_api=lambda settings, _: calls.api.append(settings),
+            run_worker=lambda settings, _: calls.worker.append(settings),
+        )
     )
 
 
@@ -195,7 +198,7 @@ def test_a_startup_failure_inside_the_runner_exits_2(monkeypatch: pytest.MonkeyP
     def failing(_: AppSettings, __: SecretProviderInterface) -> None:
         raise ApplicationError("SECRET_MISSING", "required secret EI_API_KEYS is not configured")
 
-    serve = ServeCli(MappingSecrets(REQUIRED), run_api=failing)
+    serve = ServeCli(ServeStarter(MappingSecrets(REQUIRED), run_api=failing))
 
     status, stderr = run(serve, "api", REQUIRED, monkeypatch)
 
@@ -212,7 +215,7 @@ def test_the_default_runners_start_the_real_runtimes(monkeypatch: pytest.MonkeyP
         "engineering_influence.runtime.worker_runtime.WorkerRuntime.run",
         lambda self: started.append("worker"),
     )
-    serve = ServeCli(MappingSecrets(REQUIRED))
+    serve = ServeCli(ServeStarter(MappingSecrets(REQUIRED)))
 
     run(serve, "api", REQUIRED, monkeypatch)
     run(serve, "worker", REQUIRED, monkeypatch)
@@ -226,11 +229,11 @@ def test_the_top_level_command_routes_serve(monkeypatch: pytest.MonkeyPatch) -> 
     buffer = io.StringIO()
 
     with redirect_stderr(buffer):
-        status = CliApplication().run(["serve", "api"])
+        status = CliRuntime().build().run(["serve", "api"])
 
     assert status == 2 and "EI_DATABASE_URL" in buffer.getvalue()
 
 
 def test_serve_only_accepts_known_targets() -> None:
     with pytest.raises(SystemExit):
-        CliApplication().run(["serve", "everything"])
+        CliRuntime().build().run(["serve", "everything"])

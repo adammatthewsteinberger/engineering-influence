@@ -12,11 +12,8 @@ from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.infrastructure.security.public_https_url_policy import (
     PublicHttpsUrlPolicy,
 )
-from engineering_influence.interactions.webhooks import (
-    SignedRequestVerifier,
-    WebhookDelivery,
-    WebhookSigner,
-)
+from engineering_influence.infrastructure.webhooks import WebhookDelivery, WebhookSigner
+from engineering_influence.interactions.webhooks import SignedRequestVerifier
 
 NOW = 1_700_000_000
 BODY = b'{"id":"evt-1"}'

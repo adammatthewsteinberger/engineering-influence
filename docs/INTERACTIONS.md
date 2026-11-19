@@ -100,7 +100,7 @@ Any non-2xx answer raises `httpx.HTTPStatusError`; the API's error document is i
 
 ## MCP server
 
-`McpApplication(ledger, queue).build()` returns an `MCPServer` (from the official `mcp` 2.x SDK)
+`McpApplication(controller).build()` returns an `MCPServer` (from the official `mcp` 2.x SDK)
 with one tool:
 
 | Tool | Arguments | Returns |

@@ -7,11 +7,13 @@ import engineering_influence_sdk
 import pytest
 
 import engineering_influence
+from engineering_influence.controllers.project_controller import ProjectController
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
 from engineering_influence.interactions.api.api_guard import ApiGuard
 from engineering_influence.interactions.api.application import ApiApplication
-from engineering_influence.interactions.cli.main import CliApplication
+from engineering_influence.runtime.cli_runtime import CliRuntime
+from engineering_influence.services.start_pipeline import StartPipeline
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -43,7 +45,7 @@ def test_pyproject_reads_the_version_from_the_package_instead_of_repeating_it(
 
 def test_the_cli_reports_the_package_version(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit) as exit_info:
-        CliApplication().run(["--version"])
+        CliRuntime().build().run(["--version"])
 
     assert exit_info.value.code == 0
     assert (
@@ -53,7 +55,9 @@ def test_the_cli_reports_the_package_version(capsys: pytest.CaptureFixture[str])
 
 
 def test_the_api_reports_the_package_version(api_guard: ApiGuard) -> None:
-    app = ApiApplication(InMemoryLedger(), InMemoryQueue(), api_guard).build()
+    app = ApiApplication(
+        ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue())), api_guard
+    ).build()
 
     assert app.version == engineering_influence.__version__
 

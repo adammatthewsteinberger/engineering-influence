@@ -3,31 +3,21 @@
 
 import argparse
 import sys
-from collections.abc import Callable
 
 from engineering_influence.errors.application_error import ApplicationError
-from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
-from engineering_influence.runtime.app_settings import AppSettings
-
-Runner = Callable[[AppSettings, SecretProviderInterface], None]
+from engineering_influence.interactions.cli.interfaces.serve_cli_interface import ServeCliInterface
+from engineering_influence.interfaces.serve_starter_interface import ServeStarterInterface
 
 
-class ServeCli:
-    """Start a long-running process from environment settings.
+class ServeCli(ServeCliInterface):
+    """Start a long-running process and turn a failure into an exit status.
 
     A configuration problem prints which variable is wrong and exits 2. It never prints a
     traceback, which could carry a connection string.
     """
 
-    def __init__(
-        self,
-        secrets: SecretProviderInterface | None = None,
-        run_api: Runner | None = None,
-        run_worker: Runner | None = None,
-    ) -> None:
-        self._secrets = secrets
-        self._run_api = run_api
-        self._run_worker = run_worker
+    def __init__(self, starter: ServeStarterInterface) -> None:
+        self._starter = starter
 
     def register(self, subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]") -> None:
         """Add ``serve api`` and ``serve worker``."""
@@ -35,21 +25,9 @@ class ServeCli:
         serve.add_argument("target", choices=("api", "worker"))
 
     def run(self, arguments: argparse.Namespace) -> int:
-        """Load settings, then run the chosen process; return its exit status."""
+        """Start the chosen process; return its exit status."""
         try:
-            from engineering_influence.infrastructure.security.env_secret_provider import (
-                EnvSecretProvider,
-            )
-            from engineering_influence.runtime.environment_settings_loader import (
-                EnvironmentSettingsLoader,
-            )
-
-            secrets = self._secrets or EnvSecretProvider()
-            settings = EnvironmentSettingsLoader(secrets).load()
-            if arguments.target == "api":
-                (self._run_api or self._default_api)(settings, secrets)
-            else:
-                (self._run_worker or self._default_worker)(settings, secrets)
+            self._starter.start(arguments.target)
         except ImportError as error:
             print(
                 "error: serve needs the api and runtime extras: "
@@ -62,15 +40,3 @@ class ServeCli:
             print(f"error: {message}", file=sys.stderr)
             return 2
         return 0
-
-    @staticmethod
-    def _default_api(settings: AppSettings, secrets: SecretProviderInterface) -> None:
-        from engineering_influence.runtime.api_runtime import ApiRuntime
-
-        ApiRuntime(settings, secrets).run()
-
-    @staticmethod
-    def _default_worker(settings: AppSettings, secrets: SecretProviderInterface) -> None:
-        from engineering_influence.runtime.worker_runtime import WorkerRuntime
-
-        WorkerRuntime(settings).run()

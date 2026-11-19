@@ -4,8 +4,10 @@
 import hashlib
 import hmac
 
+from engineering_influence.interfaces.webhook_signer_interface import WebhookSignerInterface
 
-class WebhookSigner:
+
+class WebhookSigner(WebhookSignerInterface):
     """Signs canonical UTF-8 payloads with an HMAC-SHA256 secret."""
 
     def __init__(self, secret: bytes) -> None:

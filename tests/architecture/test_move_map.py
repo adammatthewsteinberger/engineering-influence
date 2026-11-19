@@ -11,7 +11,7 @@ from architecture_metrics import LAYERS, REPO, SOURCE
 MAP = REPO / "scripts" / "refactor" / "move_map.toml"
 ENTRIES: list[dict[str, Any]] = tomllib.loads(MAP.read_text(encoding="utf-8"))["class"]
 KINDS = {"plain", "dataclass", "pydantic", "enum", "exception", "interface", "record"}
-STYLES = {"abc", "protocol", "self"}
+STYLES = {"abc", "protocol", "self", "port"}
 DECISIONS = {"curated", "signal"}
 PUBLIC_API = {
     "Box",
@@ -83,9 +83,15 @@ def test_every_class_in_the_tree_is_in_the_map_exactly_once() -> None:
 
 
 def test_interfaces_pair_with_their_class_by_name_and_location() -> None:
+    ports = {(e["new"], e["new_name"]) for e in ENTRIES if e["kind"] == "interface"}
     for entry in ENTRIES:
         if entry["interface_style"] == "self":
             assert entry["interface"] == "" and entry["kind"] == "interface", entry["old"]
+            continue
+        if entry["interface_style"] == "port":
+            # The class implements a top-level port that already exists; no new interface file.
+            assert entry["interface_module"].startswith("engineering_influence.interfaces."), entry
+            assert (entry["interface_module"], entry["interface"]) in ports, entry["old"]
             continue
         parent, _, stem = entry["new"].rpartition(".")
         assert entry["interface"] == f"{entry['new_name']}Interface", entry["old"]

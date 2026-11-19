@@ -25,7 +25,7 @@ def run_without_extras(
 
 
 def test_the_cli_imports_without_the_publishing_libraries() -> None:
-    result = run_without_extras("import engineering_influence.interactions.cli.main")
+    result = run_without_extras("import engineering_influence.runtime.cli_runtime")
 
     assert result.returncode == 0, result.stderr
 
@@ -36,8 +36,8 @@ def test_serve_reports_missing_settings_instead_of_crashing_on_import() -> None:
         import os
         os.environ.pop("EI_DATABASE_URL", None)
         os.environ.pop("EI_RABBITMQ_URL", None)
-        from engineering_influence.interactions.cli.main import CliApplication
-        raise SystemExit(CliApplication().run(["serve", "api"]))
+        from engineering_influence.runtime.cli_runtime import CliRuntime
+        raise SystemExit(CliRuntime().build().run(["serve", "api"]))
         """
     )
 
@@ -49,8 +49,8 @@ def test_serve_reports_missing_settings_instead_of_crashing_on_import() -> None:
 def test_the_pipeline_command_works_without_the_publishing_libraries() -> None:
     result = run_without_extras(
         """
-        from engineering_influence.interactions.cli.main import CliApplication
-        raise SystemExit(CliApplication().run(
+        from engineering_influence.runtime.cli_runtime import CliRuntime
+        raise SystemExit(CliRuntime().build().run(
             ["pipeline", "start", "--slug", "demo", "--title", "Demo", "--postulate", "x"]
         ))
         """
@@ -63,8 +63,8 @@ def test_the_pipeline_command_works_without_the_publishing_libraries() -> None:
 def test_a_book_command_without_the_extra_explains_how_to_install_it() -> None:
     result = run_without_extras(
         """
-        from engineering_influence.interactions.cli.main import CliApplication
-        raise SystemExit(CliApplication().run(["book", "audit"]))
+        from engineering_influence.runtime.cli_runtime import CliRuntime
+        raise SystemExit(CliRuntime().build().run(["book", "audit"]))
         """
     )
 
@@ -87,8 +87,8 @@ def test_the_runtime_roots_import_without_the_publishing_libraries(module: str) 
 def test_serve_without_the_runtime_extra_explains_how_to_install_it() -> None:
     result = run_without_extras(
         """
-        from engineering_influence.interactions.cli.main import CliApplication
-        raise SystemExit(CliApplication().run(["serve", "worker"]))
+        from engineering_influence.runtime.cli_runtime import CliRuntime
+        raise SystemExit(CliRuntime().build().run(["serve", "worker"]))
         """,
         blocked=("vibey_bootstrap", "aio_pika", "sqlmodel", "uvicorn"),
     )

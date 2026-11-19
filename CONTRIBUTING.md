@@ -42,7 +42,8 @@ and adapters implement ports ([docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). The
 
 - one class per file, no loose production functions;
 - interfaces live in sibling `interfaces/` folders;
-- layers point inward only.
+- layers point inward only (`lint-imports` runs a strict layers contract);
+- only `runtime/` composes concrete classes; everything else receives its collaborators.
 
 A new external integration needs a **port**, an **adapter**, an **ADR** when the choice is
 architectural (`docs/adr/`), and failure and recovery tests. Every pipeline side effect must be
@@ -76,6 +77,7 @@ the text of one bullet (see `changelog.d/README.md` and `docs/adr/0005-release-f
 - Every commit carries a `Made-With:` trailer; the installed `commit-msg` hook adds it.
   Pull requests Dependabot opens are exempt from that one check.
 - Use your GitHub no-reply address if you want to keep your email out of history.
+- Restructuring commits that only move or rename files are listed in `.git-blame-ignore-revs`; GitHub honours it, and locally run `git config blame.ignoreRevsFile .git-blame-ignore-revs`.
 - Update `CHANGELOG.md` under `## Unreleased` for anything a user would notice.
 
 ## Dependency updates

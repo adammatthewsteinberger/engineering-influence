@@ -52,7 +52,9 @@ def test_controller_uses_shared_start_pipeline_service() -> None:
 
 
 def test_api_returns_same_controller_contract(api_guard: ApiGuard) -> None:
-    application = ApiApplication(RecordingLedger(), RecordingQueue(), api_guard)
+    application = ApiApplication(
+        ProjectController(StartPipeline(RecordingLedger(), RecordingQueue())), api_guard
+    )
     application.build()
 
     assert application._start(request()) == {"job_id": "job-api-1", "project_slug": "demo"}

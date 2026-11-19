@@ -6,16 +6,31 @@ import json
 
 from engineering_influence import __version__
 from engineering_influence.contracts.project_request import ProjectRequest
-from engineering_influence.controllers.project_controller import ProjectController
-from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
-from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
-from engineering_influence.interactions.cli.book_cli import BookCli
-from engineering_influence.interactions.cli.serve_cli import ServeCli
-from engineering_influence.services.start_pipeline import StartPipeline
+from engineering_influence.controllers.interfaces.project_controller_interface import (
+    ProjectControllerInterface,
+)
+from engineering_influence.interactions.cli.interfaces.book_cli_interface import BookCliInterface
+from engineering_influence.interactions.cli.interfaces.cli_application_interface import (
+    CliApplicationInterface,
+)
+from engineering_influence.interactions.cli.interfaces.serve_cli_interface import ServeCliInterface
 
 
-class CliApplication:
-    """Runs commands without duplicating domain or service behavior."""
+class CliApplication(CliApplicationInterface):
+    """Runs commands without duplicating domain or service behavior.
+
+    Every collaborator is handed in; a composition root in ``runtime`` builds them.
+    """
+
+    def __init__(
+        self,
+        controller: ProjectControllerInterface,
+        book_cli: BookCliInterface,
+        serve_cli: ServeCliInterface,
+    ) -> None:
+        self._controller = controller
+        self._book_cli = book_cli
+        self._serve_cli = serve_cli
 
     def run(self, argv: list[str] | None = None) -> int:
         """Parse the command line and return its process status."""
@@ -31,29 +46,20 @@ class CliApplication:
         start.add_argument("--title", required=True)
         start.add_argument("--postulate", action="append", required=True)
         start.add_argument("--stage", action="append")
-        book_cli = BookCli()
-        book_cli.register(subparsers)
-        serve_cli = ServeCli()
-        serve_cli.register(subparsers)
+        self._book_cli.register(subparsers)
+        self._serve_cli.register(subparsers)
         arguments = parser.parse_args(argv)
         if arguments.command == "book":
-            return book_cli.run(arguments)
+            return self._book_cli.run(arguments)
         if arguments.command == "serve":
-            return serve_cli.run(arguments)
+            return self._serve_cli.run(arguments)
         if arguments.command == "pipeline" and arguments.pipeline_command == "start":
-            ledger = InMemoryLedger()
-            queue = InMemoryQueue()
             request = ProjectRequest(
                 slug=arguments.slug,
                 title=arguments.title,
                 postulates=tuple(arguments.postulate),
                 stages=tuple(arguments.stage or ["thesis"]),
             )
-            response = ProjectController(StartPipeline(ledger, queue)).start(request)
+            response = self._controller.start(request)
             print(json.dumps(response.model_dump(), sort_keys=True))
         return 0
-
-
-def main() -> None:
-    """Console-script shim."""
-    raise SystemExit(CliApplication().run())
