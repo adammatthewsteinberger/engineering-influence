@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.12"
 resolution-markers = [
     "python_full_version == '3.14.*'",
@@ -17,15 +17,15 @@ members = [
 
 [[package]]
 name = "aio-pika"
-version = "10.2.1"
+version = "10.2.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiormq" },
     { name = "yarl" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5d/31/70f0d7a9fe1affc3241d86d24c24714a4a2ac648961efd3d835ef734a6a1/aio_pika-10.2.1.tar.gz", hash = "sha256:e4f77afd9179a3cca5a904c3b0a1190256a36d9f90650db908b1b2245eb27487", size = 101040, upload-time = "2026-10-25T11:47:24.577Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e2/e5/0306621c02feed03d73df7df6e453742aee71468200c5a3b764e3dccfc3e/aio_pika-10.2.3.tar.gz", hash = "sha256:217bb7c8a10a21c41bb86ba4bd2f4ff59540d6fa7b72cb4bf30e4038563df353", size = 101648, upload-time = "2026-11-08T19:00:44.846Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b4/ae/f69eb62f240f743d5d3aff659a6ed76077f73b722a0d8f9f9559ab825836/aio_pika-10.2.1-py3-none-any.whl", hash = "sha256:66c85d311e30f1dd3e28109d686c9bf1d9dd1a74582004c7cb7bed284d8fe3b1", size = 61568, upload-time = "2026-10-25T11:47:23.119Z" },
+    { url = "https://files.pythonhosted.org/packages/4f/f2/0a7c530dc8d969824ffc1a7562e1bd33e8c561e09fde633108a4923c9613/aio_pika-10.2.3-py3-none-any.whl", hash = "sha256:7697e3d273e3a2a1b6bdaa96e5105650fb2543c78ba639aa6e9327430acea9d3", size = 61705, upload-time = "2026-11-08T19:00:43.505Z" },
 ]
 
 [[package]]
