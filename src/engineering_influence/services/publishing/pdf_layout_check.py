@@ -3,8 +3,8 @@
 
 from typing import Any
 
-from engineering_influence.publishing.folio_reader import FolioReader
-from engineering_influence.publishing.kdp_geometry import KdpGeometry
+from engineering_influence.services.publishing.folio_reader import FolioReader
+from engineering_influence.services.publishing.kdp_geometry import KdpGeometry
 
 
 class PdfLayoutCheck:

@@ -8,13 +8,13 @@ from pathlib import Path
 import pytest
 from conftest import raw_epub
 
+from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.publishing.epub.cover_image import CoverImage
 from engineering_influence.publishing.epub.epub_builder import EpubBuilder
 from engineering_influence.publishing.epub.epub_repacker import EpubRepacker
 from engineering_influence.publishing.epub.epub_verifier import EpubVerifier
 from engineering_influence.publishing.epub.epubcheck_runner import EpubcheckRunner
 from engineering_influence.publishing.epub.tex4ebook_compiler import Tex4ebookCompiler
-from engineering_influence.publishing.project_layout import ProjectLayout
 from engineering_influence.publishing.typesetting.book import Book
 from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
 

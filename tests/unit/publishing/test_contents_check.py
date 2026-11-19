@@ -1,6 +1,6 @@
 """Table-of-contents verification against printed folios."""
 
-from engineering_influence.publishing.contents_check import ContentsCheck
+from engineering_influence.services.publishing.contents_check import ContentsCheck
 
 TITLE = "The Book"
 FRONT = "Contents\nIntroduction 1\nA Long Chapter\nName Continues 5\nContents ix\nThe Book vi\niv\n"

@@ -4,9 +4,9 @@
 from pathlib import Path
 from typing import Any
 
-from engineering_influence.publishing.path_relativizer import PathRelativizer
-from engineering_influence.publishing.project_layout import ProjectLayout
+from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.publishing.release.file_digest import FileDigest
+from engineering_influence.services.publishing.path_relativizer import PathRelativizer
 
 
 class ArtifactInventory:

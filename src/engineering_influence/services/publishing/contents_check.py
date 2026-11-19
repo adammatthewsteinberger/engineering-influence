@@ -3,7 +3,7 @@
 
 import re
 
-from engineering_influence.publishing.text_normalizer import TextNormalizer
+from engineering_influence.services.publishing.text_normalizer import TextNormalizer
 
 
 class ContentsCheck:

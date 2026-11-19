@@ -4,8 +4,8 @@
 from datetime import date
 from typing import Any
 
-from engineering_influence.publishing.readiness_report import ReadinessReport
-from engineering_influence.publishing.text_statistics import TextStatistics
+from engineering_influence.models.publishing.release_readiness_report import ReleaseReadinessReport
+from engineering_influence.services.publishing.text_statistics import TextStatistics
 
 
 class PricingCheck:
@@ -15,7 +15,7 @@ class PricingCheck:
         self._today = today or date.today()
 
     def validate(
-        self, report: ReadinessReport, release: dict[str, Any], severity: str, ref: str
+        self, report: ReleaseReadinessReport, release: dict[str, Any], severity: str, ref: str
     ) -> tuple[dict[str, Any], float | None, float | None, float | None]:
         """Return (pricing table, ebook, paperback, hardcover list prices)."""
         pricing = release.get("pricing", {})
@@ -72,7 +72,7 @@ class PricingCheck:
 
     def estimate(
         self,
-        report: ReadinessReport,
+        report: ReleaseReadinessReport,
         pricing: dict[str, Any],
         prices: tuple[float | None, float | None, float | None],
         page_count: int | None,
@@ -112,7 +112,12 @@ class PricingCheck:
         )
 
     def _price(
-        self, report: ReadinessReport, pricing: dict[str, Any], name: str, severity: str, ref: str
+        self,
+        report: ReleaseReadinessReport,
+        pricing: dict[str, Any],
+        name: str,
+        severity: str,
+        ref: str,
     ) -> float | None:
         try:
             return float(pricing.get(name))  # type: ignore[arg-type]

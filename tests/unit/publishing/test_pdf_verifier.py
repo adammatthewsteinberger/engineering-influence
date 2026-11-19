@@ -4,7 +4,7 @@ from pathlib import Path
 
 from reportlab.pdfgen import canvas
 
-from engineering_influence.publishing.pdf_verifier import PdfVerifier
+from engineering_influence.services.publishing.pdf_verifier import PdfVerifier
 
 CONFIG = 'title = "Test Book"\nedition = "First Edition"\n'
 

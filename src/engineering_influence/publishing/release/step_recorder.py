@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from engineering_influence.publishing.path_relativizer import PathRelativizer
+from engineering_influence.services.publishing.path_relativizer import PathRelativizer
 
 
 class StepRecorder:

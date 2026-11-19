@@ -5,7 +5,7 @@ from typing import Any
 
 from pypdf import PdfReader
 
-from engineering_influence.publishing.kdp_geometry import KdpGeometry
+from engineering_influence.services.publishing.kdp_geometry import KdpGeometry
 
 
 class PdfStructureCheck:

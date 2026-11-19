@@ -4,13 +4,13 @@
 from dataclasses import asdict
 from typing import Any
 
-from engineering_influence.publishing.readiness_report import ReadinessReport
+from engineering_influence.models.publishing.release_readiness_report import ReleaseReadinessReport
 
 
 class ReleaseSummary:
     """Status, findings, pricing, and format decisions, with the path of the full report."""
 
-    def of(self, report: ReadinessReport, report_path: str) -> dict[str, Any]:
+    def of(self, report: ReleaseReadinessReport, report_path: str) -> dict[str, Any]:
         """The summary dictionary for a release-readiness report."""
         return {
             "status": report.status,

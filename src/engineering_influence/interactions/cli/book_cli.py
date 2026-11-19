@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from engineering_influence.interactions.cli.interfaces.book_cli_interface import BookCliInterface
-from engineering_influence.publishing.project_config import ProjectConfig
+from engineering_influence.models.publishing.project_config import ProjectConfig
 from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
 from engineering_influence.publishing.typesetting.manuscript_error import ManuscriptError
 

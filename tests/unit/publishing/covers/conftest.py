@@ -6,12 +6,12 @@ from typing import Any
 
 import pytest
 
+from engineering_influence.infrastructure.publishing.package_assets import PackageAssets
 from engineering_influence.publishing.covers.builtin_cover_style import BuiltinCoverStyle
 from engineering_influence.publishing.covers.cover_style import CoverStyle
 from engineering_influence.publishing.covers.font_loader import FontLoader
 from engineering_influence.publishing.covers.gradient_painter import GradientPainter
 from engineering_influence.publishing.covers.painter_registry import PainterRegistry
-from engineering_influence.publishing.package_assets import PackageAssets
 
 META: dict[str, Any] = {
     "title": "The Case for Testing",

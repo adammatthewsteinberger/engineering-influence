@@ -4,8 +4,8 @@
 from pathlib import Path
 from typing import Any
 
-from engineering_influence.publishing.audit_report_text import AuditReportText
-from engineering_influence.publishing.book_auditor import BookAuditor
+from engineering_influence.models.publishing.project_config import ProjectConfig
+from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.publishing.covers.cover_builder import CoverBuilder
 from engineering_influence.publishing.covers.cover_plugin_loader import CoverPluginLoader
 from engineering_influence.publishing.covers.cover_style import CoverStyle
@@ -14,17 +14,17 @@ from engineering_influence.publishing.covers.painter_registry import PainterRegi
 from engineering_influence.publishing.epub.epub_builder import EpubBuilder
 from engineering_influence.publishing.epub.epub_verifier import EpubVerifier
 from engineering_influence.publishing.epub.tex4ebook_compiler import Tex4ebookCompiler
-from engineering_influence.publishing.pdf_verifier import PdfVerifier
-from engineering_influence.publishing.project_config import ProjectConfig
-from engineering_influence.publishing.project_layout import ProjectLayout
 from engineering_influence.publishing.qa.render_qa import RenderQa
 from engineering_influence.publishing.release.publish_pipeline import PublishPipeline
 from engineering_influence.publishing.release.publish_steps import PublishSteps
-from engineering_influence.publishing.release_auditor import ReleaseAuditor
 from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
 from engineering_influence.publishing.typesetting.book_builder import BookBuilder
 from engineering_influence.publishing.typesetting.book_loader import BookLoader
 from engineering_influence.publishing.typesetting.latex_compiler import LatexCompiler
+from engineering_influence.services.publishing.audit_report_text import AuditReportText
+from engineering_influence.services.publishing.book_auditor import BookAuditor
+from engineering_influence.services.publishing.pdf_verifier import PdfVerifier
+from engineering_influence.services.publishing.release_auditor import ReleaseAuditor
 
 
 class PublishingController:

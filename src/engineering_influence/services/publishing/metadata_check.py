@@ -3,8 +3,8 @@
 
 from typing import Any
 
-from engineering_influence.publishing.readiness_report import ReadinessReport
-from engineering_influence.publishing.text_statistics import TextStatistics
+from engineering_influence.models.publishing.release_readiness_report import ReleaseReadinessReport
+from engineering_influence.services.publishing.text_statistics import TextStatistics
 
 
 class MetadataCheck:
@@ -12,7 +12,7 @@ class MetadataCheck:
 
     def run(
         self,
-        report: ReadinessReport,
+        report: ReleaseReadinessReport,
         config: dict[str, Any],
         release: dict[str, Any],
         severity: str,

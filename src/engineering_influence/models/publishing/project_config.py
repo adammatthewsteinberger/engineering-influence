@@ -6,7 +6,7 @@ import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
-from engineering_influence.publishing.project_layout import ProjectLayout
+from engineering_influence.models.publishing.project_layout import ProjectLayout
 
 
 @dataclass(frozen=True)

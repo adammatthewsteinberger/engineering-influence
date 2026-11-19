@@ -4,9 +4,9 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from engineering_influence.publishing.audit_report import AuditReport
-from engineering_influence.publishing.book_auditor import BookAuditor
-from engineering_influence.publishing.config_entries import ConfigEntries
+from engineering_influence.models.publishing.audit_report import AuditReport
+from engineering_influence.services.publishing.book_auditor import BookAuditor
+from engineering_influence.services.publishing.config_entries import ConfigEntries
 
 BODY = "The opening is fine.\n\nA second paragraph follows."
 Dump = Callable[[dict[str, Any]], str]

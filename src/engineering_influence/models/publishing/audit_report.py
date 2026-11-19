@@ -4,8 +4,8 @@
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
-from engineering_influence.publishing.entry import Entry
-from engineering_influence.publishing.issue import Issue
+from engineering_influence.models.publishing.entry import Entry
+from engineering_influence.models.publishing.issue import Issue
 
 
 @dataclass

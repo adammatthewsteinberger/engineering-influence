@@ -9,9 +9,9 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
+from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.publishing.epub.cover_image import CoverImage
 from engineering_influence.publishing.epub.epub_repacker import EpubRepacker
-from engineering_influence.publishing.project_layout import ProjectLayout
 from engineering_influence.publishing.typesetting.book import Book
 from engineering_influence.publishing.typesetting.chapter import Chapter
 

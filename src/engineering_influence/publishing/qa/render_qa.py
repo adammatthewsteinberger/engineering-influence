@@ -6,13 +6,13 @@ from pathlib import Path
 from PIL import Image
 from pypdf import PdfReader
 
-from engineering_influence.publishing.path_relativizer import PathRelativizer
 from engineering_influence.publishing.qa.blank_page_detector import BlankPageDetector
 from engineering_influence.publishing.qa.contact_sheet_builder import ContactSheetBuilder
 from engineering_influence.publishing.qa.page_file_number import PageFileNumber
 from engineering_influence.publishing.qa.page_rasterizer import PageRasterizer
 from engineering_influence.publishing.qa.page_record import PageRecord
 from engineering_influence.publishing.qa.render_report import RenderReport
+from engineering_influence.services.publishing.path_relativizer import PathRelativizer
 
 
 class RenderQa:
