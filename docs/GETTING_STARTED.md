@@ -20,7 +20,7 @@ test, so it works as written.
 git clone https://github.com/adammatthewsteinberger/engineering-influence
 cd engineering-influence
 uv sync --extra test --extra runtime --extra api
-uv run ei --version        # engineering-influence 0.1.0a1
+uv run ei --version        # engineering-influence 0.1.0a2
 ```
 
 ## 2. Start the stack

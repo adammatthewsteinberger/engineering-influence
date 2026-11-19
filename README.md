@@ -11,7 +11,7 @@ PDFs, EPUB, covers, listing metadata and a release-readiness report. See
 The same behavior is reachable five ways, all over one controller layer: a **REST API**,
 an **MCP server**, a **CLI**, a **Python SDK** (sync and async) and **signed webhooks**.
 
-> **Status: alpha (`0.1.0a1`).** The orchestration and the KDP packaging and verification are
+> **Status: alpha (`0.1.0a2`).** The orchestration and the KDP packaging and verification are
 > built and tested. The *writing* is not yet autonomous: the runner and gate that ship are
 > deterministic placeholders, so a pipeline runs end to end but produces fixed text until a
 > model-backed runner is plugged in. Nothing uploads to KDP for you (KDP has no API); a person
