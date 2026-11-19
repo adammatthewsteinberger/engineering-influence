@@ -7,6 +7,7 @@ from pathlib import Path
 from engineering_influence.publishing.covers.cover_builder import CoverBuilder
 from engineering_influence.publishing.epub.epub_builder import EpubBuilder
 from engineering_influence.publishing.epub.epub_verifier import EpubVerifier
+from engineering_influence.publishing.epub.epubcheck_runner import EpubcheckRunner
 from engineering_influence.publishing.path_relativizer import PathRelativizer
 from engineering_influence.publishing.pdf_verifier import PdfVerifier
 from engineering_influence.publishing.project_layout import ProjectLayout
@@ -36,7 +37,7 @@ class PublishSteps:
         self._epub = epub
         self._relativizer = PathRelativizer(layout.root)
 
-    def plan(self, slug: str, *, hardcover: bool) -> list[Step]:
+    def plan(self, slug: str, *, hardcover: bool, strict: bool = False) -> list[Step]:
         """The ordered steps: interior, optional hardcover interior, covers, then the EPUB."""
         steps: list[Step] = [("pdf", ["BookBuilder.build", slug], lambda: self.pdf(slug))]
         if hardcover:
@@ -51,7 +52,7 @@ class PublishSteps:
         if hardcover:
             cover_command += ["--hardcover-pdf", f"output/{slug}-hardcover.pdf"]
         steps.append(("covers", cover_command, lambda: self.covers(slug, hardcover=hardcover)))
-        steps.append(("epub", ["EpubBuilder.build", slug], lambda: self.epub(slug)))
+        steps.append(("epub", ["EpubBuilder.build", slug], lambda: self.epub(slug, strict=strict)))
         return steps
 
     def pdf(self, slug: str) -> str:
@@ -68,11 +69,11 @@ class PublishSteps:
         out = self._covers.build(slug, preview=True, hardcover_pdf=hardcover_pdf)
         return f"[{slug}] covers written to {self._relativizer.relative(out)}\n[{slug}] all cover checks passed"
 
-    def epub(self, slug: str) -> str:
-        """Build and verify the EPUB."""
+    def epub(self, slug: str, *, strict: bool = False) -> str:
+        """Build and verify the EPUB; a strict release also requires epubcheck to run."""
         path = self._epub.build(slug)
         book = BookLoader(self._layout.root).load(self._layout.books / f"{slug}.toml")
-        self._raise_on(slug, EpubVerifier().verify(path, book))
+        self._raise_on(slug, EpubVerifier(EpubcheckRunner(required=strict)).verify(path, book))
         return f"[{slug}] built {self._relativizer.relative(path)}\n[{slug}] all checks passed"
 
     def _interior(self, slug: str, pdf: Path, log_slug: str) -> str:

@@ -110,13 +110,18 @@ def test_compiler_runs_latexmk_with_a_pinned_epoch(
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     script = bin_dir / "latexmk"
-    script.write_text('#!/bin/sh\necho "args:$*"\necho "epoch:$SOURCE_DATE_EPOCH"\nexit 3\n')
+    script.write_text(
+        '#!/bin/sh\necho "args:$*"\necho "epoch:$SOURCE_DATE_EPOCH"\necho "secret:${EI_TEST_SECRET:-absent}"\nexit 3\n'
+    )
     script.chmod(script.stat().st_mode | stat.S_IXUSR)
     monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ['PATH']}")
+    monkeypatch.setenv("EI_TEST_SECRET", "sk-do-not-leak")
     status, stdout = LatexCompiler().compile(tmp_path, "b.tex", 1234)
     assert status == 3
-    assert "args:-lualatex -interaction=nonstopmode -halt-on-error -file-line-error b.tex" in stdout
+    expected = "-lualatex -no-shell-escape -interaction=nonstopmode -halt-on-error"
+    assert f"args:{expected} -file-line-error b.tex" in stdout
     assert "epoch:1234" in stdout
+    assert "secret:absent" in stdout
 
 
 class FakeCompiler(LatexCompiler):

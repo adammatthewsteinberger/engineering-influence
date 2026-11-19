@@ -175,6 +175,14 @@ def test_epubcheck_is_skipped_when_not_installed(
     assert EpubcheckRunner().run(tmp_path / "x.epub") == []
 
 
+def test_a_strict_release_fails_when_epubcheck_is_not_installed(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("PATH", str(tmp_path))
+    findings = EpubcheckRunner(required=True).run(tmp_path / "x.epub")
+    assert findings == ["epubcheck: not installed, but a strict release requires it"]
+
+
 def test_epubcheck_bare_executable_reports_findings(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

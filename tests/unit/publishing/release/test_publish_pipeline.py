@@ -88,8 +88,10 @@ class FakeSteps(PublishSteps):
             bad_epub,
         )
         self.ran: list[str] = []
+        self.strict_seen: list[bool] = []
 
-    def plan(self, slug: str, *, hardcover: bool) -> list[Step]:
+    def plan(self, slug: str, *, hardcover: bool, strict: bool = False) -> list[Step]:
+        self.strict_seen.append(strict)
         names = ["pdf", *(["hardcover"] if hardcover else []), "covers", "epub"]
         return [(n, [n, slug], self._action(n, slug)) for n in names]
 
@@ -275,6 +277,18 @@ def test_strict_release_rejects_a_book_without_a_contract_at_preflight(tmp_path:
     assert result["release_readiness"]["findings"][0]["code"] == "missing-release-contract"
 
 
+def test_a_required_release_contract_tells_the_steps_to_require_epubcheck(tmp_path: Path) -> None:
+    (tmp_path / "strict").mkdir()
+    (tmp_path / "plain").mkdir()
+    strict_layout = project(tmp_path / "strict", BASE + PARTS + CONTRACT)
+    plain_layout = project(tmp_path / "plain")
+    strict_steps, plain_steps = FakeSteps(strict_layout), FakeSteps(plain_layout)
+    pipeline(strict_layout, strict_steps).publish("demo", no_render=True)
+    pipeline(plain_layout, plain_steps).publish("demo", no_render=True)
+    assert strict_steps.strict_seen == [True]
+    assert plain_steps.strict_seen == [False]
+
+
 def test_the_real_clock_and_default_renderer_are_used_when_not_injected(tmp_path: Path) -> None:
     layout = project(tmp_path)
     result, _ = PublishPipeline(layout, FakeSteps(layout)).publish("demo", audit_only=True)
@@ -345,6 +359,7 @@ def test_step_actions_build_and_verify(monkeypatch: pytest.MonkeyPatch, tmp_path
     steps.covers("demo", hardcover=True)
     assert covers.calls == [("demo", True, None), ("demo", True, Path("output/demo-hardcover.pdf"))]
     assert "built output/demo.epub" in steps.epub("demo")
+    assert [s[0] for s in steps.plan("demo", hardcover=False, strict=True)][-1] == "epub"
     assert builder.calls == [("pdf", "demo"), ("hardcover", "demo")]
 
 
