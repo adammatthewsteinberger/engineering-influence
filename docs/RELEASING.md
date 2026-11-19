@@ -10,8 +10,11 @@ you turn it on and approve it.
    `src/engineering_influence/__init__.py` and
    `packages/engineering-influence-sdk/src/engineering_influence_sdk/__init__.py`. Nothing
    else repeats the version: `pyproject.toml`, `ei --version` and the API all read it.
-2. In `CHANGELOG.md`, rename `## Unreleased` to `## <version>` (a `## [<version>] - <date>`
-   heading also works) and add a new empty `## Unreleased` above it.
+2. Fold the changelog fragments into the new version's section and delete them:
+   `uv run python scripts/fold_changelog.py <version>`. It turns every `changelog.d/*.md` into a
+   bullet under a new `## <version>` heading (keeping a fresh empty `## Unreleased` above it). Update
+   the status text that names the current alpha (`README.md`, `llms.txt`, `docs/GETTING_STARTED.md`)
+   in the same commit. `develop` does not claim a version until its release commit.
 3. Merge `develop` into `main` through a pull request.
 4. Tag the merge commit and push the tag:
 
@@ -34,7 +37,7 @@ the build and the attestation are all unchanged.
 
 | Job | Does | Stops the release if |
 |---|---|---|
-| `guard` | Compares the tag with the code | the tag is not `v<version>`; core and SDK versions differ; the changelog has no section for exactly this version; the commit is not on `main` |
+| `guard` | Compares the tag with the code | the tag is not `v<version>`; core and SDK versions differ; the changelog has no section for exactly this version; unfolded fragments remain in `changelog.d/`; the commit is not on `main` |
 | `build` | Runs the whole test suite, builds both packages, installs the real artifacts in clean environments, writes `SHA256SUMS` and a CycloneDX SBOM | any test, `twine check --strict`, or an install check fails |
 | `github-release` | Attests the build provenance, then creates the GitHub release with the artifacts, a checksum file and the SBOM | it cannot create the release |
 | `pypi` | Publishes both packages with PyPI attestations | `PUBLISH_TO_PYPI` is not `true`, or the `pypi` environment is not approved |

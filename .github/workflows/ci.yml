@@ -9,8 +9,14 @@ permissions:
   contents: read
 
 jobs:
+  # Every supported Python runs every gate. The image, the distribution build and the release use
+  # 3.13; the lock resolves 3.12 to 3.14 (pyproject.toml, [tool.uv] environments).
   checks:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -20,7 +26,7 @@ jobs:
           version: "0.12.6"
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python }}
       # --locked fails when uv.lock is out of step with pyproject.toml (the `uv lock --check` gate).
       - run: uv sync --locked --extra test --extra runtime --extra dev --extra publishing
       - run: uv run ruff check .
@@ -73,6 +79,7 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+      # What may live here, and where prompts and fixtures go: CONTRIBUTING.md, "What may live in this repository".
       - name: Reject private-content paths
         run: |
           ! git rev-list --objects HEAD | grep -E '(^|/)(manuscripts|living-waters|archive|prompts|chapters)/|^output/|\.(pdf|docx)$'

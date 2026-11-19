@@ -50,6 +50,8 @@ jobs:
           # The dots in a version are regex wildcards; escape them so only this exact version matches.
           pattern="$(printf '%s' "$core" | sed 's/[][\.*^$+?(){}|]/\\&/g')"
           grep -Eq "^## \[?$pattern\]?( |$)" CHANGELOG.md || { echo "CHANGELOG.md has no '## $core' section" >&2; exit 1; }
+          leftover="$(find changelog.d -type f -name '*.md' ! -name README.md 2>/dev/null | head -n 1)"
+          [ -z "$leftover" ] || { echo "$leftover is an unfolded changelog fragment; run scripts/fold_changelog.py" >&2; exit 1; }
           git merge-base --is-ancestor HEAD origin/main || { echo "$TAG is not on the main branch" >&2; exit 1; }
           echo "releasing $core"
 

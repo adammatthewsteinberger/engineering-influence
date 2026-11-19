@@ -48,6 +48,27 @@ A new external integration needs a **port**, an **adapter**, an **ADR** when the
 architectural (`docs/adr/`), and failure and recovery tests. Every pipeline side effect must be
 bounded, idempotent, observable and recoverable.
 
+## What may live in this repository
+
+This repository is public product code. It never holds an author's manuscripts, profiles,
+covers or built books. The `leak-scan` CI job rejects any path containing `manuscripts/`,
+`living-waters/`, `archive/`, `prompts/` or `chapters/`, a top-level `output/`, and any `.pdf` or
+`.docx` file anywhere in history.
+
+- **Prompts the product sends to a model are code.** They live in a package folder named
+  `templates/` (never `prompts/`), are versioned, are tested, and are written generically, with no
+  author's voice or content in them.
+- **Test fixtures** live in `tests/fixtures/<name>/` and use original, synthetic text. Built PDFs are
+  never committed; a build is checked by a structural snapshot (`docs/TESTING.md`).
+- **Recorded model responses** (cassettes) live in `tests/cassettes/` and are made only from
+  synthetic briefs.
+- If a legitimate file trips the scan, move the file. Loosening the pattern needs an ADR.
+
+## Changelog fragments
+
+Do not edit `CHANGELOG.md` in a pull request. Add `changelog.d/<short-slug>.md` with one paragraph,
+the text of one bullet (see `changelog.d/README.md` and `docs/adr/0005-release-flow-and-changelog-fragments.md`).
+
 ## Commits and branches
 
 - Branch from `develop`; open the pull request against `develop`. `main` receives releases.
