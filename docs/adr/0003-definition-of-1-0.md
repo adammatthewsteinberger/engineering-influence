@@ -37,6 +37,6 @@ experimental and outside the stable contract.
 ## Consequences
 
 - Each milestone toward 1.0 maps to a pre-release (alpha, beta, release candidate, see ADR 0004).
-- The 1.0.0 commit carries a `BREAKING CHANGE:` footer, because the vibey release flow derives
-  major versions from breaking markers.
+- The 1.0.0 release commit sets the version by hand, as every release does (ADR 0005). Conventional
+  commits with `BREAKING CHANGE:` footers are still required, but they do not choose the version.
 - Paid model runs, publishing and the KDP upload need the maintainer's explicit go-ahead.

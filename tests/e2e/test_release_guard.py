@@ -190,3 +190,25 @@ def test_every_stage_of_the_release_uses_the_same_tag() -> None:
 
     assert text.count(expression) == 5  # concurrency, checkout, guard, build, release
     assert "github.ref_name" not in text.replace(expression, "")
+
+
+def test_a_tag_with_an_unfolded_changelog_fragment_is_refused(repo: Path) -> None:
+    write(repo, "changelog.d/README.md", "how to\n")
+    write(repo, "changelog.d/a-change.md", "A change.\n")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-q", "-m", "fragment")
+    git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+
+    result = run_guard(repo, f"v{VERSION}")
+
+    assert result.returncode == 1
+    assert "changelog.d/a-change.md is an unfolded changelog fragment" in result.stderr
+
+
+def test_the_fragments_readme_alone_does_not_block_a_release(repo: Path) -> None:
+    write(repo, "changelog.d/README.md", "how to\n")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-q", "-m", "readme")
+    git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+
+    assert run_guard(repo, f"v{VERSION}").returncode == 0
