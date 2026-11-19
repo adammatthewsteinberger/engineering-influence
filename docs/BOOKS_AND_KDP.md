@@ -25,7 +25,7 @@ The publish stage (`ei book publish`) produces, and verifies, the files and deci
 | Hardcover interior | Compact hardcover build; page limit checked, or an explicit external-provider decision required |
 | eBook | EPUB built and validated (structure, links, `epubcheck`) |
 | Covers | Front, back and spine/wrap for print at the exact trim and page count, plus the eBook cover; image, quiet-zone and layout checks |
-| Listing metadata | Title, subtitle, author, description size, **exactly seven unique keywords**, categories |
+| Listing metadata | Title, subtitle, author, description size, **exactly seven unique keywords** (categories are not checked yet) |
 | Pricing | List-price policy, freshness and source of the inputs, estimated print cost and royalty |
 | Manuscript quality | Forbidden-content, scaffold-leak, chapter-opening, contents, research-apparatus and formula checks |
 | Evidence | A machine-readable release report with file digests, tool versions and git state |
@@ -39,10 +39,10 @@ Be exact about today's state (alpha `0.1.0a1`):
 
 | | Status |
 |---|---|
-| Orchestration: queue, worker, ledger, gates, retries, dead-letter, API, MCP, CLI, SDK, webhooks | Built and tested |
+| Orchestration: queue, worker, ledger, gates, dead-letter, API, MCP, CLI, SDK, webhooks | Built and tested |
 | KDP packaging and verification (`ei book …`): audits, PDF, EPUB, covers, QA, readiness report | Built, tested, used to build ten real books |
 | **The writing itself** | **Not yet autonomous.** The runner and gate that ship are deterministic placeholders (`DeterministicRunner` returns fixed text). A model-backed runner and rubric gates implement the same ports and are the next milestone |
-| Methodology stages (P1 to P14), autonomy modes and budget guards | Not built |
+| Methodology stages (P1 to P14), autonomy modes, budget guards, automatic job retries | Not built |
 | Uploading to KDP | Never automatic: KDP has no publishing API. You upload the verified files and paste the verified metadata yourself |
 
 So today you can run the full orchestration end to end and produce KDP-ready packaging from

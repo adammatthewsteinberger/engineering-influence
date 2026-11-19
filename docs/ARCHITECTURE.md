@@ -49,7 +49,7 @@ The correlation id travels the whole way: request, queued job, worker log lines 
 
 ## Design decisions
 
-- **Ports first.** Queue, ledger, gate, runner, outbox, clock and secrets are ports. The
+- **Ports first.** Queue, ledger, gate, runner, outbox and secrets are ports. The
   application does not know which LLM runner or queue it runs on.
 - **vibey stays behind a boundary.** [ADR 0001](adr/0001-vibey-integration-boundary.md) records
   why: vibey-engine 0.4 does not expose worker extension points, so the worker uses an

@@ -22,7 +22,7 @@ class McpApplication:
 
         server = MCPServer(
             name="engineering-influence",
-            instructions="Start and inspect evidence-bounded content pipelines.",
+            instructions="Start evidence-bounded content pipelines.",
         )
 
         @server.tool()

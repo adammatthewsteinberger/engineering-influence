@@ -40,10 +40,10 @@ runs the curl example against the full stack. If you change an interface, the ex
 
 - The 100% gate includes branches. Code that only runs in a fresh interpreter (missing optional
   extras) is measured through `patch = ["subprocess"]` in `[tool.coverage.run]`; do not remove it.
-- Tests marked for a TeX toolchain are deselected by default (`pytest` reports "deselected").
+- Only the `distribution` marker is deselected by default; no test builds a real PDF or EPUB, because CI installs no TeX toolchain.
 
 ## Writing tests
 
 - Prefer a fake adapter behind a port over a mock of a library.
 - Anything that crosses a process boundary needs a failure and recovery test, not only the happy path.
-- Property tests use `hypothesis`; keep strategies small so the suite stays near a minute.
+- `hypothesis` is a declared test dependency, but no property tests exist yet; keep strategies small when adding them.

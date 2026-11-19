@@ -31,9 +31,9 @@ release may receive a native adapter without changing the application core.
 ## Consequences
 
 - Pipeline phases can use domain-specific job kinds without modifying vibey.
-- Crash recovery and exactly-once event delivery remain explicit contracts of
+- Crash recovery and at-least-once event delivery (consumers must deduplicate) remain explicit contracts of
   the engineering-influence adapters.
 - The adapter must preserve lease, retry, dead-letter, and gate semantics and
-  must be covered by integration tests against PostgreSQL and RabbitMQ.
+  must be covered by integration tests against PostgreSQL and RabbitMQ. Those tests do not exist yet; today only `examples/compose_smoke.sh` exercises the real stack (milestone M1 of the 1.0 plan adds them).
 - Native vibey worker registration remains an optimization, not an architectural
   prerequisite.

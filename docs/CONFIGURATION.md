@@ -1,11 +1,11 @@
 # Configuration
 
 Book configuration is intentionally separate from author profile configuration.
-The public package accepts a project title, slug, governing postulates, target
-formats, and autonomy policy. Private books repositories may add a profile that
+The public package accepts a project title, slug, governing postulates and the
+stages to run. Target formats and an autonomy policy are planned, not accepted yet. Private books repositories may add a profile that
 fills the governing-postulates slot without changing the public domain model.
 
-The versioned configuration schema will be published under
+The versioned configuration schema is not published yet; it is planned under
 `contracts/book_config/v1` before the first stable release.
 
 ## Security settings
@@ -46,8 +46,7 @@ possible; route deliveries to untrusted URLs through an egress proxy as well.
   authenticated; do not expose them on a network.
 - Request body size limits, TLS termination, and API key rotation are
   deployment concerns for the reverse proxy and are not implemented here.
-- `pdf_safety` is a best-effort scrubber for pass-through PDFs and is not wired
-  in because the service never passes uploaded PDFs on.
+- `AttachmentUploadInspector` and `ConfinedPathGuard` exist but no route uses them yet, because the service accepts no uploads.
 
 ## Observability
 
@@ -59,7 +58,7 @@ Wire these adapters in the process entry point. Nothing is global except what
 | JSON logs | `JsonLoggingConfigurator(level).configure()`: one JSON line per record on stderr, secrets masked, `correlation_id` on every line. Safe to call twice. |
 | Correlation | `ContextVarCorrelation` plus `CorrelatingQueue(queue, correlation)` on the API side and `CorrelatedPhaseHandler(handler, correlation)` on the worker side. |
 | Request metrics | `ApiObservability(readiness, metrics, correlation)` passed to `ApiApplication`. |
-| Health | `ReadinessProbe((TcpHealthCheck("postgres", host, 5432), TcpHealthCheck("rabbitmq", host, 5672), ToolchainHealthCheck()))`. |
+| Health | `ReadinessProbe((TcpHealthCheck("postgres", host, 5432), TcpHealthCheck("rabbitmq", host, 5672)))`. `ToolchainHealthCheck()` exists but the API does not add it, since the runtime image has no TeX. |
 | Service spans | `TracedStartPipeline`, `TracedRunPhase`, `TracedDispatchOutbox` wrap the services. |
 | Crash alerts | `ProcessCrashHooks().install()`, once per process. |
 | Worker liveness | `WorkerHeartbeat(metrics, alerts).start()`, `.record_progress()` per job, `.stop()`. |
