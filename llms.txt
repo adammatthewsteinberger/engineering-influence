@@ -1,6 +1,6 @@
 # engineering-influence
 
-> Writes complete books, fiction and non-fiction, fully autonomously, and produces files and metadata ready to self-publish on Amazon KDP (paperback and hardcover interiors, EPUB, covers, listing metadata, release-readiness report; a person reviews and uploads, as KDP has no API). One controller layer is exposed as a REST API, an MCP server (tool: start_pipeline), a CLI (`ei`), a Python SDK and signed webhooks. Alpha (0.1.0a1); autonomous drafting needs a model-backed runner (the shipped runner and gate are deterministic placeholders). Public software only: author-owned books and profiles are not in this repository.
+> Writes complete books, fiction and non-fiction, fully autonomously, and produces files and metadata ready to self-publish on Amazon KDP (paperback and hardcover interiors, EPUB, covers, listing metadata, release-readiness report; a person reviews and uploads, as KDP has no API). One controller layer is exposed as a REST API, an MCP server (tool: start_pipeline), a CLI (`ei`), a Python SDK and signed webhooks. Alpha (0.1.0a2); autonomous drafting needs a model-backed runner (the shipped runner and gate are deterministic placeholders). Public software only: author-owned books and profiles are not in this repository.
 
 ## Start here
 

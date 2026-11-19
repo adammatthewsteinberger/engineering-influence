@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.1.0a2
+
+- Release flow and CI: ADR 0005 records how releases really work (the version is set by hand in the release commit) and replaces direct edits of this file with `changelog.d/` fragments, folded by `scripts/fold_changelog.py` and enforced by the release guard. CI now runs every gate on Python 3.12, 3.13 and 3.14, the SDK and core declare 3.14, and a daily `Canary` workflow installs the declared bounds from the package index without the lock file and runs the suite. `CONTRIBUTING.md` states what may live in the public repository (where model prompts, fixtures and cassettes go).
+- The `toolchain` CI job caches the downloaded TeX packages and downloads them in short, retried attempts, because the runner's mirror sometimes throttled a connection until the job hit its time limit.
 - Added a `toolchain` CI job that builds a synthetic fixture book with real LuaLaTeX, tex4ebook and epubcheck under a strict release contract and compares it with a checked-in structural snapshot. Before this, no test built a real PDF or EPUB. See `docs/TESTING.md`.
 - Hardened the TeX toolchain before any model-written text reaches it: `latexmk` runs with `-no-shell-escape`, and both `latexmk` and `tex4ebook` get an allow-listed environment (`PATH`, `HOME`, locale, `TEXMF*` and similar) instead of a copy of the parent's, so API keys and tokens never reach a build tool.
 - A strict release (`--strict-release`, or `release.required = true` in the book config) now fails when `epubcheck` is not installed. Before, a missing validator read as a pass.
