@@ -96,7 +96,7 @@ class PublishPipeline:
             return result, preflight_ok
 
         hardcover_pdf = self._layout.output / f"{slug}-hardcover.pdf"
-        self._run_steps(slug, hardcover, report_dir, result)
+        self._run_steps(slug, hardcover, report_dir, result, strict)
         result["artifacts"] = self._inventory.artifacts(slug, hardcover=hardcover)
         self._check_artifacts(
             result, hardcover, hardcover_pdf, formats["hardcover_max_pages"], slug
@@ -156,10 +156,10 @@ class PublishPipeline:
         }
 
     def _run_steps(
-        self, slug: str, hardcover: bool, report_dir: Path, result: dict[str, Any]
+        self, slug: str, hardcover: bool, report_dir: Path, result: dict[str, Any], strict: bool
     ) -> None:
         recorder = StepRecorder(self._relativizer, self._clock)
-        for name, command, action in self._steps.plan(slug, hardcover=hardcover):
+        for name, command, action in self._steps.plan(slug, hardcover=hardcover, strict=strict):
             step = recorder.run(name, command, action, report_dir / f"{name}.log")
             result["steps"].append(step)
             if step["status"] == "fail":

@@ -1,9 +1,10 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Runs latexmk with LuaLaTeX."""
 
-import os
 import subprocess  # nosec B404
 from pathlib import Path
+
+from engineering_influence.publishing.typesetting.tool_environment import ToolEnvironment
 
 
 class LatexCompiler:
@@ -18,13 +19,13 @@ class LatexCompiler:
         command = [
             "latexmk",
             "-lualatex",
+            "-no-shell-escape",
             "-interaction=nonstopmode",
             "-halt-on-error",
             "-file-line-error",
             tex_name,
         ]
-        env = os.environ.copy()
-        env["SOURCE_DATE_EPOCH"] = str(source_date_epoch)
+        env = ToolEnvironment().build(source_date_epoch)
         # Fixed argument list, no shell; tex_name is a validated slug plus '.tex'.
         result = subprocess.run(  # nosec B603
             command, cwd=workdir, capture_output=True, text=True, env=env, check=False

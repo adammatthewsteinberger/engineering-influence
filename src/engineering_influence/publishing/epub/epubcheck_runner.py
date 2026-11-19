@@ -9,6 +9,9 @@ from pathlib import Path
 class EpubcheckRunner:
     """Finds epubcheck on PATH (Debian installs it as a bare .jar) and reports its findings."""
 
+    def __init__(self, required: bool = False) -> None:
+        self._required = required
+
     def command(self) -> list[str] | None:
         """epubcheck as a command, or None when it is not installed."""
         found = shutil.which("epubcheck")
@@ -20,9 +23,15 @@ class EpubcheckRunner:
         return [found]
 
     def run(self, path: Path) -> list[str]:
-        """Return up to 20 epubcheck findings; empty when it passes or is not installed."""
+        """Return up to 20 epubcheck findings.
+
+        Empty when it passes. When epubcheck is not installed that is also empty, unless it
+        is required (a strict release): a validator that did not run must not read as a pass.
+        """
         command = self.command()
         if not command:
+            if self._required:
+                return ["epubcheck: not installed, but a strict release requires it"]
             return []
         # Argument list built from a located executable and a file path; no shell.
         proc = subprocess.run(  # nosec B603

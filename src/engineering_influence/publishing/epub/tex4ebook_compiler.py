@@ -4,6 +4,8 @@
 import subprocess  # nosec B404
 from pathlib import Path
 
+from engineering_influence.publishing.typesetting.tool_environment import ToolEnvironment
+
 
 class Tex4ebookCompiler:
     """Uses fine-ebook.cfg for the markup and fine-ebook.css for the styles."""
@@ -13,6 +15,11 @@ class Tex4ebookCompiler:
         command = ["tex4ebook", "-l", "-f", "epub3", "-c", "fine-ebook.cfg", tex_name]
         # Fixed argument list, no shell; tex_name is a validated slug plus '.tex'.
         result = subprocess.run(  # nosec B603
-            command, cwd=workdir, capture_output=True, text=True, check=False
+            command,
+            cwd=workdir,
+            capture_output=True,
+            text=True,
+            env=ToolEnvironment().build(),
+            check=False,
         )
         return result.returncode, result.stdout + result.stderr
