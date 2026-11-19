@@ -1,9 +1,9 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """The print-interior LaTeX document for the fine-book classes."""
 
-from engineering_influence.publishing.typesetting.book import Book
-from engineering_influence.publishing.typesetting.chapter_tex import ChapterTex
-from engineering_influence.publishing.typesetting.tex_text import TexText
+from engineering_influence.models.typesetting.book import Book
+from engineering_influence.services.typesetting.chapter_tex import ChapterTex
+from engineering_influence.services.typesetting.tex_text import TexText
 
 
 class PrintDocument:

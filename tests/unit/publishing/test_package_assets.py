@@ -3,9 +3,17 @@
 import re
 from pathlib import Path
 
+from engineering_influence.infrastructure.publishing.filesystem_manuscript_source import (
+    FilesystemManuscriptSource,
+)
 from engineering_influence.infrastructure.publishing.package_assets import PackageAssets
+from engineering_influence.infrastructure.typesetting.filesystem_build_workspace import (
+    FilesystemBuildWorkspace,
+)
+from engineering_influence.infrastructure.typesetting.latex_compiler import LatexCompiler
 from engineering_influence.models.publishing.project_layout import ProjectLayout
-from engineering_influence.publishing.typesetting.book_builder import BookBuilder
+from engineering_influence.repositories.typesetting.book_loader import BookLoader
+from engineering_influence.services.typesetting.book_builder import BookBuilder
 
 EXPECTED = {
     "fine-book.cls",
@@ -48,7 +56,14 @@ def test_builder_defaults_to_the_bundled_assets(tmp_path: Path) -> None:
         'author_bio = "Bio."\nparts = [{ title = "One", chapters = ["a.md"] }]\n',
         encoding="utf-8",
     )
-    tex = BookBuilder(ProjectLayout(tmp_path)).build("demo", tex_only=True, hardcover=True)
+    tex = BookBuilder(
+        ProjectLayout(tmp_path),
+        BookLoader(tmp_path),
+        LatexCompiler(),
+        FilesystemBuildWorkspace(),
+        PackageAssets(),
+        FilesystemManuscriptSource(),
+    ).build("demo", tex_only=True, hardcover=True)
     workdir = tex.parent
     assert (workdir / "fine-book.cls").is_file() and (workdir / "fine-book-hardcover.cls").is_file()
     assert (workdir / "fonts" / "EBGaramond-Regular.otf").is_file()

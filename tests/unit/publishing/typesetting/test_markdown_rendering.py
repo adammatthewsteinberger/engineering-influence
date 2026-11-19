@@ -3,16 +3,16 @@
 import pytest
 from markdown_it.token import Token
 
-from engineering_influence.publishing.typesetting.block_renderer import BlockRenderer
-from engineering_influence.publishing.typesetting.inline_renderer import InlineRenderer
-from engineering_influence.publishing.typesetting.latex_escaper import LatexEscaper
-from engineering_influence.publishing.typesetting.latex_table import LatexTable
-from engineering_influence.publishing.typesetting.manuscript_error import ManuscriptError
-from engineering_influence.publishing.typesetting.markdown_latex_converter import (
+from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
+from engineering_influence.services.typesetting.block_renderer import BlockRenderer
+from engineering_influence.services.typesetting.inline_renderer import InlineRenderer
+from engineering_influence.services.typesetting.latex_escaper import LatexEscaper
+from engineering_influence.services.typesetting.latex_table import LatexTable
+from engineering_influence.services.typesetting.markdown_latex_converter import (
     MarkdownLatexConverter,
 )
-from engineering_influence.publishing.typesetting.markdown_parser import MarkdownParser
-from engineering_influence.publishing.typesetting.opening_formatter import OpeningFormatter
+from engineering_influence.services.typesetting.markdown_parser import MarkdownParser
+from engineering_influence.services.typesetting.opening_formatter import OpeningFormatter
 
 PARSER = MarkdownParser()
 

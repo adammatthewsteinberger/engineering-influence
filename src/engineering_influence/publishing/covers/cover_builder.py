@@ -8,6 +8,7 @@ from typing import Any
 
 from PIL import Image
 
+from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 from engineering_influence.infrastructure.publishing.package_assets import PackageAssets
 from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.publishing.covers.builtin_cover_style import BuiltinCoverStyle
@@ -24,8 +25,7 @@ from engineering_influence.publishing.covers.kdp_cover_spec import KdpCoverSpec 
 from engineering_influence.publishing.covers.layout_factory import LayoutFactory
 from engineering_influence.publishing.covers.painter_registry import PainterRegistry
 from engineering_influence.publishing.covers.print_pdf_verifier import PrintPdfVerifier
-from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
-from engineering_influence.publishing.typesetting.book_builder import BookBuilder
+from engineering_influence.services.typesetting.book_builder import BookBuilder
 
 
 class CoverBuilder:

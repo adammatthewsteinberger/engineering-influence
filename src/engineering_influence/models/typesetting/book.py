@@ -4,7 +4,7 @@
 from dataclasses import dataclass, field
 from typing import Any
 
-from engineering_influence.publishing.typesetting.chapter import Chapter
+from engineering_influence.models.typesetting.chapter import Chapter
 
 
 @dataclass

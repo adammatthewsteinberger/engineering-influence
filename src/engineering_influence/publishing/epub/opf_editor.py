@@ -4,9 +4,9 @@
 import html
 import re
 
+from engineering_influence.models.typesetting.book import Book
 from engineering_influence.publishing.epub.cover_image import CoverImage
 from engineering_influence.publishing.epub.nav_document import NavDocument
-from engineering_influence.publishing.typesetting.book import Book
 
 
 class OpfEditor:

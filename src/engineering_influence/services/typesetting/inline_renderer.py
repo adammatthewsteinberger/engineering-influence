@@ -5,8 +5,8 @@ import re
 
 from markdown_it.token import Token
 
-from engineering_influence.publishing.typesetting.latex_escaper import LatexEscaper
-from engineering_influence.publishing.typesetting.manuscript_error import ManuscriptError
+from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
+from engineering_influence.services.typesetting.latex_escaper import LatexEscaper
 
 
 class InlineRenderer:

@@ -5,14 +5,15 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
-from engineering_influence.publishing.typesetting.book import Book
-from engineering_influence.publishing.typesetting.chapter import Chapter
-from engineering_influence.publishing.typesetting.chapter_loader import ChapterLoader
-from engineering_influence.publishing.typesetting.manuscript_error import ManuscriptError
-from engineering_influence.services.publishing.path_relativizer import PathRelativizer
+from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
+from engineering_influence.interfaces.book_loader_interface import BookLoaderInterface
+from engineering_influence.models.publishing.path_relativizer import PathRelativizer
+from engineering_influence.models.typesetting.book import Book
+from engineering_influence.models.typesetting.chapter import Chapter
+from engineering_influence.repositories.typesetting.chapter_loader import ChapterLoader
 
 
-class BookLoader:
+class BookLoader(BookLoaderInterface):
     """Reads every configured file, numbers the chapters, and rejects unlisted sources."""
 
     def __init__(self, root: Path, strict: bool = True) -> None:

@@ -9,6 +9,7 @@ from PIL import Image
 from pypdf import PdfWriter
 from pypdf.generic import DictionaryObject, NameObject, NumberObject
 
+from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 from engineering_influence.publishing.covers.cover_files import CoverFiles
 from engineering_influence.publishing.covers.ebook_border import EbookBorder
 from engineering_influence.publishing.covers.ebook_cover_verifier import EbookCoverVerifier
@@ -16,7 +17,6 @@ from engineering_influence.publishing.covers.image_verifier import ImageVerifier
 from engineering_influence.publishing.covers.interior_page_count import InteriorPageCount
 from engineering_influence.publishing.covers.kdp_cover_spec import KdpCoverSpec
 from engineering_influence.publishing.covers.print_pdf_verifier import PrintPdfVerifier
-from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
 
 DARK = (20, 20, 40)
 

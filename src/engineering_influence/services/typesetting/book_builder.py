@@ -3,16 +3,16 @@
 
 import datetime as dt
 import re
-import shutil
-from contextlib import AbstractContextManager, nullcontext
 from pathlib import Path
 
-from engineering_influence.infrastructure.publishing.package_assets import PackageAssets
+from engineering_influence.errors.typesetting.book_build_error import BookBuildError
+from engineering_influence.interfaces.book_loader_interface import BookLoaderInterface
+from engineering_influence.interfaces.build_workspace_interface import BuildWorkspaceInterface
+from engineering_influence.interfaces.latex_compiler_interface import LatexCompilerInterface
+from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
+from engineering_influence.interfaces.package_assets_interface import PackageAssetsInterface
 from engineering_influence.models.publishing.project_layout import ProjectLayout
-from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
-from engineering_influence.publishing.typesetting.book_loader import BookLoader
-from engineering_influence.publishing.typesetting.latex_compiler import LatexCompiler
-from engineering_influence.publishing.typesetting.print_document import PrintDocument
+from engineering_influence.services.typesetting.print_document import PrintDocument
 
 
 class BookBuilder:
@@ -23,30 +23,31 @@ class BookBuilder:
     def __init__(
         self,
         layout: ProjectLayout,
-        assets: Path | None = None,
-        compiler: LatexCompiler | None = None,
-        strict: bool = True,
+        loader: BookLoaderInterface,
+        compiler: LatexCompilerInterface,
+        workspace: BuildWorkspaceInterface,
+        assets: PackageAssetsInterface,
+        files: ManuscriptSourceInterface,
     ) -> None:
         self._layout = layout
+        self._loader = loader
+        self._compiler = compiler
+        self._workspace = workspace
         self._assets = assets
-        self._compiler = compiler or LatexCompiler()
-        self._loader = BookLoader(layout.root, strict)
+        self._files = files
 
     def build(self, slug: str, *, tex_only: bool = False, hardcover: bool = False) -> Path:
         """Return the .tex path when tex_only, otherwise the finished PDF path.
 
-        Class files and fonts come from the assets directory given to the builder, or from
-        the assets bundled in the package.
+        Class files and fonts come from the assets provider: the ones bundled in the package,
+        or a directory of the project's own.
         """
         if not self.SLUG.fullmatch(slug):
             raise BookBuildError(f"invalid book slug: {slug!r}")
         config = self._layout.books / f"{slug}.toml"
-        if not config.exists():
+        if not self._files.exists(config):
             raise BookBuildError(f"no such book config: {config}")
-        assets_context: AbstractContextManager[Path] = (
-            nullcontext(self._assets) if self._assets else PackageAssets().directory()
-        )
-        with assets_context as assets:
+        with self._assets.directory() as assets:
             return self._build(config, slug, assets, tex_only, hardcover)
 
     def _build(
@@ -55,15 +56,9 @@ class BookBuilder:
         book = self._loader.load(config)
         build_slug = f"{slug}-hardcover" if hardcover else slug
         workdir = self._layout.build / build_slug
-        workdir.mkdir(parents=True, exist_ok=True)
-        if hardcover:
-            shutil.copy(assets / "fine-book-hardcover.cls", workdir / "fine-book-hardcover.cls")
-        shutil.copy(assets / "fine-book.cls", workdir / "fine-book.cls")
-        # The interior fonts travel with the package, so the PDF does not depend on which TeX
-        # distribution built it.
-        shutil.copytree(assets / "fonts", workdir / "fonts", dirs_exist_ok=True)
+        self._workspace.prepare(workdir, assets, hardcover)
         tex_path = workdir / f"{slug}.tex"
-        tex_path.write_text(PrintDocument().render(book, hardcover=hardcover), encoding="utf-8")
+        self._workspace.write_text(tex_path, PrintDocument().render(book, hardcover=hardcover))
         if tex_only:
             return tex_path
         year = int(book.meta.get("year", 2026))
@@ -71,9 +66,12 @@ class BookBuilder:
         status, stdout = self._compiler.compile(workdir, f"{slug}.tex", epoch)
         if status != 0:
             log = workdir / f"{slug}.log"
-            tail = log.read_text(errors="replace")[-4000:] if log.exists() else stdout[-4000:]
+            tail = (
+                self._files.read_text(log, errors="replace")[-4000:]
+                if self._files.exists(log)
+                else stdout[-4000:]
+            )
             raise BookBuildError(f"[{slug}] LaTeX failed:\n{tail}")
-        self._layout.output.mkdir(exist_ok=True)
         pdf = self._layout.output / f"{build_slug}.pdf"
-        shutil.copy(workdir / f"{slug}.pdf", pdf)
+        self._workspace.deliver(workdir / f"{slug}.pdf", pdf)
         return pdf

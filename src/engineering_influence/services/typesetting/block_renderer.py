@@ -5,10 +5,10 @@ from typing import ClassVar
 
 from markdown_it.token import Token
 
-from engineering_influence.publishing.typesetting.inline_renderer import InlineRenderer
-from engineering_influence.publishing.typesetting.latex_table import LatexTable
-from engineering_influence.publishing.typesetting.manuscript_error import ManuscriptError
-from engineering_influence.publishing.typesetting.opening_formatter import OpeningFormatter
+from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
+from engineering_influence.services.typesetting.inline_renderer import InlineRenderer
+from engineering_influence.services.typesetting.latex_table import LatexTable
+from engineering_influence.services.typesetting.opening_formatter import OpeningFormatter
 
 
 class BlockRenderer:

@@ -4,10 +4,10 @@ from pathlib import Path
 
 import pytest
 
+from engineering_influence.models.publishing.path_relativizer import PathRelativizer
 from engineering_influence.services.publishing.forbidden_content_check import ForbiddenContentCheck
 from engineering_influence.services.publishing.kdp_geometry import KdpGeometry
 from engineering_influence.services.publishing.latex_log_check import LatexLogCheck
-from engineering_influence.services.publishing.path_relativizer import PathRelativizer
 from engineering_influence.services.publishing.text_normalizer import TextNormalizer
 
 

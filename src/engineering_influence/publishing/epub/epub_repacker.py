@@ -6,6 +6,7 @@ import re
 import zipfile
 from pathlib import Path
 
+from engineering_influence.models.typesetting.book import Book
 from engineering_influence.publishing.epub.contents_page import ContentsPage
 from engineering_influence.publishing.epub.cover_image import CoverImage
 from engineering_influence.publishing.epub.css_cleaner import CssCleaner
@@ -15,7 +16,6 @@ from engineering_influence.publishing.epub.ncx_document import NcxDocument
 from engineering_influence.publishing.epub.opf_editor import OpfEditor
 from engineering_influence.publishing.epub.xhtml_cleaner import XhtmlCleaner
 from engineering_influence.publishing.epub.xhtml_patterns import XhtmlPatterns
-from engineering_influence.publishing.typesetting.book import Book
 
 
 class EpubRepacker:

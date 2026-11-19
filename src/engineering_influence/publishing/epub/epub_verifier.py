@@ -3,6 +3,7 @@
 
 from pathlib import Path
 
+from engineering_influence.models.typesetting.book import Book
 from engineering_influence.publishing.epub.contents_links_check import ContentsLinksCheck
 from engineering_influence.publishing.epub.contents_page_check import ContentsPageCheck
 from engineering_influence.publishing.epub.cover_check import CoverCheck
@@ -14,7 +15,6 @@ from engineering_influence.publishing.epub.start_reading_check import StartReadi
 from engineering_influence.publishing.epub.stylesheet_check import StylesheetCheck
 from engineering_influence.publishing.epub.text_rules_check import TextRulesCheck
 from engineering_influence.publishing.epub.xml_check import XmlCheck
-from engineering_influence.publishing.typesetting.book import Book
 
 
 class EpubVerifier:

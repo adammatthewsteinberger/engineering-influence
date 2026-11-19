@@ -8,12 +8,12 @@ from typing import Any
 from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
 from engineering_influence.models.publishing.audit_report import AuditReport
 from engineering_influence.models.publishing.entry import Entry
+from engineering_influence.models.publishing.path_relativizer import PathRelativizer
 from engineering_influence.services.publishing.chapter_opening_check import ChapterOpeningCheck
 from engineering_influence.services.publishing.config_entries import ConfigEntries
 from engineering_influence.services.publishing.formula_check import FormulaCheck
 from engineering_influence.services.publishing.issue_recorder import IssueRecorder
 from engineering_influence.services.publishing.manuscript_text import ManuscriptText
-from engineering_influence.services.publishing.path_relativizer import PathRelativizer
 from engineering_influence.services.publishing.scaffold_check import ScaffoldCheck
 from engineering_influence.services.publishing.source_inventory_check import SourceInventoryCheck
 from engineering_influence.services.publishing.text_statistics import TextStatistics

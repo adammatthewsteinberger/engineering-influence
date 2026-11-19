@@ -6,6 +6,7 @@ from typing import Any
 import numpy as np
 from PIL import Image
 
+from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 from engineering_influence.publishing.covers.back_typesetter import BackTypesetter
 from engineering_influence.publishing.covers.cover_layout import CoverLayout
 from engineering_influence.publishing.covers.cover_style import CoverStyle
@@ -18,7 +19,6 @@ from engineering_influence.publishing.covers.spine_typesetter import SpineTypese
 from engineering_influence.publishing.covers.text_placement_check import TextPlacementCheck
 from engineering_influence.publishing.covers.text_recorder import TextRecorder
 from engineering_influence.publishing.covers.typography import Typography
-from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
 
 
 class CoverRenderer:

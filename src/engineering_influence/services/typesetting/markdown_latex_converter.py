@@ -3,8 +3,8 @@
 
 import re
 
-from engineering_influence.publishing.typesetting.block_renderer import BlockRenderer
-from engineering_influence.publishing.typesetting.markdown_parser import MarkdownParser
+from engineering_influence.services.typesetting.block_renderer import BlockRenderer
+from engineering_influence.services.typesetting.markdown_parser import MarkdownParser
 
 
 class MarkdownLatexConverter:

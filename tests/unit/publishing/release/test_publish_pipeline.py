@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 from pypdf import PdfWriter
 
+from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 from engineering_influence.infrastructure.publishing.filesystem_manuscript_source import (
     FilesystemManuscriptSource,
 )
@@ -22,9 +23,8 @@ from engineering_influence.publishing.qa.render_qa import RenderQa
 from engineering_influence.publishing.qa.render_report import RenderReport
 from engineering_influence.publishing.release.publish_pipeline import PublishPipeline
 from engineering_influence.publishing.release.publish_steps import PublishSteps, Step
-from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
-from engineering_influence.publishing.typesetting.book_builder import BookBuilder
 from engineering_influence.services.publishing.pdf_verifier import PdfVerifier
+from engineering_influence.services.typesetting.book_builder import BookBuilder
 
 BASE = (
     'source = "src"\ntitle = "Demo"\nsubtitle = "Sub"\nauthor = "Ann Author"\npublisher = "P"\n'

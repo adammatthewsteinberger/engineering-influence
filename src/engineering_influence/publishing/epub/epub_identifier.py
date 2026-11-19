@@ -4,8 +4,8 @@
 import re
 import uuid
 
-from engineering_influence.publishing.typesetting.book import Book
-from engineering_influence.publishing.typesetting.manuscript_error import ManuscriptError
+from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
+from engineering_influence.models.typesetting.book import Book
 
 
 class EpubIdentifier:

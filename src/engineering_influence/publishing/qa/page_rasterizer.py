@@ -5,8 +5,8 @@ import shutil
 import subprocess  # nosec B404
 from pathlib import Path
 
+from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 from engineering_influence.publishing.qa.page_file_number import PageFileNumber
-from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
 
 
 class PageRasterizer:
