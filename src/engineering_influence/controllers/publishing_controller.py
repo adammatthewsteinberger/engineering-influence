@@ -4,6 +4,9 @@
 from pathlib import Path
 from typing import Any
 
+from engineering_influence.controllers.interfaces.publishing_controller_interface import (
+    PublishingControllerInterface,
+)
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 from engineering_influence.interfaces.book_loader_interface import BookLoaderInterface
 from engineering_influence.interfaces.build_workspace_interface import BuildWorkspaceInterface
@@ -30,7 +33,7 @@ from engineering_influence.services.publishing.release_auditor import ReleaseAud
 from engineering_influence.services.typesetting.book_builder import BookBuilder
 
 
-class PublishingController:
+class PublishingController(PublishingControllerInterface):
     """One entry point per publishing operation, shared by every transport.
 
     The controller owns the wiring a transport should not repeat: the project's layout, its

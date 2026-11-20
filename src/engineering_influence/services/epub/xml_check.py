@@ -5,9 +5,10 @@ from defusedxml.common import DefusedXmlException
 from defusedxml.ElementTree import ParseError, fromstring
 
 from engineering_influence.models.epub.epub_contents import EpubContents
+from engineering_influence.services.epub.interfaces.xml_check_interface import XmlCheckInterface
 
 
-class XmlCheck:
+class XmlCheck(XmlCheckInterface):
     """Parses each document and collects the reader-visible text of the XHTML pages."""
 
     def run(self, contents: EpubContents) -> tuple[list[str], str]:

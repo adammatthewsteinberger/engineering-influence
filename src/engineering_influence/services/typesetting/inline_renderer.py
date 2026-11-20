@@ -6,10 +6,13 @@ import re
 from markdown_it.token import Token
 
 from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
+from engineering_influence.services.typesetting.interfaces.inline_renderer_interface import (
+    InlineRendererInterface,
+)
 from engineering_influence.services.typesetting.latex_escaper import LatexEscaper
 
 
-class InlineRenderer:
+class InlineRenderer(InlineRendererInterface):
     """Renders emphasis, code, links, and bare URLs."""
 
     URL = re.compile(r"https?://[^\s<>\"\u201d\u2019)]+[^\s<>\"\u201d\u2019).,;:]")

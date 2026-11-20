@@ -12,11 +12,14 @@ from engineering_influence.interfaces.package_assets_interface import PackageAss
 from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.services.epub.epub_identifier import EpubIdentifier
 from engineering_influence.services.epub.epub_repacker import EpubRepacker
+from engineering_influence.services.epub.interfaces.epub_builder_interface import (
+    EpubBuilderInterface,
+)
 from engineering_influence.services.typesetting.book_builder import BookBuilder
 from engineering_influence.services.typesetting.ebook_document import EbookDocument
 
 
-class EpubBuilder:
+class EpubBuilder(EpubBuilderInterface):
     """The ebook shares one Markdown to LaTeX conversion with the print interior.
 
     The ebook embeds no fonts (readers supply their own, and KDP charges per megabyte of

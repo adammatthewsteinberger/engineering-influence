@@ -4,10 +4,13 @@
 from typing import Any
 
 from engineering_influence.models.publishing.release_readiness_report import ReleaseReadinessReport
+from engineering_influence.services.publishing.interfaces.metadata_check_interface import (
+    MetadataCheckInterface,
+)
 from engineering_influence.services.publishing.text_statistics import TextStatistics
 
 
-class MetadataCheck:
+class MetadataCheck(MetadataCheckInterface):
     """Requires complete listing metadata and exactly seven unique keywords."""
 
     def run(

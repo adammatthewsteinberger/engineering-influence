@@ -3,9 +3,12 @@
 
 from engineering_influence.models.publishing.audit_report import AuditReport
 from engineering_influence.models.publishing.release_readiness_report import ReleaseReadinessReport
+from engineering_influence.services.publishing.interfaces.audit_report_text_interface import (
+    AuditReportTextInterface,
+)
 
 
-class AuditReportText:
+class AuditReportText(AuditReportTextInterface):
     """The lines a person reads after an audit."""
 
     def manuscript(self, report: AuditReport) -> str:

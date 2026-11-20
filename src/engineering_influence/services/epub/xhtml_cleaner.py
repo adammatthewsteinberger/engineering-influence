@@ -4,9 +4,12 @@
 import re
 
 from engineering_influence.models.epub.xhtml_patterns import XhtmlPatterns
+from engineering_influence.services.epub.interfaces.xhtml_cleaner_interface import (
+    XhtmlCleanerInterface,
+)
 
 
-class XhtmlCleaner:
+class XhtmlCleaner(XhtmlCleanerInterface):
     """Drops empty stubs, hoists heading ids, and adds xml:lang."""
 
     def clean(self, xhtml: str) -> str:

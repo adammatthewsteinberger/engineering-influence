@@ -4,10 +4,13 @@
 from pathlib import Path
 
 from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
+from engineering_influence.services.publishing.interfaces.source_inventory_check_interface import (
+    SourceInventoryCheckInterface,
+)
 from engineering_influence.services.publishing.issue_recorder import IssueRecorder
 
 
-class SourceInventoryCheck:
+class SourceInventoryCheck(SourceInventoryCheckInterface):
     """Finds unlisted sources and ignore entries that name missing files."""
 
     def __init__(self, files: ManuscriptSourceInterface) -> None:

@@ -2,13 +2,16 @@
 """One chapter as LaTeX."""
 
 from engineering_influence.models.typesetting.chapter import Chapter
+from engineering_influence.services.typesetting.interfaces.chapter_tex_interface import (
+    ChapterTexInterface,
+)
 from engineering_influence.services.typesetting.markdown_latex_converter import (
     MarkdownLatexConverter,
 )
 from engineering_influence.services.typesetting.tex_text import TexText
 
 
-class ChapterTex:
+class ChapterTex(ChapterTexInterface):
     """Heading, table-of-contents entry, running head, epigraph, and body."""
 
     def __init__(self) -> None:

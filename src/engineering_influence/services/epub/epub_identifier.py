@@ -6,9 +6,12 @@ import uuid
 
 from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
 from engineering_influence.models.typesetting.book import Book
+from engineering_influence.services.epub.interfaces.epub_identifier_interface import (
+    EpubIdentifierInterface,
+)
 
 
-class EpubIdentifier:
+class EpubIdentifier(EpubIdentifierInterface):
     """An ISBN-based identifier when the book has one, otherwise a stable UUID.
 
     The UUID is derived from the website, slug, and edition, so rebuilding never changes it.

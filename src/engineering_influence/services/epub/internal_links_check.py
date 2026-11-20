@@ -5,9 +5,12 @@ import re
 
 from engineering_influence.models.epub.epub_contents import EpubContents
 from engineering_influence.models.epub.xhtml_patterns import XhtmlPatterns
+from engineering_influence.services.epub.interfaces.internal_links_check_interface import (
+    InternalLinksCheckInterface,
+)
 
 
-class InternalLinksCheck:
+class InternalLinksCheck(InternalLinksCheckInterface):
     """Walks the XHTML pages checking hrefs, titles, and empty blocks."""
 
     def run(self, contents: EpubContents) -> list[str]:

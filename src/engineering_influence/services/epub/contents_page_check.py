@@ -5,10 +5,13 @@ import html
 import re
 
 from engineering_influence.models.epub.epub_contents import EpubContents
+from engineering_influence.services.epub.interfaces.contents_page_check_interface import (
+    ContentsPageCheckInterface,
+)
 from engineering_influence.services.epub.toc_trees import TocTree
 
 
-class ContentsPageCheck:
+class ContentsPageCheck(ContentsPageCheckInterface):
     """The Kindle Publishing Guidelines want the toc nav in its own document, outside the
     reading order; the page the guide and the toc landmark name is an ordinary page near the
     front, listing the NCX's entries in the NCX's order."""

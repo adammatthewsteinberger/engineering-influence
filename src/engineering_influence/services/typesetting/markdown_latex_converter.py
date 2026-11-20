@@ -4,10 +4,13 @@
 import re
 
 from engineering_influence.services.typesetting.block_renderer import BlockRenderer
+from engineering_influence.services.typesetting.interfaces.markdown_latex_converter_interface import (
+    MarkdownLatexConverterInterface,
+)
 from engineering_influence.services.typesetting.markdown_parser import MarkdownParser
 
 
-class MarkdownLatexConverter:
+class MarkdownLatexConverter(MarkdownLatexConverterInterface):
     """Converts a chapter body (without its title) to LaTeX."""
 
     CALLOUT = re.compile(r"^\[CALLOUT\]\n(.*?)\n\[/CALLOUT\]$", re.DOTALL | re.MULTILINE)

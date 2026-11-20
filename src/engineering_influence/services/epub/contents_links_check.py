@@ -6,9 +6,12 @@ import re
 from engineering_influence.models.epub.epub_contents import EpubContents
 from engineering_influence.models.typesetting.book import Book
 from engineering_influence.services.epub.heading_ids import HeadingIds
+from engineering_influence.services.epub.interfaces.contents_links_check_interface import (
+    ContentsLinksCheckInterface,
+)
 
 
-class ContentsLinksCheck:
+class ContentsLinksCheck(ContentsLinksCheckInterface):
     """Counts the navigation entries and checks each target file, anchor, and heading id."""
 
     def run(self, contents: EpubContents, book: Book) -> list[str]:

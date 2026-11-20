@@ -5,9 +5,12 @@ import re
 
 from engineering_influence.models.epub.epub_contents import EpubContents
 from engineering_influence.models.typesetting.book import Book
+from engineering_influence.services.epub.interfaces.text_rules_check_interface import (
+    TextRulesCheckInterface,
+)
 
 
-class TextRulesCheck:
+class TextRulesCheck(TextRulesCheckInterface):
     """The same editorial gates as the print interior."""
 
     MARKERS = ("[CALLOUT", "[/CALLOUT", "[ILLUSTRATION", "[TESTIMONY", "[PLACEHOLDER")

@@ -6,9 +6,12 @@ from pathlib import Path
 from engineering_influence.models.publishing.audit_report import AuditReport
 from engineering_influence.models.publishing.issue import Issue
 from engineering_influence.models.publishing.path_relativizer import PathRelativizer
+from engineering_influence.services.publishing.interfaces.issue_recorder_interface import (
+    IssueRecorderInterface,
+)
 
 
-class IssueRecorder:
+class IssueRecorder(IssueRecorderInterface):
     """Turns a path and a text offset into a root-relative path and a line number."""
 
     def __init__(self, report: AuditReport, relativizer: PathRelativizer) -> None:

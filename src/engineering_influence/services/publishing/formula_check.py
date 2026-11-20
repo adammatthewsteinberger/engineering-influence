@@ -8,10 +8,13 @@ from typing import Any
 from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
 from engineering_influence.models.publishing.audit_report import AuditReport
 from engineering_influence.services.publishing.audit_defaults import AuditDefaults
+from engineering_influence.services.publishing.interfaces.formula_check_interface import (
+    FormulaCheckInterface,
+)
 from engineering_influence.services.publishing.issue_recorder import IssueRecorder
 
 
-class FormulaCheck:
+class FormulaCheck(FormulaCheckInterface):
     """Warns when a formula such as 'the question is not' is overused."""
 
     def __init__(self, files: ManuscriptSourceInterface) -> None:

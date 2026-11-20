@@ -5,11 +5,14 @@ from pathlib import Path
 from typing import Any
 
 from engineering_influence.models.publishing.audit_report import AuditReport
+from engineering_influence.services.publishing.interfaces.threshold_check_interface import (
+    ThresholdCheckInterface,
+)
 from engineering_influence.services.publishing.issue_recorder import IssueRecorder
 from engineering_influence.services.publishing.manuscript_text import ManuscriptText
 
 
-class ThresholdCheck:
+class ThresholdCheck(ThresholdCheckInterface):
     """Records counts and thresholds, then reports the ones the manuscript misses."""
 
     def run(

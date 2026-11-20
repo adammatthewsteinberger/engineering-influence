@@ -3,8 +3,12 @@
 
 import re
 
+from engineering_influence.services.publishing.interfaces.latex_log_check_interface import (
+    LatexLogCheckInterface,
+)
 
-class LatexLogCheck:
+
+class LatexLogCheck(LatexLogCheckInterface):
     """Flags typesetting defects the PDF itself cannot reveal."""
 
     def run(self, log: str) -> list[str]:

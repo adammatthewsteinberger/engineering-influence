@@ -3,10 +3,13 @@
 
 from engineering_influence.models.typesetting.book import Book
 from engineering_influence.services.typesetting.chapter_tex import ChapterTex
+from engineering_influence.services.typesetting.interfaces.ebook_document_interface import (
+    EbookDocumentInterface,
+)
 from engineering_influence.services.typesetting.tex_text import TexText
 
 
-class EbookDocument:
+class EbookDocument(EbookDocumentInterface):
     """The same chapters as the print interior, set with the fine-ebook class.
 
     The ebook and the print interior share one Markdown to LaTeX conversion.

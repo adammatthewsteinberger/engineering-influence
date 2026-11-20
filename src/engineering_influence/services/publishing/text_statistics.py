@@ -3,8 +3,12 @@
 
 import re
 
+from engineering_influence.services.publishing.interfaces.text_statistics_interface import (
+    TextStatisticsInterface,
+)
 
-class TextStatistics:
+
+class TextStatistics(TextStatisticsInterface):
     """Counts reader-visible words and source URLs."""
 
     WORD = re.compile(r"\b[A-Za-z0-9]+(?:['’][A-Za-z0-9]+)?\b")

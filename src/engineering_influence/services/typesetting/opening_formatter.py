@@ -3,8 +3,12 @@
 
 import re
 
+from engineering_influence.services.typesetting.interfaces.opening_formatter_interface import (
+    OpeningFormatterInterface,
+)
 
-class OpeningFormatter:
+
+class OpeningFormatter(OpeningFormatterInterface):
     """Every reader-facing chapter opening receives the large initial.
 
     A three-line drop cap needs enough text beside it. min_chars lets a book fall back to a

@@ -9,10 +9,13 @@ from sqlmodel import Session, SQLModel, col, create_engine, select
 from engineering_influence.interfaces.outbox_interface import (
     OutboxInterface,
 )
+from engineering_influence.repositories.interfaces.sqlmodel_outbox_interface import (
+    SqlModelOutboxInterface,
+)
 from engineering_influence.repositories.outbox_record import OutboxRecord
 
 
-class SqlModelOutbox(OutboxInterface):
+class SqlModelOutbox(SqlModelOutboxInterface, OutboxInterface):
     """Persist idempotent webhook intents with retry metadata."""
 
     def __init__(self, database_url: str = "sqlite://") -> None:

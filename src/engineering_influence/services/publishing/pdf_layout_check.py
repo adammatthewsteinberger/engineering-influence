@@ -5,10 +5,13 @@ from collections.abc import Sequence
 
 from engineering_influence.models.publishing.pdf_page import PdfPage
 from engineering_influence.services.publishing.folio_reader import FolioReader
+from engineering_influence.services.publishing.interfaces.pdf_layout_check_interface import (
+    PdfLayoutCheckInterface,
+)
 from engineering_influence.services.publishing.kdp_geometry import KdpGeometry
 
 
-class PdfLayoutCheck:
+class PdfLayoutCheck(PdfLayoutCheckInterface):
     """Walks the pages of a PDF and reports margin and blank-page violations."""
 
     def run(self, pages: Sequence[PdfPage]) -> tuple[list[str], list[str], list[str | None]]:

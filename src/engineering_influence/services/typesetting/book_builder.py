@@ -12,10 +12,13 @@ from engineering_influence.interfaces.manuscript_source_interface import Manuscr
 from engineering_influence.interfaces.package_assets_interface import PackageAssetsInterface
 from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.models.typesetting.book_slug import BookSlug
+from engineering_influence.services.typesetting.interfaces.book_builder_interface import (
+    BookBuilderInterface,
+)
 from engineering_influence.services.typesetting.print_document import PrintDocument
 
 
-class BookBuilder:
+class BookBuilder(BookBuilderInterface):
     """Writes the .tex source, compiles it, and copies the PDF to the output directory."""
 
     SLUG = BookSlug.PATTERN

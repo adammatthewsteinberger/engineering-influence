@@ -3,8 +3,12 @@
 
 from typing import Any
 
+from engineering_influence.services.publishing.interfaces.config_entries_interface import (
+    ConfigEntriesInterface,
+)
 
-class ConfigEntries:
+
+class ConfigEntries(ConfigEntriesInterface):
     """Flattens front matter, parts and chapters, and back matter."""
 
     def iterate(self, config: dict[str, Any]) -> list[tuple[str, str, str, int | None]]:

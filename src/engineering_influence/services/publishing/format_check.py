@@ -4,9 +4,12 @@
 from typing import Any
 
 from engineering_influence.models.publishing.release_readiness_report import ReleaseReadinessReport
+from engineering_influence.services.publishing.interfaces.format_check_interface import (
+    FormatCheckInterface,
+)
 
 
-class FormatCheck:
+class FormatCheck(FormatCheckInterface):
     """Rejects a KDP hardcover that is too long or an unprovided external hardcover."""
 
     def run(

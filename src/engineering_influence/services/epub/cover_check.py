@@ -7,9 +7,10 @@ from engineering_influence.interfaces.epub_cover_inspector_interface import (
     EpubCoverInspectorInterface,
 )
 from engineering_influence.models.epub.epub_contents import EpubContents
+from engineering_influence.services.epub.interfaces.cover_check_interface import CoverCheckInterface
 
 
-class CoverCheck:
+class CoverCheck(CoverCheckInterface):
     """The Kindle Publishing Guidelines require an internal cover declared in the OPF."""
 
     def __init__(self, inspector: EpubCoverInspectorInterface) -> None:

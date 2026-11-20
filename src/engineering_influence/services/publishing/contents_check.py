@@ -3,10 +3,13 @@
 
 import re
 
+from engineering_influence.services.publishing.interfaces.contents_check_interface import (
+    ContentsCheckInterface,
+)
 from engineering_influence.services.publishing.text_normalizer import TextNormalizer
 
 
-class ContentsCheck:
+class ContentsCheck(ContentsCheckInterface):
     """Compares Contents entries with the folios printed on the pages themselves."""
 
     def run(
