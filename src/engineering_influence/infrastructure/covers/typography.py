@@ -7,12 +7,15 @@ from typing import Any
 from PIL import ImageDraw, ImageFont
 
 from engineering_influence.infrastructure.covers.font_loader import FontLoader
+from engineering_influence.infrastructure.covers.interfaces.typography_interface import (
+    TypographyInterface,
+)
 from engineering_influence.models.covers.cover_layout import CoverLayout
 from engineering_influence.models.covers.kdp_cover_spec import KdpCoverSpec as Kdp
 from engineering_influence.models.covers.text_recorder import TextRecorder
 
 
-class Typography:
+class Typography(TypographyInterface):
     """Tracked (letter-spaced) text, fitting, wrapping, and the print size floor."""
 
     def __init__(self, fonts: FontLoader, recorder: TextRecorder) -> None:

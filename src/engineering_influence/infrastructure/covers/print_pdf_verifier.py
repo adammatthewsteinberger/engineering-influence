@@ -5,10 +5,13 @@ from pathlib import Path
 
 from pypdf import PdfReader
 
+from engineering_influence.infrastructure.covers.interfaces.print_pdf_verifier_interface import (
+    PrintPdfVerifierInterface,
+)
 from engineering_influence.models.covers.kdp_cover_spec import KdpCoverSpec as Kdp
 
 
-class PrintPdfVerifier:
+class PrintPdfVerifier(PrintPdfVerifierInterface):
     """A single unencrypted page of exact size holding one flattened RGB image."""
 
     def run(self, path: Path, width_in: float, height_in: float) -> list[str]:

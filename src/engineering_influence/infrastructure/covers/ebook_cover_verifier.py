@@ -7,10 +7,13 @@ import numpy as np
 from PIL import Image
 
 from engineering_influence.infrastructure.covers.ebook_border import EbookBorder
+from engineering_influence.infrastructure.covers.interfaces.ebook_cover_verifier_interface import (
+    EbookCoverVerifierInterface,
+)
 from engineering_influence.models.covers.kdp_cover_spec import KdpCoverSpec as Kdp
 
 
-class EbookCoverVerifier:
+class EbookCoverVerifier(EbookCoverVerifierInterface):
     """Size, format, colour, compression, and the gray border on a light cover."""
 
     def run(self, path: Path) -> list[str]:

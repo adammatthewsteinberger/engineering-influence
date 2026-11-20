@@ -6,8 +6,12 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
+from engineering_influence.infrastructure.covers.interfaces.film_grain_interface import (
+    FilmGrainInterface,
+)
 
-class FilmGrain:
+
+class FilmGrain(FilmGrainInterface):
     """Adds zero-mean noise to an image in place."""
 
     def add(self, img: NDArray[Any], rng: np.random.Generator, amount: float) -> None:

@@ -6,11 +6,12 @@ import hashlib
 from fastapi import Request
 
 from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.interactions.api.interfaces.api_guard_interface import ApiGuardInterface
 from engineering_influence.interfaces.api_key_verifier_interface import ApiKeyVerifierInterface
 from engineering_influence.interfaces.rate_limiter_interface import RateLimiterInterface
 
 
-class ApiGuard:
+class ApiGuard(ApiGuardInterface):
     """FastAPI dependency: throttle by address, authenticate, then throttle by key.
 
     The address limit runs first so key guessing is slowed before any comparison.

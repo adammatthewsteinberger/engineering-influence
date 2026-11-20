@@ -4,9 +4,12 @@
 from urllib.parse import urlsplit
 
 from engineering_influence.infrastructure.observability.tcp_health_check import TcpHealthCheck
+from engineering_influence.runtime.interfaces.endpoint_checks_interface import (
+    EndpointChecksInterface,
+)
 
 
-class EndpointChecks:
+class EndpointChecks(EndpointChecksInterface):
     """Build a reachability check from a URL without ever exposing its credentials."""
 
     @staticmethod

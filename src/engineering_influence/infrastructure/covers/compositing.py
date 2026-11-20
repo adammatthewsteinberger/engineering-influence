@@ -6,8 +6,12 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
+from engineering_influence.infrastructure.covers.interfaces.compositing_interface import (
+    CompositingInterface,
+)
 
-class Compositing:
+
+class Compositing(CompositingInterface):
     """Smoothstep, mixing, colours, and in-place compositing through masks."""
 
     def smoothstep(self, e0: float, e1: float, x: NDArray[Any]) -> NDArray[Any]:

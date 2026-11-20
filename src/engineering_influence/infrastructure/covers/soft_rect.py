@@ -7,9 +7,12 @@ import numpy as np
 from numpy.typing import NDArray
 
 from engineering_influence.infrastructure.covers.box_blur import BoxBlur
+from engineering_influence.infrastructure.covers.interfaces.soft_rect_interface import (
+    SoftRectInterface,
+)
 
 
-class SoftRect:
+class SoftRect(SoftRectInterface):
     """A rectangle of ones, blurred at the edges."""
 
     def mask(self, h: int, w: int, box: tuple[int, int, int, int], feather: float) -> NDArray[Any]:

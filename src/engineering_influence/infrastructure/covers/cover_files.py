@@ -6,10 +6,13 @@ from pathlib import Path
 
 from PIL import Image
 
+from engineering_influence.infrastructure.covers.interfaces.cover_files_interface import (
+    CoverFilesInterface,
+)
 from engineering_influence.models.covers.kdp_cover_spec import KdpCoverSpec as Kdp
 
 
-class CoverFiles:
+class CoverFiles(CoverFilesInterface):
     """File formats KDP accepts."""
 
     def save_tiff(self, img: Image.Image, path: Path, compress: bool = True) -> None:

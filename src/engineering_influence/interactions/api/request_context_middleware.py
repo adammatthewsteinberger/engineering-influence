@@ -7,6 +7,9 @@ from typing import Any
 
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
+from engineering_influence.interactions.api.interfaces.request_context_middleware_interface import (
+    RequestContextMiddlewareInterface,
+)
 from engineering_influence.interfaces.correlation_interface import CorrelationInterface
 from engineering_influence.interfaces.metrics_interface import MetricsInterface
 from engineering_influence.models.trace_context import TraceContext
@@ -14,7 +17,7 @@ from engineering_influence.models.trace_context import TraceContext
 _QUIET = frozenset({"/health/live", "/health/ready", "/metrics"})
 
 
-class RequestContextMiddleware:
+class RequestContextMiddleware(RequestContextMiddlewareInterface):
     """Give every HTTP request one correlation id, count it, and return the id to the caller.
 
     This is plain ASGI rather than ``BaseHTTPMiddleware`` so the id is set in the same

@@ -8,9 +8,12 @@ from pathlib import Path
 from PIL import ImageFont
 
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
+from engineering_influence.infrastructure.covers.interfaces.font_loader_interface import (
+    FontLoaderInterface,
+)
 
 
-class FontLoader:
+class FontLoader(FontLoaderInterface):
     """The first directory that holds the file wins."""
 
     def __init__(self, directories: Sequence[Path]) -> None:

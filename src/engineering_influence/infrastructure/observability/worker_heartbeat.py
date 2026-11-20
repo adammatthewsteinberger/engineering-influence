@@ -8,11 +8,14 @@ from typing import Any
 
 from vibey_bootstrap.heartbeat import start_heartbeat
 
+from engineering_influence.infrastructure.observability.interfaces.worker_heartbeat_interface import (
+    WorkerHeartbeatInterface,
+)
 from engineering_influence.interfaces.alert_interface import AlertInterface
 from engineering_influence.interfaces.metrics_interface import MetricsInterface
 
 
-class WorkerHeartbeat:
+class WorkerHeartbeat(WorkerHeartbeatInterface):
     """Log a heartbeat and alert when the worker stops making progress.
 
     vibey_bootstrap's own watchdog words its alert for Azure Service Bus, raises an

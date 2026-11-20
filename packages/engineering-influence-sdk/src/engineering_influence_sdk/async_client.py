@@ -5,8 +5,12 @@ from typing import Any, cast
 
 import httpx
 
+from engineering_influence_sdk.interfaces.async_client_interface import (
+    AsyncEngineeringInfluenceClientInterface,
+)
 
-class AsyncEngineeringInfluenceClient:
+
+class AsyncEngineeringInfluenceClient(AsyncEngineeringInfluenceClientInterface):
     """Async counterpart to the synchronous typed client."""
 
     def __init__(self, base_url: str, api_key: str | None = None, transport: Any = None) -> None:

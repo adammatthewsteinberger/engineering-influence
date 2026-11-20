@@ -8,13 +8,16 @@ from typing import Any
 
 import aio_pika
 
+from engineering_influence.infrastructure.interfaces.rabbitmq_job_consumer_interface import (
+    RabbitMqJobConsumerInterface,
+)
 from engineering_influence.infrastructure.job_message_handler import JobMessageHandler
 from engineering_influence.infrastructure.rabbitmq_topology import RabbitMqTopology
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class RabbitMqJobConsumer:
+class RabbitMqJobConsumer(RabbitMqJobConsumerInterface):
     """Connect (retrying while the broker starts), consume, and finish the job in flight on stop."""
 
     def __init__(

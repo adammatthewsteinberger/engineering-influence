@@ -7,11 +7,14 @@ from PIL import Image, ImageDraw
 
 from engineering_influence.infrastructure.covers.font_loader import FontLoader
 from engineering_influence.infrastructure.publishing.package_assets import PackageAssets
+from engineering_influence.infrastructure.qa.interfaces.contact_sheet_builder_interface import (
+    ContactSheetBuilderInterface,
+)
 from engineering_influence.models.publishing.path_relativizer import PathRelativizer
 from engineering_influence.models.qa.page_file_number import PageFileNumber
 
 
-class ContactSheetBuilder:
+class ContactSheetBuilder(ContactSheetBuilderInterface):
     """Page labels use the bundled DejaVu Serif, so sheets look the same on every machine."""
 
     def __init__(self, relativizer: PathRelativizer) -> None:

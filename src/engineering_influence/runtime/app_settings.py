@@ -3,9 +3,11 @@
 
 from dataclasses import dataclass
 
+from engineering_influence.runtime.interfaces.app_settings_interface import AppSettingsInterface
+
 
 @dataclass(frozen=True, slots=True)
-class AppSettings:
+class AppSettings(AppSettingsInterface):
     """Everything a process needs from its environment.
 
     ``database_url`` and ``rabbitmq_url`` carry credentials, so they are never logged.

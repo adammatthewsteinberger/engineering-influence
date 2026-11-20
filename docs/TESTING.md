@@ -46,14 +46,16 @@ runs the curl example against the full stack. If you change an interface, the ex
 ## Architecture ratchets
 
 `tests/architecture/` enforces the structure of ADR 0006. Rules the tree already satisfies are strict.
-Rules it does not satisfy yet (every class has an interface, every folder an `interfaces/` folder,
-and so on) are ratchets: `tests/architecture/ratchet.json`
+Rules it does not satisfy yet are ratchets: `tests/architecture/ratchet.json`
 holds each one's violation count, a count may only go down, and a change that lowers one must record
 the new number (`EI_UPDATE_RATCHET=1 uv run pytest tests/architecture/test_ratchets.py` does it).
+Every rule is at zero except the two the deprecation shims keep above it (files outside the layers,
+folders without an `interfaces/` folder); they reach zero when the shims are removed.
 `tests/architecture/test_move_map.py` keeps `scripts/refactor/move_map.toml` complete against the
 tree, and `scripts/refactor/inventory.py` prints the facts the map is built from.
 `tests/architecture/test_enum_protocols.py` checks each enum against its `runtime_checkable`
-Protocol, because an enum cannot inherit an ABC.
+Protocol, because an enum cannot inherit an ABC, and `tests/architecture/test_sdk_interfaces.py`
+holds the SDK package to the same interface rules.
 
 ## The toolchain test
 

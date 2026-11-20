@@ -4,10 +4,13 @@
 import numpy as np
 from PIL import Image, ImageDraw
 
+from engineering_influence.infrastructure.covers.interfaces.ebook_border_interface import (
+    EbookBorderInterface,
+)
 from engineering_influence.models.covers.kdp_cover_spec import KdpCoverSpec as Kdp
 
 
-class EbookBorder:
+class EbookBorder(EbookBorderInterface):
     """Detects a light edge and frames the cover in medium gray."""
 
     def is_light_edge(self, img: Image.Image, inset: int = 4, band: int = 24) -> bool:

@@ -5,6 +5,9 @@ from typing import Any
 
 from PIL import Image, ImageDraw, ImageFont
 
+from engineering_influence.infrastructure.covers.interfaces.back_typesetter_interface import (
+    BackTypesetterInterface,
+)
 from engineering_influence.infrastructure.covers.typography import Typography
 from engineering_influence.models.covers.cover_layout import CoverLayout
 from engineering_influence.models.covers.cover_style import CoverStyle
@@ -12,7 +15,7 @@ from engineering_influence.models.covers.cover_style import CoverStyle
 Block = tuple[str, ImageFont.FreeTypeFont, list[str], float, float]
 
 
-class BackTypesetter:
+class BackTypesetter(BackTypesetterInterface):
     """Lays the description out above the barcode, shrinking it until it fits."""
 
     def __init__(self, typography: Typography) -> None:

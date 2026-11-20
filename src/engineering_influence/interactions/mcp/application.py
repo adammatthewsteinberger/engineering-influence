@@ -7,9 +7,12 @@ from engineering_influence.contracts.project_request import ProjectRequest
 from engineering_influence.controllers.interfaces.project_controller_interface import (
     ProjectControllerInterface,
 )
+from engineering_influence.interactions.mcp.interfaces.application_interface import (
+    McpApplicationInterface,
+)
 
 
-class McpApplication:
+class McpApplication(McpApplicationInterface):
     """Expose pipeline tools through the official MCP SDK's `MCPServer` (mcp 2.x)."""
 
     def __init__(self, controller: ProjectControllerInterface) -> None:
