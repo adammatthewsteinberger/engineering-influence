@@ -3,6 +3,7 @@
 
 from dataclasses import dataclass
 
+from engineering_influence.errors.budget_exceeded_error import BudgetExceededError
 from engineering_influence.models.interfaces.budget_interface import BudgetInterface
 
 
@@ -34,7 +35,7 @@ class Budget(BudgetInterface):
         if amount < 0:
             raise ValueError("a reservation cannot be negative")
         if amount > self.remaining():
-            raise ValueError("reservation exceeds the remaining budget")
+            raise BudgetExceededError("reservation exceeds the remaining budget")
         return Budget(cap=self.cap, spent=self.spent, reserved=self.reserved + amount)
 
     def settle(self, reserved: int, actual: int) -> "Budget":
@@ -44,5 +45,5 @@ class Budget(BudgetInterface):
         if reserved > self.reserved:
             raise ValueError("cannot settle more than is reserved")
         if actual > reserved:
-            raise ValueError("actual cost exceeds the reservation")
+            raise BudgetExceededError("actual cost exceeds the reservation")
         return Budget(cap=self.cap, spent=self.spent + actual, reserved=self.reserved - reserved)
