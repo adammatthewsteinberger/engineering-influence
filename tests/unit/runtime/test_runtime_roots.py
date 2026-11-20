@@ -1,6 +1,7 @@
 """The two composition roots: the API and the worker."""
 
 import asyncio
+import json
 import logging
 import os
 import signal
@@ -19,7 +20,15 @@ from engineering_influence.infrastructure.observability.worker_heartbeat import 
 from engineering_influence.infrastructure.rabbitmq_job_consumer import RabbitMqJobConsumer
 from engineering_influence.interfaces.queue_interface import QueueInterface
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
+from engineering_influence.models.book_brief import BookBrief
+from engineering_influence.models.book_kind import BookKind
+from engineering_influence.models.book_run import BookRun
+from engineering_influence.models.budget import Budget
+from engineering_influence.models.run_status import RunStatus
+from engineering_influence.models.stage_plan import StagePlan
+from engineering_influence.repositories.sqlmodel_artifact_store import SqlModelArtifactStore
 from engineering_influence.repositories.sqlmodel_ledger import SqlModelLedger
+from engineering_influence.repositories.sqlmodel_run_repository import SqlModelRunRepository
 from engineering_influence.runtime.api_runtime import ApiRuntime
 from engineering_influence.runtime.app_settings import AppSettings
 from engineering_influence.runtime.worker_runtime import WorkerRuntime
@@ -302,3 +311,54 @@ def test_the_worker_refuses_to_start_on_a_database_that_was_never_migrated(tmp_p
     with pytest.raises(ApplicationError) as raised:
         WorkerRuntime(settings).build()
     assert raised.value.code == "SCHEMA_OUT_OF_DATE"
+
+
+def test_the_worker_opens_the_run_stores_and_releases_them_on_close(tmp_path: Path) -> None:
+    worker = WorkerRuntime(settings_for(tmp_path))
+    worker.build()
+    assert len(worker._stores) == 3
+    worker.close()
+    assert worker._stores == []
+
+
+class Delivery:
+    """The parts of an aio-pika incoming message the handler uses."""
+
+    def __init__(self, document: dict[str, Any]) -> None:
+        self.body = json.dumps(document).encode()
+        self.acked = 0
+        self.rejected: list[bool] = []
+
+    async def ack(self) -> None:
+        self.acked += 1
+
+    async def reject(self, requeue: bool = False) -> None:
+        self.rejected.append(requeue)
+
+
+def test_the_built_worker_runs_a_run_advance_job_against_the_database(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    runs = SqlModelRunRepository(settings.database_url)
+    brief = BookBrief(kind=BookKind.NONFICTION, idea="sourdough", budget_micro_usd=1_000)
+    plan = StagePlan(kind=BookKind.NONFICTION, stages=("brief",))
+    runs.save(BookRun("run-1", brief, plan, Budget(cap=1_000)))
+    worker = WorkerRuntime(settings)
+    consumer, _ = worker.build()
+    delivery = Delivery(
+        {
+            "job_id": "job-1",
+            "kind": "run.advance",
+            "payload": {"run_id": "run-1", "stage": "brief", "attempt": 1},
+        }
+    )
+
+    asyncio.run(consumer._handler.handle(delivery))
+    worker.close()
+
+    assert (delivery.acked, delivery.rejected) == (1, [])
+    stored = runs.get("run-1")
+    assert stored is not None and stored.status is RunStatus.COMPLETED
+    artifacts = SqlModelArtifactStore(settings.database_url)
+    assert artifacts.get("run-1", "brief.md") == b"brief: draft for sourdough"
+    artifacts.close()
+    runs.close()

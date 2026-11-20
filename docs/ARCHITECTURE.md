@@ -93,7 +93,8 @@ The correlation id travels the whole way: request, queued job, worker log lines 
 - **Queues**: `EI_QUEUE_NAME` (default `engineering-influence.jobs`) and its `.dead` companion.
 
 - **Runs** (`bookrunrecord`), the **run journal** (`journalrecord`) and **artifacts** (`artifactrecord`)
-  back resumable book runs; nothing writes to them yet.
+  back resumable book runs. The worker writes them when it advances a `run.advance` job; nothing yet
+  creates a run.
 
 The schema is owned by Alembic. The migrations ship in the wheel
 (`infrastructure/migrations/`), `ei db upgrade` applies them to `EI_DATABASE_URL`, and the compose
