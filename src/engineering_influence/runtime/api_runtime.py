@@ -26,6 +26,7 @@ from engineering_influence.infrastructure.security.token_bucket_rate_limiter imp
 from engineering_influence.interactions.api.api_guard import ApiGuard
 from engineering_influence.interactions.api.api_observability import ApiObservability
 from engineering_influence.interactions.api.application import ApiApplication
+from engineering_influence.interfaces.queue_interface import QueueInterface
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
 from engineering_influence.repositories.sqlmodel_ledger import SqlModelLedger
 from engineering_influence.runtime.app_settings import AppSettings
@@ -47,17 +48,20 @@ class ApiRuntime(ApiRuntimeInterface):
         settings: AppSettings,
         secrets: SecretProviderInterface,
         server: Callable[..., None] | None = None,
+        queue: QueueInterface | None = None,
     ) -> None:
         self._settings = settings
         self._secrets = secrets
         self._server = server
+        self._queue = queue
         self._ledger: SqlModelLedger | None = None
 
     def build_app(self) -> Any:
         """Wire the ledger, the correlating queue, the guard and observability."""
         correlation = ContextVarCorrelation()
         queue = CorrelatingQueue(
-            RabbitMqQueueAdapter(self._settings.rabbitmq_url, self._settings.queue_name),
+            self._queue
+            or RabbitMqQueueAdapter(self._settings.rabbitmq_url, self._settings.queue_name),
             correlation,
         )
         guard = ApiGuard(

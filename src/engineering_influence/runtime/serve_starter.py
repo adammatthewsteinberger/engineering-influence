@@ -6,8 +6,12 @@ from collections.abc import Callable
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
 from engineering_influence.interfaces.serve_starter_interface import ServeStarterInterface
 from engineering_influence.runtime.app_settings import AppSettings
+from engineering_influence.runtime.interfaces.api_runtime_interface import ApiRuntimeInterface
+from engineering_influence.runtime.interfaces.worker_runtime_interface import WorkerRuntimeInterface
 
 Runner = Callable[[AppSettings, SecretProviderInterface], None]
+ApiRuntimeFactory = Callable[[AppSettings, SecretProviderInterface], ApiRuntimeInterface]
+WorkerRuntimeFactory = Callable[[AppSettings], WorkerRuntimeInterface]
 
 
 class ServeStarter(ServeStarterInterface):
@@ -23,10 +27,14 @@ class ServeStarter(ServeStarterInterface):
         secrets: SecretProviderInterface | None = None,
         run_api: Runner | None = None,
         run_worker: Runner | None = None,
+        api_runtime: ApiRuntimeFactory | None = None,
+        worker_runtime: WorkerRuntimeFactory | None = None,
     ) -> None:
         self._secrets = secrets
         self._run_api = run_api
         self._run_worker = run_worker
+        self._api_runtime = api_runtime
+        self._worker_runtime = worker_runtime
 
     def start(self, target: str) -> None:
         """Run ``api`` or ``worker`` until it stops."""
@@ -44,14 +52,20 @@ class ServeStarter(ServeStarterInterface):
         else:
             (self._run_worker or self._default_worker)(settings, secrets)
 
+    def _default_api(self, settings: AppSettings, secrets: SecretProviderInterface) -> None:
+        (self._api_runtime or self._real_api)(settings, secrets).run()
+
+    def _default_worker(self, settings: AppSettings, secrets: SecretProviderInterface) -> None:
+        (self._worker_runtime or self._real_worker)(settings).run()
+
     @staticmethod
-    def _default_api(settings: AppSettings, secrets: SecretProviderInterface) -> None:
+    def _real_api(settings: AppSettings, secrets: SecretProviderInterface) -> ApiRuntimeInterface:
         from engineering_influence.runtime.api_runtime import ApiRuntime
 
-        ApiRuntime(settings, secrets).run()
+        return ApiRuntime(settings, secrets)
 
     @staticmethod
-    def _default_worker(settings: AppSettings, secrets: SecretProviderInterface) -> None:
+    def _real_worker(settings: AppSettings) -> WorkerRuntimeInterface:
         from engineering_influence.runtime.worker_runtime import WorkerRuntime
 
-        WorkerRuntime(settings).run()
+        return WorkerRuntime(settings)

@@ -16,6 +16,9 @@ from engineering_influence.models.covers.kdp_cover_spec import KdpCoverSpec as K
 class EbookCoverVerifier(EbookCoverVerifierInterface):
     """Size, format, colour, compression, and the gray border on a light cover."""
 
+    def __init__(self, max_mb: float = Kdp.EBOOK_MAX_MB) -> None:
+        self._max_mb = max_mb
+
     def run(self, path: Path) -> list[str]:
         """Return problems with the file."""
         problems: list[str] = []
@@ -42,10 +45,10 @@ class EbookCoverVerifier(EbookCoverVerifierInterface):
                 problems.append(
                     f"{path.name}: height to width is {h / w:.3f}; KDP wants at least 1.6"
                 )
-            if path.stat().st_size >= Kdp.EBOOK_MAX_MB * 1e6:
+            if path.stat().st_size >= self._max_mb * 1e6:
                 problems.append(
                     f"{path.name}: {path.stat().st_size / 1e6:.1f} MB; "
-                    f"KDP's limit is {Kdp.EBOOK_MAX_MB} MB"
+                    f"KDP's limit is {self._max_mb} MB"
                 )
             if im.mode != "RGB":
                 problems.append(

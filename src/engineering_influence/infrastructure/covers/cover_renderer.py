@@ -27,9 +27,15 @@ from engineering_influence.models.covers.text_recorder import TextRecorder
 class CoverRenderer(CoverRendererInterface):
     """Painter output plus ordered dither, then front, back, and spine text on a layer."""
 
-    def __init__(self, registry: PainterRegistry, fonts: FontLoader) -> None:
+    def __init__(
+        self,
+        registry: PainterRegistry,
+        fonts: FontLoader,
+        min_text_pt: float = Kdp.MIN_TEXT_PT,
+    ) -> None:
         self._registry = registry
         self._fonts = fonts
+        self._min_text_pt = min_text_pt
 
     def render(self, L: CoverLayout, st: CoverStyle, meta: dict[str, Any]) -> Image.Image:
         """Return the finished RGB cover, or fail when the text or layout breaks a KDP rule."""
@@ -45,9 +51,9 @@ class CoverRenderer(CoverRendererInterface):
         SpineTypesetter(typography).typeset(layer, L, st, meta)
         problems = TextPlacementCheck().run(layer, L) + LayoutCheck().run(L)
         smallest = recorder.smallest()
-        if L.kind != "ebook" and smallest is not None and smallest / L.ppi * 72 < Kdp.MIN_TEXT_PT:
+        if L.kind != "ebook" and smallest is not None and smallest / L.ppi * 72 < self._min_text_pt:
             problems.append(
-                f"text set at {smallest / L.ppi * 72:.1f} pt; KDP's minimum is {Kdp.MIN_TEXT_PT:g} pt"
+                f"text set at {smallest / L.ppi * 72:.1f} pt; KDP's minimum is {self._min_text_pt:g} pt"
             )
         if problems:
             raise BookBuildError(f"[{L.kind}] cover text check failed: " + "; ".join(problems))

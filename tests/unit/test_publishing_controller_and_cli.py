@@ -51,8 +51,14 @@ from engineering_influence.services.epub.epub_builder import EpubBuilder
 from engineering_influence.services.epub.epub_identifier import EpubIdentifier
 from engineering_influence.services.epub.epub_repacker import EpubRepacker
 from engineering_influence.services.epub.epub_verifier import EpubVerifier
+from engineering_influence.services.publishing.interfaces.pdf_verifier_interface import (
+    PdfVerifierInterface,
+)
 from engineering_influence.services.publishing.pdf_verifier import PdfVerifier
 from engineering_influence.services.typesetting.book_builder import BookBuilder
+from engineering_influence.services.typesetting.interfaces.book_builder_interface import (
+    BookBuilderInterface,
+)
 
 BOOK = (
     'source = "src"\ntitle = "Demo Cover"\nsubtitle = "Sub"\nauthor = "Ann Author"\npublisher = "P"\n'
@@ -141,6 +147,24 @@ class FakeEpubVerifier(EpubVerifierInterface):
         return list(self.problems)
 
 
+class FakePdfVerifier(PdfVerifierInterface):
+    def __init__(self, problems: list[str] | None = None) -> None:
+        self.problems = problems or []
+        self.logs: list[Path] = []
+
+    def verify(self, pdf_path: Path, config_path: Path, log_path: Path | None = None) -> list[str]:
+        self.logs.append(log_path or Path())
+        return list(self.problems)
+
+
+class FakeBuilder(BookBuilderInterface):
+    def __init__(self, path: Path) -> None:
+        self._path = path
+
+    def build(self, slug: str, *, tex_only: bool = False, hardcover: bool = False) -> Path:
+        return self._path
+
+
 class FakeControllerFactory(PublishingControllerFactoryInterface):
     """What `ei book` builds instead of the real factory, so the whole CLI runs over fakes."""
 
@@ -162,24 +186,16 @@ class Stubs:
 
 
 @pytest.fixture
-def stubs(monkeypatch: pytest.MonkeyPatch, root: Path) -> Stubs:
-    calls: dict[str, list[Any]] = {"latex": [], "covers": [], "verify": []}
+def stubs(root: Path) -> Stubs:
+    verifier = FakePdfVerifier()
+    calls: dict[str, list[Any]] = {"latex": [], "covers": [], "verify": verifier.logs}
     wiring: dict[str, Any] = {
         "latex": FakeLatex(calls),
         "epub": FakeEpub(root),
         "covers": FakeCoverProvider(FakeCovers(root, calls)),
         "epub_verifier": FakeEpubVerifier(),
+        "pdf_verifier": verifier,
     }
-
-    def pdf_verify(
-        self: PdfVerifier, pdf: Path, config: Path, log: Path | None = None
-    ) -> list[str]:
-        calls["verify"].append(log)
-        return []
-
-    # Still patched: the controller and the pipeline steps build a PdfVerifier themselves, so it
-    # cannot be injected until services receive their helper services.
-    monkeypatch.setattr(PdfVerifier, "verify", pdf_verify)
     return Stubs(calls, wiring)
 
 
@@ -191,11 +207,12 @@ def controller(root: Path, **kwargs: Any) -> PublishingController:
     workspace = FilesystemBuildWorkspace()
     assets = PackageAssets()
     identifier = EpubIdentifier()
+    pdfs = PypdfPdfInspector()
+    latex = kwargs.pop("latex", None) or LatexCompiler()
     collaborators: dict[str, Any] = {
         "loader": loader,
-        "workspace": workspace,
-        "assets": assets,
-        "latex": LatexCompiler(),
+        "builder": BookBuilder(layout, loader, latex, workspace, assets, files),
+        "pdf_verifier": PdfVerifier(pdfs, files),
         "epub": EpubBuilder(
             layout,
             loader,
@@ -210,7 +227,6 @@ def controller(root: Path, **kwargs: Any) -> PublishingController:
         "covers": CoverBuilderProvider(config),
         **kwargs,
     }
-    pdfs = PypdfPdfInspector()
     collaborators.setdefault("qa", RenderQa(config.root))
     collaborators.setdefault(
         "publisher",
@@ -218,10 +234,10 @@ def controller(root: Path, **kwargs: Any) -> PublishingController:
             config,
             files,
             pdfs,
-            collaborators["loader"],
-            collaborators["workspace"],
-            collaborators["assets"],
-            collaborators["latex"],
+            loader,
+            workspace,
+            collaborators["builder"],
+            collaborators["pdf_verifier"],
             collaborators["epub"],
             collaborators["covers"],
             collaborators["qa"],
@@ -265,14 +281,10 @@ def test_controller_builds_the_interior(root: Path, stubs: Stubs) -> None:
     assert [p.parent.name for p in stubs["verify"]] == ["demo", "demo-hardcover"]
 
 
-def test_controller_reports_verification_failures(
-    root: Path, stubs: Stubs, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setattr(
-        PdfVerifier, "verify", lambda self, pdf, config, log=None: ["page 1 is wrong"]
-    )
+def test_controller_reports_verification_failures(root: Path, stubs: Stubs) -> None:
+    wrong = {**stubs.wiring, "pdf_verifier": FakePdfVerifier(["page 1 is wrong"])}
     with pytest.raises(BookBuildError, match=r"\[demo\] FAIL page 1 is wrong"):
-        controller(root, **stubs.wiring).build("demo")
+        controller(root, **wrong).build("demo")
     failing = {**stubs.wiring, "epub_verifier": FakeEpubVerifier(["bad nav"])}
     with pytest.raises(BookBuildError, match=r"\[demo\] FAIL bad nav"):
         controller(root, **failing).epub("demo")
@@ -288,16 +300,11 @@ def test_controller_builds_the_epub(root: Path, stubs: Stubs) -> None:
 
 
 def test_controller_reports_paths_outside_the_project(
-    root: Path,
-    stubs: Stubs,
-    tmp_path_factory: pytest.TempPathFactory,
-    monkeypatch: pytest.MonkeyPatch,
+    root: Path, stubs: Stubs, tmp_path_factory: pytest.TempPathFactory
 ) -> None:
     elsewhere = tmp_path_factory.mktemp("elsewhere") / "x.pdf"
-    monkeypatch.setattr(
-        BookBuilder, "build", lambda self, slug, *, tex_only=False, hardcover=False: elsewhere
-    )
-    assert str(elsewhere.resolve()) in controller(root, **stubs.wiring).build("demo", verify=False)
+    wiring = {**stubs.wiring, "builder": FakeBuilder(elsewhere)}
+    assert str(elsewhere.resolve()) in controller(root, **wiring).build("demo", verify=False)
 
 
 def test_controller_covers_without_a_plugin(root: Path, stubs: Stubs) -> None:
@@ -460,13 +467,10 @@ def test_cli_publish(root: Path, stubs: Stubs, capsys: pytest.CaptureFixture[str
 
 
 def test_cli_publish_failures_name_the_failing_step(
-    root: Path,
-    stubs: Stubs,
-    monkeypatch: pytest.MonkeyPatch,
-    capsys: pytest.CaptureFixture[str],
+    root: Path, stubs: Stubs, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    monkeypatch.setattr(PdfVerifier, "verify", lambda self, pdf, config, log=None: ["broken"])
-    assert run(root, "publish", "demo", "--no-render", wiring=stubs.wiring) == 1
+    wiring = {**stubs.wiring, "pdf_verifier": FakePdfVerifier(["broken"])}
+    assert run(root, "publish", "demo", "--no-render", wiring=wiring) == 1
     err = capsys.readouterr().err
     assert "FAIL step pdf: see build/demo/release/pdf.log" in err and "missing artifact" in err
 

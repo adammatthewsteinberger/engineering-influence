@@ -16,6 +16,15 @@ from engineering_influence.infrastructure.covers.ebook_cover_verifier import Ebo
 from engineering_influence.infrastructure.covers.font_loader import FontLoader
 from engineering_influence.infrastructure.covers.gradient_painter import GradientPainter
 from engineering_influence.infrastructure.covers.image_verifier import ImageVerifier
+from engineering_influence.infrastructure.covers.interfaces.ebook_cover_verifier_interface import (
+    EbookCoverVerifierInterface,
+)
+from engineering_influence.infrastructure.covers.interfaces.image_verifier_interface import (
+    ImageVerifierInterface,
+)
+from engineering_influence.infrastructure.covers.interfaces.print_pdf_verifier_interface import (
+    PrintPdfVerifierInterface,
+)
 from engineering_influence.infrastructure.covers.interior_page_count import InteriorPageCount
 from engineering_influence.infrastructure.covers.painter_registry import PainterRegistry
 from engineering_influence.infrastructure.covers.print_pdf_verifier import PrintPdfVerifier
@@ -43,8 +52,14 @@ class CoverBuilder(CoverBuilderInterface):
         registry: PainterRegistry | None = None,
         styles: Mapping[str, CoverStyle] | None = None,
         font_dirs: list[Path] | None = None,
+        images: ImageVerifierInterface | None = None,
+        ebooks: EbookCoverVerifierInterface | None = None,
+        pdfs: PrintPdfVerifierInterface | None = None,
     ) -> None:
         self._layout = layout
+        self._images = images or ImageVerifier()
+        self._ebooks = ebooks or EbookCoverVerifier()
+        self._pdfs = pdfs or PrintPdfVerifier()
         self._registry = registry or PainterRegistry()
         if registry is None:
             self._registry.register("gradient", GradientPainter())
@@ -138,7 +153,7 @@ class CoverBuilder(CoverBuilderInterface):
             )
 
         panel_w = Kdp.TRIM_W + 2 * Kdp.BLEED
-        images, ebooks, pdfs = ImageVerifier(), EbookCoverVerifier(), PrintPdfVerifier()
+        images, ebooks, pdfs = self._images, self._ebooks, self._pdfs
         problems = (
             ebooks.run(out / f"{slug}-ebook.jpg")
             + ebooks.run(out / f"{slug}-ebook.tif")

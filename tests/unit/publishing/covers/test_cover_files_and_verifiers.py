@@ -128,11 +128,9 @@ def test_ebook_verifier_accepts_a_light_cover_with_the_border(tmp_path: Path) ->
     assert EbookCoverVerifier().run(path) == []
 
 
-def test_ebook_verifier_enforces_the_size_limit(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setattr(KdpCoverSpec, "EBOOK_MAX_MB", 0.0001)
-    assert "KDP's limit is 0.0001 MB" in EbookCoverVerifier().run(save(tmp_path, "big.jpg"))[0]
+def test_ebook_verifier_enforces_the_size_limit(tmp_path: Path) -> None:
+    problems = EbookCoverVerifier(max_mb=0.0001).run(save(tmp_path, "big.jpg"))
+    assert "KDP's limit is 0.0001 MB" in problems[0]
 
 
 def make_pdf(
@@ -216,9 +214,7 @@ def test_print_pdf_verifier_reports_each_defect(
     assert any(expected in p for p in problems), problems
 
 
-def test_print_pdf_verifier_flags_fonts_and_oversized_files(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_print_pdf_verifier_flags_fonts_and_oversized_files(tmp_path: Path) -> None:
     writer = PdfWriter()
     page = writer.add_blank_page(216, 144)
     page[NameObject("/Resources")] = DictionaryObject(
@@ -231,9 +227,9 @@ def test_print_pdf_verifier_flags_fonts_and_oversized_files(
     with path.open("wb") as handle:
         writer.write(handle)
     assert any("uses fonts" in p for p in PrintPdfVerifier().run(path, *PDF_IN))
-    monkeypatch.setattr(KdpCoverSpec, "PDF_MAX_MB", 0.00001)
     assert any(
-        "KDP recommends 1e-05 MB or less" in p for p in PrintPdfVerifier().run(path, *PDF_IN)
+        "KDP recommends 1e-05 MB or less" in p
+        for p in PrintPdfVerifier(max_mb=0.00001).run(path, *PDF_IN)
     )
 
 

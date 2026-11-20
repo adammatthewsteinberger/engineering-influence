@@ -36,7 +36,9 @@ from engineering_influence.repositories.release.json_report import JsonReport
 from engineering_influence.repositories.release.step_recorder import StepRecorder
 from engineering_influence.repositories.typesetting.book_loader import BookLoader
 from engineering_influence.services.epub.epub_builder import EpubBuilder
-from engineering_influence.services.publishing.pdf_verifier import PdfVerifier
+from engineering_influence.services.publishing.interfaces.pdf_verifier_interface import (
+    PdfVerifierInterface,
+)
 from engineering_influence.services.release.publish_pipeline import PublishPipeline
 from engineering_influence.services.release.publish_steps import PublishSteps, Step
 from engineering_influence.services.typesetting.book_builder import BookBuilder
@@ -380,8 +382,20 @@ class FakeEpubVerifier(EpubVerifierInterface):
         return list(self._problems)
 
 
+class FakePdfVerifier(PdfVerifierInterface):
+    def __init__(self, problems: list[str] | None = None) -> None:
+        self.problems = problems or []
+        self.logs: list[Path] = []
+
+    def verify(self, pdf_path: Path, config_path: Path, log_path: Path | None = None) -> list[str]:
+        self.logs.append(log_path or Path())
+        return list(self.problems)
+
+
 def real_steps(
-    layout: ProjectLayout, epub_problems: list[str] | None = None
+    layout: ProjectLayout,
+    epub_problems: list[str] | None = None,
+    pdf_verifier: PdfVerifierInterface | None = None,
 ) -> tuple[PublishSteps, StubBuilder, StubCovers]:
     builder, covers = StubBuilder(layout), StubCovers(layout)
     verifier = FakeEpubVerifier(epub_problems or [])
@@ -389,10 +403,9 @@ def real_steps(
         PublishSteps(
             layout,
             builder,
+            pdf_verifier or FakePdfVerifier(),
             covers,
             StubEpub(layout),
-            FilesystemManuscriptSource(),
-            PypdfPdfInspector(),
             BookLoader(layout.root),
             verifier,
             verifier,
@@ -412,19 +425,13 @@ def test_the_step_plan_orders_the_builds(tmp_path: Path) -> None:
     assert hard[2][1][-2:] == ["--hardcover-pdf", "output/demo-hardcover.pdf"]
 
 
-def test_step_actions_build_and_verify(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_step_actions_build_and_verify(tmp_path: Path) -> None:
     layout = project(tmp_path)
-    steps, builder, covers = real_steps(layout)
-    seen: list[Path] = []
-
-    def pdf_ok(self: PdfVerifier, pdf: Path, config: Path, log: Path | None = None) -> list[str]:
-        seen.append(log or Path())
-        return []
-
-    monkeypatch.setattr(PdfVerifier, "verify", pdf_ok)
+    pdf_verifier = FakePdfVerifier()
+    steps, builder, covers = real_steps(layout, pdf_verifier=pdf_verifier)
     assert "built output/demo.pdf" in steps.pdf("demo")
     assert "built output/demo-hardcover.pdf" in steps.hardcover("demo")
-    assert [p.parent.name for p in seen] == ["demo", "demo-hardcover"]
+    assert [p.parent.name for p in pdf_verifier.logs] == ["demo", "demo-hardcover"]
     assert "covers written to output/covers/demo" in steps.covers("demo", hardcover=False)
     steps.covers("demo", hardcover=True)
     assert covers.calls == [("demo", True, None), ("demo", True, Path("output/demo-hardcover.pdf"))]
@@ -433,12 +440,9 @@ def test_step_actions_build_and_verify(monkeypatch: pytest.MonkeyPatch, tmp_path
     assert builder.calls == [("pdf", "demo"), ("hardcover", "demo")]
 
 
-def test_failed_verification_raises_with_every_problem(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_failed_verification_raises_with_every_problem(tmp_path: Path) -> None:
     layout = project(tmp_path)
-    steps, _, _ = real_steps(layout)
-    monkeypatch.setattr(PdfVerifier, "verify", lambda self, pdf, config, log=None: ["a", "b"])
+    steps, _, _ = real_steps(layout, pdf_verifier=FakePdfVerifier(["a", "b"]))
     with pytest.raises(BookBuildError, match=r"\[demo\] FAIL a\n\[demo\] FAIL b"):
         steps.pdf("demo")
     failing, _, _ = real_steps(layout, epub_problems=["epub bad"])

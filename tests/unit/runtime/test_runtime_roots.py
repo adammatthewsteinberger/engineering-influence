@@ -17,6 +17,7 @@ from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.infrastructure.observability.process_crash_hooks import ProcessCrashHooks
 from engineering_influence.infrastructure.observability.worker_heartbeat import WorkerHeartbeat
 from engineering_influence.infrastructure.rabbitmq_job_consumer import RabbitMqJobConsumer
+from engineering_influence.interfaces.queue_interface import QueueInterface
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
 from engineering_influence.repositories.sqlmodel_ledger import SqlModelLedger
 from engineering_influence.runtime.api_runtime import ApiRuntime
@@ -48,8 +49,12 @@ class Secrets(SecretProviderInterface):
 def api_runtime(request: pytest.FixtureRequest) -> Any:
     """Build an ApiRuntime and close its database pool afterwards."""
 
-    def make(settings: AppSettings, secrets: SecretProviderInterface) -> ApiRuntime:
-        runtime = ApiRuntime(settings, secrets)
+    def make(
+        settings: AppSettings,
+        secrets: SecretProviderInterface,
+        queue: QueueInterface | None = None,
+    ) -> ApiRuntime:
+        runtime = ApiRuntime(settings, secrets, queue=queue)
         request.addfinalizer(runtime.close)
         return runtime
 
@@ -86,28 +91,28 @@ def test_the_api_serves_probes_and_guards_everything_else(tmp_path: Path, api_ru
     assert "database" not in metrics  # an embedded database has no network check
 
 
-def test_starting_a_pipeline_records_it_and_queues_the_first_stage(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, api_runtime: Any
-) -> None:
-    queued: list[tuple[str, dict[str, object]]] = []
+class FakeQueue(QueueInterface):
+    def __init__(self) -> None:
+        self.queued: list[tuple[str, dict[str, object]]] = []
 
-    def fake_enqueue(self: Any, kind: str, payload: dict[str, object]) -> str:
-        queued.append((kind, payload))
+    def enqueue(self, kind: str, payload: dict[str, object]) -> str:
+        self.queued.append((kind, payload))
         return "job-9"
 
-    monkeypatch.setattr(
-        "engineering_influence.infrastructure.rabbitmq_queue.RabbitMqQueueAdapter.enqueue",
-        fake_enqueue,
-    )
+
+def test_starting_a_pipeline_records_it_and_queues_the_first_stage(
+    tmp_path: Path, api_runtime: Any
+) -> None:
+    queue = FakeQueue()
     settings = settings_for(tmp_path)
-    client = TestClient(api_runtime(settings, Secrets({"EI_API_KEYS": KEY})).build_app())
+    client = TestClient(api_runtime(settings, Secrets({"EI_API_KEYS": KEY}), queue).build_app())
 
     response = client.post(
         "/v1/pipelines", json=PROJECT, headers={**AUTH, "X-Request-ID": "client-req-0001"}
     )
 
     assert response.json() == {"job_id": "job-9", "project_slug": "demo"}
-    kind, payload = queued[0]
+    kind, payload = queue.queued[0]
     assert kind == "pipeline.thesis"
     assert payload["remaining_stages"] == ["book"]
     assert payload["correlation_id"] == "client-req-0001"

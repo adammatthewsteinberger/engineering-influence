@@ -53,10 +53,11 @@ tree, and `scripts/refactor/inventory.py` prints the facts the map is built from
 `tests/architecture/test_enum_protocols.py` checks each enum against its `runtime_checkable`
 Protocol, because an enum cannot inherit an ABC, and `tests/architecture/test_sdk_interfaces.py`
 holds the SDK package to the same interface rules.
-`tests/architecture/test_no_patching.py` keeps tests from patching production code: they pass fakes
-into the classes that take their collaborators, and the few production targets still patched (because
-the class under test builds them itself) are listed there, each with its reason, and can only be
-removed.
+`tests/architecture/test_no_patching.py` keeps tests from patching production code: classes take their
+collaborators through their constructors, so a test passes a fake. The only patches left are
+standard-library calls at the system boundary (`subprocess.run`, `sys.argv`, `sys.path`,
+`zipfile.ZipFile.testzip`) and one class the test defines itself; they are listed there, and a new
+patch of anything else fails the build.
 
 ## The toolchain test
 
