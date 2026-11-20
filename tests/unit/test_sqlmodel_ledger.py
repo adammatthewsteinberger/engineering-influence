@@ -3,8 +3,8 @@
 from engineering_influence.repositories import SqlModelLedger
 
 
-def test_sqlmodel_ledger_round_trip_preserves_append_order() -> None:
-    ledger = SqlModelLedger()
+def test_sqlmodel_ledger_round_trip_preserves_append_order(database_url: str) -> None:
+    ledger = SqlModelLedger(database_url)
     ledger.append("pipeline.started", {"project_slug": "demo", "stage": "thesis"})
     ledger.append("phase.queued", {"project_slug": "demo", "stage": "thesis"})
 

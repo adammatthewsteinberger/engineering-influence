@@ -2,7 +2,7 @@
 """SQLModel-backed run journal."""
 
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import Session, SQLModel, col, create_engine, select
+from sqlmodel import Session, col, create_engine, select
 
 from engineering_influence.interfaces.journal_interface import JournalInterface
 from engineering_influence.models.journal_entry import JournalEntry
@@ -13,10 +13,9 @@ from engineering_influence.repositories.journal_record import JournalRecord
 class SqlModelJournal(JournalInterface):
     """Persist journal entries; the database refuses a second entry for the same request."""
 
-    def __init__(self, database_url: str = "sqlite://") -> None:
+    def __init__(self, database_url: str) -> None:
         connect_args = {"check_same_thread": False} if database_url.startswith("sqlite") else {}
         self._engine = create_engine(database_url, connect_args=connect_args)
-        SQLModel.metadata.create_all(self._engine)
 
     def record(self, entry: JournalEntry) -> JournalEntry:
         digest = entry.key.digest()

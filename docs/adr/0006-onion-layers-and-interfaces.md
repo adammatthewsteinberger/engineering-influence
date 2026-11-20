@@ -43,7 +43,7 @@ mechanical before they arrive, not after.
 ### Interfaces
 
 - Every folder, including every new subfolder, has an `interfaces/` folder. `interfaces/` packages and
-  `assets/` are exempt.
+  `assets/` are exempt, and so is `infrastructure/migrations/` (see "As built").
 - One class per file. `x/foo.py` defining `Foo` is paired with `x/interfaces/foo_interface.py`
   defining `FooInterface`, and `Foo` inherits it.
 - An interface is an ABC with `__slots__ = ()` that declares **methods only**, never fields or
@@ -116,3 +116,11 @@ Four things differ from the plan above, and the plan is left as written so the d
 - **Some pure helpers are still built where they are used.** `PublishingController` builds its audit
   classes and `EpubVerifier` builds its own checks, because no test has to replace them. Anything a
   test replaces, and every adapter, is injected.
+- **Alembic migrations are exempt from the file rules.** An Alembic script is a module of functions
+  and constants by contract (`upgrade()`, `downgrade()`, `revision`), so `infrastructure/migrations/`
+  is excluded from the one-class-per-file, no-loose-function, interface-folder and layer-matrix checks
+  through `SCRIPT_FOLDERS` in `tests/architecture/architecture_metrics.py`. The exemption names that
+  folder and nothing else. The scripts are still linted, type-checked with `mypy --strict` and run by
+  the tests, which also compare the schema they build with the SQLModel models, so a model change
+  without a migration fails the build. The class that drives them, `SchemaMigrator`, follows every
+  rule.

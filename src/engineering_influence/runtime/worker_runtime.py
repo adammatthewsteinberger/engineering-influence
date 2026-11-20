@@ -27,6 +27,8 @@ from engineering_influence.infrastructure.observability.worker_heartbeat import 
 from engineering_influence.infrastructure.rabbitmq_job_consumer import RabbitMqJobConsumer
 from engineering_influence.infrastructure.rabbitmq_queue import RabbitMqQueueAdapter
 from engineering_influence.infrastructure.rabbitmq_topology import RabbitMqTopology
+from engineering_influence.infrastructure.schema_migrator import SchemaMigrator
+from engineering_influence.interfaces.schema_migrator_interface import SchemaMigratorInterface
 from engineering_influence.repositories.sqlmodel_ledger import SqlModelLedger
 from engineering_influence.runtime.app_settings import AppSettings
 from engineering_influence.runtime.interfaces.worker_runtime_interface import WorkerRuntimeInterface
@@ -43,8 +45,11 @@ class WorkerRuntime(WorkerRuntimeInterface):
     pipeline offline. A model-backed runner replaces ``DeterministicRunner`` here.
     """
 
-    def __init__(self, settings: AppSettings) -> None:
+    def __init__(
+        self, settings: AppSettings, migrator: SchemaMigratorInterface | None = None
+    ) -> None:
         self._settings = settings
+        self._migrator = migrator or SchemaMigrator()
         self._ledger: SqlModelLedger | None = None
 
     def build(self) -> tuple[RabbitMqJobConsumer, WorkerHeartbeat]:
@@ -57,6 +62,7 @@ class WorkerRuntime(WorkerRuntimeInterface):
             RabbitMqQueueAdapter(self._settings.rabbitmq_url, self._settings.queue_name),
             correlation,
         )
+        self._migrator.check(self._settings.database_url)
         self._ledger = SqlModelLedger(self._settings.database_url)
         process_job = ProcessJob(
             TracedRunPhase(RunPhase(DeterministicRunner(), NonEmptyArtifactGate())),

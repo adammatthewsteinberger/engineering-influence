@@ -61,6 +61,10 @@ def api_runtime(request: pytest.FixtureRequest) -> Any:
     return make
 
 
+# Every test here starts from the migrated database the shared fixture puts at tmp_path / "ei.db".
+pytestmark = pytest.mark.usefixtures("database_url")
+
+
 def settings_for(tmp_path: Path, **overrides: Any) -> AppSettings:
     return AppSettings(f"sqlite:///{tmp_path / 'ei.db'}", UNREACHABLE_BROKER, **overrides)
 
@@ -283,3 +287,18 @@ def test_running_the_worker_configures_logging_and_crash_hooks(
     assert any(
         getattr(h, "_engineering_influence_json", False) for h in logging.getLogger().handlers
     )
+
+
+def test_the_api_refuses_to_start_on_a_database_that_was_never_migrated(tmp_path: Path) -> None:
+    settings = AppSettings(f"sqlite:///{tmp_path / 'fresh.db'}", UNREACHABLE_BROKER)
+    with pytest.raises(ApplicationError) as raised:
+        ApiRuntime(settings, Secrets({"EI_API_KEYS": KEY})).build_app()
+    assert raised.value.code == "SCHEMA_OUT_OF_DATE"
+    assert "ei db upgrade" in raised.value.message
+
+
+def test_the_worker_refuses_to_start_on_a_database_that_was_never_migrated(tmp_path: Path) -> None:
+    settings = AppSettings(f"sqlite:///{tmp_path / 'fresh.db'}", UNREACHABLE_BROKER)
+    with pytest.raises(ApplicationError) as raised:
+        WorkerRuntime(settings).build()
+    assert raised.value.code == "SCHEMA_OUT_OF_DATE"

@@ -15,18 +15,20 @@ from engineering_influence.interfaces.artifact_store_interface import ArtifactSt
 from engineering_influence.models.artifact_address import ArtifactAddress
 from engineering_influence.repositories.sqlmodel_artifact_store import SqlModelArtifactStore
 
-Factory = Callable[[Path], ArtifactStoreInterface]
+Factory = Callable[[Path, str], ArtifactStoreInterface]
 
 STORES: dict[str, Factory] = {
-    "memory": lambda _: InMemoryArtifactStore(),
-    "file": lambda tmp: FileArtifactStore(tmp / "artifacts", ConfinedPathGuard()),
-    "sqlite": lambda tmp: SqlModelArtifactStore(f"sqlite:///{tmp / 'artifacts.db'}"),
+    "memory": lambda _, __: InMemoryArtifactStore(),
+    "file": lambda tmp, _: FileArtifactStore(tmp / "artifacts", ConfinedPathGuard()),
+    "sqlite": lambda _, url: SqlModelArtifactStore(url),
 }
 
 
 @pytest.fixture(params=sorted(STORES))
-def store(request: pytest.FixtureRequest, tmp_path: Path) -> Iterator[ArtifactStoreInterface]:
-    opened = STORES[request.param](tmp_path)
+def store(
+    request: pytest.FixtureRequest, tmp_path: Path, database_url: str
+) -> Iterator[ArtifactStoreInterface]:
+    opened = STORES[request.param](tmp_path, database_url)
     yield opened
     if isinstance(opened, SqlModelArtifactStore):
         opened.close()
@@ -143,8 +145,8 @@ def test_a_symlink_planted_in_the_store_cannot_lead_a_write_outside_it(tmp_path:
     assert list(outside.iterdir()) == []
 
 
-def test_a_sql_store_survives_reopening_the_database(tmp_path: Path) -> None:
-    url = f"sqlite:///{tmp_path / 'artifacts.db'}"
+def test_a_sql_store_survives_reopening_the_database(database_url: str) -> None:
+    url = database_url
     first = SqlModelArtifactStore(url)
     first.put("run-1", "a.md", b"text")
     first.close()
@@ -172,8 +174,8 @@ class BlindStore(SqlModelArtifactStore):
         return None
 
 
-def test_two_workers_racing_on_one_name_agree_when_the_bytes_match(tmp_path: Path) -> None:
-    url = f"sqlite:///{tmp_path / 'artifacts.db'}"
+def test_two_workers_racing_on_one_name_agree_when_the_bytes_match(database_url: str) -> None:
+    url = database_url
     winner = SqlModelArtifactStore(url)
     winner.put("run-1", "a.md", b"text")
     loser = RacingStore(url)
@@ -182,8 +184,8 @@ def test_two_workers_racing_on_one_name_agree_when_the_bytes_match(tmp_path: Pat
     loser.close()
 
 
-def test_two_workers_racing_on_one_name_with_different_bytes_conflict(tmp_path: Path) -> None:
-    url = f"sqlite:///{tmp_path / 'artifacts.db'}"
+def test_two_workers_racing_on_one_name_with_different_bytes_conflict(database_url: str) -> None:
+    url = database_url
     winner = SqlModelArtifactStore(url)
     winner.put("run-1", "a.md", b"text")
     loser = RacingStore(url)
@@ -194,8 +196,8 @@ def test_two_workers_racing_on_one_name_with_different_bytes_conflict(tmp_path: 
     loser.close()
 
 
-def test_a_duplicate_whose_original_cannot_be_found_is_an_error(tmp_path: Path) -> None:
-    store = BlindStore(f"sqlite:///{tmp_path / 'artifacts.db'}")
+def test_a_duplicate_whose_original_cannot_be_found_is_an_error(database_url: str) -> None:
+    store = BlindStore(database_url)
     store.put("run-1", "a.md", b"text")
     with pytest.raises(RuntimeError, match="cannot find the original"):
         store.put("run-1", "a.md", b"text")

@@ -8,7 +8,7 @@ webhooks. The test suite runs all of them (`tests/e2e/test_examples.py`), and
 ```text
 examples/
 ├── up.sh · down.sh            start / stop the stack with generated credentials
-├── docker-compose.yml         Postgres, RabbitMQ, API, worker (no default credentials)
+├── docker-compose.yml         Postgres, RabbitMQ, a one-shot migrate step, API, worker (no default credentials)
 ├── compose_smoke.sh           end-to-end check used by CI
 ├── sample_project/            the project every example sends
 ├── cli/run.sh                 the `ei` command in a terminal

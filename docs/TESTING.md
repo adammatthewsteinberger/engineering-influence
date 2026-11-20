@@ -50,6 +50,8 @@ allowance for violations (`test_rules.py` asserts each count is zero, so a new c
 interface, an import that crosses layers or a file outside the layers fails the build).
 `tests/architecture/test_move_map.py` keeps `scripts/refactor/move_map.toml` complete against the
 tree, and `scripts/refactor/inventory.py` prints the facts the map is built from.
+Alembic scripts in `infrastructure/migrations/` are the one exempt folder (ADR 0006); a test builds
+the schema from them and fails if it differs from the SQLModel models.
 `tests/architecture/test_enum_protocols.py` checks each enum against its `runtime_checkable`
 Protocol, because an enum cannot inherit an ABC, and `tests/architecture/test_sdk_interfaces.py`
 holds the SDK package to the same interface rules.

@@ -6,6 +6,8 @@ Find the symptom, then the cause. Commands assume you ran `set -a; . examples/.e
 |---|---|---|
 | `docker compose` says `set POSTGRES_PASSWORD in examples/.env` | Compose has no default credentials by design | `sh examples/up.sh` generates `examples/.env`, or copy `.env.example` and fill every blank |
 | `error: required secret EI_DATABASE_URL is not configured` (exit 2) | `ei serve` fails closed without settings | Export the variables in [CONFIGURATION.md](CONFIGURATION.md#running-the-stack) |
+| API or worker exits with `the database schema is not at the latest revision` | The database was never migrated, or a new release added migrations | Run `ei db upgrade` (compose does this in its `migrate` service), then start the process |
+| `ei db upgrade` prints `cannot reach or migrate the database (OperationalError)` | The URL is wrong or the database is down; the message never includes the password | Check `EI_DATABASE_URL` and that Postgres is reachable from where you run it |
 | `ei serve` prints `needs the api and runtime extras` | Optional dependencies missing | `pip install "engineering-influence[api,runtime]"` or `uv sync --extra api --extra runtime` |
 | `ei book …` prints `needs the publishing extra` | Pillow, numpy and the PDF libraries are optional | `pip install "engineering-influence[publishing]"` |
 | API will not start; mentions API keys | `EI_API_KEYS` unset or a key shorter than 24 characters | `openssl rand -hex 24` per key |

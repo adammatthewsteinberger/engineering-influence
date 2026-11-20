@@ -3,8 +3,8 @@
 from engineering_influence.repositories import SqlModelOutbox
 
 
-def test_outbox_is_idempotent_and_tracks_delivery() -> None:
-    outbox = SqlModelOutbox()
+def test_outbox_is_idempotent_and_tracks_delivery(database_url: str) -> None:
+    outbox = SqlModelOutbox(database_url)
     outbox.enqueue("evt-1", "https://receiver.test", "pipeline.started", {"slug": "demo"})
     outbox.enqueue("evt-1", "https://receiver.test", "pipeline.started", {"slug": "demo"})
 
@@ -17,8 +17,8 @@ def test_outbox_is_idempotent_and_tracks_delivery() -> None:
     outbox.close()
 
 
-def test_failures_are_counted_and_dead_events_stop_being_pending() -> None:
-    outbox = SqlModelOutbox()
+def test_failures_are_counted_and_dead_events_stop_being_pending(database_url: str) -> None:
+    outbox = SqlModelOutbox(database_url)
     outbox.enqueue("evt-1", "https://a.test", "x", {})
 
     assert outbox.mark_failed("evt-1") == 1
