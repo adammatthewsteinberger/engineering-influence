@@ -1,7 +1,7 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Kindle needs a start-reading location."""
 
-from engineering_influence.publishing.epub.epub_contents import EpubContents
+from engineering_influence.models.epub.epub_contents import EpubContents
 
 
 class StartReadingCheck:

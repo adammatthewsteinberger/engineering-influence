@@ -5,8 +5,10 @@ import shutil
 import subprocess  # nosec B404
 from pathlib import Path
 
+from engineering_influence.interfaces.epubcheck_interface import EpubcheckInterface
 
-class EpubcheckRunner:
+
+class EpubcheckRunner(EpubcheckInterface):
     """Finds epubcheck on PATH (Debian installs it as a bare .jar) and reports its findings."""
 
     def __init__(self, required: bool = False) -> None:

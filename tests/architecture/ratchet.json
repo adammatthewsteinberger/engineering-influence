@@ -1,10 +1,10 @@
 {
-  "classes_without_an_interface": 172,
+  "classes_without_an_interface": 168,
   "effectful_library_imports_in_models_contracts_and_services": 0,
-  "files_outside_the_ring": 83,
+  "files_outside_the_ring": 55,
   "files_under_a_legacy_layer_name": 0,
-  "folders_without_an_interfaces_folder": 14,
-  "imports_that_cross_the_layer_matrix": 17,
+  "folders_without_an_interfaces_folder": 13,
+  "imports_that_cross_the_layer_matrix": 14,
   "interface_files_not_paired_with_a_module": 1,
   "interface_modules_that_break_the_declaration_rules": 27,
   "models_importing_beyond_models_errors_and_the_standard_library": 0

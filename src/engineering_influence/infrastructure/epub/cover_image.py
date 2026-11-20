@@ -7,16 +7,13 @@ from pathlib import Path
 from PIL import Image
 
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
+from engineering_influence.interfaces.ebook_cover_interface import EbookCoverInterface
 from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.models.typesetting.book import Book
 
 
-class CoverImage:
+class CoverImage(EbookCoverInterface):
     """The Kindle Publishing Guidelines require an internal cover declared in the OPF."""
-
-    NAME = "cover.jpg"
-    ID = "cover-image"
-    MIN_PX = (1600, 2500)  # KDP wants a large cover; verification fails a smaller one
 
     def __init__(self, layout: ProjectLayout) -> None:
         self._layout = layout

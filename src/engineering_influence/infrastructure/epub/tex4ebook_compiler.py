@@ -5,9 +5,10 @@ import subprocess  # nosec B404
 from pathlib import Path
 
 from engineering_influence.infrastructure.typesetting.tool_environment import ToolEnvironment
+from engineering_influence.interfaces.epub_compiler_interface import EpubCompilerInterface
 
 
-class Tex4ebookCompiler:
+class Tex4ebookCompiler(EpubCompilerInterface):
     """Uses fine-ebook.cfg for the markup and fine-ebook.css for the styles."""
 
     def compile(self, workdir: Path, tex_name: str) -> tuple[int, str]:

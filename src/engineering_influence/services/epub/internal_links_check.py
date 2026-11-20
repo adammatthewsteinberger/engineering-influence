@@ -3,8 +3,8 @@
 
 import re
 
-from engineering_influence.publishing.epub.epub_contents import EpubContents
-from engineering_influence.publishing.epub.xhtml_patterns import XhtmlPatterns
+from engineering_influence.models.epub.epub_contents import EpubContents
+from engineering_influence.models.epub.xhtml_patterns import XhtmlPatterns
 
 
 class InternalLinksCheck:

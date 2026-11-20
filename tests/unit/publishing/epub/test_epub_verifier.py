@@ -5,11 +5,10 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from conftest import jpeg_bytes, regex_sub
+from conftest import jpeg_bytes, make_verifier, regex_sub
 
+from engineering_influence.infrastructure.epub.epubcheck_runner import EpubcheckRunner
 from engineering_influence.models.typesetting.book import Book
-from engineering_influence.publishing.epub.epub_verifier import EpubVerifier
-from engineering_influence.publishing.epub.epubcheck_runner import EpubcheckRunner
 
 Rewrite = Callable[..., Path]
 NO_GUIDE = regex_sub(r"<guide>.*?</guide>", "")
@@ -248,13 +247,13 @@ CASES: dict[str, tuple[dict[str, Any], str]] = {
 
 
 def test_the_known_good_fixture_has_no_problems(finished: Path, book: Book) -> None:
-    assert EpubVerifier().verify(finished, book) == []
+    assert make_verifier().verify(finished, book) == []
 
 
 @pytest.mark.parametrize("label", sorted(CASES))
 def test_each_defect_is_reported(label: str, finished: Path, book: Book, rewrite: Rewrite) -> None:
     kwargs, expected = CASES[label]
-    problems = EpubVerifier().verify(rewrite(finished, **kwargs), book)
+    problems = make_verifier().verify(rewrite(finished, **kwargs), book)
     assert any(expected in problem for problem in problems), problems
 
 
@@ -267,7 +266,7 @@ def test_a_same_file_anchor_link_resolves(finished: Path, book: Book, rewrite: R
             )
         },
     )
-    assert EpubVerifier().verify(mutant, book) == []
+    assert make_verifier().verify(mutant, book) == []
 
 
 def test_external_and_stylesheet_links_are_not_resolved(
@@ -280,7 +279,7 @@ def test_external_and_stylesheet_links_are_not_resolved(
         finished,
         edits={"c1.xhtml": lambda s: s.replace("<p>Chapter one", links + "<p>Chapter one")},
     )
-    assert EpubVerifier().verify(mutant, book) == []
+    assert make_verifier().verify(mutant, book) == []
 
 
 def test_epubcheck_findings_are_appended(finished: Path, book: Book) -> None:
@@ -288,4 +287,4 @@ def test_epubcheck_findings_are_appended(finished: Path, book: Book) -> None:
         def run(self, path: Path) -> list[str]:
             return ["epubcheck: ERROR something"]
 
-    assert EpubVerifier(Fake()).verify(finished, book) == ["epubcheck: ERROR something"]
+    assert make_verifier(Fake()).verify(finished, book) == ["epubcheck: ERROR something"]

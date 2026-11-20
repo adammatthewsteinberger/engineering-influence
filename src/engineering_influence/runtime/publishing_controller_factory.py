@@ -4,6 +4,12 @@
 from pathlib import Path
 
 from engineering_influence.controllers.publishing_controller import PublishingController
+from engineering_influence.infrastructure.epub.cover_image import CoverImage
+from engineering_influence.infrastructure.epub.epub_archive import EpubArchive
+from engineering_influence.infrastructure.epub.epub_cover_inspector import EpubCoverInspector
+from engineering_influence.infrastructure.epub.epubcheck_runner import EpubcheckRunner
+from engineering_influence.infrastructure.epub.tex4ebook_compiler import Tex4ebookCompiler
+from engineering_influence.infrastructure.epub.zip_epub_package import ZipEpubPackage
 from engineering_influence.infrastructure.publishing.filesystem_manuscript_source import (
     FilesystemManuscriptSource,
 )
@@ -18,6 +24,10 @@ from engineering_influence.repositories.typesetting.book_loader import BookLoade
 from engineering_influence.runtime.interfaces.publishing_controller_factory_interface import (
     PublishingControllerFactoryInterface,
 )
+from engineering_influence.services.epub.epub_builder import EpubBuilder
+from engineering_influence.services.epub.epub_identifier import EpubIdentifier
+from engineering_influence.services.epub.epub_repacker import EpubRepacker
+from engineering_influence.services.epub.epub_verifier import EpubVerifier
 
 
 class PublishingControllerFactory(PublishingControllerFactoryInterface):
@@ -26,12 +36,31 @@ class PublishingControllerFactory(PublishingControllerFactoryInterface):
     def create(self, root: Path) -> PublishingController:
         """Load the project at ``root`` and wire its collaborators."""
         config = ProjectConfig.load(root)
+        layout = config.layout()
+        files = FilesystemManuscriptSource()
+        loader = BookLoader(config.root)
+        workspace = FilesystemBuildWorkspace()
+        assets = PackageAssets()
+        identifier = EpubIdentifier()
+        epub = EpubBuilder(
+            layout,
+            loader,
+            Tex4ebookCompiler(),
+            workspace,
+            assets,
+            EpubRepacker(CoverImage(layout), ZipEpubPackage(), identifier),
+            files,
+            identifier,
+        )
+        epub_verifier = EpubVerifier(EpubArchive(), EpubcheckRunner(), EpubCoverInspector())
         return PublishingController(
             config,
-            FilesystemManuscriptSource(),
+            files,
             PypdfPdfInspector(),
-            BookLoader(config.root),
-            FilesystemBuildWorkspace(),
-            PackageAssets(),
+            loader,
+            workspace,
+            assets,
             LatexCompiler(),
+            epub,
+            epub_verifier,
         )

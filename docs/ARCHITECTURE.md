@@ -19,8 +19,8 @@ repositories/ SQLModel ledger and outbox (Postgres)
 infrastructure/ RabbitMQ queue and consumer, in-memory adapters, security, observability, vibey adapters
 runtime/      composition roots (CLI, API, worker), settings loader, entry points
 publishing/   the book toolchain behind `ei book` (optional `publishing` extra); being split into the
-              layers above: the audit and check classes live in `<layer>/publishing/` and the typesetting
-              classes in `<layer>/typesetting/`
+              layers above: the audit and check classes live in `<layer>/publishing/`, the typesetting
+              classes in `<layer>/typesetting/` and the EPUB classes in `<layer>/epub/`
 ```
 
 Dependencies only point inward. `services` and `controllers` never import adapters or

@@ -13,6 +13,12 @@ from pypdf import PdfWriter
 
 from engineering_influence.controllers.publishing_controller import PublishingController
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
+from engineering_influence.infrastructure.epub.cover_image import CoverImage
+from engineering_influence.infrastructure.epub.epub_archive import EpubArchive
+from engineering_influence.infrastructure.epub.epub_cover_inspector import EpubCoverInspector
+from engineering_influence.infrastructure.epub.epubcheck_runner import EpubcheckRunner
+from engineering_influence.infrastructure.epub.tex4ebook_compiler import Tex4ebookCompiler
+from engineering_influence.infrastructure.epub.zip_epub_package import ZipEpubPackage
 from engineering_influence.infrastructure.publishing.filesystem_manuscript_source import (
     FilesystemManuscriptSource,
 )
@@ -24,13 +30,15 @@ from engineering_influence.infrastructure.typesetting.filesystem_build_workspace
 from engineering_influence.infrastructure.typesetting.latex_compiler import LatexCompiler
 from engineering_influence.models.publishing.project_config import ProjectConfig
 from engineering_influence.publishing.covers.cover_builder import CoverBuilder
-from engineering_influence.publishing.epub.epub_builder import EpubBuilder
-from engineering_influence.publishing.epub.epub_verifier import EpubVerifier
 from engineering_influence.publishing.qa.page_record import PageRecord
 from engineering_influence.publishing.qa.render_qa import RenderQa
 from engineering_influence.publishing.qa.render_report import RenderReport
 from engineering_influence.repositories.typesetting.book_loader import BookLoader
 from engineering_influence.runtime.cli_runtime import CliRuntime
+from engineering_influence.services.epub.epub_builder import EpubBuilder
+from engineering_influence.services.epub.epub_identifier import EpubIdentifier
+from engineering_influence.services.epub.epub_repacker import EpubRepacker
+from engineering_influence.services.epub.epub_verifier import EpubVerifier
 from engineering_influence.services.publishing.pdf_verifier import PdfVerifier
 from engineering_influence.services.typesetting.book_builder import BookBuilder
 
@@ -113,16 +121,31 @@ def stubs(monkeypatch: pytest.MonkeyPatch, root: Path) -> dict[str, list[Any]]:
 
 def controller(root: Path, **kwargs: Any) -> PublishingController:
     config = ProjectConfig.load(root)
+    layout = config.layout()
+    files = FilesystemManuscriptSource()
+    loader = BookLoader(config.root)
+    workspace = FilesystemBuildWorkspace()
+    assets = PackageAssets()
+    identifier = EpubIdentifier()
     collaborators: dict[str, Any] = {
-        "loader": BookLoader(config.root),
-        "workspace": FilesystemBuildWorkspace(),
-        "assets": PackageAssets(),
+        "loader": loader,
+        "workspace": workspace,
+        "assets": assets,
         "latex": LatexCompiler(),
+        "epub": EpubBuilder(
+            layout,
+            loader,
+            Tex4ebookCompiler(),
+            workspace,
+            assets,
+            EpubRepacker(CoverImage(layout), ZipEpubPackage(), identifier),
+            files,
+            identifier,
+        ),
+        "epub_verifier": EpubVerifier(EpubArchive(), EpubcheckRunner(), EpubCoverInspector()),
         **kwargs,
     }
-    return PublishingController(
-        config, FilesystemManuscriptSource(), PypdfPdfInspector(), **collaborators
-    )
+    return PublishingController(config, files, PypdfPdfInspector(), **collaborators)
 
 
 class FakeQa(RenderQa):
