@@ -4,10 +4,10 @@ import dataclasses
 
 import pytest
 
-from engineering_influence.publishing.covers.box import Box
-from engineering_influence.publishing.covers.cover_layout import CoverLayout
-from engineering_influence.publishing.covers.layout_check import LayoutCheck
-from engineering_influence.publishing.covers.layout_factory import LayoutFactory
+from engineering_influence.models.covers.box import Box
+from engineering_influence.models.covers.cover_layout import CoverLayout
+from engineering_influence.models.covers.layout_check import LayoutCheck
+from engineering_influence.models.covers.layout_factory import LayoutFactory
 
 FACTORY = LayoutFactory()
 

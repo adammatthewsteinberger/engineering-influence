@@ -7,18 +7,18 @@ import numpy as np
 from PIL import Image
 
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
-from engineering_influence.publishing.covers.back_typesetter import BackTypesetter
-from engineering_influence.publishing.covers.cover_layout import CoverLayout
-from engineering_influence.publishing.covers.cover_style import CoverStyle
-from engineering_influence.publishing.covers.font_loader import FontLoader
-from engineering_influence.publishing.covers.front_typesetter import FrontTypesetter
-from engineering_influence.publishing.covers.kdp_cover_spec import KdpCoverSpec as Kdp
-from engineering_influence.publishing.covers.layout_check import LayoutCheck
-from engineering_influence.publishing.covers.painter_registry import PainterRegistry
-from engineering_influence.publishing.covers.spine_typesetter import SpineTypesetter
-from engineering_influence.publishing.covers.text_placement_check import TextPlacementCheck
-from engineering_influence.publishing.covers.text_recorder import TextRecorder
-from engineering_influence.publishing.covers.typography import Typography
+from engineering_influence.infrastructure.covers.back_typesetter import BackTypesetter
+from engineering_influence.infrastructure.covers.font_loader import FontLoader
+from engineering_influence.infrastructure.covers.front_typesetter import FrontTypesetter
+from engineering_influence.infrastructure.covers.painter_registry import PainterRegistry
+from engineering_influence.infrastructure.covers.spine_typesetter import SpineTypesetter
+from engineering_influence.infrastructure.covers.text_placement_check import TextPlacementCheck
+from engineering_influence.infrastructure.covers.typography import Typography
+from engineering_influence.models.covers.cover_layout import CoverLayout
+from engineering_influence.models.covers.cover_style import CoverStyle
+from engineering_influence.models.covers.kdp_cover_spec import KdpCoverSpec as Kdp
+from engineering_influence.models.covers.layout_check import LayoutCheck
+from engineering_influence.models.covers.text_recorder import TextRecorder
 
 
 class CoverRenderer:

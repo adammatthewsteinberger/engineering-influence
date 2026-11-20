@@ -8,19 +8,19 @@ import pytest
 from PIL import Image
 
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
-from engineering_influence.publishing.covers.back_typesetter import BackTypesetter
-from engineering_influence.publishing.covers.cover_painter import CoverPainter
-from engineering_influence.publishing.covers.cover_renderer import CoverRenderer
-from engineering_influence.publishing.covers.cover_style import CoverStyle
-from engineering_influence.publishing.covers.font_loader import FontLoader
-from engineering_influence.publishing.covers.front_typesetter import FrontTypesetter
-from engineering_influence.publishing.covers.kdp_cover_spec import KdpCoverSpec
-from engineering_influence.publishing.covers.layout_factory import LayoutFactory
-from engineering_influence.publishing.covers.painter_registry import PainterRegistry
-from engineering_influence.publishing.covers.spine_typesetter import SpineTypesetter
-from engineering_influence.publishing.covers.text_placement_check import TextPlacementCheck
-from engineering_influence.publishing.covers.text_recorder import TextRecorder
-from engineering_influence.publishing.covers.typography import Typography
+from engineering_influence.infrastructure.covers.back_typesetter import BackTypesetter
+from engineering_influence.infrastructure.covers.cover_renderer import CoverRenderer
+from engineering_influence.infrastructure.covers.font_loader import FontLoader
+from engineering_influence.infrastructure.covers.front_typesetter import FrontTypesetter
+from engineering_influence.infrastructure.covers.painter_registry import PainterRegistry
+from engineering_influence.infrastructure.covers.spine_typesetter import SpineTypesetter
+from engineering_influence.infrastructure.covers.text_placement_check import TextPlacementCheck
+from engineering_influence.infrastructure.covers.typography import Typography
+from engineering_influence.interfaces.cover_painter_interface import CoverPainterInterface
+from engineering_influence.models.covers.cover_style import CoverStyle
+from engineering_influence.models.covers.kdp_cover_spec import KdpCoverSpec
+from engineering_influence.models.covers.layout_factory import LayoutFactory
+from engineering_influence.models.covers.text_recorder import TextRecorder
 
 FACTORY = LayoutFactory()
 
@@ -236,7 +236,7 @@ def test_renderer_enforces_the_minimum_print_text_size(
     CoverRenderer(registry, fonts).render(FACTORY.ebook(), style, meta)  # ebooks are not printed
 
 
-class BlankPainter(CoverPainter):
+class BlankPainter(CoverPainterInterface):
     def paint(self, layout: Any, style: CoverStyle) -> Any:
         return np.zeros((*reversed(layout.px), 3), np.float32)
 

@@ -6,8 +6,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from engineering_influence.publishing.covers.ebook_border import EbookBorder
-from engineering_influence.publishing.covers.kdp_cover_spec import KdpCoverSpec as Kdp
+from engineering_influence.infrastructure.covers.ebook_border import EbookBorder
+from engineering_influence.models.covers.kdp_cover_spec import KdpCoverSpec as Kdp
 
 
 class EbookCoverVerifier:

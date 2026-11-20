@@ -1,0 +1,27 @@
+# Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
+"""The interface a cover painter implements."""
+
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
+
+    from engineering_influence.models.covers.cover_layout import CoverLayout
+    from engineering_influence.models.covers.cover_style import CoverStyle
+
+
+class CoverPainterInterface(ABC):
+    """Paints the full cover image, text excluded, as float RGB in [0, 1].
+
+    Painters must be deterministic for a given layout and style (seed from style.seed), so a
+    rebuild of unchanged sources produces identical files.
+    """
+
+    __slots__ = ()
+
+    @abstractmethod
+    def paint(self, layout: CoverLayout, style: CoverStyle) -> NDArray[Any]:
+        """Return an (height, width, 3) float array for layout.px."""

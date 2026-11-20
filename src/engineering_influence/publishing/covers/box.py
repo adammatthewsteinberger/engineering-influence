@@ -1,37 +1,15 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
-"""An axis-aligned rectangle in inches."""
+"""Deprecated path: ``Box`` moved to ``engineering_influence.covers``."""
 
-from dataclasses import dataclass
+import warnings
 
+from engineering_influence.covers import Box
 
-@dataclass
-class Box:
-    """Left, top, right, bottom edges."""
+warnings.warn(
+    "engineering_influence.publishing.covers.box is deprecated and will be removed in the "
+    "next minor release; import Box from engineering_influence.covers",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
-    x0: float
-    y0: float
-    x1: float
-    y1: float
-
-    @property
-    def w(self) -> float:
-        """Width."""
-        return self.x1 - self.x0
-
-    @property
-    def h(self) -> float:
-        """Height."""
-        return self.y1 - self.y0
-
-    def inset(
-        self,
-        left: float,
-        top: float | None = None,
-        right: float | None = None,
-        bottom: float | None = None,
-    ) -> "Box":
-        """Shrink by the given amounts; omitted sides repeat the previous one."""
-        top = left if top is None else top
-        right = left if right is None else right
-        bottom = top if bottom is None else bottom
-        return Box(self.x0 + left, self.y0 + top, self.x1 - right, self.y1 - bottom)
+__all__ = ["Box"]

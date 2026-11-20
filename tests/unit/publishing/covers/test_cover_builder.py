@@ -9,12 +9,12 @@ from PIL import Image
 from pypdf import PdfWriter
 
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
+from engineering_influence.infrastructure.covers.cover_builder import CoverBuilder
+from engineering_influence.infrastructure.covers.ebook_cover_verifier import EbookCoverVerifier
+from engineering_influence.infrastructure.covers.painter_registry import PainterRegistry
+from engineering_influence.interfaces.cover_painter_interface import CoverPainterInterface
+from engineering_influence.models.covers.cover_style import CoverStyle
 from engineering_influence.models.publishing.project_layout import ProjectLayout
-from engineering_influence.publishing.covers.cover_builder import CoverBuilder
-from engineering_influence.publishing.covers.cover_painter import CoverPainter
-from engineering_influence.publishing.covers.cover_style import CoverStyle
-from engineering_influence.publishing.covers.ebook_cover_verifier import EbookCoverVerifier
-from engineering_influence.publishing.covers.painter_registry import PainterRegistry
 
 FILES = (
     "ebook.jpg",
@@ -114,7 +114,7 @@ def test_reports_missing_inputs_and_unsafe_slugs(tmp_path: Path) -> None:
         builder.build("demo")
 
 
-class WhitePainter(CoverPainter):
+class WhitePainter(CoverPainterInterface):
     def paint(self, layout: Any, style: CoverStyle) -> Any:
         return np.ones((*reversed(layout.px), 3), np.float32)
 
@@ -123,7 +123,7 @@ def test_a_light_ebook_cover_gets_the_gray_border_and_still_verifies(tmp_path: P
     layout = project(tmp_path)
     registry = PainterRegistry()
     registry.register("white", WhitePainter())
-    from engineering_influence.publishing.covers.builtin_cover_style import BuiltinCoverStyle
+    from engineering_influence.models.covers.builtin_cover_style import BuiltinCoverStyle
 
     style = BuiltinCoverStyle().for_book({"title": "Demo Cover"})
     style.painter = "white"

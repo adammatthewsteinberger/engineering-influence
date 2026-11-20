@@ -1,22 +1,15 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
-"""The interface a cover painter implements."""
+"""Deprecated path: ``CoverPainter`` moved to ``engineering_influence.covers``."""
 
-from abc import ABC, abstractmethod
-from typing import Any
+import warnings
 
-from numpy.typing import NDArray
+from engineering_influence.covers import CoverPainter
 
-from engineering_influence.publishing.covers.cover_layout import CoverLayout
-from engineering_influence.publishing.covers.cover_style import CoverStyle
+warnings.warn(
+    "engineering_influence.publishing.covers.cover_painter is deprecated and will be removed in the "
+    "next minor release; import CoverPainter from engineering_influence.covers",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
-
-class CoverPainter(ABC):
-    """Paints the full cover image, text excluded, as float RGB in [0, 1].
-
-    Painters must be deterministic for a given layout and style (seed from style.seed), so a
-    rebuild of unchanged sources produces identical files.
-    """
-
-    @abstractmethod
-    def paint(self, layout: CoverLayout, style: CoverStyle) -> NDArray[Any]:
-        """Return an (height, width, 3) float array for layout.px."""
+__all__ = ["CoverPainter"]

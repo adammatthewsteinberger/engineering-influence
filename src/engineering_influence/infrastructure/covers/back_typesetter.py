@@ -5,9 +5,9 @@ from typing import Any
 
 from PIL import Image, ImageDraw, ImageFont
 
-from engineering_influence.publishing.covers.cover_layout import CoverLayout
-from engineering_influence.publishing.covers.cover_style import CoverStyle
-from engineering_influence.publishing.covers.typography import Typography
+from engineering_influence.infrastructure.covers.typography import Typography
+from engineering_influence.models.covers.cover_layout import CoverLayout
+from engineering_influence.models.covers.cover_style import CoverStyle
 
 Block = tuple[str, ImageFont.FreeTypeFont, list[str], float, float]
 
