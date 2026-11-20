@@ -98,3 +98,18 @@ def test_serve_without_the_runtime_extra_explains_how_to_install_it() -> None:
     assert "pip install 'engineering-influence[api,runtime]'" in result.stderr
     assert "is missing" in result.stderr
     assert "Traceback" not in result.stderr
+
+
+def test_db_without_the_runtime_extra_explains_how_to_install_it() -> None:
+    result = run_without_extras(
+        """
+        from engineering_influence.runtime.cli_runtime import CliRuntime
+        raise SystemExit(CliRuntime().build().run(["db", "upgrade"]))
+        """,
+        blocked=("vibey_bootstrap", "alembic", "sqlalchemy", "sqlmodel"),
+    )
+
+    assert result.returncode == 1
+    assert "pip install 'engineering-influence[runtime]'" in result.stderr
+    assert "is missing" in result.stderr
+    assert "Traceback" not in result.stderr

@@ -92,7 +92,15 @@ The correlation id travels the whole way: request, queued job, worker log lines 
 - **Outbox**: webhook intents with attempt counts and `dead_at`. Dispatch isolates failures per event.
 - **Queues**: `EI_QUEUE_NAME` (default `engineering-influence.jobs`) and its `.dead` companion.
 
-`create_all()` creates tables at start-up; there is no migration tool yet.
+- **Runs** (`bookrunrecord`), the **run journal** (`journalrecord`) and **artifacts** (`artifactrecord`)
+  back resumable book runs; nothing writes to them yet.
+
+The schema is owned by Alembic. The migrations ship in the wheel
+(`infrastructure/migrations/`), `ei db upgrade` applies them to `EI_DATABASE_URL`, and the compose
+stack runs it once in a `migrate` service that the API and the worker wait for. The API and the
+worker never create tables: they check the revision at start-up and refuse to run on a database that
+is not at the latest one, so two processes can no longer race to create the schema. Databases made by
+the earlier `create_all()` are adopted in place; the baseline creates only the tables that are missing.
 
 ## Trust boundaries
 

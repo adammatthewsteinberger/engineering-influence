@@ -9,10 +9,13 @@ from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
 from engineering_influence.interactions.cli.book_cli import BookCli
 from engineering_influence.interactions.cli.cli_application import CliApplication
+from engineering_influence.interactions.cli.db_cli import DbCli
 from engineering_influence.interactions.cli.interfaces.cli_application_interface import (
     CliApplicationInterface,
 )
 from engineering_influence.interactions.cli.serve_cli import ServeCli
+from engineering_influence.interfaces.schema_migrator_interface import SchemaMigratorInterface
+from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
 from engineering_influence.runtime.interfaces.cli_runtime_interface import CliRuntimeInterface
 from engineering_influence.runtime.interfaces.publishing_controller_factory_interface import (
     PublishingControllerFactoryInterface,
@@ -25,7 +28,7 @@ if TYPE_CHECKING:
 
 
 class CliRuntime(CliRuntimeInterface):
-    """Wire ``ei``: a local pipeline planner, the book commands and the server commands.
+    """Wire ``ei``: a local pipeline planner, the book, server and database commands.
 
     ``publishing`` replaces the factory that wires the book commands to the real file system and
     toolchain, so a test can drive the whole command line over fakes.
@@ -38,8 +41,25 @@ class CliRuntime(CliRuntimeInterface):
         """Wire the controller, the book commands and the server commands."""
         controller = ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue()))
         return CliApplication(
-            controller, BookCli(self._publishing_controller), ServeCli(ServeStarter())
+            controller,
+            BookCli(self._publishing_controller),
+            ServeCli(ServeStarter()),
+            DbCli(self._schema_migrator, self._secret_provider),
         )
+
+    def _secret_provider(self) -> SecretProviderInterface:
+        """Build the secret provider on first use; it needs the ``runtime`` extra."""
+        from engineering_influence.infrastructure.security.env_secret_provider import (
+            EnvSecretProvider,
+        )
+
+        return EnvSecretProvider()
+
+    def _schema_migrator(self) -> SchemaMigratorInterface:
+        """Build the migrator on first use; it needs the ``runtime`` extra."""
+        from engineering_influence.infrastructure.schema_migrator import SchemaMigrator
+
+        return SchemaMigrator()
 
     def _publishing_controller(self, root: Path) -> "PublishingController":
         """Build the publishing controller on first use.

@@ -54,9 +54,22 @@ services:
       timeout: 10s
       retries: 20
 
+  # One-shot: brings the schema to the latest revision, then exits. The API and the worker wait
+  # for it, so neither can start on an empty or old database, and neither creates tables itself.
+  migrate:
+    <<: *app
+    command: ["db", "upgrade"]
+    restart: "no"
+    depends_on:
+      postgres: {condition: service_healthy}
+
   api:
     <<: *app
     command: ["serve", "api"]
+    depends_on:
+      postgres: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+      migrate: {condition: service_completed_successfully}
     environment:
       <<: *app-environment
       EI_API_KEYS: ${EI_API_KEYS:?set EI_API_KEYS in examples/.env}
@@ -74,6 +87,10 @@ services:
   worker:
     <<: *app
     command: ["serve", "worker"]
+    depends_on:
+      postgres: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+      migrate: {condition: service_completed_successfully}
 
 volumes:
   postgres-data:

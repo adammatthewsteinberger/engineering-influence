@@ -128,6 +128,12 @@ cp examples/.env.example examples/.env     # fill in the three blank values
 docker compose -f examples/docker-compose.yml --env-file examples/.env up -d --build --wait
 ```
 
+The database schema is created by `ei db upgrade`, which reads `EI_DATABASE_URL` and is safe to
+run again. The compose file runs it once in a `migrate` service that the API and the worker wait
+for. Outside compose, run it yourself before starting either process; they check the schema
+revision at start-up and exit with `the database schema is not at the latest revision` if it is not
+current. Upgrade before you roll out a new release, then start the new processes.
+
 `examples/compose_smoke.sh` does all of this with throwaway credentials, runs a
 two-stage pipeline, checks that a malformed message is dead-lettered, and tears the
 stack down. It needs Docker and `curl`.

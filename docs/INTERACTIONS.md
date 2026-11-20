@@ -118,6 +118,7 @@ is not authenticated and the example uses in-memory adapters, so do not expose i
 ei --version
 ei pipeline start --slug S --title T --postulate P [--postulate P …] [--stage STAGE …]
 ei serve api|worker
+ei db upgrade
 ei book [--root DIR] audit|build|epub|covers|qa|publish …
 ```
 
@@ -125,6 +126,7 @@ ei book [--root DIR] audit|build|epub|covers|qa|publish …
 |---|---|---|
 | `ei pipeline start` | Validates a project and prints the result as JSON. In-memory only: it does not queue work on the stack. `--stage` defaults to `thesis`. | `0`; `2` on a usage error |
 | `ei serve api` / `worker` | Runs the API or the worker from `EI_*` settings. | `2` and one line naming the bad variable; never a traceback |
+| `ei db upgrade` | Applies the database migrations to `EI_DATABASE_URL` and prints the revision reached. Needs the `runtime` extra. | `0`; `1` extra missing; `2` and one line for a missing setting or an unreachable database |
 | `ei book …` | Audit, build and publish books (needs the `publishing` extra and, for PDFs, a TeX toolchain). Reads `engineering-influence.toml` in `--root`. | `0` ok; `1` a build or audit failure; `2` bad arguments |
 
 `python -m engineering_influence` is the same program. Walk-through: [`examples/cli/run.sh`](../examples/cli/run.sh).

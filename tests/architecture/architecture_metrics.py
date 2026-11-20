@@ -48,6 +48,9 @@ ALLOWED = {
 ADAPTERS = {"controllers", "repositories", "infrastructure", "interactions"}
 TYPE_ONLY = {"errors", "models", "contracts"}
 EXEMPT_FOLDERS = {"interfaces", "assets", "__pycache__"}
+# Alembic scripts are modules of functions and constants by contract, so they cannot follow the
+# one-class-per-file rules; ADR 0006 exempts this folder and nothing else.
+SCRIPT_FOLDERS = {"migrations"}
 STDLIB = set(sys.stdlib_module_names)
 # ADR 0006: these never appear in models, contracts or services; an adapter provides them.
 EFFECTFUL = {"PIL", "pypdf", "pdfplumber", "reportlab", "subprocess", "zipfile"}
@@ -70,7 +73,11 @@ class ArchitectureMetrics:
 
     def __init__(self, source: Path = SOURCE) -> None:
         self._source = source
-        self._files = sorted(p for p in source.rglob("*.py") if p.name != "__init__.py")
+        self._files = sorted(
+            p
+            for p in source.rglob("*.py")
+            if p.name != "__init__.py" and not SCRIPT_FOLDERS & set(p.relative_to(source).parts)
+        )
 
     def all(self) -> dict[str, int]:
         """Every metric by name."""

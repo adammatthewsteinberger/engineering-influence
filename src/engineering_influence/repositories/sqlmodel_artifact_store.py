@@ -4,7 +4,7 @@
 import hashlib
 
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import Session, SQLModel, col, create_engine, select
+from sqlmodel import Session, col, create_engine, select
 
 from engineering_influence.errors.artifact_conflict_error import ArtifactConflictError
 from engineering_influence.interfaces.artifact_store_interface import ArtifactStoreInterface
@@ -15,10 +15,9 @@ from engineering_influence.repositories.artifact_record import ArtifactRecord
 class SqlModelArtifactStore(ArtifactStoreInterface):
     """Persist artifacts as rows; the database refuses a second row for the same run and name."""
 
-    def __init__(self, database_url: str = "sqlite://") -> None:
+    def __init__(self, database_url: str) -> None:
         connect_args = {"check_same_thread": False} if database_url.startswith("sqlite") else {}
         self._engine = create_engine(database_url, connect_args=connect_args)
-        SQLModel.metadata.create_all(self._engine)
 
     def put(self, run_id: str, name: str, data: bytes) -> str:
         address = ArtifactAddress(run_id, name)

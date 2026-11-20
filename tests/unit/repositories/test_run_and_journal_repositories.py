@@ -1,7 +1,6 @@
 """The run repository and the journal: every implementation honours the same contract."""
 
 from collections.abc import Callable, Iterator
-from pathlib import Path
 
 import pytest
 from sqlalchemy.exc import IntegrityError
@@ -22,16 +21,16 @@ from engineering_influence.repositories.book_run_codec import BookRunCodec
 from engineering_influence.repositories.sqlmodel_journal import SqlModelJournal
 from engineering_influence.repositories.sqlmodel_run_repository import SqlModelRunRepository
 
-RunFactory = Callable[[Path], RunRepositoryInterface]
-JournalFactory = Callable[[Path], JournalInterface]
+RunFactory = Callable[[str], RunRepositoryInterface]
+JournalFactory = Callable[[str], JournalInterface]
 
 RUN_REPOSITORIES: dict[str, RunFactory] = {
     "memory": lambda _: InMemoryRunRepository(),
-    "sqlite": lambda tmp: SqlModelRunRepository(f"sqlite:///{tmp / 'runs.db'}"),
+    "sqlite": SqlModelRunRepository,
 }
 JOURNALS: dict[str, JournalFactory] = {
     "memory": lambda _: InMemoryJournal(),
-    "sqlite": lambda tmp: SqlModelJournal(f"sqlite:///{tmp / 'journal.db'}"),
+    "sqlite": SqlModelJournal,
 }
 
 
@@ -57,16 +56,16 @@ def make_entry(
 
 
 @pytest.fixture(params=sorted(RUN_REPOSITORIES))
-def runs(request: pytest.FixtureRequest, tmp_path: Path) -> Iterator[RunRepositoryInterface]:
-    repository = RUN_REPOSITORIES[request.param](tmp_path)
+def runs(request: pytest.FixtureRequest, database_url: str) -> Iterator[RunRepositoryInterface]:
+    repository = RUN_REPOSITORIES[request.param](database_url)
     yield repository
     if isinstance(repository, SqlModelRunRepository):
         repository.close()
 
 
 @pytest.fixture(params=sorted(JOURNALS))
-def journal(request: pytest.FixtureRequest, tmp_path: Path) -> Iterator[JournalInterface]:
-    store = JOURNALS[request.param](tmp_path)
+def journal(request: pytest.FixtureRequest, database_url: str) -> Iterator[JournalInterface]:
+    store = JOURNALS[request.param](database_url)
     yield store
     if isinstance(store, SqlModelJournal):
         store.close()
@@ -113,8 +112,8 @@ def test_the_codec_text_is_stable_for_equal_runs() -> None:
     assert codec.decode(codec.encode(make_run())) == make_run()
 
 
-def test_a_sql_run_survives_reopening_the_database(tmp_path: Path) -> None:
-    url = f"sqlite:///{tmp_path / 'runs.db'}"
+def test_a_sql_run_survives_reopening_the_database(database_url: str) -> None:
+    url = database_url
     first = SqlModelRunRepository(url)
     first.save(make_run().advance())
     first.close()
@@ -163,8 +162,8 @@ def test_journal_entries_keep_the_order_they_were_recorded(journal: JournalInter
     assert [e.key.context_hash for e in journal.entries("run-1")] == ["c3", "c1", "c2"]
 
 
-def test_a_sql_journal_survives_reopening_the_database(tmp_path: Path) -> None:
-    url = f"sqlite:///{tmp_path / 'journal.db'}"
+def test_a_sql_journal_survives_reopening_the_database(database_url: str) -> None:
+    url = database_url
     first = SqlModelJournal(url)
     first.record(make_entry())
     first.close()
@@ -194,8 +193,8 @@ class BlindJournal(SqlModelJournal):
         return None
 
 
-def test_two_workers_racing_on_one_request_converge_on_the_first_answer(tmp_path: Path) -> None:
-    url = f"sqlite:///{tmp_path / 'journal.db'}"
+def test_two_workers_racing_on_one_request_converge_on_the_first_answer(database_url: str) -> None:
+    url = database_url
     winner = SqlModelJournal(url)
     winner.record(make_entry(response="winner"))
     loser = RacingJournal(url)
@@ -205,8 +204,8 @@ def test_two_workers_racing_on_one_request_converge_on_the_first_answer(tmp_path
     loser.close()
 
 
-def test_a_duplicate_whose_original_cannot_be_found_is_an_error(tmp_path: Path) -> None:
-    url = f"sqlite:///{tmp_path / 'journal.db'}"
+def test_a_duplicate_whose_original_cannot_be_found_is_an_error(database_url: str) -> None:
+    url = database_url
     journal = BlindJournal(url)
     journal.record(make_entry())
     with pytest.raises(RuntimeError, match="cannot find the original"):
@@ -214,10 +213,10 @@ def test_a_duplicate_whose_original_cannot_be_found_is_an_error(tmp_path: Path) 
     journal.close()
 
 
-def test_the_database_itself_refuses_a_duplicate_request(tmp_path: Path) -> None:
+def test_the_database_itself_refuses_a_duplicate_request(database_url: str) -> None:
     from sqlmodel import Session
 
-    journal = SqlModelJournal(f"sqlite:///{tmp_path / 'journal.db'}")
+    journal = SqlModelJournal(database_url)
     journal.record(make_entry())
     with Session(journal._engine) as session, pytest.raises(IntegrityError):
         session.add(journal._row(make_entry(response="again"), make_entry().key.digest()))

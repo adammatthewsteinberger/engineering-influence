@@ -13,6 +13,7 @@ from engineering_influence.interactions.cli.interfaces.book_cli_interface import
 from engineering_influence.interactions.cli.interfaces.cli_application_interface import (
     CliApplicationInterface,
 )
+from engineering_influence.interactions.cli.interfaces.db_cli_interface import DbCliInterface
 from engineering_influence.interactions.cli.interfaces.serve_cli_interface import ServeCliInterface
 
 
@@ -27,10 +28,12 @@ class CliApplication(CliApplicationInterface):
         controller: ProjectControllerInterface,
         book_cli: BookCliInterface,
         serve_cli: ServeCliInterface,
+        db_cli: DbCliInterface,
     ) -> None:
         self._controller = controller
         self._book_cli = book_cli
         self._serve_cli = serve_cli
+        self._db_cli = db_cli
 
     def run(self, argv: list[str] | None = None) -> int:
         """Parse the command line and return its process status."""
@@ -48,11 +51,14 @@ class CliApplication(CliApplicationInterface):
         start.add_argument("--stage", action="append")
         self._book_cli.register(subparsers)
         self._serve_cli.register(subparsers)
+        self._db_cli.register(subparsers)
         arguments = parser.parse_args(argv)
         if arguments.command == "book":
             return self._book_cli.run(arguments)
         if arguments.command == "serve":
             return self._serve_cli.run(arguments)
+        if arguments.command == "db":
+            return self._db_cli.run(arguments)
         if arguments.command == "pipeline" and arguments.pipeline_command == "start":
             request = ProjectRequest(
                 slug=arguments.slug,
