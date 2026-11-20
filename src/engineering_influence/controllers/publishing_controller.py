@@ -9,14 +9,11 @@ from engineering_influence.controllers.interfaces.publishing_controller_interfac
 )
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 from engineering_influence.interfaces.book_loader_interface import BookLoaderInterface
-from engineering_influence.interfaces.build_workspace_interface import BuildWorkspaceInterface
 from engineering_influence.interfaces.cover_builder_interface import CoverBuilderInterface
 from engineering_influence.interfaces.cover_builder_provider_interface import (
     CoverBuilderProviderInterface,
 )
-from engineering_influence.interfaces.latex_compiler_interface import LatexCompilerInterface
 from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
-from engineering_influence.interfaces.package_assets_interface import PackageAssetsInterface
 from engineering_influence.interfaces.pdf_inspector_interface import PdfInspectorInterface
 from engineering_influence.interfaces.publish_pipeline_provider_interface import (
     PublishPipelineProviderInterface,
@@ -28,9 +25,13 @@ from engineering_influence.services.epub.epub_builder import EpubBuilder
 from engineering_influence.services.epub.epub_verifier import EpubVerifier
 from engineering_influence.services.publishing.audit_report_text import AuditReportText
 from engineering_influence.services.publishing.book_auditor import BookAuditor
-from engineering_influence.services.publishing.pdf_verifier import PdfVerifier
+from engineering_influence.services.publishing.interfaces.pdf_verifier_interface import (
+    PdfVerifierInterface,
+)
 from engineering_influence.services.publishing.release_auditor import ReleaseAuditor
-from engineering_influence.services.typesetting.book_builder import BookBuilder
+from engineering_influence.services.typesetting.interfaces.book_builder_interface import (
+    BookBuilderInterface,
+)
 
 
 class PublishingController(PublishingControllerInterface):
@@ -47,9 +48,8 @@ class PublishingController(PublishingControllerInterface):
         files: ManuscriptSourceInterface,
         pdfs: PdfInspectorInterface,
         loader: BookLoaderInterface,
-        workspace: BuildWorkspaceInterface,
-        assets: PackageAssetsInterface,
-        latex: LatexCompilerInterface,
+        builder: BookBuilderInterface,
+        pdf_verifier: PdfVerifierInterface,
         epub: EpubBuilder,
         epub_verifier: EpubVerifier,
         covers: CoverBuilderProviderInterface,
@@ -60,10 +60,9 @@ class PublishingController(PublishingControllerInterface):
         self._files = files
         self._pdfs = pdfs
         self._loader = loader
-        self._workspace = workspace
-        self._assets = assets
         self._layout = config.layout()
-        self._latex = latex
+        self._builder = builder
+        self._pdf_verifier = pdf_verifier
         self._epub = epub
         self._epub_verifier = epub_verifier
         self._covers = covers
@@ -74,11 +73,6 @@ class PublishingController(PublishingControllerInterface):
     def layout(self) -> ProjectLayout:
         """The project's directory layout."""
         return self._layout
-
-    def _book_builder(self) -> BookBuilder:
-        return BookBuilder(
-            self._layout, self._loader, self._latex, self._workspace, self._assets, self._files
-        )
 
     def audit(self, slug: str, *, strict_release: bool = False) -> tuple[dict[str, Any], bool, str]:
         """Return (both reports as dictionaries, whether the manuscript passes, text)."""
@@ -96,14 +90,12 @@ class PublishingController(PublishingControllerInterface):
         self, slug: str, *, hardcover: bool = False, tex_only: bool = False, verify: bool = True
     ) -> str:
         """Build the interior PDF (or only its LaTeX) and verify the PDF."""
-        path = self._book_builder().build(slug, tex_only=tex_only, hardcover=hardcover)
+        path = self._builder.build(slug, tex_only=tex_only, hardcover=hardcover)
         if tex_only or not verify:
             return f"[{slug}] wrote {self._relative(path)}"
         log_slug = f"{slug}-hardcover" if hardcover else slug
         log = self._layout.build / log_slug / f"{slug}.log"
-        problems = PdfVerifier(self._pdfs, self._files).verify(
-            path, self._layout.books / f"{slug}.toml", log
-        )
+        problems = self._pdf_verifier.verify(path, self._layout.books / f"{slug}.toml", log)
         self._raise_on(slug, problems)
         return f"[{slug}] built {self._relative(path)}\n[{slug}] all checks passed"
 

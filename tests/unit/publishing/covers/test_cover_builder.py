@@ -10,7 +10,9 @@ from pypdf import PdfWriter
 
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 from engineering_influence.infrastructure.covers.cover_builder import CoverBuilder
-from engineering_influence.infrastructure.covers.ebook_cover_verifier import EbookCoverVerifier
+from engineering_influence.infrastructure.covers.interfaces.ebook_cover_verifier_interface import (
+    EbookCoverVerifierInterface,
+)
 from engineering_influence.infrastructure.covers.painter_registry import PainterRegistry
 from engineering_influence.interfaces.cover_painter_interface import CoverPainterInterface
 from engineering_influence.models.covers.cover_style import CoverStyle
@@ -142,15 +144,17 @@ def test_a_light_ebook_cover_gets_the_gray_border_and_still_verifies(tmp_path: P
         assert ebook.getpixel((800, 8))[0] > 250  # the art itself is untouched inside the frame
 
 
-def test_verification_failures_fail_the_build(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+class FailingEbookVerifier(EbookCoverVerifierInterface):
+    def run(self, path: Path) -> list[str]:
+        return ["forced problem"]
+
+
+def test_verification_failures_fail_the_build(tmp_path: Path) -> None:
     layout = project(tmp_path)
-    monkeypatch.setattr(EbookCoverVerifier, "run", lambda self, path: ["forced problem"])
     with pytest.raises(
         BookBuildError, match=r"\[demo\] cover check failed: forced problem; forced problem"
     ):
-        CoverBuilder(layout).build("demo")
+        CoverBuilder(layout, ebooks=FailingEbookVerifier()).build("demo")
 
 
 def test_custom_font_directories_are_searched_before_the_bundled_fonts(tmp_path: Path) -> None:

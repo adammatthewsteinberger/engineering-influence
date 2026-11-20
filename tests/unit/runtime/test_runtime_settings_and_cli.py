@@ -11,11 +11,13 @@ from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.infrastructure.security.env_secret_provider import EnvSecretProvider
 from engineering_influence.interactions.cli.serve_cli import ServeCli
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
+from engineering_influence.runtime.api_runtime import ApiRuntime
 from engineering_influence.runtime.app_settings import AppSettings
 from engineering_influence.runtime.cli_runtime import CliRuntime
 from engineering_influence.runtime.endpoint_checks import EndpointChecks
 from engineering_influence.runtime.environment_settings_loader import EnvironmentSettingsLoader
 from engineering_influence.runtime.serve_starter import ServeStarter
+from engineering_influence.runtime.worker_runtime import WorkerRuntime
 
 DB = "postgresql+psycopg://svc:s3cretpw@db.internal:5432/ei"
 MQ = "amqp://svc:rabbitpw@mq.internal:5672/"
@@ -207,20 +209,31 @@ def test_a_startup_failure_inside_the_runner_exits_2(monkeypatch: pytest.MonkeyP
 
 def test_the_default_runners_start_the_real_runtimes(monkeypatch: pytest.MonkeyPatch) -> None:
     started: list[str] = []
-    monkeypatch.setattr(
-        "engineering_influence.runtime.api_runtime.ApiRuntime.run",
-        lambda self: started.append("api"),
+
+    class StartsApi(ApiRuntime):
+        def run(self) -> None:
+            started.append("api")
+
+    class StartsWorker(WorkerRuntime):
+        def run(self) -> None:
+            started.append("worker")
+
+    starter = ServeStarter(
+        MappingSecrets(REQUIRED), api_runtime=StartsApi, worker_runtime=StartsWorker
     )
-    monkeypatch.setattr(
-        "engineering_influence.runtime.worker_runtime.WorkerRuntime.run",
-        lambda self: started.append("worker"),
-    )
-    serve = ServeCli(ServeStarter(MappingSecrets(REQUIRED)))
+    serve = ServeCli(starter)
 
     run(serve, "api", REQUIRED, monkeypatch)
     run(serve, "worker", REQUIRED, monkeypatch)
 
     assert started == ["api", "worker"]
+
+
+def test_without_a_factory_the_starter_builds_the_real_runtimes() -> None:
+    settings = AppSettings("sqlite://", "amqp://guest:guest@localhost:1//")
+
+    assert isinstance(ServeStarter._real_api(settings, MappingSecrets(REQUIRED)), ApiRuntime)
+    assert isinstance(ServeStarter._real_worker(settings), WorkerRuntime)
 
 
 def test_the_top_level_command_routes_serve(monkeypatch: pytest.MonkeyPatch) -> None:

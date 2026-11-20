@@ -31,6 +31,8 @@ from engineering_influence.services.epub.epub_builder import EpubBuilder
 from engineering_influence.services.epub.epub_identifier import EpubIdentifier
 from engineering_influence.services.epub.epub_repacker import EpubRepacker
 from engineering_influence.services.epub.epub_verifier import EpubVerifier
+from engineering_influence.services.publishing.pdf_verifier import PdfVerifier
+from engineering_influence.services.typesetting.book_builder import BookBuilder
 
 
 class PublishingControllerFactory(PublishingControllerFactoryInterface):
@@ -59,7 +61,8 @@ class PublishingControllerFactory(PublishingControllerFactoryInterface):
         epub_verifier = EpubVerifier(archive, EpubcheckRunner(), inspector)
         strict_verifier = EpubVerifier(archive, EpubcheckRunner(required=True), inspector)
         pdfs = PypdfPdfInspector()
-        latex = LatexCompiler()
+        builder = BookBuilder(layout, loader, LatexCompiler(), workspace, assets, files)
+        pdf_verifier = PdfVerifier(pdfs, files)
         covers = CoverBuilderProvider(config)
         qa = RenderQa(config.root)
         publisher = PublishPipelineProvider(
@@ -68,8 +71,8 @@ class PublishingControllerFactory(PublishingControllerFactoryInterface):
             pdfs,
             loader,
             workspace,
-            assets,
-            latex,
+            builder,
+            pdf_verifier,
             epub,
             covers,
             qa,
@@ -81,9 +84,8 @@ class PublishingControllerFactory(PublishingControllerFactoryInterface):
             files,
             pdfs,
             loader,
-            workspace,
-            assets,
-            latex,
+            builder,
+            pdf_verifier,
             epub,
             epub_verifier,
             covers,

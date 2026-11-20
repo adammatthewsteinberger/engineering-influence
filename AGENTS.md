@@ -12,7 +12,7 @@ infrastructure code. `llms.txt` lists the documents.
   `infrastructure/` or `repositories/`.
 - One class per file; no loose production functions; interfaces in sibling `interfaces/` folders.
 - Layers point inward: transports call controllers, controllers call services. `uv run lint-imports` enforces it.
-- Only `runtime/` builds concrete classes: interactions, controllers and services receive their collaborators as interfaces. (Services still construct their own pure helper services, a planned follow-up to R9; adapters and ports are always injected.)
+- Only `runtime/` builds concrete classes: interactions, controllers and services receive their collaborators as interfaces. (A few pure helpers are still built where they are used, such as the audit classes in `PublishingController` and the checks inside `EpubVerifier`. Anything a test has to replace is injected, adapters and ports always are, and `tests/architecture/test_no_patching.py` holds that line.)
 - The structure of `docs/adr/0006-onion-layers-and-interfaces.md` is in place and every rule in `tests/architecture/` holds with no exceptions: fix a violation rather than allowing it. `scripts/refactor/move_map.toml` records where each class moved from.
 - Every pipeline side effect must be bounded, idempotent, observable and recoverable.
 - Fail closed: missing keys, secrets and settings stop the process; they never open it.

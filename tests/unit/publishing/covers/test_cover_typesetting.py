@@ -228,12 +228,11 @@ def test_renderer_enforces_the_minimum_print_text_size(
     registry: PainterRegistry,
     style: CoverStyle,
     meta: dict[str, Any],
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(KdpCoverSpec, "MIN_TEXT_PT", 500.0)
+    strict = CoverRenderer(registry, fonts, min_text_pt=500.0)
     with pytest.raises(BookBuildError, match="KDP's minimum is 500 pt"):
-        CoverRenderer(registry, fonts).render(FACTORY.paperback(249), style, meta)
-    CoverRenderer(registry, fonts).render(FACTORY.ebook(), style, meta)  # ebooks are not printed
+        strict.render(FACTORY.paperback(249), style, meta)
+    strict.render(FACTORY.ebook(), style, meta)  # ebooks are not printed
 
 
 class BlankPainter(CoverPainterInterface):

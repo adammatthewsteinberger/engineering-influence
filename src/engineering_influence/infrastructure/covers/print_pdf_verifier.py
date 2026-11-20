@@ -14,6 +14,9 @@ from engineering_influence.models.covers.kdp_cover_spec import KdpCoverSpec as K
 class PrintPdfVerifier(PrintPdfVerifierInterface):
     """A single unencrypted page of exact size holding one flattened RGB image."""
 
+    def __init__(self, max_mb: float = Kdp.PDF_MAX_MB) -> None:
+        self._max_mb = max_mb
+
     def run(self, path: Path, width_in: float, height_in: float) -> list[str]:
         """Return problems with the PDF."""
         problems: list[str] = []
@@ -58,9 +61,9 @@ class PrintPdfVerifier(PrintPdfVerifierInterface):
                 problems.append(
                     f"{path.name}: image is {min(dpi_x, dpi_y):.2f} DPI; KDP's minimum is 300"
                 )
-        if path.stat().st_size > Kdp.PDF_MAX_MB * 1e6:
+        if path.stat().st_size > self._max_mb * 1e6:
             problems.append(
                 f"{path.name}: {path.stat().st_size / 1e6:.1f} MB; "
-                f"KDP recommends {Kdp.PDF_MAX_MB} MB or less"
+                f"KDP recommends {self._max_mb} MB or less"
             )
         return problems

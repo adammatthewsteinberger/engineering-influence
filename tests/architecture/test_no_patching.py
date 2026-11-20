@@ -1,10 +1,10 @@
 """Tests inject fakes; they do not patch production code.
 
 Patching the standard library at the system boundary, or a class the test defines itself, is
-fine. The production targets listed below are patched only because the class under test builds
-them itself, so they cannot be injected yet; each entry says why. A new patch of production code
-fails the first test, and removing the last patch of a listed target fails the second until the
-entry is deleted, so the list can only shrink.
+fine, and the boundary is listed below. Every production class takes its collaborators through its
+constructor, so a test passes a fake instead of patching one. A new patch of anything else fails
+the first test, and a boundary entry that no test patches any more fails the second until it is
+deleted, so the list can only shrink.
 """
 
 import ast
@@ -17,22 +17,6 @@ BOUNDARY = {
     "sys.path",
     "zipfile.ZipFile.testzip",
     "RootPlugin.__init__",
-}
-
-AWAITING_INJECTION = {
-    "BookBuilder.build": "the controller builds it",
-    "PdfVerifier.verify": "the controller and the pipeline steps build it",
-    "EbookCoverVerifier.run": "CoverBuilder builds it",
-    "KdpCoverSpec.EBOOK_MAX_MB": "its limits are read as class constants",
-    "KdpCoverSpec.PDF_MAX_MB": "its limits are read as class constants",
-    "KdpCoverSpec.MIN_TEXT_PT": "its limits are read as class constants",
-    "engineering_influence.infrastructure.rabbitmq_queue.RabbitMqQueueAdapter.enqueue": (
-        "ApiRuntime builds the queue"
-    ),
-    "engineering_influence.runtime.api_runtime.ApiRuntime.run": "ServeStarter builds the runtime",
-    "engineering_influence.runtime.worker_runtime.WorkerRuntime.run": (
-        "ServeStarter builds the runtime"
-    ),
 }
 
 
@@ -61,13 +45,13 @@ def patched_targets() -> set[str]:
     return found
 
 
-def test_tests_patch_only_the_boundary_and_the_listed_exceptions() -> None:
-    unexpected = patched_targets() - BOUNDARY - set(AWAITING_INJECTION)
+def test_tests_patch_only_the_system_boundary() -> None:
+    unexpected = patched_targets() - BOUNDARY
     assert unexpected == set(), f"inject a fake instead of patching: {sorted(unexpected)}"
 
 
-def test_the_exception_list_has_no_stale_entries() -> None:
-    stale = set(AWAITING_INJECTION) - patched_targets()
+def test_the_boundary_list_has_no_stale_entries() -> None:
+    stale = BOUNDARY - patched_targets()
     assert stale == set(), (
         f"no test patches these any more; delete them from the list: {sorted(stale)}"
     )
