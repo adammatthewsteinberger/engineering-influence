@@ -14,13 +14,16 @@ from engineering_influence.models.typesetting.book import Book
 from engineering_influence.services.epub.contents_page import ContentsPage
 from engineering_influence.services.epub.css_cleaner import CssCleaner
 from engineering_influence.services.epub.epub_identifier import EpubIdentifier
+from engineering_influence.services.epub.interfaces.epub_repacker_interface import (
+    EpubRepackerInterface,
+)
 from engineering_influence.services.epub.nav_document import NavDocument
 from engineering_influence.services.epub.ncx_document import NcxDocument
 from engineering_influence.services.epub.opf_editor import OpfEditor
 from engineering_influence.services.epub.xhtml_cleaner import XhtmlCleaner
 
 
-class EpubRepacker:
+class EpubRepacker(EpubRepackerInterface):
     """Copies the EPUB with the finished OPF, nav, NCX, and XHTML.
 
     The mimetype entry stays first and stored, and every member carries a stable timestamp

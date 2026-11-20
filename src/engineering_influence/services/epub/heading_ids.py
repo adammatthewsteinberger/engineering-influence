@@ -2,9 +2,10 @@
 """Ids on heading elements."""
 
 from engineering_influence.models.epub.xhtml_patterns import XhtmlPatterns
+from engineering_influence.services.epub.interfaces.heading_ids_interface import HeadingIdsInterface
 
 
-class HeadingIds:
+class HeadingIds(HeadingIdsInterface):
     """Finds the anchors a contents link may target."""
 
     def all(self, xhtml: str) -> list[str]:

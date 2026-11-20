@@ -3,10 +3,13 @@
 
 import re
 
+from engineering_influence.services.publishing.interfaces.forbidden_content_check_interface import (
+    ForbiddenContentCheckInterface,
+)
 from engineering_influence.services.publishing.text_normalizer import TextNormalizer
 
 
-class ForbiddenContentCheck:
+class ForbiddenContentCheck(ForbiddenContentCheckInterface):
     """Dashes, placeholder markers, the word Draft, and the Edition line."""
 
     MARKERS = ("[CALLOUT", "[/CALLOUT", "[TESTIMONY", "[PLACEHOLDER", "[ILLUSTRATION")

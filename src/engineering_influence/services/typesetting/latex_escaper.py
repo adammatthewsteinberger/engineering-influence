@@ -4,8 +4,12 @@
 import re
 from typing import ClassVar
 
+from engineering_influence.services.typesetting.interfaces.latex_escaper_interface import (
+    LatexEscaperInterface,
+)
 
-class LatexEscaper:
+
+class LatexEscaper(LatexEscaperInterface):
     """Escapes LaTeX specials and applies light typographic fixes."""
 
     SPECIALS: ClassVar[dict[str, str]] = {

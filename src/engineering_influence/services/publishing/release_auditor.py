@@ -10,12 +10,15 @@ from engineering_influence.interfaces.pdf_inspector_interface import PdfInspecto
 from engineering_influence.models.publishing.path_relativizer import PathRelativizer
 from engineering_influence.models.publishing.release_readiness_report import ReleaseReadinessReport
 from engineering_influence.services.publishing.format_check import FormatCheck
+from engineering_influence.services.publishing.interfaces.release_auditor_interface import (
+    ReleaseAuditorInterface,
+)
 from engineering_influence.services.publishing.metadata_check import MetadataCheck
 from engineering_influence.services.publishing.pricing_check import PricingCheck
 from engineering_influence.services.publishing.research_check import ResearchCheck
 
 
-class ReleaseAuditor:
+class ReleaseAuditor(ReleaseAuditorInterface):
     """Proves a release has the decisions that used to live in chat or memory."""
 
     def __init__(

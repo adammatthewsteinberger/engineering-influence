@@ -4,11 +4,14 @@
 import html
 
 from engineering_influence.models.typesetting.book import Book
+from engineering_influence.services.epub.interfaces.ncx_document_interface import (
+    NcxDocumentInterface,
+)
 
 Entries = list[tuple[str, str, int]]
 
 
-class NcxDocument:
+class NcxDocument(NcxDocumentInterface):
     """Parts as navPoints containing their chapters."""
 
     def render(self, entries: Entries, book: Book, uid: str) -> str:

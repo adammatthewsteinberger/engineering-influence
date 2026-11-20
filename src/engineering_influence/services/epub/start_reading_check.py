@@ -2,9 +2,12 @@
 """Kindle needs a start-reading location."""
 
 from engineering_influence.models.epub.epub_contents import EpubContents
+from engineering_influence.services.epub.interfaces.start_reading_check_interface import (
+    StartReadingCheckInterface,
+)
 
 
-class StartReadingCheck:
+class StartReadingCheck(StartReadingCheckInterface):
     """EPUB 3 landmarks and the EPUB 2 guide both name where reading begins."""
 
     def run(self, contents: EpubContents) -> list[str]:

@@ -7,10 +7,13 @@ from defusedxml.common import DefusedXmlException
 from defusedxml.ElementTree import ParseError
 
 from engineering_influence.models.epub.epub_contents import EpubContents
+from engineering_influence.services.epub.interfaces.nav_ncx_check_interface import (
+    NavNcxCheckInterface,
+)
 from engineering_influence.services.epub.toc_trees import TocTree, TocTrees
 
 
-class NavNcxCheck:
+class NavNcxCheck(NavNcxCheckInterface):
     """KDP rejects a book whose EPUB 3 contents and NCX disagree in any entry or level."""
 
     def run(self, contents: EpubContents) -> tuple[list[str], TocTree | None]:

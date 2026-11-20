@@ -5,10 +5,12 @@ from typing import Any
 
 from defusedxml.ElementTree import fromstring
 
+from engineering_influence.services.epub.interfaces.toc_trees_interface import TocTreesInterface
+
 TocTree = list[tuple[str, str | None, Any]]
 
 
-class TocTrees:
+class TocTrees(TocTreesInterface):
     """Nested (label, href, children) lists, so the two contents can be compared."""
 
     XHTML = "{http://www.w3.org/1999/xhtml}"

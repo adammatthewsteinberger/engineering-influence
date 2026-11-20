@@ -4,8 +4,12 @@
 from markdown_it import MarkdownIt
 from markdown_it.token import Token
 
+from engineering_influence.services.typesetting.interfaces.markdown_parser_interface import (
+    MarkdownParserInterface,
+)
 
-class MarkdownParser:
+
+class MarkdownParser(MarkdownParserInterface):
     """CommonMark with smart quotes, tables, and strikethrough.
 
     The "replacements" rule stays off: it would turn -- into dashes, and the books use none.

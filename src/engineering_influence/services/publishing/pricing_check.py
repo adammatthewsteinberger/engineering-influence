@@ -5,10 +5,13 @@ from datetime import date
 from typing import Any
 
 from engineering_influence.models.publishing.release_readiness_report import ReleaseReadinessReport
+from engineering_influence.services.publishing.interfaces.pricing_check_interface import (
+    PricingCheckInterface,
+)
 from engineering_influence.services.publishing.text_statistics import TextStatistics
 
 
-class PricingCheck:
+class PricingCheck(PricingCheckInterface):
     """Validates volatile pricing assumptions and records the inputs used."""
 
     def __init__(self, today: date | None = None) -> None:

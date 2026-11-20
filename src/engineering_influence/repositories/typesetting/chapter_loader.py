@@ -8,9 +8,12 @@ from engineering_influence.errors.typesetting.manuscript_error import Manuscript
 from engineering_influence.models.publishing.path_relativizer import PathRelativizer
 from engineering_influence.models.typesetting.chapter import Chapter
 from engineering_influence.models.typesetting.running_head import RunningHead
+from engineering_influence.repositories.typesetting.interfaces.chapter_loader_interface import (
+    ChapterLoaderInterface,
+)
 
 
-class ChapterLoader:
+class ChapterLoader(ChapterLoaderInterface):
     """Parses the title, epigraph, and body; refuses unfinished markers when strict."""
 
     FORBIDDEN_MARKERS = re.compile(

@@ -3,10 +3,13 @@
 
 from engineering_influence.models.typesetting.book import Book
 from engineering_influence.services.typesetting.chapter_tex import ChapterTex
+from engineering_influence.services.typesetting.interfaces.print_document_interface import (
+    PrintDocumentInterface,
+)
 from engineering_influence.services.typesetting.tex_text import TexText
 
 
-class PrintDocument:
+class PrintDocument(PrintDocumentInterface):
     """Half title, title page, copyright, dedication, contents, chapters, and author note."""
 
     def __init__(self) -> None:

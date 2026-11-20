@@ -5,10 +5,11 @@ import html
 import re
 
 from engineering_influence.models.typesetting.book import Book
+from engineering_influence.services.epub.interfaces.toc_labels_interface import TocLabelsInterface
 from engineering_influence.services.typesetting.markdown_parser import MarkdownParser
 
 
-class TocLabels:
+class TocLabels(TocLabelsInterface):
     """Parts at depth 0 with their chapters at depth 1; front and back matter at depth 0."""
 
     NUMBER_WORDS = (

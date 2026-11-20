@@ -2,10 +2,13 @@
 """Structural PDF checks: size, bookmarks, annotations, transparency, fonts."""
 
 from engineering_influence.models.publishing.pdf_document import PdfDocument
+from engineering_influence.services.publishing.interfaces.pdf_structure_check_interface import (
+    PdfStructureCheckInterface,
+)
 from engineering_influence.services.publishing.kdp_geometry import KdpGeometry
 
 
-class PdfStructureCheck:
+class PdfStructureCheck(PdfStructureCheckInterface):
     """Applies the KDP structure rules to the facts of a finished PDF."""
 
     def run(self, document: PdfDocument) -> list[str]:

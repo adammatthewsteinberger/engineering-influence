@@ -7,11 +7,14 @@ from markdown_it.token import Token
 
 from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
 from engineering_influence.services.typesetting.inline_renderer import InlineRenderer
+from engineering_influence.services.typesetting.interfaces.block_renderer_interface import (
+    BlockRendererInterface,
+)
 from engineering_influence.services.typesetting.latex_table import LatexTable
 from engineering_influence.services.typesetting.opening_formatter import OpeningFormatter
 
 
-class BlockRenderer:
+class BlockRenderer(BlockRendererInterface):
     """Renders headings, paragraphs, lists, quotes, tables, and code."""
 
     HEADINGS: ClassVar[dict[int, str]] = {2: r"\booksection", 3: r"\booksubsection"}

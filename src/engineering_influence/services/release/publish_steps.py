@@ -14,12 +14,15 @@ from engineering_influence.models.publishing.path_relativizer import PathRelativ
 from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.services.epub.epub_builder import EpubBuilder
 from engineering_influence.services.publishing.pdf_verifier import PdfVerifier
+from engineering_influence.services.release.interfaces.publish_steps_interface import (
+    PublishStepsInterface,
+)
 from engineering_influence.services.typesetting.book_builder import BookBuilder
 
 Step = tuple[str, list[str], Callable[[], str]]
 
 
-class PublishSteps:
+class PublishSteps(PublishStepsInterface):
     """Each action builds one artifact set and raises BookBuildError if its checks fail.
 
     The pre-package scripts ran their own verification after building; here it is explicit.

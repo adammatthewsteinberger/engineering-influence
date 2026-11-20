@@ -4,9 +4,12 @@
 from pathlib import Path
 
 from engineering_influence.interfaces.pdf_inspector_interface import PdfInspectorInterface
+from engineering_influence.services.release.interfaces.page_limit_check_interface import (
+    PageLimitCheckInterface,
+)
 
 
-class PageLimitCheck:
+class PageLimitCheck(PageLimitCheckInterface):
     """Compares a built interior's page count with the limit."""
 
     def __init__(self, pdfs: PdfInspectorInterface) -> None:

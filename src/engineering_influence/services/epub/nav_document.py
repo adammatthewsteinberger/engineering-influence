@@ -4,11 +4,14 @@
 import html
 
 from engineering_influence.models.typesetting.book import Book
+from engineering_influence.services.epub.interfaces.nav_document_interface import (
+    NavDocumentInterface,
+)
 
 Entries = list[tuple[str, str, int]]
 
 
-class NavDocument:
+class NavDocument(NavDocumentInterface):
     """The toc nav (nested like the NCX) and the landmarks."""
 
     NAME = "nav.xhtml"

@@ -4,10 +4,13 @@
 import re
 
 from engineering_influence.models.publishing.pdf_page import PdfPage
+from engineering_influence.services.publishing.interfaces.folio_reader_interface import (
+    FolioReaderInterface,
+)
 from engineering_influence.services.publishing.kdp_geometry import KdpGeometry
 
 
-class FolioReader:
+class FolioReader(FolioReaderInterface):
     """Finds the folio in the running head or the opener footer."""
 
     def read(self, page: PdfPage) -> str | None:

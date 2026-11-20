@@ -12,6 +12,9 @@ from engineering_influence.models.publishing.path_relativizer import PathRelativ
 from engineering_influence.services.publishing.chapter_opening_check import ChapterOpeningCheck
 from engineering_influence.services.publishing.config_entries import ConfigEntries
 from engineering_influence.services.publishing.formula_check import FormulaCheck
+from engineering_influence.services.publishing.interfaces.book_auditor_interface import (
+    BookAuditorInterface,
+)
 from engineering_influence.services.publishing.issue_recorder import IssueRecorder
 from engineering_influence.services.publishing.manuscript_text import ManuscriptText
 from engineering_influence.services.publishing.scaffold_check import ScaffoldCheck
@@ -20,7 +23,7 @@ from engineering_influence.services.publishing.text_statistics import TextStatis
 from engineering_influence.services.publishing.threshold_check import ThresholdCheck
 
 
-class BookAuditor:
+class BookAuditor(BookAuditorInterface):
     """Source-oriented gates: inventory, openings, scaffolding, depth, and apparatus.
 
     The audit makes the mechanical parts of editorial review visible. It does not decide

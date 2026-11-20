@@ -5,8 +5,12 @@ from datetime import UTC, datetime
 
 from sqlmodel import Field, SQLModel
 
+from engineering_influence.repositories.interfaces.outbox_record_interface import (
+    OutboxRecordInterface,
+)
 
-class OutboxRecord(SQLModel, table=True):
+
+class OutboxRecord(OutboxRecordInterface, SQLModel, table=True):
     """Durable webhook intent whose delivery can be retried safely."""
 
     id: int | None = Field(default=None, primary_key=True)

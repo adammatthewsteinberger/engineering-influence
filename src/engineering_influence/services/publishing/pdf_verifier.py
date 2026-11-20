@@ -8,12 +8,15 @@ from engineering_influence.interfaces.manuscript_source_interface import Manuscr
 from engineering_influence.interfaces.pdf_inspector_interface import PdfInspectorInterface
 from engineering_influence.services.publishing.contents_check import ContentsCheck
 from engineering_influence.services.publishing.forbidden_content_check import ForbiddenContentCheck
+from engineering_influence.services.publishing.interfaces.pdf_verifier_interface import (
+    PdfVerifierInterface,
+)
 from engineering_influence.services.publishing.latex_log_check import LatexLogCheck
 from engineering_influence.services.publishing.pdf_layout_check import PdfLayoutCheck
 from engineering_influence.services.publishing.pdf_structure_check import PdfStructureCheck
 
 
-class PdfVerifier:
+class PdfVerifier(PdfVerifierInterface):
     """Checks an interior PDF against KDP print rules and against itself."""
 
     def __init__(self, pdfs: PdfInspectorInterface, files: ManuscriptSourceInterface) -> None:

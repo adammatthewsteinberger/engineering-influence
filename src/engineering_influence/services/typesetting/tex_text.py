@@ -2,10 +2,13 @@
 """Metadata strings rendered as LaTeX."""
 
 from engineering_influence.services.typesetting.inline_renderer import InlineRenderer
+from engineering_influence.services.typesetting.interfaces.tex_text_interface import (
+    TexTextInterface,
+)
 from engineering_influence.services.typesetting.markdown_parser import MarkdownParser
 
 
-class TexText:
+class TexText(TexTextInterface):
     """Escapes plain metadata, keeping line breaks."""
 
     def __init__(self) -> None:

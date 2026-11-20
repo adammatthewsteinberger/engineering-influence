@@ -6,10 +6,11 @@ import re
 
 from engineering_influence.models.epub.cover_declaration import CoverDeclaration
 from engineering_influence.models.typesetting.book import Book
+from engineering_influence.services.epub.interfaces.opf_editor_interface import OpfEditorInterface
 from engineering_influence.services.epub.nav_document import NavDocument
 
 
-class OpfEditor:
+class OpfEditor(OpfEditorInterface):
     """Adds store metadata, the separate nav document, the guide, and the cover."""
 
     def finish(self, opf: str, book: Book) -> str:

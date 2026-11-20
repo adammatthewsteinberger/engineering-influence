@@ -1,8 +1,12 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Markdown tables to a tabularx environment."""
 
+from engineering_influence.services.typesetting.interfaces.latex_table_interface import (
+    LatexTableInterface,
+)
 
-class LatexTable:
+
+class LatexTable(LatexTableInterface):
     """Renders rows of already-rendered cells; the first row is the header."""
 
     def render(self, rows: list[list[str]]) -> str:

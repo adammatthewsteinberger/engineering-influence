@@ -1,8 +1,12 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Default phrase lists for the manuscript audit."""
 
+from engineering_influence.services.publishing.interfaces.audit_defaults_interface import (
+    AuditDefaultsInterface,
+)
 
-class AuditDefaults:
+
+class AuditDefaults(AuditDefaultsInterface):
     """High-confidence scaffold phrases and rhetorical formulas.
 
     The forbidden phrases are signs that a planning packet or proof note leaked into

@@ -4,8 +4,12 @@
 import hashlib
 from pathlib import Path
 
+from engineering_influence.repositories.release.interfaces.file_digest_interface import (
+    FileDigestInterface,
+)
 
-class FileDigest:
+
+class FileDigest(FileDigestInterface):
     """Hashes in 1 MiB blocks so large PDFs never load whole."""
 
     def sha256(self, path: Path) -> str:

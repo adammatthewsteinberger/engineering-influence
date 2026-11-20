@@ -3,8 +3,12 @@
 
 import re
 
+from engineering_influence.services.publishing.interfaces.manuscript_text_interface import (
+    ManuscriptTextInterface,
+)
 
-class ManuscriptText:
+
+class ManuscriptText(ManuscriptTextInterface):
     """Titles, bodies, and prose paragraphs of a Markdown source file."""
 
     TITLE = re.compile(r"^\s*#\s+(.+?)\s*$")

@@ -5,11 +5,14 @@ import re
 from pathlib import Path
 from typing import Any
 
+from engineering_influence.services.publishing.interfaces.chapter_opening_check_interface import (
+    ChapterOpeningCheckInterface,
+)
 from engineering_influence.services.publishing.issue_recorder import IssueRecorder
 from engineering_influence.services.publishing.manuscript_text import ManuscriptText
 
 
-class ChapterOpeningCheck:
+class ChapterOpeningCheck(ChapterOpeningCheckInterface):
     """A lowercase first paragraph breaks the print initial; later ones are fragments."""
 
     def run(

@@ -3,8 +3,12 @@
 
 from typing import Any
 
+from engineering_influence.services.release.interfaces.format_policy_interface import (
+    FormatPolicyInterface,
+)
 
-class FormatPolicy:
+
+class FormatPolicy(FormatPolicyInterface):
     """Keeps old books compatible: no [formats] table means no hardcover."""
 
     def of(self, config: dict[str, Any]) -> dict[str, Any]:

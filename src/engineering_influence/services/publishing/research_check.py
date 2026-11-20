@@ -7,10 +7,13 @@ from typing import Any
 from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
 from engineering_influence.models.publishing.path_relativizer import PathRelativizer
 from engineering_influence.models.publishing.release_readiness_report import ReleaseReadinessReport
+from engineering_influence.services.publishing.interfaces.research_check_interface import (
+    ResearchCheckInterface,
+)
 from engineering_influence.services.publishing.text_statistics import TextStatistics
 
 
-class ResearchCheck:
+class ResearchCheck(ResearchCheckInterface):
     """Counts words and URLs in the configured research files."""
 
     def __init__(self, files: ManuscriptSourceInterface) -> None:

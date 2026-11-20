@@ -6,11 +6,14 @@ from pathlib import Path
 from typing import Any
 
 from engineering_influence.services.publishing.audit_defaults import AuditDefaults
+from engineering_influence.services.publishing.interfaces.scaffold_check_interface import (
+    ScaffoldCheckInterface,
+)
 from engineering_influence.services.publishing.issue_recorder import IssueRecorder
 from engineering_influence.services.publishing.manuscript_text import ManuscriptText
 
 
-class ScaffoldCheck:
+class ScaffoldCheck(ScaffoldCheckInterface):
     """Planning or proof language that leaked into the printed copy."""
 
     def run(

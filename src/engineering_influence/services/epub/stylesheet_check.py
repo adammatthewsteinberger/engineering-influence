@@ -4,9 +4,12 @@
 import re
 
 from engineering_influence.models.epub.epub_contents import EpubContents
+from engineering_influence.services.epub.interfaces.stylesheet_check_interface import (
+    StylesheetCheckInterface,
+)
 
 
-class StylesheetCheck:
+class StylesheetCheck(StylesheetCheckInterface):
     """Kindle cannot resolve a link whose target is, or sits inside, a hidden element.
 
     It also reads a descendant rule such as "h2 br { display: none }" as hiding the heading

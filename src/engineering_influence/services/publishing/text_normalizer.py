@@ -4,8 +4,12 @@
 import re
 import unicodedata
 
+from engineering_influence.services.publishing.interfaces.text_normalizer_interface import (
+    TextNormalizerInterface,
+)
 
-class TextNormalizer:
+
+class TextNormalizer(TextNormalizerInterface):
     """Lowercases, folds quotes, and strips punctuation and whitespace."""
 
     def normalize(self, text: str) -> str:

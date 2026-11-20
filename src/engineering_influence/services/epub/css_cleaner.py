@@ -3,8 +3,10 @@
 
 import re
 
+from engineering_influence.services.epub.interfaces.css_cleaner_interface import CssCleanerInterface
 
-class CssCleaner:
+
+class CssCleaner(CssCleanerInterface):
     """Nothing in an ebook needs to be hidden."""
 
     HIDDEN_RULE = re.compile(r"[^{}]*\{[^{}]*display\s*:\s*none[^{}]*\}\s*")

@@ -1,8 +1,12 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Amazon KDP print geometry constants and gutter lookup."""
 
+from engineering_influence.services.publishing.interfaces.kdp_geometry_interface import (
+    KdpGeometryInterface,
+)
 
-class KdpGeometry:
+
+class KdpGeometry(KdpGeometryInterface):
     """Trim size, margins, and page-count-dependent gutter for a 6 x 9 in interior."""
 
     POINTS_PER_INCH = 72.0

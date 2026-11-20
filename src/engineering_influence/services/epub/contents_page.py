@@ -8,12 +8,15 @@ from collections.abc import Callable
 from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
 from engineering_influence.models.typesetting.book import Book
 from engineering_influence.services.epub.heading_ids import HeadingIds
+from engineering_influence.services.epub.interfaces.contents_page_interface import (
+    ContentsPageInterface,
+)
 from engineering_influence.services.epub.toc_labels import TocLabels
 
 Entries = list[tuple[str, str, int]]
 
 
-class ContentsPage:
+class ContentsPage(ContentsPageInterface):
     """Turns TeX4ht's contents page into plain linked divs, in the Kindle Publishing form."""
 
     NAV = re.compile(r"(<nav[^>]*epub:type=.toc.[^>]*>)(.*?)(</nav>)", re.DOTALL)
