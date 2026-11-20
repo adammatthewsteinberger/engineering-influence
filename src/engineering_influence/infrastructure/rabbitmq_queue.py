@@ -9,6 +9,7 @@ from uuid import uuid4
 
 import aio_pika
 
+from engineering_influence.contracts.job_message import JobMessage
 from engineering_influence.infrastructure.rabbitmq_topology import RabbitMqTopology
 from engineering_influence.interfaces.queue_interface import QueueInterface
 
@@ -29,7 +30,7 @@ class RabbitMqQueueAdapter(QueueInterface):
     def enqueue(self, kind: str, payload: dict[str, object]) -> str:
         """Publish one durable job and return its id."""
         job_id = str(uuid4())
-        message = {"job_id": job_id, "kind": kind, "payload": payload}
+        message = JobMessage(job_id=job_id, kind=kind, payload=payload).model_dump(mode="json")
         asyncio.run(self._publish(json.dumps(message, sort_keys=True).encode("utf-8")))
         return job_id
 
