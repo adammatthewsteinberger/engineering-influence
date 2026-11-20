@@ -4,4 +4,4 @@ The SDK package follows the same rules: `EngineeringInfluenceClient` and `AsyncE
 
 Tidied two things from the previous step. `SqlModelLedger` and `SqlModelOutbox` had been given a redundant second interface on top of the port they already implemented; those two generated modules are gone, and the tables they create are unchanged, statement for statement. `LedgerRepositoryInterface` is a port that extends `LedgerInterface`, so it moved to `engineering_influence.interfaces.ledger_repository_interface`; as with the earlier internal moves there is no alias. The generated REST schema, the MCP tool list and every `ei` help page are byte-identical.
 
-The architecture ratchets for classes without an interface, layer crossings, interface-rule breaks, unpaired interfaces, effectful imports and model purity are all at zero. Only the files and folders held by the deprecation shims remain above zero.
+The architecture ratchets for classes without an interface, layer crossings, interface-rule breaks, unpaired interfaces, effectful imports and model purity are all at zero.
