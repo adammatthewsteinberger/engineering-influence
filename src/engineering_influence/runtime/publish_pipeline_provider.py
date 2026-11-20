@@ -1,9 +1,6 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Compose the acceptance pipeline for a project, when a book is published."""
 
-from engineering_influence.infrastructure.epub.epub_archive import EpubArchive
-from engineering_influence.infrastructure.epub.epub_cover_inspector import EpubCoverInspector
-from engineering_influence.infrastructure.epub.epubcheck_runner import EpubcheckRunner
 from engineering_influence.infrastructure.publishing.system_clock import SystemClock
 from engineering_influence.infrastructure.release.epub_zip_check import EpubZipCheck
 from engineering_influence.infrastructure.release.git_state import GitState
@@ -13,6 +10,7 @@ from engineering_influence.interfaces.build_workspace_interface import BuildWork
 from engineering_influence.interfaces.cover_builder_provider_interface import (
     CoverBuilderProviderInterface,
 )
+from engineering_influence.interfaces.epub_verifier_interface import EpubVerifierInterface
 from engineering_influence.interfaces.latex_compiler_interface import LatexCompilerInterface
 from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
 from engineering_influence.interfaces.package_assets_interface import PackageAssetsInterface
@@ -28,7 +26,6 @@ from engineering_influence.repositories.release.artifact_inventory import Artifa
 from engineering_influence.repositories.release.json_report import JsonReport
 from engineering_influence.repositories.release.step_recorder import StepRecorder
 from engineering_influence.services.epub.epub_builder import EpubBuilder
-from engineering_influence.services.epub.epub_verifier import EpubVerifier
 from engineering_influence.services.release.publish_pipeline import PublishPipeline
 from engineering_influence.services.release.publish_steps import PublishSteps
 from engineering_influence.services.typesetting.book_builder import BookBuilder
@@ -53,6 +50,8 @@ class PublishPipelineProvider(PublishPipelineProviderInterface):
         epub: EpubBuilder,
         covers: CoverBuilderProviderInterface,
         qa: RenderQaInterface,
+        verifier: EpubVerifierInterface,
+        strict_verifier: EpubVerifierInterface,
     ) -> None:
         self._config = config
         self._files = files
@@ -64,6 +63,8 @@ class PublishPipelineProvider(PublishPipelineProviderInterface):
         self._epub = epub
         self._covers = covers
         self._qa = qa
+        self._verifier = verifier
+        self._strict_verifier = strict_verifier
 
     def provide(self) -> PublishPipelineInterface:
         """Build the pipeline, loading cover plugins as the build does."""
@@ -71,7 +72,6 @@ class PublishPipelineProvider(PublishPipelineProviderInterface):
         builder = BookBuilder(
             layout, self._loader, self._latex, self._workspace, self._assets, self._files
         )
-        archive, inspector = EpubArchive(), EpubCoverInspector()
         steps = PublishSteps(
             layout,
             builder,
@@ -80,8 +80,8 @@ class PublishPipelineProvider(PublishPipelineProviderInterface):
             self._files,
             self._pdfs,
             self._loader,
-            EpubVerifier(archive, EpubcheckRunner(), inspector),
-            EpubVerifier(archive, EpubcheckRunner(required=True), inspector),
+            self._verifier,
+            self._strict_verifier,
         )
         clock = SystemClock()
         return PublishPipeline(

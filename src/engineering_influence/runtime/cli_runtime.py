@@ -14,6 +14,9 @@ from engineering_influence.interactions.cli.interfaces.cli_application_interface
 )
 from engineering_influence.interactions.cli.serve_cli import ServeCli
 from engineering_influence.runtime.interfaces.cli_runtime_interface import CliRuntimeInterface
+from engineering_influence.runtime.interfaces.publishing_controller_factory_interface import (
+    PublishingControllerFactoryInterface,
+)
 from engineering_influence.runtime.serve_starter import ServeStarter
 from engineering_influence.services.start_pipeline import StartPipeline
 
@@ -22,7 +25,14 @@ if TYPE_CHECKING:
 
 
 class CliRuntime(CliRuntimeInterface):
-    """Wire ``ei``: a local pipeline planner, the book commands and the server commands."""
+    """Wire ``ei``: a local pipeline planner, the book commands and the server commands.
+
+    ``publishing`` replaces the factory that wires the book commands to the real file system and
+    toolchain, so a test can drive the whole command line over fakes.
+    """
+
+    def __init__(self, publishing: PublishingControllerFactoryInterface | None = None) -> None:
+        self._publishing = publishing
 
     def build(self) -> CliApplicationInterface:
         """Wire the controller, the book commands and the server commands."""
@@ -31,15 +41,17 @@ class CliRuntime(CliRuntimeInterface):
             controller, BookCli(self._publishing_controller), ServeCli(ServeStarter())
         )
 
-    @staticmethod
-    def _publishing_controller(root: Path) -> "PublishingController":
+    def _publishing_controller(self, root: Path) -> "PublishingController":
         """Build the publishing controller on first use.
 
-        The factory imports Pillow, numpy and the PDF libraries, so it is imported only when a
-        book command runs; the rest of ``ei`` keeps working without the ``publishing`` extra.
+        The real factory imports Pillow, numpy and the PDF libraries, so it is imported only when
+        a book command runs; the rest of ``ei`` keeps working without the ``publishing`` extra.
         """
-        from engineering_influence.runtime.publishing_controller_factory import (
-            PublishingControllerFactory,
-        )
+        factory = self._publishing
+        if factory is None:
+            from engineering_influence.runtime.publishing_controller_factory import (
+                PublishingControllerFactory,
+            )
 
-        return PublishingControllerFactory().create(root)
+            factory = PublishingControllerFactory()
+        return factory.create(root)

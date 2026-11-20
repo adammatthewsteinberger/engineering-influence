@@ -2,7 +2,8 @@
 """Finds cover plugins: through entry points, or by an explicit `module:Class` reference."""
 
 import importlib
-from importlib.metadata import entry_points
+from collections.abc import Callable, Iterable
+from importlib.metadata import EntryPoint, entry_points
 from pathlib import Path
 from typing import Any
 
@@ -24,10 +25,13 @@ class CoverPluginLoader(CoverPluginLoaderInterface):
 
     GROUP = "engineering_influence.covers"
 
+    def __init__(self, discover: Callable[..., Iterable[EntryPoint]] = entry_points) -> None:
+        self._discover = discover
+
     def load(self, registry: PainterRegistry, root: Path | None = None) -> dict[str, CoverStyle]:
         """Register every entry-point plugin's painters; return the merged styles by slug."""
         styles: dict[str, CoverStyle] = {}
-        for entry in entry_points(group=self.GROUP):
+        for entry in self._discover(group=self.GROUP):
             styles.update(self._register(entry.load()(root=root), entry.name, registry))
         return styles
 
