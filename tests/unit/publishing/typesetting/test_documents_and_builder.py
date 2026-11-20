@@ -7,14 +7,22 @@ from typing import Any
 
 import pytest
 
+from engineering_influence.errors.typesetting.book_build_error import BookBuildError
+from engineering_influence.infrastructure.publishing.filesystem_manuscript_source import (
+    FilesystemManuscriptSource,
+)
+from engineering_influence.infrastructure.publishing.package_assets import PackageAssets
+from engineering_influence.infrastructure.typesetting.filesystem_build_workspace import (
+    FilesystemBuildWorkspace,
+)
+from engineering_influence.infrastructure.typesetting.latex_compiler import LatexCompiler
 from engineering_influence.models.publishing.project_layout import ProjectLayout
-from engineering_influence.publishing.typesetting.book import Book
-from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
-from engineering_influence.publishing.typesetting.book_builder import BookBuilder
-from engineering_influence.publishing.typesetting.chapter import Chapter
-from engineering_influence.publishing.typesetting.ebook_document import EbookDocument
-from engineering_influence.publishing.typesetting.latex_compiler import LatexCompiler
-from engineering_influence.publishing.typesetting.print_document import PrintDocument
+from engineering_influence.models.typesetting.book import Book
+from engineering_influence.models.typesetting.chapter import Chapter
+from engineering_influence.repositories.typesetting.book_loader import BookLoader
+from engineering_influence.services.typesetting.book_builder import BookBuilder
+from engineering_influence.services.typesetting.ebook_document import EbookDocument
+from engineering_influence.services.typesetting.print_document import PrintDocument
 
 MINIMAL: dict[str, Any] = {
     "title": "My Book",
@@ -156,10 +164,21 @@ def project(root: Path) -> tuple[ProjectLayout, Path]:
     return ProjectLayout(root), assets
 
 
+def make_builder(layout: ProjectLayout, assets: Path, compiler: Any = None) -> BookBuilder:
+    return BookBuilder(
+        layout,
+        BookLoader(layout.root),
+        compiler or LatexCompiler(),
+        FilesystemBuildWorkspace(),
+        PackageAssets(assets),
+        FilesystemManuscriptSource(),
+    )
+
+
 def test_builder_writes_tex_and_assets_without_compiling(tmp_path: Path) -> None:
     layout, assets = project(tmp_path)
     compiler = FakeCompiler()
-    tex_path = BookBuilder(layout, assets, compiler).build("demo", tex_only=True, hardcover=True)
+    tex_path = make_builder(layout, assets, compiler).build("demo", tex_only=True, hardcover=True)
     assert tex_path == tmp_path / "build" / "demo-hardcover" / "demo.tex"
     workdir = tex_path.parent
     assert (workdir / "fine-book.cls").exists() and (workdir / "fine-book-hardcover.cls").exists()
@@ -170,26 +189,28 @@ def test_builder_writes_tex_and_assets_without_compiling(tmp_path: Path) -> None
 def test_builder_compiles_and_copies_the_pdf(tmp_path: Path) -> None:
     layout, assets = project(tmp_path)
     compiler = FakeCompiler()
-    pdf = BookBuilder(layout, assets, compiler).build("demo")
+    pdf = make_builder(layout, assets, compiler).build("demo")
     assert pdf == tmp_path / "output" / "demo.pdf" and pdf.read_bytes() == b"%PDF fake"
     assert compiler.calls == [(tmp_path / "build" / "demo", "demo.tex", 1924992000)]
     assert not (tmp_path / "build" / "demo" / "fine-book-hardcover.cls").exists()
-    hard = BookBuilder(layout, assets, FakeCompiler()).build("demo", hardcover=True)
+    hard = make_builder(layout, assets, FakeCompiler()).build("demo", hardcover=True)
     assert hard == tmp_path / "output" / "demo-hardcover.pdf"
 
 
 def test_builder_reports_latex_failures_from_the_log_or_stdout(tmp_path: Path) -> None:
     layout, assets = project(tmp_path)
     with pytest.raises(BookBuildError, match="LaTeX failed:\nLOG TAIL"):
-        BookBuilder(layout, assets, FakeCompiler(status=1, write_log=True)).build("demo")
+        make_builder(layout, assets, FakeCompiler(status=1, write_log=True)).build("demo")
     other_layout, other_assets = project(tmp_path / "two")
     with pytest.raises(BookBuildError, match="LaTeX failed:\nSTDOUT TAIL"):
-        BookBuilder(other_layout, other_assets, FakeCompiler(status=1)).build("demo")
+        make_builder(other_layout, other_assets, FakeCompiler(status=1)).build("demo")
 
 
-def test_builder_rejects_an_unknown_book_and_defaults_to_a_real_compiler(tmp_path: Path) -> None:
+def test_builder_rejects_an_unknown_book_and_writes_tex_with_the_real_adapters(
+    tmp_path: Path,
+) -> None:
     layout, assets = project(tmp_path)
-    builder = BookBuilder(layout, assets)
+    builder = make_builder(layout, assets)
     with pytest.raises(BookBuildError, match="no such book config"):
         builder.build("absent")
     assert builder.build("demo", tex_only=True).name == "demo.tex"
@@ -199,4 +220,4 @@ def test_builder_rejects_an_unknown_book_and_defaults_to_a_real_compiler(tmp_pat
 def test_builder_rejects_slugs_that_are_not_plain_names(tmp_path: Path, slug: str) -> None:
     layout, assets = project(tmp_path)
     with pytest.raises(BookBuildError, match="invalid book slug"):
-        BookBuilder(layout, assets, FakeCompiler()).build(slug)
+        make_builder(layout, assets, FakeCompiler()).build(slug)

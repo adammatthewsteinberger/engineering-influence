@@ -7,7 +7,7 @@ from pathlib import Path
 
 from PIL import ImageFont
 
-from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
+from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 
 
 class FontLoader:

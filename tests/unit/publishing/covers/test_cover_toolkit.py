@@ -7,6 +7,7 @@ from typing import Any
 import numpy as np
 import pytest
 
+from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 from engineering_influence.publishing.covers.box_blur import BoxBlur
 from engineering_influence.publishing.covers.builtin_cover_style import BuiltinCoverStyle
 from engineering_influence.publishing.covers.compositing import Compositing
@@ -22,7 +23,6 @@ from engineering_influence.publishing.covers.quiet_zone import QuietZone
 from engineering_influence.publishing.covers.soft_rect import SoftRect
 from engineering_influence.publishing.covers.starfield import Starfield
 from engineering_influence.publishing.covers.value_noise import ValueNoise
-from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
 
 
 def test_noise_is_seeded_bounded_and_shaped() -> None:

@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import Any
 
 from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
+from engineering_influence.models.publishing.path_relativizer import PathRelativizer
 from engineering_influence.models.publishing.release_readiness_report import ReleaseReadinessReport
-from engineering_influence.services.publishing.path_relativizer import PathRelativizer
 from engineering_influence.services.publishing.text_statistics import TextStatistics
 
 

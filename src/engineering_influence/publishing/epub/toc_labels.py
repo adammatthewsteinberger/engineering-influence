@@ -4,8 +4,8 @@
 import html
 import re
 
-from engineering_influence.publishing.typesetting.book import Book
-from engineering_influence.publishing.typesetting.markdown_parser import MarkdownParser
+from engineering_influence.models.typesetting.book import Book
+from engineering_influence.services.typesetting.markdown_parser import MarkdownParser
 
 
 class TocLabels:

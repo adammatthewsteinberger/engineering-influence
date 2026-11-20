@@ -12,10 +12,16 @@ from PIL import Image
 from pypdf import PdfWriter
 
 from engineering_influence.controllers.publishing_controller import PublishingController
+from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 from engineering_influence.infrastructure.publishing.filesystem_manuscript_source import (
     FilesystemManuscriptSource,
 )
+from engineering_influence.infrastructure.publishing.package_assets import PackageAssets
 from engineering_influence.infrastructure.publishing.pypdf_pdf_inspector import PypdfPdfInspector
+from engineering_influence.infrastructure.typesetting.filesystem_build_workspace import (
+    FilesystemBuildWorkspace,
+)
+from engineering_influence.infrastructure.typesetting.latex_compiler import LatexCompiler
 from engineering_influence.models.publishing.project_config import ProjectConfig
 from engineering_influence.publishing.covers.cover_builder import CoverBuilder
 from engineering_influence.publishing.epub.epub_builder import EpubBuilder
@@ -23,11 +29,10 @@ from engineering_influence.publishing.epub.epub_verifier import EpubVerifier
 from engineering_influence.publishing.qa.page_record import PageRecord
 from engineering_influence.publishing.qa.render_qa import RenderQa
 from engineering_influence.publishing.qa.render_report import RenderReport
-from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
-from engineering_influence.publishing.typesetting.book_builder import BookBuilder
-from engineering_influence.publishing.typesetting.latex_compiler import LatexCompiler
+from engineering_influence.repositories.typesetting.book_loader import BookLoader
 from engineering_influence.runtime.cli_runtime import CliRuntime
 from engineering_influence.services.publishing.pdf_verifier import PdfVerifier
+from engineering_influence.services.typesetting.book_builder import BookBuilder
 
 BOOK = (
     'source = "src"\ntitle = "Demo Cover"\nsubtitle = "Sub"\nauthor = "Ann Author"\npublisher = "P"\n'
@@ -107,8 +112,16 @@ def stubs(monkeypatch: pytest.MonkeyPatch, root: Path) -> dict[str, list[Any]]:
 
 
 def controller(root: Path, **kwargs: Any) -> PublishingController:
+    config = ProjectConfig.load(root)
+    collaborators: dict[str, Any] = {
+        "loader": BookLoader(config.root),
+        "workspace": FilesystemBuildWorkspace(),
+        "assets": PackageAssets(),
+        "latex": LatexCompiler(),
+        **kwargs,
+    }
     return PublishingController(
-        ProjectConfig.load(root), FilesystemManuscriptSource(), PypdfPdfInspector(), **kwargs
+        config, FilesystemManuscriptSource(), PypdfPdfInspector(), **collaborators
     )
 
 

@@ -7,15 +7,13 @@ import argparse
 import json
 import sys
 import tomllib
+from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from engineering_influence.errors.typesetting.book_build_error import BookBuildError
+from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
 from engineering_influence.interactions.cli.interfaces.book_cli_interface import BookCliInterface
-from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
-from engineering_influence.interfaces.pdf_inspector_interface import PdfInspectorInterface
-from engineering_influence.models.publishing.project_config import ProjectConfig
-from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
-from engineering_influence.publishing.typesetting.manuscript_error import ManuscriptError
 
 if TYPE_CHECKING:
     from engineering_influence.controllers.publishing_controller import PublishingController
@@ -29,9 +27,8 @@ class BookCli(BookCliInterface):
 
     ERRORS = (BookBuildError, ManuscriptError, OSError, ValueError, tomllib.TOMLDecodeError)
 
-    def __init__(self, files: ManuscriptSourceInterface, pdfs: PdfInspectorInterface) -> None:
-        self._files = files
-        self._pdfs = pdfs
+    def __init__(self, controller_for: Callable[[Path], PublishingController]) -> None:
+        self._controller_for = controller_for
 
     def register(self, subparsers: Any) -> None:
         """Add the `book` command and its subcommands."""
@@ -69,25 +66,20 @@ class BookCli(BookCliInterface):
         if arguments.book_command in ("qa", "publish") and arguments.dpi < 36:
             print("error: --dpi must be at least 36", file=sys.stderr)
             return 2
-        try:
-            from engineering_influence.controllers.publishing_controller import (
-                PublishingController,
-            )
-        except ImportError as error:
-            # Pillow, numpy and the PDF libraries come with the optional extra; the rest of
-            # `ei` (serve, pipeline) must keep working without them.
-            print(
-                "error: book commands need the publishing extra: "
-                "pip install 'engineering-influence[publishing]'"
-                f" ({error.name} is missing)",
-                file=sys.stderr,
-            )
-            return 1
         failures = 0
         try:
-            controller = PublishingController(
-                ProjectConfig.load(arguments.root), self._files, self._pdfs
-            )
+            try:
+                controller = self._controller_for(arguments.root)
+            except ImportError as error:
+                # Pillow, numpy and the PDF libraries come with the optional extra; the rest of
+                # `ei` (serve, pipeline) must keep working without them.
+                print(
+                    "error: book commands need the publishing extra: "
+                    "pip install 'engineering-influence[publishing]'"
+                    f" ({error.name} is missing)",
+                    file=sys.stderr,
+                )
+                return 1
             handler = getattr(self, f"_{arguments.book_command}")
             if arguments.book_command == "qa":
                 return int(handler(controller, arguments))

@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from engineering_influence.publishing.typesetting.latex_compiler import LatexCompiler
-from engineering_influence.publishing.typesetting.tool_environment import ToolEnvironment
+from engineering_influence.infrastructure.typesetting.latex_compiler import LatexCompiler
+from engineering_influence.infrastructure.typesetting.tool_environment import ToolEnvironment
 
 SECRETS = {
     "ANTHROPIC_API_KEY": "sk-secret",

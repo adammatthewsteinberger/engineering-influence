@@ -4,10 +4,11 @@
 import subprocess  # nosec B404
 from pathlib import Path
 
-from engineering_influence.publishing.typesetting.tool_environment import ToolEnvironment
+from engineering_influence.infrastructure.typesetting.tool_environment import ToolEnvironment
+from engineering_influence.interfaces.latex_compiler_interface import LatexCompilerInterface
 
 
-class LatexCompiler:
+class LatexCompiler(LatexCompilerInterface):
     """Iterates until cross-references, and so the contents page numbers, are stable."""
 
     def compile(self, workdir: Path, tex_name: str, source_date_epoch: int) -> tuple[int, str]:

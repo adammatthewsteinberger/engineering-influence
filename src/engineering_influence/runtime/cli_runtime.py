@@ -1,13 +1,12 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Compose the command-line application."""
 
+from pathlib import Path
+from typing import TYPE_CHECKING
+
 from engineering_influence.controllers.project_controller import ProjectController
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
-from engineering_influence.infrastructure.publishing.filesystem_manuscript_source import (
-    FilesystemManuscriptSource,
-)
-from engineering_influence.infrastructure.publishing.pypdf_pdf_inspector import PypdfPdfInspector
 from engineering_influence.interactions.cli.book_cli import BookCli
 from engineering_influence.interactions.cli.cli_application import CliApplication
 from engineering_influence.interactions.cli.interfaces.cli_application_interface import (
@@ -18,6 +17,9 @@ from engineering_influence.runtime.interfaces.cli_runtime_interface import CliRu
 from engineering_influence.runtime.serve_starter import ServeStarter
 from engineering_influence.services.start_pipeline import StartPipeline
 
+if TYPE_CHECKING:
+    from engineering_influence.controllers.publishing_controller import PublishingController
+
 
 class CliRuntime(CliRuntimeInterface):
     """Wire ``ei``: a local pipeline planner, the book commands and the server commands."""
@@ -25,5 +27,19 @@ class CliRuntime(CliRuntimeInterface):
     def build(self) -> CliApplicationInterface:
         """Wire the controller, the book commands and the server commands."""
         controller = ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue()))
-        book_cli = BookCli(FilesystemManuscriptSource(), PypdfPdfInspector())
-        return CliApplication(controller, book_cli, ServeCli(ServeStarter()))
+        return CliApplication(
+            controller, BookCli(self._publishing_controller), ServeCli(ServeStarter())
+        )
+
+    @staticmethod
+    def _publishing_controller(root: Path) -> "PublishingController":
+        """Build the publishing controller on first use.
+
+        The factory imports Pillow, numpy and the PDF libraries, so it is imported only when a
+        book command runs; the rest of ``ei`` keeps working without the ``publishing`` extra.
+        """
+        from engineering_influence.runtime.publishing_controller_factory import (
+            PublishingControllerFactory,
+        )
+
+        return PublishingControllerFactory().create(root)

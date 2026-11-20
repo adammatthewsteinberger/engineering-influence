@@ -1,11 +1,11 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """One chapter as LaTeX."""
 
-from engineering_influence.publishing.typesetting.chapter import Chapter
-from engineering_influence.publishing.typesetting.markdown_latex_converter import (
+from engineering_influence.models.typesetting.chapter import Chapter
+from engineering_influence.services.typesetting.markdown_latex_converter import (
     MarkdownLatexConverter,
 )
-from engineering_influence.publishing.typesetting.tex_text import TexText
+from engineering_influence.services.typesetting.tex_text import TexText
 
 
 class ChapterTex:

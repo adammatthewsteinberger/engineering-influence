@@ -1,8 +1,8 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Named cover painters."""
 
+from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 from engineering_influence.publishing.covers.cover_painter import CoverPainter
-from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
 
 
 class PainterRegistry:

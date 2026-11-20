@@ -4,14 +4,14 @@ from pathlib import Path
 
 import pytest
 
-from engineering_influence.publishing.typesetting.book_loader import BookLoader
-from engineering_influence.publishing.typesetting.chapter import Chapter
-from engineering_influence.publishing.typesetting.chapter_loader import ChapterLoader
-from engineering_influence.publishing.typesetting.chapter_tex import ChapterTex
-from engineering_influence.publishing.typesetting.manuscript_error import ManuscriptError
-from engineering_influence.publishing.typesetting.running_head import RunningHead
-from engineering_influence.publishing.typesetting.tex_text import TexText
-from engineering_influence.services.publishing.path_relativizer import PathRelativizer
+from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
+from engineering_influence.models.publishing.path_relativizer import PathRelativizer
+from engineering_influence.models.typesetting.chapter import Chapter
+from engineering_influence.models.typesetting.running_head import RunningHead
+from engineering_influence.repositories.typesetting.book_loader import BookLoader
+from engineering_influence.repositories.typesetting.chapter_loader import ChapterLoader
+from engineering_influence.services.typesetting.chapter_tex import ChapterTex
+from engineering_influence.services.typesetting.tex_text import TexText
 
 
 def test_running_head_prefers_the_main_clause() -> None:

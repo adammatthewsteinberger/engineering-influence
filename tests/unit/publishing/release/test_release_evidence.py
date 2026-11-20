@@ -12,6 +12,7 @@ from pathlib import Path
 import pytest
 from pypdf import PdfWriter
 
+from engineering_influence.models.publishing.path_relativizer import PathRelativizer
 from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.models.publishing.release_readiness_report import ReleaseReadinessReport
 from engineering_influence.publishing.release.artifact_inventory import ArtifactInventory
@@ -24,7 +25,6 @@ from engineering_influence.publishing.release.page_limit_check import PageLimitC
 from engineering_influence.publishing.release.release_summary import ReleaseSummary
 from engineering_influence.publishing.release.step_recorder import StepRecorder
 from engineering_influence.publishing.release.tool_versions import ToolVersions
-from engineering_influence.services.publishing.path_relativizer import PathRelativizer
 
 
 def test_digest_matches_hashlib_across_block_boundaries(tmp_path: Path) -> None:

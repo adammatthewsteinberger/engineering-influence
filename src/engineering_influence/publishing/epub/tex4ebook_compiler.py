@@ -4,7 +4,7 @@
 import subprocess  # nosec B404
 from pathlib import Path
 
-from engineering_influence.publishing.typesetting.tool_environment import ToolEnvironment
+from engineering_influence.infrastructure.typesetting.tool_environment import ToolEnvironment
 
 
 class Tex4ebookCompiler:

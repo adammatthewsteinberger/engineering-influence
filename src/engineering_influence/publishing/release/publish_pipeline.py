@@ -16,8 +16,10 @@ from typing import Any
 
 from pypdf import PdfReader
 
+from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
 from engineering_influence.interfaces.pdf_inspector_interface import PdfInspectorInterface
+from engineering_influence.models.publishing.path_relativizer import PathRelativizer
 from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.publishing.qa.render_qa import RenderQa
 from engineering_influence.publishing.release.artifact_inventory import ArtifactInventory
@@ -30,9 +32,7 @@ from engineering_influence.publishing.release.publish_steps import PublishSteps
 from engineering_influence.publishing.release.release_summary import ReleaseSummary
 from engineering_influence.publishing.release.step_recorder import StepRecorder
 from engineering_influence.publishing.release.tool_versions import ToolVersions
-from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
 from engineering_influence.services.publishing.book_auditor import BookAuditor
-from engineering_influence.services.publishing.path_relativizer import PathRelativizer
 from engineering_influence.services.publishing.release_auditor import ReleaseAuditor
 
 

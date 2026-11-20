@@ -4,7 +4,12 @@
 from pathlib import Path
 from typing import Any
 
+from engineering_influence.errors.typesetting.book_build_error import BookBuildError
+from engineering_influence.interfaces.book_loader_interface import BookLoaderInterface
+from engineering_influence.interfaces.build_workspace_interface import BuildWorkspaceInterface
+from engineering_influence.interfaces.latex_compiler_interface import LatexCompilerInterface
 from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
+from engineering_influence.interfaces.package_assets_interface import PackageAssetsInterface
 from engineering_influence.interfaces.pdf_inspector_interface import PdfInspectorInterface
 from engineering_influence.models.publishing.project_config import ProjectConfig
 from engineering_influence.models.publishing.project_layout import ProjectLayout
@@ -19,14 +24,11 @@ from engineering_influence.publishing.epub.tex4ebook_compiler import Tex4ebookCo
 from engineering_influence.publishing.qa.render_qa import RenderQa
 from engineering_influence.publishing.release.publish_pipeline import PublishPipeline
 from engineering_influence.publishing.release.publish_steps import PublishSteps
-from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
-from engineering_influence.publishing.typesetting.book_builder import BookBuilder
-from engineering_influence.publishing.typesetting.book_loader import BookLoader
-from engineering_influence.publishing.typesetting.latex_compiler import LatexCompiler
 from engineering_influence.services.publishing.audit_report_text import AuditReportText
 from engineering_influence.services.publishing.book_auditor import BookAuditor
 from engineering_influence.services.publishing.pdf_verifier import PdfVerifier
 from engineering_influence.services.publishing.release_auditor import ReleaseAuditor
+from engineering_influence.services.typesetting.book_builder import BookBuilder
 
 
 class PublishingController:
@@ -42,13 +44,19 @@ class PublishingController:
         config: ProjectConfig,
         files: ManuscriptSourceInterface,
         pdfs: PdfInspectorInterface,
-        latex: LatexCompiler | None = None,
+        loader: BookLoaderInterface,
+        workspace: BuildWorkspaceInterface,
+        assets: PackageAssetsInterface,
+        latex: LatexCompilerInterface,
         tex4ebook: Tex4ebookCompiler | None = None,
         qa: RenderQa | None = None,
     ) -> None:
         self._config = config
         self._files = files
         self._pdfs = pdfs
+        self._loader = loader
+        self._workspace = workspace
+        self._assets = assets
         self._layout = config.layout()
         self._latex = latex
         self._tex4ebook = tex4ebook
@@ -58,6 +66,11 @@ class PublishingController:
     def layout(self) -> ProjectLayout:
         """The project's directory layout."""
         return self._layout
+
+    def _book_builder(self) -> BookBuilder:
+        return BookBuilder(
+            self._layout, self._loader, self._latex, self._workspace, self._assets, self._files
+        )
 
     def audit(self, slug: str, *, strict_release: bool = False) -> tuple[dict[str, Any], bool, str]:
         """Return (both reports as dictionaries, whether the manuscript passes, text)."""
@@ -75,9 +88,7 @@ class PublishingController:
         self, slug: str, *, hardcover: bool = False, tex_only: bool = False, verify: bool = True
     ) -> str:
         """Build the interior PDF (or only its LaTeX) and verify the PDF."""
-        path = BookBuilder(self._layout, compiler=self._latex).build(
-            slug, tex_only=tex_only, hardcover=hardcover
-        )
+        path = self._book_builder().build(slug, tex_only=tex_only, hardcover=hardcover)
         if tex_only or not verify:
             return f"[{slug}] wrote {self._relative(path)}"
         log_slug = f"{slug}-hardcover" if hardcover else slug
@@ -93,7 +104,7 @@ class PublishingController:
         path = EpubBuilder(self._layout, compiler=self._tex4ebook).build(slug, tex_only=tex_only)
         if tex_only or not verify:
             return f"[{slug}] wrote {self._relative(path)}"
-        book = BookLoader(self._config.root).load(self._layout.books / f"{slug}.toml")
+        book = self._loader.load(self._layout.books / f"{slug}.toml")
         self._raise_on(slug, EpubVerifier().verify(path, book))
         return f"[{slug}] built {self._relative(path)}\n[{slug}] all checks passed"
 
@@ -126,7 +137,7 @@ class PublishingController:
         """Run the complete acceptance pipeline for one book."""
         steps = PublishSteps(
             self._layout,
-            BookBuilder(self._layout, compiler=self._latex),
+            self._book_builder(),
             self._cover_builder(),
             EpubBuilder(self._layout, compiler=self._tex4ebook),
             self._files,

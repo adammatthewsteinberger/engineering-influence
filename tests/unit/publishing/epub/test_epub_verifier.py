@@ -7,9 +7,9 @@ from typing import Any
 import pytest
 from conftest import jpeg_bytes, regex_sub
 
+from engineering_influence.models.typesetting.book import Book
 from engineering_influence.publishing.epub.epub_verifier import EpubVerifier
 from engineering_influence.publishing.epub.epubcheck_runner import EpubcheckRunner
-from engineering_influence.publishing.typesetting.book import Book
 
 Rewrite = Callable[..., Path]
 NO_GUIDE = regex_sub(r"<guide>.*?</guide>", "")

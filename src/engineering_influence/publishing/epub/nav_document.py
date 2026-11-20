@@ -3,7 +3,7 @@
 
 import html
 
-from engineering_influence.publishing.typesetting.book import Book
+from engineering_influence.models.typesetting.book import Book
 
 Entries = list[tuple[str, str, int]]
 

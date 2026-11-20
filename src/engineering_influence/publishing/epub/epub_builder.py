@@ -5,16 +5,16 @@ import shutil
 from contextlib import AbstractContextManager, nullcontext
 from pathlib import Path
 
+from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 from engineering_influence.infrastructure.publishing.package_assets import PackageAssets
 from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.publishing.epub.cover_image import CoverImage
 from engineering_influence.publishing.epub.epub_identifier import EpubIdentifier
 from engineering_influence.publishing.epub.epub_repacker import EpubRepacker
 from engineering_influence.publishing.epub.tex4ebook_compiler import Tex4ebookCompiler
-from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
-from engineering_influence.publishing.typesetting.book_builder import BookBuilder
-from engineering_influence.publishing.typesetting.book_loader import BookLoader
-from engineering_influence.publishing.typesetting.ebook_document import EbookDocument
+from engineering_influence.repositories.typesetting.book_loader import BookLoader
+from engineering_influence.services.typesetting.book_builder import BookBuilder
+from engineering_influence.services.typesetting.ebook_document import EbookDocument
 
 
 class EpubBuilder:

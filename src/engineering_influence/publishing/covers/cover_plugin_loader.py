@@ -6,10 +6,10 @@ from importlib.metadata import entry_points
 from pathlib import Path
 from typing import Any
 
+from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 from engineering_influence.publishing.covers.cover_plugin import CoverPlugin
 from engineering_influence.publishing.covers.cover_style import CoverStyle
 from engineering_influence.publishing.covers.painter_registry import PainterRegistry
-from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
 
 
 class CoverPluginLoader:

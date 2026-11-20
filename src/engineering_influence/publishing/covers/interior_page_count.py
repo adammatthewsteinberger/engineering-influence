@@ -5,7 +5,7 @@ from pathlib import Path
 
 from pypdf import PdfReader
 
-from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
+from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 
 
 class InteriorPageCount:

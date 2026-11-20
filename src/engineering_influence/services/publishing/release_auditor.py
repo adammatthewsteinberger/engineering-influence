@@ -7,10 +7,10 @@ from pathlib import Path
 
 from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
 from engineering_influence.interfaces.pdf_inspector_interface import PdfInspectorInterface
+from engineering_influence.models.publishing.path_relativizer import PathRelativizer
 from engineering_influence.models.publishing.release_readiness_report import ReleaseReadinessReport
 from engineering_influence.services.publishing.format_check import FormatCheck
 from engineering_influence.services.publishing.metadata_check import MetadataCheck
-from engineering_influence.services.publishing.path_relativizer import PathRelativizer
 from engineering_influence.services.publishing.pricing_check import PricingCheck
 from engineering_influence.services.publishing.research_check import ResearchCheck
 
