@@ -3,7 +3,7 @@
 
 These names are the supported way to import the cover API. The classes behind them may move
 between layers; import them from here and your code keeps working. The old
-``engineering_influence.publishing.covers.<module>`` paths still work for now, and warn.
+``engineering_influence.publishing.covers.<module>`` paths no longer exist.
 """
 
 from engineering_influence.infrastructure.covers.box_blur import BoxBlur
