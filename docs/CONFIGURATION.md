@@ -151,7 +151,7 @@ and republish it by hand. Stopping the worker finishes the job in flight first.
 
 - **The runner and gate are placeholders.** `DeterministicRunner` returns a fixed line
   of text and `NonEmptyArtifactGate` accepts anything non-blank. They let the whole
-  pipeline run offline; a model-backed runner and rubric gates implement the same ports.
+  pipeline run offline; a model-backed runner and rubric gates implement the same interfaces.
 - **Delivery is at least once.** A worker that dies between writing the ledger and
   acknowledging the job runs it again and records the stage twice.
 - **Nothing resolves a human gate yet.** There is no endpoint for it, so a pipeline that
