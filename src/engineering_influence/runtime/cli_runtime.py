@@ -13,7 +13,10 @@ from engineering_influence.interactions.cli.db_cli import DbCli
 from engineering_influence.interactions.cli.interfaces.cli_application_interface import (
     CliApplicationInterface,
 )
+from engineering_influence.interactions.cli.run_cli import RunCli
 from engineering_influence.interactions.cli.serve_cli import ServeCli
+from engineering_influence.interfaces.queue_interface import QueueInterface
+from engineering_influence.interfaces.run_repository_interface import RunRepositoryInterface
 from engineering_influence.interfaces.schema_migrator_interface import SchemaMigratorInterface
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
 from engineering_influence.runtime.interfaces.cli_runtime_interface import CliRuntimeInterface
@@ -21,6 +24,10 @@ from engineering_influence.runtime.interfaces.publishing_controller_factory_inte
     PublishingControllerFactoryInterface,
 )
 from engineering_influence.runtime.serve_starter import ServeStarter
+from engineering_influence.services.cancel_run import CancelRun
+from engineering_influence.services.interfaces.cancel_run_interface import CancelRunInterface
+from engineering_influence.services.interfaces.resume_run_interface import ResumeRunInterface
+from engineering_influence.services.resume_run import ResumeRun
 from engineering_influence.services.start_pipeline import StartPipeline
 
 if TYPE_CHECKING:
@@ -34,8 +41,13 @@ class CliRuntime(CliRuntimeInterface):
     toolchain, so a test can drive the whole command line over fakes.
     """
 
-    def __init__(self, publishing: PublishingControllerFactoryInterface | None = None) -> None:
+    def __init__(
+        self,
+        publishing: PublishingControllerFactoryInterface | None = None,
+        queue: QueueInterface | None = None,
+    ) -> None:
         self._publishing = publishing
+        self._queue = queue
 
     def build(self) -> CliApplicationInterface:
         """Wire the controller, the book commands and the server commands."""
@@ -45,7 +57,37 @@ class CliRuntime(CliRuntimeInterface):
             BookCli(self._publishing_controller),
             ServeCli(ServeStarter()),
             DbCli(self._schema_migrator, self._secret_provider),
+            RunCli(self._resume_run, self._cancel_run),
         )
+
+    def _run_repository(self) -> RunRepositoryInterface:
+        """Open the stack's run repository, after checking its schema is current."""
+        from engineering_influence.repositories.sqlmodel_run_repository import (
+            SqlModelRunRepository,
+        )
+
+        url = self._secret_provider().require("EI_DATABASE_URL")
+        self._schema_migrator().check(url)
+        # A one-shot command keeps no pool, so no connection outlives it.
+        return SqlModelRunRepository(url, pooled=False)
+
+    def _resume_run(self) -> ResumeRunInterface:
+        """Build the resume service; it queues through the broker unless a queue was injected."""
+        queue = self._queue
+        if queue is None:
+            import os
+
+            from engineering_influence.infrastructure.rabbitmq_queue import RabbitMqQueueAdapter
+
+            queue = RabbitMqQueueAdapter(
+                self._secret_provider().require("EI_RABBITMQ_URL"),
+                os.environ.get("EI_QUEUE_NAME", "engineering-influence.jobs"),
+            )
+        return ResumeRun(self._run_repository(), queue)
+
+    def _cancel_run(self) -> CancelRunInterface:
+        """Build the cancel service; it needs only the database."""
+        return CancelRun(self._run_repository())
 
     def _secret_provider(self) -> SecretProviderInterface:
         """Build the secret provider on first use; it needs the ``runtime`` extra."""

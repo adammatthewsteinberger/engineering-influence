@@ -119,6 +119,7 @@ ei --version
 ei pipeline start --slug S --title T --postulate P [--postulate P …] [--stage STAGE …]
 ei serve api|worker
 ei db upgrade
+ei run resume|cancel RUN_ID
 ei book [--root DIR] audit|build|epub|covers|qa|publish …
 ```
 
@@ -127,6 +128,8 @@ ei book [--root DIR] audit|build|epub|covers|qa|publish …
 | `ei pipeline start` | Validates a project and prints the result as JSON. In-memory only: it does not queue work on the stack. `--stage` defaults to `thesis`. | `0`; `2` on a usage error |
 | `ei serve api` / `worker` | Runs the API or the worker from `EI_*` settings. | `2` and one line naming the bad variable; never a traceback |
 | `ei db upgrade` | Applies the database migrations to `EI_DATABASE_URL` and prints the revision reached. Needs the `runtime` extra. | `0`; `1` extra missing; `2` and one line for a missing setting or an unreachable database |
+| `ei run resume RUN_ID` | Moves a parked run back to running and queues its current stage; on a run that is already running it only queues the stage again, which repairs a resume that died half-way. Reads `EI_DATABASE_URL` and `EI_RABBITMQ_URL`. | `0`; `1` unknown run, finished run or a run that kept changing; `2` setup trouble |
+| `ei run cancel RUN_ID` | Stops a run for good; cancelling twice is fine, and a completed or failed run is refused. Needs only `EI_DATABASE_URL`. | same |
 | `ei book …` | Audit, build and publish books (needs the `publishing` extra and, for PDFs, a TeX toolchain). Reads `engineering-influence.toml` in `--root`. | `0` ok; `1` a build or audit failure; `2` bad arguments |
 
 `python -m engineering_influence` is the same program. Walk-through: [`examples/cli/run.sh`](../examples/cli/run.sh).

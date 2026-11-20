@@ -3,6 +3,7 @@
 
 from datetime import UTC, datetime
 
+from sqlalchemy.pool import NullPool
 from sqlmodel import Session, col, create_engine, select, update
 
 from engineering_influence.interfaces.run_repository_interface import RunRepositoryInterface
@@ -14,9 +15,11 @@ from engineering_influence.repositories.book_run_record import BookRunRecord
 class SqlModelRunRepository(RunRepositoryInterface):
     """Persist runs through SQLite or PostgreSQL, one row per run, replaced on every save."""
 
-    def __init__(self, database_url: str) -> None:
+    def __init__(self, database_url: str, pooled: bool = True) -> None:
         connect_args = {"check_same_thread": False} if database_url.startswith("sqlite") else {}
-        self._engine = create_engine(database_url, connect_args=connect_args)
+        self._engine = create_engine(
+            database_url, connect_args=connect_args, **({} if pooled else {"poolclass": NullPool})
+        )
         self._codec = BookRunCodec()
 
     def save(self, run: BookRun) -> None:
