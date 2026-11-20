@@ -3,9 +3,11 @@
 
 from dataclasses import dataclass
 
+from engineering_influence.models.covers.interfaces.box_interface import BoxInterface
+
 
 @dataclass
-class Box:
+class Box(BoxInterface):
     """Left, top, right, bottom edges."""
 
     x0: float

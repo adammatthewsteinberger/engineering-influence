@@ -3,9 +3,11 @@
 
 from dataclasses import dataclass
 
+from engineering_influence.models.publishing.interfaces.finding_interface import FindingInterface
+
 
 @dataclass
-class Finding:
+class Finding(FindingInterface):
     """A severity-coded observation about a release contract."""
 
     severity: str

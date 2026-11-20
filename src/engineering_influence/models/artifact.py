@@ -4,10 +4,11 @@
 from dataclasses import dataclass
 
 from engineering_influence.models.gate import Gate
+from engineering_influence.models.interfaces.artifact_interface import ArtifactInterface
 
 
 @dataclass(frozen=True, slots=True)
-class Artifact:
+class Artifact(ArtifactInterface):
     """A durable, typed output produced by a phase."""
 
     artifact_id: str

@@ -3,11 +3,12 @@
 
 from dataclasses import dataclass
 
+from engineering_influence.models.interfaces.phase_run_interface import PhaseRunInterface
 from engineering_influence.models.phase_state import PhaseState
 
 
 @dataclass(frozen=True, slots=True)
-class PhaseRun:
+class PhaseRun(PhaseRunInterface):
     """A phase run whose transitions are validated before persistence."""
 
     run_id: str

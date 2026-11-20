@@ -9,6 +9,8 @@ from engineering_influence.interfaces.ledger_interface import LedgerInterface
 class LedgerRepositoryInterface(LedgerInterface, ABC):
     """Append-only event repository with readback for recovery."""
 
+    __slots__ = ()
+
     @abstractmethod
     def events(self) -> list[tuple[str, dict[str, object]]]:
         """Return events in append order."""

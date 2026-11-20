@@ -8,6 +8,8 @@ from typing import Any
 class HandlerRegistryInterface(ABC):
     """Register custom job handlers for an external worker runtime."""
 
+    __slots__ = ()
+
     @abstractmethod
     def register_handler(self, kind: str, handler: Any) -> None:
         """Register a long-lived handler."""

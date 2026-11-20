@@ -3,10 +3,13 @@
 
 from engineering_influence.models.covers.box import Box
 from engineering_influence.models.covers.cover_layout import CoverLayout
+from engineering_influence.models.covers.interfaces.layout_factory_interface import (
+    LayoutFactoryInterface,
+)
 from engineering_influence.models.covers.kdp_cover_spec import KdpCoverSpec as Kdp
 
 
-class LayoutFactory:
+class LayoutFactory(LayoutFactoryInterface):
     """Spine width follows page count; the back cover keeps a clear barcode box."""
 
     def ebook(self) -> CoverLayout:

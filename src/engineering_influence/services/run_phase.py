@@ -1,7 +1,7 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Application service for running a phase and applying its first gate."""
 
-from engineering_influence.interfaces.gate_interface import GateInterface
+from engineering_influence.interfaces.gate_evaluator_interface import GateEvaluatorInterface
 from engineering_influence.interfaces.runner_interface import RunnerInterface
 from engineering_influence.models.artifact import Artifact
 from engineering_influence.models.gate import Gate
@@ -13,7 +13,7 @@ from engineering_influence.services.interfaces.run_phase_interface import RunPha
 class RunPhase(RunPhaseInterface):
     """Run one phase through an injected runner and gate evaluator."""
 
-    def __init__(self, runner: RunnerInterface, gates: GateInterface) -> None:
+    def __init__(self, runner: RunnerInterface, gates: GateEvaluatorInterface) -> None:
         self._runner = runner
         self._gates = gates
 

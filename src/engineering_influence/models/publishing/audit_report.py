@@ -5,11 +5,14 @@ from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from engineering_influence.models.publishing.entry import Entry
+from engineering_influence.models.publishing.interfaces.audit_report_interface import (
+    AuditReportInterface,
+)
 from engineering_influence.models.publishing.issue import Issue
 
 
 @dataclass
-class AuditReport:
+class AuditReport(AuditReportInterface):
     """Inventory, thresholds, and issues for one configured manuscript."""
 
     schema_version: int

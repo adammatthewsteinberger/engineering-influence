@@ -5,10 +5,11 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from engineering_influence.models.typesetting.chapter import Chapter
+from engineering_influence.models.typesetting.interfaces.book_interface import BookInterface
 
 
 @dataclass
-class Book:
+class Book(BookInterface):
     """Metadata plus front matter, parts of chapters, and back matter."""
 
     slug: str

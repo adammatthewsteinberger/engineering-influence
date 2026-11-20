@@ -4,11 +4,12 @@
 from dataclasses import asdict, dataclass
 from typing import Any
 
+from engineering_influence.models.qa.interfaces.render_report_interface import RenderReportInterface
 from engineering_influence.models.qa.page_record import PageRecord
 
 
 @dataclass
-class RenderReport:
+class RenderReport(RenderReportInterface):
     """Every page's size and blankness, plus the contact sheets that show them."""
 
     schema_version: int

@@ -8,6 +8,8 @@ from contextlib import AbstractContextManager
 class CorrelationInterface(ABC):
     """Carry one correlation id across a request, a queued job and an outbound call."""
 
+    __slots__ = ()
+
     @abstractmethod
     def current(self) -> str | None:
         """Return the active correlation id, if any."""

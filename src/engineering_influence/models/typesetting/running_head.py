@@ -4,8 +4,12 @@
 import re
 from itertools import accumulate
 
+from engineering_influence.models.typesetting.interfaces.running_head_interface import (
+    RunningHeadInterface,
+)
 
-class RunningHead:
+
+class RunningHead(RunningHeadInterface):
     """Uses the main clause of a long title."""
 
     DANGLING = frozenset(

@@ -7,6 +7,8 @@ from abc import ABC, abstractmethod
 class AlertInterface(ABC):
     """Raise an operator alert that must never be lost silently."""
 
+    __slots__ = ()
+
     @abstractmethod
     def raise_alert(
         self, severity: str, subject: str, context: dict[str, object], dedup_key: str

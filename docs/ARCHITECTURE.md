@@ -89,7 +89,7 @@ The correlation id travels the whole way: request, queued job, worker log lines 
 
 To add an integration, write a **port**, an **adapter**, an ADR when the choice is
 architectural, and failure/recovery tests (see [CONTRIBUTING.md](../CONTRIBUTING.md)).
-Typical swaps: a model-backed `RunnerInterface` and rubric `GateInterface` in place of the placeholders;
+Typical swaps: a model-backed `RunnerInterface` and rubric `GateEvaluatorInterface` in place of the placeholders;
 another `QueueInterface`; another `LedgerInterface`.
 
 ## Not built yet

@@ -3,8 +3,10 @@
 
 from pydantic import BaseModel, ConfigDict
 
+from engineering_influence.contracts.interfaces.health_status_interface import HealthStatusInterface
 
-class HealthStatus(BaseModel):
+
+class HealthStatus(HealthStatusInterface, BaseModel):
     """Whether one dependency is usable, with a short reason when it is not."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")

@@ -8,6 +8,8 @@ from typing import Any
 class PhaseHandlerInterface(ABC):
     """Handle one queued phase job for an external worker runtime."""
 
+    __slots__ = ()
+
     @abstractmethod
     async def handle(self, job: Any) -> Any:
         """Return the runtime's success or parked outcome."""

@@ -3,9 +3,11 @@
 
 from dataclasses import dataclass
 
+from engineering_influence.models.interfaces.limits_on_means_interface import LimitsOnMeansInterface
+
 
 @dataclass(frozen=True, slots=True)
-class LimitsOnMeans:
+class LimitsOnMeans(LimitsOnMeansInterface):
     """Fixed constraints that apply to every project and autonomy mode."""
 
     require_source_for_factual_claims: bool = True

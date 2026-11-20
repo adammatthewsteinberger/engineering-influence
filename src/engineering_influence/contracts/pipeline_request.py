@@ -3,8 +3,12 @@
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from engineering_influence.contracts.interfaces.pipeline_request_interface import (
+    PipelineRequestInterface,
+)
 
-class PipelineRequest(BaseModel):
+
+class PipelineRequest(PipelineRequestInterface, BaseModel):
     """Validated request naming the project whose pipeline should start."""
 
     model_config = ConfigDict(extra="forbid")

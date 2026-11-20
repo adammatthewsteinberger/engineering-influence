@@ -4,9 +4,13 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+from engineering_influence.models.publishing.interfaces.project_layout_interface import (
+    ProjectLayoutInterface,
+)
+
 
 @dataclass(frozen=True)
-class ProjectLayout:
+class ProjectLayout(ProjectLayoutInterface):
     """Where a project keeps book configs, build products, and finished outputs.
 
     The directory names default to books, build, and output; a project can rename them in its

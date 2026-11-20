@@ -4,10 +4,13 @@
 from dataclasses import asdict, dataclass, field
 
 from engineering_influence.models.publishing.finding import Finding
+from engineering_influence.models.publishing.interfaces.release_readiness_report_interface import (
+    ReleaseReadinessReportInterface,
+)
 
 
 @dataclass
-class ReleaseReadinessReport:
+class ReleaseReadinessReport(ReleaseReadinessReportInterface):
     """Metadata, pricing, and format decisions plus every finding about them."""
 
     schema_version: int

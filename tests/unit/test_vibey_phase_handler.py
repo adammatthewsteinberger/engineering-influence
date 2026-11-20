@@ -7,7 +7,7 @@ from uuid import uuid4
 from vibey.application.worker import Park, Success
 
 from engineering_influence.infrastructure.vibey_phase_handler import VibeyPhaseHandler
-from engineering_influence.interfaces.gate_interface import GateInterface
+from engineering_influence.interfaces.gate_evaluator_interface import GateEvaluatorInterface
 from engineering_influence.interfaces.runner_interface import RunnerInterface
 from engineering_influence.services.run_phase import RunPhase
 
@@ -19,7 +19,7 @@ class RunnerFake(RunnerInterface):
         return f"content:{phase}"
 
 
-class GateFake(GateInterface):
+class GateFake(GateEvaluatorInterface):
     """Returns a configured gate decision."""
 
     def __init__(self, accepted: bool) -> None:

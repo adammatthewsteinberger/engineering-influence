@@ -7,6 +7,8 @@ from abc import ABC, abstractmethod
 class WebhookDeliveryInterface(ABC):
     """Send one event to a signed webhook endpoint."""
 
+    __slots__ = ()
+
     @abstractmethod
     async def deliver(
         self,

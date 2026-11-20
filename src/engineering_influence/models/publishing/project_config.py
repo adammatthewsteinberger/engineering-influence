@@ -6,11 +6,14 @@ import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
+from engineering_influence.models.publishing.interfaces.project_config_interface import (
+    ProjectConfigInterface,
+)
 from engineering_influence.models.publishing.project_layout import ProjectLayout
 
 
 @dataclass(frozen=True)
-class ProjectConfig:
+class ProjectConfig(ProjectConfigInterface):
     """The consumer configuration of a book project.
 
     ``[books] config_dir`` and ``[artifacts] directory`` rename the books and output folders;

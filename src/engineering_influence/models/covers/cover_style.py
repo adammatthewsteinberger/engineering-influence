@@ -4,11 +4,13 @@
 from dataclasses import dataclass, field
 from typing import Any
 
+from engineering_influence.models.covers.interfaces.cover_style_interface import CoverStyleInterface
+
 Color = tuple[float, float, float]
 
 
 @dataclass
-class CoverStyle:
+class CoverStyle(CoverStyleInterface):
     """Palette, type, and painter choice. Font names are files found by the FontLoader."""
 
     painter: str

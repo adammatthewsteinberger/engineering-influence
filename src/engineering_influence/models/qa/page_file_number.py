@@ -4,8 +4,12 @@
 import re
 from pathlib import Path
 
+from engineering_influence.models.qa.interfaces.page_file_number_interface import (
+    PageFileNumberInterface,
+)
 
-class PageFileNumber:
+
+class PageFileNumber(PageFileNumberInterface):
     """Natural ordering for names such as render-0012.png."""
 
     def of(self, path: Path) -> int:

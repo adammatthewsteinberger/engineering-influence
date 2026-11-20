@@ -1,8 +1,12 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Amazon KDP cover dimensions and limits."""
 
+from engineering_influence.models.covers.interfaces.kdp_cover_spec_interface import (
+    KdpCoverSpecInterface,
+)
 
-class KdpCoverSpec:
+
+class KdpCoverSpec(KdpCoverSpecInterface):
     """Constants from KDP's published cover guidelines, checked on every build."""
 
     PPI = 300

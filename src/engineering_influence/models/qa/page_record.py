@@ -3,9 +3,11 @@
 
 from dataclasses import dataclass
 
+from engineering_influence.models.qa.interfaces.page_record_interface import PageRecordInterface
+
 
 @dataclass
-class PageRecord:
+class PageRecord(PageRecordInterface):
     """Where a page image is, how big it is, and whether it is visually blank."""
 
     page: int

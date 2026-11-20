@@ -5,9 +5,12 @@ import zlib
 from typing import Any
 
 from engineering_influence.models.covers.cover_style import CoverStyle
+from engineering_influence.models.covers.interfaces.builtin_cover_style_interface import (
+    BuiltinCoverStyleInterface,
+)
 
 
-class BuiltinCoverStyle:
+class BuiltinCoverStyle(BuiltinCoverStyleInterface):
     """Used when no plugin supplies a style for a book's slug."""
 
     def for_book(self, meta: dict[str, Any]) -> CoverStyle:

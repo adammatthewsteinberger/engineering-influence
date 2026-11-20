@@ -4,10 +4,11 @@
 from dataclasses import dataclass
 
 from engineering_influence.models.gate_kind import GateKind
+from engineering_influence.models.interfaces.gate_interface import GateInterface
 
 
 @dataclass(frozen=True, slots=True)
-class Gate:
+class Gate(GateInterface):
     """A typed acceptance gate attached to an artifact."""
 
     name: str

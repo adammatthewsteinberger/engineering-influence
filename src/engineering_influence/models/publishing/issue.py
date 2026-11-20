@@ -3,9 +3,11 @@
 
 from dataclasses import dataclass
 
+from engineering_influence.models.publishing.interfaces.issue_interface import IssueInterface
+
 
 @dataclass
-class Issue:
+class Issue(IssueInterface):
     """A severity-coded defect located in a source file."""
 
     severity: str
