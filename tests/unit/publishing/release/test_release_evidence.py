@@ -6,25 +6,29 @@ import stat
 import subprocess
 import sys
 import zipfile
+from collections.abc import Iterator
 from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 from pypdf import PdfWriter
 
+from engineering_influence.infrastructure.publishing.pypdf_pdf_inspector import PypdfPdfInspector
+from engineering_influence.infrastructure.publishing.system_clock import SystemClock
+from engineering_influence.infrastructure.release.epub_zip_check import EpubZipCheck
+from engineering_influence.infrastructure.release.git_state import GitState
+from engineering_influence.infrastructure.release.tool_versions import ToolVersions
+from engineering_influence.interfaces.clock_interface import ClockInterface
 from engineering_influence.models.publishing.path_relativizer import PathRelativizer
 from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.models.publishing.release_readiness_report import ReleaseReadinessReport
-from engineering_influence.publishing.release.artifact_inventory import ArtifactInventory
-from engineering_influence.publishing.release.epub_zip_check import EpubZipCheck
-from engineering_influence.publishing.release.file_digest import FileDigest
-from engineering_influence.publishing.release.format_policy import FormatPolicy
-from engineering_influence.publishing.release.git_state import GitState
-from engineering_influence.publishing.release.json_report import JsonReport
-from engineering_influence.publishing.release.page_limit_check import PageLimitCheck
-from engineering_influence.publishing.release.release_summary import ReleaseSummary
-from engineering_influence.publishing.release.step_recorder import StepRecorder
-from engineering_influence.publishing.release.tool_versions import ToolVersions
+from engineering_influence.repositories.release.artifact_inventory import ArtifactInventory
+from engineering_influence.repositories.release.file_digest import FileDigest
+from engineering_influence.repositories.release.json_report import JsonReport
+from engineering_influence.repositories.release.step_recorder import StepRecorder
+from engineering_influence.services.release.format_policy import FormatPolicy
+from engineering_influence.services.release.page_limit_check import PageLimitCheck
+from engineering_influence.services.release.release_summary import ReleaseSummary
 
 
 def test_digest_matches_hashlib_across_block_boundaries(tmp_path: Path) -> None:
@@ -176,7 +180,7 @@ def pdf_with(path: Path, pages: int) -> Path:
 
 
 def test_page_limit_check(tmp_path: Path) -> None:
-    check = PageLimitCheck()
+    check = PageLimitCheck(PypdfPdfInspector())
     assert check.run(tmp_path / "absent.pdf", label="x", maximum=5) is None
     pdf = pdf_with(tmp_path / "a.pdf", 3)
     assert check.run(pdf, label="hardcover interior", maximum=3) is None
@@ -207,9 +211,17 @@ def test_release_summary_flattens_findings() -> None:
     }
 
 
+class TickClock(ClockInterface):
+    def __init__(self, ticks: Iterator[datetime]) -> None:
+        self._ticks = ticks
+
+    def now(self) -> datetime:
+        return next(self._ticks)
+
+
 def test_step_recorder_records_passes_and_failures(tmp_path: Path) -> None:
     ticks = iter(datetime(2031, 1, 1, 0, 0, s, tzinfo=UTC) for s in range(10))
-    recorder = StepRecorder(PathRelativizer(tmp_path), lambda: next(ticks))
+    recorder = StepRecorder(PathRelativizer(tmp_path), TickClock(ticks))
     ok = recorder.run("pdf", ["do", "it"], lambda: "all good\n" * 1000, tmp_path / "pdf.log")
     assert ok["status"] == "pass" and ok["returncode"] == 0 and len(ok["stdout_tail"]) == 4000
     assert (
@@ -230,6 +242,8 @@ def test_step_recorder_records_passes_and_failures(tmp_path: Path) -> None:
     assert (tmp_path / "epub.log").read_text() == "LaTeX failed: line 7"
 
 
-def test_step_recorder_uses_the_real_clock_by_default(tmp_path: Path) -> None:
-    record = StepRecorder(PathRelativizer(tmp_path)).run("x", [], lambda: "", tmp_path / "x.log")
+def test_step_recorder_stamps_with_the_system_clock(tmp_path: Path) -> None:
+    record = StepRecorder(PathRelativizer(tmp_path), SystemClock()).run(
+        "x", [], lambda: "", tmp_path / "x.log"
+    )
     assert record["started_at"].endswith("+00:00")

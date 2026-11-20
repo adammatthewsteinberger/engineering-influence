@@ -5,8 +5,10 @@ import subprocess  # nosec B404
 from pathlib import Path
 from typing import Any
 
+from engineering_influence.interfaces.git_state_interface import GitStateInterface
 
-class GitState:
+
+class GitState(GitStateInterface):
     """Commit, branch, and dirty status; None for each when git is unavailable."""
 
     def __init__(self, root: Path) -> None:

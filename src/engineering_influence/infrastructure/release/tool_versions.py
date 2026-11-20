@@ -5,8 +5,10 @@ import shutil
 import subprocess  # nosec B404
 import sys
 
+from engineering_influence.interfaces.tool_versions_interface import ToolVersionsInterface
 
-class ToolVersions:
+
+class ToolVersions(ToolVersionsInterface):
     """The first line of each tool's version banner, or None when it is not installed."""
 
     def of(self, command: str) -> str | None:

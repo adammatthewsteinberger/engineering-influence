@@ -4,7 +4,7 @@
 from dataclasses import asdict, dataclass
 from typing import Any
 
-from engineering_influence.publishing.qa.page_record import PageRecord
+from engineering_influence.models.qa.page_record import PageRecord
 
 
 @dataclass

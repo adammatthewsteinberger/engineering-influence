@@ -15,6 +15,7 @@ from engineering_influence.infrastructure.publishing.filesystem_manuscript_sourc
 )
 from engineering_influence.infrastructure.publishing.package_assets import PackageAssets
 from engineering_influence.infrastructure.publishing.pypdf_pdf_inspector import PypdfPdfInspector
+from engineering_influence.infrastructure.qa.render_qa import RenderQa
 from engineering_influence.infrastructure.typesetting.filesystem_build_workspace import (
     FilesystemBuildWorkspace,
 )
@@ -25,6 +26,7 @@ from engineering_influence.runtime.cover_builder_provider import CoverBuilderPro
 from engineering_influence.runtime.interfaces.publishing_controller_factory_interface import (
     PublishingControllerFactoryInterface,
 )
+from engineering_influence.runtime.publish_pipeline_provider import PublishPipelineProvider
 from engineering_influence.services.epub.epub_builder import EpubBuilder
 from engineering_influence.services.epub.epub_identifier import EpubIdentifier
 from engineering_influence.services.epub.epub_repacker import EpubRepacker
@@ -54,15 +56,24 @@ class PublishingControllerFactory(PublishingControllerFactoryInterface):
             identifier,
         )
         epub_verifier = EpubVerifier(EpubArchive(), EpubcheckRunner(), EpubCoverInspector())
+        pdfs = PypdfPdfInspector()
+        latex = LatexCompiler()
+        covers = CoverBuilderProvider(config)
+        qa = RenderQa(config.root)
+        publisher = PublishPipelineProvider(
+            config, files, pdfs, loader, workspace, assets, latex, epub, covers, qa
+        )
         return PublishingController(
             config,
             files,
-            PypdfPdfInspector(),
+            pdfs,
             loader,
             workspace,
             assets,
-            LatexCompiler(),
+            latex,
             epub,
             epub_verifier,
-            CoverBuilderProvider(config),
+            covers,
+            qa,
+            publisher,
         )

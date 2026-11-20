@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw
 from engineering_influence.infrastructure.covers.font_loader import FontLoader
 from engineering_influence.infrastructure.publishing.package_assets import PackageAssets
 from engineering_influence.models.publishing.path_relativizer import PathRelativizer
-from engineering_influence.publishing.qa.page_file_number import PageFileNumber
+from engineering_influence.models.qa.page_file_number import PageFileNumber
 
 
 class ContactSheetBuilder:

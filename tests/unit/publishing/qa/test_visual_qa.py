@@ -10,14 +10,14 @@ from PIL import Image
 from pypdf import PdfWriter
 
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
+from engineering_influence.infrastructure.qa.blank_page_detector import BlankPageDetector
+from engineering_influence.infrastructure.qa.contact_sheet_builder import ContactSheetBuilder
+from engineering_influence.infrastructure.qa.page_rasterizer import PageRasterizer
+from engineering_influence.infrastructure.qa.render_qa import RenderQa
 from engineering_influence.models.publishing.path_relativizer import PathRelativizer
-from engineering_influence.publishing.qa.blank_page_detector import BlankPageDetector
-from engineering_influence.publishing.qa.contact_sheet_builder import ContactSheetBuilder
-from engineering_influence.publishing.qa.page_file_number import PageFileNumber
-from engineering_influence.publishing.qa.page_rasterizer import PageRasterizer
-from engineering_influence.publishing.qa.page_record import PageRecord
-from engineering_influence.publishing.qa.render_qa import RenderQa
-from engineering_influence.publishing.qa.render_report import RenderReport
+from engineering_influence.models.qa.page_file_number import PageFileNumber
+from engineering_influence.models.qa.page_record import PageRecord
+from engineering_influence.models.qa.render_report import RenderReport
 
 
 def record(page: int, blank: bool) -> PageRecord:
