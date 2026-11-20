@@ -2,10 +2,12 @@
 
 import asyncio
 from collections import deque
+from collections.abc import Callable
 
 import pytest
 
 from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.errors.budget_exceeded_error import BudgetExceededError
 from engineering_influence.errors.capacity_exhausted_error import CapacityExhaustedError
 from engineering_influence.errors.transient_stage_error import TransientStageError
 from engineering_influence.infrastructure.in_memory_artifact_store import InMemoryArtifactStore
@@ -33,13 +35,13 @@ CAP = 5_000_000
 COST = 100
 
 
-def new_run(run_id: str = "run-1") -> BookRun:
-    brief = BookBrief(kind=BookKind.NONFICTION, idea="sourdough", budget_micro_usd=CAP)
+def new_run(run_id: str = "run-1", cap: int = CAP) -> BookRun:
+    brief = BookBrief(kind=BookKind.NONFICTION, idea="sourdough", budget_micro_usd=cap)
     return BookRun(
         run_id=run_id,
         brief=brief,
         plan=StagePlan(kind=BookKind.NONFICTION, stages=STAGES),
-        budget=Budget(cap=CAP),
+        budget=Budget(cap=cap),
     )
 
 
@@ -73,8 +75,14 @@ class Executor(StageExecutorInterface):
 class World:
     """Everything a service needs, wired to in-memory fakes."""
 
-    def __init__(self, script: list[object] | None = None, max_attempts: int = 3) -> None:
-        self.runs = InMemoryRunRepository()
+    def __init__(
+        self,
+        script: list[object] | None = None,
+        max_attempts: int = 3,
+        runs: InMemoryRunRepository | None = None,
+        cap: int = CAP,
+    ) -> None:
+        self.runs = runs or InMemoryRunRepository()
         self.journal = InMemoryJournal()
         self.store = InMemoryArtifactStore()
         self.queue = InMemoryQueue()
@@ -82,7 +90,7 @@ class World:
         self.service = AdvanceRun(
             self.runs, self.journal, self.executor, self.queue, FailureClassifier(), max_attempts
         )
-        self.runs.save(new_run())
+        self.runs.save(new_run(cap=cap))
 
     def advance(self, stage: str, attempt: int = 1) -> AdvanceOutcome:
         return asyncio.run(self.service.advance("run-1", stage, attempt))
@@ -272,23 +280,105 @@ def test_failures_are_sorted_into_retry_park_or_stop(
     assert FailureClassifier().classify(error) is kind
 
 
+class LosingRuns(InMemoryRunRepository):
+    """A rival delivery changes the stored run just before this one's nth swap lands."""
+
+    def __init__(self, lose_on: int, rival: Callable[[BookRun], BookRun]) -> None:
+        super().__init__()
+        self.lose_on = lose_on
+        self.rival = rival
+        self.swaps = 0
+
+    def swap(self, expected: BookRun, replacement: BookRun) -> bool:
+        self.swaps += 1
+        if self.swaps == self.lose_on:
+            self._runs[expected.run_id] = self.rival(expected)
+        return super().swap(expected, replacement)
+
+
+def test_a_delivery_that_loses_the_race_to_start_does_nothing() -> None:
+    rival = LosingRuns(1, lambda run: run.start().advance())
+    world = World(runs=rival)
+    assert world.advance("brief") is AdvanceOutcome.SKIPPED
+    assert world.executor.calls == []
+    assert world.queue.jobs == []
+    assert world.run().stage == "outline"
+
+
+def test_a_delivery_that_loses_the_race_to_finish_the_stage_queues_nothing() -> None:
+    rival = LosingRuns(2, lambda run: run.advance())
+    world = World(runs=rival)
+    assert world.advance("brief") is AdvanceOutcome.SKIPPED
+    assert world.executor.calls == [("brief", 1)]
+    assert world.queue.jobs == []
+    assert world.run().stage == "outline"
+    assert world.run().status is RunStatus.RUNNING
+
+
+def test_a_losing_retry_does_not_queue_another_attempt() -> None:
+    rival = LosingRuns(2, lambda run: run.advance())
+    world = World([TransientStageError("busy")], runs=rival)
+    assert world.advance("brief") is AdvanceOutcome.SKIPPED
+    assert world.queue.jobs == []
+    assert world.run().stage == "outline"
+
+
+def test_a_losing_delivery_never_overwrites_the_winner_with_an_older_state() -> None:
+    rival = LosingRuns(2, lambda run: run.advance().advance())
+    world = World(runs=rival)
+    world.advance("brief")
+    assert world.run().stage == "draft"
+
+
+def test_spend_over_the_cap_ends_the_run_instead_of_raising() -> None:
+    world = World(cap=150)
+    assert world.advance("brief") is AdvanceOutcome.ADVANCED
+    assert world.advance("outline") is AdvanceOutcome.FAILED
+    run = world.run()
+    assert run.status is RunStatus.FAILED
+    assert [(i.code, i.blocking, i.stage) for i in run.issues] == [
+        ("budget-exceeded", True, "outline")
+    ]
+    assert run.budget.spent == COST
+    assert [job[1]["stage"] for job in world.queue.jobs] == ["outline"]
+
+
+def test_a_failed_attempt_that_overspent_fails_the_run_instead_of_retrying() -> None:
+    world = World([TransientStageError("busy")], cap=50)
+    assert world.advance("brief") is AdvanceOutcome.FAILED
+    assert world.queue.jobs == []
+    assert [i.code for i in world.run().issues] == ["budget-exceeded"]
+
+
+def test_a_budget_over_its_cap_raises_the_budget_error() -> None:
+    with pytest.raises(BudgetExceededError, match="cannot exceed the cap"):
+        Budget(cap=10, spent=11)
+
+
 class SimulatedCrash(Exception):
     """The worker process dies at this point."""
 
 
 class FlakyRuns(InMemoryRunRepository):
-    """Loses the nth save by crashing before it is stored."""
+    """Loses the nth write, a save or a swap, by crashing before it is stored."""
 
     def __init__(self, crash_on: int) -> None:
         super().__init__()
         self.crash_on = crash_on
-        self.saves = 0
+        self.writes = 0
+
+    def _write(self) -> None:
+        self.writes += 1
+        if self.writes == self.crash_on:
+            raise SimulatedCrash
 
     def save(self, run: BookRun) -> None:
-        self.saves += 1
-        if self.saves == self.crash_on:
-            raise SimulatedCrash
+        self._write()
         super().save(run)
+
+    def swap(self, expected: BookRun, replacement: BookRun) -> bool:
+        self._write()
+        return super().swap(expected, replacement)
 
 
 class FlakyQueue(InMemoryQueue):

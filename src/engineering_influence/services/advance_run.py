@@ -4,6 +4,7 @@
 import asyncio
 
 from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.errors.budget_exceeded_error import BudgetExceededError
 from engineering_influence.interfaces.journal_interface import JournalInterface
 from engineering_influence.interfaces.queue_interface import QueueInterface
 from engineering_influence.interfaces.run_repository_interface import RunRepositoryInterface
@@ -33,9 +34,16 @@ class AdvanceRun(AdvanceRunInterface):
       queued the next stage, so the current stage is queued again (``REPAIRED``);
     * a finished or parked run skips everything, and a later stage is an error.
 
+    Two deliveries of one stage can overlap, so every change to the run is a compare-and-swap
+    against the state this delivery read. The delivery that loses reports ``SKIPPED`` and neither
+    overwrites the winner nor queues anything, so duplicates cannot compound down the chain.
+
     The budget's ``spent`` is recomputed from the journal after every attempt, whether it
     succeeded or failed, so a crash cannot lose the cost of a call that happened and a replayed
-    call is never counted twice.
+    call is never counted twice. ``reserved`` is reset to zero on purpose: a reservation lives
+    inside one model call and is settled before a stage returns, so a saved run never holds one.
+    If the journal records more than the cap, the run fails with a blocking ``budget-exceeded``
+    issue rather than raising, so the message is not redelivered forever.
     """
 
     KIND = "run.advance"
@@ -75,21 +83,27 @@ class AdvanceRun(AdvanceRunInterface):
         if early is not None:
             return early
         if run.status is RunStatus.PENDING:
-            run = run.start()
-            await asyncio.to_thread(self._runs.save, run)
+            started = run.start()
+            if not await self._swap(run, started):
+                return AdvanceOutcome.SKIPPED
+            run = started
         try:
             report = await self._executor.execute(run, attempt)
         except Exception as error:  # noqa: BLE001 - every failure is classified, none is dropped
             return await self._failed(run, attempt, error)
-        run = await self._settled(run)
+        try:
+            settled = await self._settled(run)
+        except BudgetExceededError:
+            return await self._overspent(run)
         for issue in report.issues:
-            run = run.with_issue(issue)
-        run = run.advance()
-        await asyncio.to_thread(self._runs.save, run)
-        if run.status is RunStatus.COMPLETED:
-            return AdvanceOutcome.COMPLETED
-        await self._enqueue(run, run.stage, 1)
-        return AdvanceOutcome.ADVANCED
+            settled = settled.with_issue(issue)
+        advanced = settled.advance()
+        if advanced.status is RunStatus.COMPLETED:
+            return await self._commit(run, advanced, AdvanceOutcome.COMPLETED)
+        outcome = await self._commit(run, advanced, AdvanceOutcome.ADVANCED)
+        if outcome is AdvanceOutcome.ADVANCED:
+            await self._enqueue(advanced, advanced.stage, 1)
+        return outcome
 
     async def _already_handled(self, run: BookRun, stage: str) -> AdvanceOutcome | None:
         if run.status in FINISHED or run.status is RunStatus.PARKED_CAPACITY:
@@ -111,24 +125,44 @@ class AdvanceRun(AdvanceRunInterface):
 
     async def _failed(self, run: BookRun, attempt: int, error: Exception) -> AdvanceOutcome:
         kind = self._classifier.classify(error)
-        run = await self._settled(run)
+        try:
+            settled = await self._settled(run)
+        except BudgetExceededError:
+            return await self._overspent(run)
         if kind is FailureKind.TRANSIENT and attempt < self._max_attempts:
-            await asyncio.to_thread(self._runs.save, run)
-            await self._enqueue(run, run.stage, attempt + 1)
-            return AdvanceOutcome.RETRYING
+            outcome = await self._commit(run, settled, AdvanceOutcome.RETRYING)
+            if outcome is AdvanceOutcome.RETRYING:
+                await self._enqueue(settled, settled.stage, attempt + 1)
+            return outcome
         if kind is FailureKind.CAPACITY:
-            await asyncio.to_thread(self._runs.save, run.park())
-            return AdvanceOutcome.PARKED
+            return await self._commit(run, settled.park(), AdvanceOutcome.PARKED)
         code = "stage-failed" if kind is FailureKind.UNRECOVERABLE else "retries-exhausted"
         detail = f"{type(error).__name__}: {error}"[:DETAIL_LIMIT]
         issue = QualityIssue(stage=run.stage, code=code, detail=detail, blocking=True)
-        await asyncio.to_thread(self._runs.save, run.with_issue(issue).fail())
-        return AdvanceOutcome.FAILED
+        return await self._commit(run, settled.with_issue(issue).fail(), AdvanceOutcome.FAILED)
+
+    async def _overspent(self, run: BookRun) -> AdvanceOutcome:
+        issue = QualityIssue(
+            stage=run.stage,
+            code="budget-exceeded",
+            detail="the journal records more spend than the run's cap",
+            blocking=True,
+        )
+        return await self._commit(run, run.with_issue(issue).fail(), AdvanceOutcome.FAILED)
 
     async def _settled(self, run: BookRun) -> BookRun:
         entries = await asyncio.to_thread(self._journal.entries, run.run_id)
         spent = sum(entry.cost_micro_usd for entry in entries)
         return run.with_budget(Budget(cap=run.budget.cap, spent=spent))
+
+    async def _swap(self, before: BookRun, after: BookRun) -> bool:
+        return await asyncio.to_thread(self._runs.swap, before, after)
+
+    async def _commit(
+        self, before: BookRun, after: BookRun, outcome: AdvanceOutcome
+    ) -> AdvanceOutcome:
+        """The outcome if this delivery's change was stored, SKIPPED if another delivery won."""
+        return outcome if await self._swap(before, after) else AdvanceOutcome.SKIPPED
 
     async def _enqueue(self, run: BookRun, stage: str, attempt: int) -> None:
         await asyncio.to_thread(
