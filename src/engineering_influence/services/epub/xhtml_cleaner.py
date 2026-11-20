@@ -3,7 +3,7 @@
 
 import re
 
-from engineering_influence.publishing.epub.xhtml_patterns import XhtmlPatterns
+from engineering_influence.models.epub.xhtml_patterns import XhtmlPatterns
 
 
 class XhtmlCleaner:

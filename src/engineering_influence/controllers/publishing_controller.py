@@ -18,12 +18,11 @@ from engineering_influence.publishing.covers.cover_plugin_loader import CoverPlu
 from engineering_influence.publishing.covers.cover_style import CoverStyle
 from engineering_influence.publishing.covers.gradient_painter import GradientPainter
 from engineering_influence.publishing.covers.painter_registry import PainterRegistry
-from engineering_influence.publishing.epub.epub_builder import EpubBuilder
-from engineering_influence.publishing.epub.epub_verifier import EpubVerifier
-from engineering_influence.publishing.epub.tex4ebook_compiler import Tex4ebookCompiler
 from engineering_influence.publishing.qa.render_qa import RenderQa
 from engineering_influence.publishing.release.publish_pipeline import PublishPipeline
 from engineering_influence.publishing.release.publish_steps import PublishSteps
+from engineering_influence.services.epub.epub_builder import EpubBuilder
+from engineering_influence.services.epub.epub_verifier import EpubVerifier
 from engineering_influence.services.publishing.audit_report_text import AuditReportText
 from engineering_influence.services.publishing.book_auditor import BookAuditor
 from engineering_influence.services.publishing.pdf_verifier import PdfVerifier
@@ -48,7 +47,8 @@ class PublishingController:
         workspace: BuildWorkspaceInterface,
         assets: PackageAssetsInterface,
         latex: LatexCompilerInterface,
-        tex4ebook: Tex4ebookCompiler | None = None,
+        epub: EpubBuilder,
+        epub_verifier: EpubVerifier,
         qa: RenderQa | None = None,
     ) -> None:
         self._config = config
@@ -59,7 +59,8 @@ class PublishingController:
         self._assets = assets
         self._layout = config.layout()
         self._latex = latex
-        self._tex4ebook = tex4ebook
+        self._epub = epub
+        self._epub_verifier = epub_verifier
         self._qa = qa or RenderQa(config.root)
 
     @property
@@ -101,11 +102,11 @@ class PublishingController:
 
     def epub(self, slug: str, *, tex_only: bool = False, verify: bool = True) -> str:
         """Build the EPUB (or only its LaTeX) and verify the EPUB."""
-        path = EpubBuilder(self._layout, compiler=self._tex4ebook).build(slug, tex_only=tex_only)
+        path = self._epub.build(slug, tex_only=tex_only)
         if tex_only or not verify:
             return f"[{slug}] wrote {self._relative(path)}"
         book = self._loader.load(self._layout.books / f"{slug}.toml")
-        self._raise_on(slug, EpubVerifier().verify(path, book))
+        self._raise_on(slug, self._epub_verifier.verify(path, book))
         return f"[{slug}] built {self._relative(path)}\n[{slug}] all checks passed"
 
     def covers(self, slug: str, *, preview: bool = False, hardcover_pdf: Path | None = None) -> str:
@@ -139,7 +140,7 @@ class PublishingController:
             self._layout,
             self._book_builder(),
             self._cover_builder(),
-            EpubBuilder(self._layout, compiler=self._tex4ebook),
+            self._epub,
             self._files,
             self._pdfs,
         )

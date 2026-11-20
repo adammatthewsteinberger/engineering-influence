@@ -7,8 +7,8 @@ from collections.abc import Callable
 
 from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
 from engineering_influence.models.typesetting.book import Book
-from engineering_influence.publishing.epub.heading_ids import HeadingIds
-from engineering_influence.publishing.epub.toc_labels import TocLabels
+from engineering_influence.services.epub.heading_ids import HeadingIds
+from engineering_influence.services.epub.toc_labels import TocLabels
 
 Entries = list[tuple[str, str, int]]
 

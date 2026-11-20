@@ -16,13 +16,13 @@ from engineering_influence.infrastructure.publishing.filesystem_manuscript_sourc
 from engineering_influence.infrastructure.publishing.pypdf_pdf_inspector import PypdfPdfInspector
 from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.publishing.covers.cover_builder import CoverBuilder
-from engineering_influence.publishing.epub.epub_builder import EpubBuilder
-from engineering_influence.publishing.epub.epub_verifier import EpubVerifier
 from engineering_influence.publishing.qa.page_record import PageRecord
 from engineering_influence.publishing.qa.render_qa import RenderQa
 from engineering_influence.publishing.qa.render_report import RenderReport
 from engineering_influence.publishing.release.publish_pipeline import PublishPipeline
 from engineering_influence.publishing.release.publish_steps import PublishSteps, Step
+from engineering_influence.services.epub.epub_builder import EpubBuilder
+from engineering_influence.services.epub.epub_verifier import EpubVerifier
 from engineering_influence.services.publishing.pdf_verifier import PdfVerifier
 from engineering_influence.services.typesetting.book_builder import BookBuilder
 

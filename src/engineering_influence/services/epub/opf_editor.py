@@ -4,9 +4,9 @@
 import html
 import re
 
+from engineering_influence.models.epub.cover_declaration import CoverDeclaration
 from engineering_influence.models.typesetting.book import Book
-from engineering_influence.publishing.epub.cover_image import CoverImage
-from engineering_influence.publishing.epub.nav_document import NavDocument
+from engineering_influence.services.epub.nav_document import NavDocument
 
 
 class OpfEditor:
@@ -87,10 +87,11 @@ class OpfEditor:
     def add_cover(self, opf: str) -> str:
         """Declare the cover both ways the Kindle Publishing Guidelines accept."""
         item = (
-            f'<item href="{CoverImage.NAME}" id="{CoverImage.ID}" media-type="image/jpeg" '
+            f'<item href="{CoverDeclaration.NAME}" id="{CoverDeclaration.ID}" '
+            'media-type="image/jpeg" '
             'properties="cover-image"></item>'
         )
         opf = opf.replace("</manifest>", item + "\n</manifest>", 1)
         return opf.replace(
-            "</metadata>", f'<meta name="cover" content="{CoverImage.ID}"/>\n</metadata>', 1
+            "</metadata>", f'<meta name="cover" content="{CoverDeclaration.ID}"/>\n</metadata>', 1
         )

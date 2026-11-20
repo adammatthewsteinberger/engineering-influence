@@ -4,11 +4,14 @@
 import zipfile
 from pathlib import Path
 
-from engineering_influence.publishing.epub.epub_contents import EpubContents
-from engineering_influence.publishing.epub.xhtml_patterns import XhtmlPatterns
+from engineering_influence.interfaces.epub_archive_reader_interface import (
+    EpubArchiveReaderInterface,
+)
+from engineering_influence.models.epub.epub_contents import EpubContents
+from engineering_influence.models.epub.xhtml_patterns import XhtmlPatterns
 
 
-class EpubArchive:
+class EpubArchive(EpubArchiveReaderInterface):
     """Decodes the XHTML, OPF, NCX, and CSS members and locates the package parts."""
 
     def read(self, path: Path) -> EpubContents:

@@ -3,9 +3,9 @@
 
 import re
 
+from engineering_influence.models.epub.epub_contents import EpubContents
 from engineering_influence.models.typesetting.book import Book
-from engineering_influence.publishing.epub.epub_contents import EpubContents
-from engineering_influence.publishing.epub.heading_ids import HeadingIds
+from engineering_influence.services.epub.heading_ids import HeadingIds
 
 
 class ContentsLinksCheck:

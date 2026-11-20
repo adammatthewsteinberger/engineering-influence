@@ -20,6 +20,18 @@ class FilesystemBuildWorkspace(BuildWorkspaceInterface):
         # distribution built it.
         shutil.copytree(assets / "fonts", workdir / "fonts", dirs_exist_ok=True)
 
+    def prepare_ebook(self, workdir: Path, assets: Path) -> None:
+        """Start the ebook directory afresh and copy the ebook class, config and styles in."""
+        if workdir.exists():
+            shutil.rmtree(workdir)
+        workdir.mkdir(parents=True)
+        for name in ("fine-ebook.sty", "fine-ebook.cfg", "fine-ebook.css"):
+            shutil.copy(assets / name, workdir / name)
+
+    def ensure_directory(self, path: Path) -> None:
+        """Create the directory if it does not exist; its parent must."""
+        path.mkdir(exist_ok=True)
+
     def write_text(self, path: Path, text: str) -> None:
         """Write UTF-8 text."""
         path.write_text(text, encoding="utf-8")

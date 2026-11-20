@@ -4,8 +4,8 @@
 import html
 import re
 
-from engineering_influence.publishing.epub.epub_contents import EpubContents
-from engineering_influence.publishing.epub.toc_trees import TocTree
+from engineering_influence.models.epub.epub_contents import EpubContents
+from engineering_influence.services.epub.toc_trees import TocTree
 
 
 class ContentsPageCheck:
