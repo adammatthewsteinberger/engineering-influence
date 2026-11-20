@@ -6,6 +6,9 @@ import logging
 import signal
 
 from engineering_influence.infrastructure.deterministic_runner import DeterministicRunner
+from engineering_influence.infrastructure.deterministic_stage_executor import (
+    DeterministicStageExecutor,
+)
 from engineering_influence.infrastructure.job_message_handler import JobMessageHandler
 from engineering_influence.infrastructure.non_empty_artifact_gate import NonEmptyArtifactGate
 from engineering_influence.infrastructure.observability.bootstrap_alert_dispatcher import (
@@ -29,10 +32,17 @@ from engineering_influence.infrastructure.rabbitmq_queue import RabbitMqQueueAda
 from engineering_influence.infrastructure.rabbitmq_topology import RabbitMqTopology
 from engineering_influence.infrastructure.schema_migrator import SchemaMigrator
 from engineering_influence.interfaces.schema_migrator_interface import SchemaMigratorInterface
+from engineering_influence.repositories.sqlmodel_artifact_store import SqlModelArtifactStore
+from engineering_influence.repositories.sqlmodel_journal import SqlModelJournal
 from engineering_influence.repositories.sqlmodel_ledger import SqlModelLedger
+from engineering_influence.repositories.sqlmodel_run_repository import SqlModelRunRepository
 from engineering_influence.runtime.app_settings import AppSettings
 from engineering_influence.runtime.interfaces.worker_runtime_interface import WorkerRuntimeInterface
+from engineering_influence.services.advance_run import AdvanceRun
+from engineering_influence.services.failure_classifier import FailureClassifier
+from engineering_influence.services.job_router import JobRouter
 from engineering_influence.services.process_job import ProcessJob
+from engineering_influence.services.process_run_job import ProcessRunJob
 from engineering_influence.services.run_phase import RunPhase
 
 _LOGGER = logging.getLogger(__name__)
@@ -51,6 +61,7 @@ class WorkerRuntime(WorkerRuntimeInterface):
         self._settings = settings
         self._migrator = migrator or SchemaMigrator()
         self._ledger: SqlModelLedger | None = None
+        self._stores: list[SqlModelRunRepository | SqlModelJournal | SqlModelArtifactStore] = []
 
     def build(self) -> tuple[RabbitMqJobConsumer, WorkerHeartbeat]:
         """Wire the consumer and the heartbeat that watches it."""
@@ -63,11 +74,30 @@ class WorkerRuntime(WorkerRuntimeInterface):
             correlation,
         )
         self._migrator.check(self._settings.database_url)
-        self._ledger = SqlModelLedger(self._settings.database_url)
-        process_job = ProcessJob(
-            TracedRunPhase(RunPhase(DeterministicRunner(), NonEmptyArtifactGate())),
-            self._ledger,
+        url = self._settings.database_url
+        self._ledger = SqlModelLedger(url)
+        runs, journal, artifacts = (
+            SqlModelRunRepository(url),
+            SqlModelJournal(url),
+            SqlModelArtifactStore(url),
+        )
+        self._stores = [runs, journal, artifacts]
+        advance = AdvanceRun(
+            runs,
+            journal,
+            DeterministicStageExecutor(artifacts, journal),
             queue,
+            FailureClassifier(),
+        )
+        process_job = JobRouter(
+            {
+                "pipeline": ProcessJob(
+                    TracedRunPhase(RunPhase(DeterministicRunner(), NonEmptyArtifactGate())),
+                    self._ledger,
+                    queue,
+                ),
+                "run": ProcessRunJob(advance),
+            }
         )
         heartbeat = WorkerHeartbeat(metrics, alerts)
         consumer = RabbitMqJobConsumer(
@@ -89,10 +119,13 @@ class WorkerRuntime(WorkerRuntimeInterface):
             self.close()
 
     def close(self) -> None:
-        """Dispose of the database pool."""
+        """Dispose of every database pool."""
         if self._ledger is not None:
             self._ledger.close()
             self._ledger = None
+        for store in self._stores:
+            store.close()
+        self._stores = []
 
     def run(self) -> None:
         """Configure the process and serve until SIGINT or SIGTERM."""

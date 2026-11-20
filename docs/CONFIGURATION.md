@@ -149,12 +149,28 @@ ledger, and enqueues the next stage, or appends `pipeline.completed` after the l
 human gate, or an automatic gate that rejects, appends `gate.awaiting` and stops the
 pipeline there.
 
+For each `run.advance` job (payload `{run_id, stage, attempt}`) it advances a book run one
+stage: it executes the run's current stage, saves the run, and queues the next stage. Redelivered
+messages are safe. A message for a stage the run already passed is skipped, a transient failure
+re-queues the stage with the next attempt up to three, running out of credit parks the run on
+its stage, and any other failure ends the run with a blocking issue. Every change to the run is
+a compare-and-swap, so two overlapping deliveries cannot overwrite each other. The worker routes
+by the prefix before the first dot: `pipeline.*` and `run.*` are handled, and any other kind is
+dead-lettered.
+
 A job that is malformed, or that fails, is rejected without requeue and lands in the
 `.dead` queue, with an alert for failures. Nothing retries it automatically: inspect it
 and republish it by hand. Stopping the worker finishes the job in flight first.
 
 ### Limits to know
 
+- **Nothing starts a run yet.** The worker can advance a run that exists, but no command or
+  endpoint creates one; `ei book create` arrives with the model-backed stages. The stage
+  executor is a placeholder too: `DeterministicStageExecutor` writes `<stage>.md` from the
+  brief's idea, at no cost, through the same journal and write-once store a model-backed
+  executor will use.
+- **Retries are immediate.** A transient failure is re-queued with no delay, because the
+  queue port has none yet.
 - **The runner and gate are placeholders.** `DeterministicRunner` returns a fixed line
   of text and `NonEmptyArtifactGate` accepts anything non-blank. They let the whole
   pipeline run offline; a model-backed runner and rubric gates implement the same interfaces.
