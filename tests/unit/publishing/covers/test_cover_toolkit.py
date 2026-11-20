@@ -169,23 +169,16 @@ class FakeEntry:
         return self._target
 
 
-def test_entry_point_plugins_are_registered(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        "engineering_influence.infrastructure.covers.cover_plugin_loader.entry_points",
-        lambda group: [FakeEntry("demo", DemoPlugin)],
-    )
+def test_entry_point_plugins_are_registered() -> None:
     registry = PainterRegistry()
-    styles = CoverPluginLoader().load(registry)
+    styles = CoverPluginLoader(lambda group: [FakeEntry("demo", DemoPlugin)]).load(registry)
     assert list(styles) == ["demo-book"] and isinstance(registry.get("demo"), Flat)
 
 
-def test_entry_point_that_is_not_a_plugin_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        "engineering_influence.infrastructure.covers.cover_plugin_loader.entry_points",
-        lambda group: [FakeEntry("bad", dict)],
-    )
+def test_entry_point_that_is_not_a_plugin_is_rejected() -> None:
+    loader = CoverPluginLoader(lambda group: [FakeEntry("bad", dict)])
     with pytest.raises(BookBuildError, match="'bad' is not a CoverPlugin"):
-        CoverPluginLoader().load(PainterRegistry())
+        loader.load(PainterRegistry())
 
 
 def test_plugins_load_from_a_module_class_reference(

@@ -55,13 +55,26 @@ class PublishingControllerFactory(PublishingControllerFactoryInterface):
             files,
             identifier,
         )
-        epub_verifier = EpubVerifier(EpubArchive(), EpubcheckRunner(), EpubCoverInspector())
+        archive, inspector = EpubArchive(), EpubCoverInspector()
+        epub_verifier = EpubVerifier(archive, EpubcheckRunner(), inspector)
+        strict_verifier = EpubVerifier(archive, EpubcheckRunner(required=True), inspector)
         pdfs = PypdfPdfInspector()
         latex = LatexCompiler()
         covers = CoverBuilderProvider(config)
         qa = RenderQa(config.root)
         publisher = PublishPipelineProvider(
-            config, files, pdfs, loader, workspace, assets, latex, epub, covers, qa
+            config,
+            files,
+            pdfs,
+            loader,
+            workspace,
+            assets,
+            latex,
+            epub,
+            covers,
+            qa,
+            epub_verifier,
+            strict_verifier,
         )
         return PublishingController(
             config,

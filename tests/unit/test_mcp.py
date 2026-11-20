@@ -27,12 +27,16 @@ def test_mcp_exposes_start_pipeline_tool() -> None:
     assert result == {"job_id": "local-job-1", "project_slug": "demo"}
 
 
-def test_mcp_stdio_runner_delegates_to_server(monkeypatch: Any) -> None:
-    application = McpApplication(
+def test_mcp_stdio_runner_delegates_to_server() -> None:
+    fake_server = type("FakeServer", (), {"run_stdio_async": AsyncMock()})()
+
+    class ApplicationWithFakeServer(McpApplication):
+        def build(self) -> Any:
+            return fake_server
+
+    application = ApplicationWithFakeServer(
         ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue()))
     )
-    fake_server = type("FakeServer", (), {"run_stdio_async": AsyncMock()})()
-    monkeypatch.setattr(application, "build", lambda: fake_server)
 
     asyncio.run(application.run_stdio())
 

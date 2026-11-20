@@ -11,9 +11,6 @@ from pypdf import PdfWriter
 
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 from engineering_influence.infrastructure.covers.cover_builder import CoverBuilder
-from engineering_influence.infrastructure.epub.epub_archive import EpubArchive
-from engineering_influence.infrastructure.epub.epub_cover_inspector import EpubCoverInspector
-from engineering_influence.infrastructure.epub.epubcheck_runner import EpubcheckRunner
 from engineering_influence.infrastructure.publishing.filesystem_manuscript_source import (
     FilesystemManuscriptSource,
 )
@@ -27,17 +24,18 @@ from engineering_influence.infrastructure.typesetting.filesystem_build_workspace
     FilesystemBuildWorkspace,
 )
 from engineering_influence.interfaces.clock_interface import ClockInterface
+from engineering_influence.interfaces.epub_verifier_interface import EpubVerifierInterface
 from engineering_influence.interfaces.render_qa_interface import RenderQaInterface
 from engineering_influence.models.publishing.path_relativizer import PathRelativizer
 from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.models.qa.page_record import PageRecord
 from engineering_influence.models.qa.render_report import RenderReport
+from engineering_influence.models.typesetting.book import Book
 from engineering_influence.repositories.release.artifact_inventory import ArtifactInventory
 from engineering_influence.repositories.release.json_report import JsonReport
 from engineering_influence.repositories.release.step_recorder import StepRecorder
 from engineering_influence.repositories.typesetting.book_loader import BookLoader
 from engineering_influence.services.epub.epub_builder import EpubBuilder
-from engineering_influence.services.epub.epub_verifier import EpubVerifier
 from engineering_influence.services.publishing.pdf_verifier import PdfVerifier
 from engineering_influence.services.release.publish_pipeline import PublishPipeline
 from engineering_influence.services.release.publish_steps import PublishSteps, Step
@@ -374,12 +372,19 @@ class StubEpub(EpubBuilder):
         return path
 
 
-def verifier(required: bool = False) -> EpubVerifier:
-    return EpubVerifier(EpubArchive(), EpubcheckRunner(required=required), EpubCoverInspector())
+class FakeEpubVerifier(EpubVerifierInterface):
+    def __init__(self, problems: list[str]) -> None:
+        self._problems = problems
+
+    def verify(self, path: Path, book: Book) -> list[str]:
+        return list(self._problems)
 
 
-def real_steps(layout: ProjectLayout) -> tuple[PublishSteps, StubBuilder, StubCovers]:
+def real_steps(
+    layout: ProjectLayout, epub_problems: list[str] | None = None
+) -> tuple[PublishSteps, StubBuilder, StubCovers]:
     builder, covers = StubBuilder(layout), StubCovers(layout)
+    verifier = FakeEpubVerifier(epub_problems or [])
     return (
         PublishSteps(
             layout,
@@ -389,8 +394,8 @@ def real_steps(layout: ProjectLayout) -> tuple[PublishSteps, StubBuilder, StubCo
             FilesystemManuscriptSource(),
             PypdfPdfInspector(),
             BookLoader(layout.root),
-            verifier(),
-            verifier(required=True),
+            verifier,
+            verifier,
         ),
         builder,
         covers,
@@ -417,7 +422,6 @@ def test_step_actions_build_and_verify(monkeypatch: pytest.MonkeyPatch, tmp_path
         return []
 
     monkeypatch.setattr(PdfVerifier, "verify", pdf_ok)
-    monkeypatch.setattr(EpubVerifier, "verify", lambda self, path, book: [])
     assert "built output/demo.pdf" in steps.pdf("demo")
     assert "built output/demo-hardcover.pdf" in steps.hardcover("demo")
     assert [p.parent.name for p in seen] == ["demo", "demo-hardcover"]
@@ -437,9 +441,9 @@ def test_failed_verification_raises_with_every_problem(
     monkeypatch.setattr(PdfVerifier, "verify", lambda self, pdf, config, log=None: ["a", "b"])
     with pytest.raises(BookBuildError, match=r"\[demo\] FAIL a\n\[demo\] FAIL b"):
         steps.pdf("demo")
-    monkeypatch.setattr(EpubVerifier, "verify", lambda self, path, book: ["epub bad"])
+    failing, _, _ = real_steps(layout, epub_problems=["epub bad"])
     with pytest.raises(BookBuildError, match=r"\[demo\] FAIL epub bad"):
-        steps.epub("demo")
+        failing.epub("demo")
 
 
 def test_when_the_interior_is_never_built_the_report_has_no_pdf_facts(tmp_path: Path) -> None:
