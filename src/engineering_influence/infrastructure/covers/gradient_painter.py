@@ -6,16 +6,16 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
-from engineering_influence.publishing.covers.compositing import Compositing
-from engineering_influence.publishing.covers.cover_layout import CoverLayout
-from engineering_influence.publishing.covers.cover_painter import CoverPainter
-from engineering_influence.publishing.covers.cover_style import CoverStyle
-from engineering_influence.publishing.covers.film_grain import FilmGrain
-from engineering_influence.publishing.covers.quiet_zone import QuietZone
-from engineering_influence.publishing.covers.value_noise import ValueNoise
+from engineering_influence.infrastructure.covers.compositing import Compositing
+from engineering_influence.infrastructure.covers.film_grain import FilmGrain
+from engineering_influence.infrastructure.covers.quiet_zone import QuietZone
+from engineering_influence.infrastructure.covers.value_noise import ValueNoise
+from engineering_influence.interfaces.cover_painter_interface import CoverPainterInterface
+from engineering_influence.models.covers.cover_layout import CoverLayout
+from engineering_influence.models.covers.cover_style import CoverStyle
 
 
-class GradientPainter(CoverPainter):
+class GradientPainter(CoverPainterInterface):
     """Needs no private art. Colours come from style.extra["top"] and ["bottom"]."""
 
     TOP = (0.10, 0.15, 0.27)

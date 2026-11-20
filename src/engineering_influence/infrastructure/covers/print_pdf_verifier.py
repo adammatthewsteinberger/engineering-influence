@@ -5,7 +5,7 @@ from pathlib import Path
 
 from pypdf import PdfReader
 
-from engineering_influence.publishing.covers.kdp_cover_spec import KdpCoverSpec as Kdp
+from engineering_influence.models.covers.kdp_cover_spec import KdpCoverSpec as Kdp
 
 
 class PrintPdfVerifier:

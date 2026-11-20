@@ -4,7 +4,7 @@
 import zlib
 from typing import Any
 
-from engineering_influence.publishing.covers.cover_style import CoverStyle
+from engineering_influence.models.covers.cover_style import CoverStyle
 
 
 class BuiltinCoverStyle:

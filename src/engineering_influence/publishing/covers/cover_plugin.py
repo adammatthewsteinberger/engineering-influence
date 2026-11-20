@@ -1,26 +1,15 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
-"""The interface a cover plugin implements, discovered through entry points."""
+"""Deprecated path: ``CoverPlugin`` moved to ``engineering_influence.covers``."""
 
-from abc import ABC, abstractmethod
-from pathlib import Path
+import warnings
 
-from engineering_influence.publishing.covers.cover_painter import CoverPainter
-from engineering_influence.publishing.covers.cover_style import CoverStyle
+from engineering_influence.covers import CoverPlugin
 
+warnings.warn(
+    "engineering_influence.publishing.covers.cover_plugin is deprecated and will be removed in the "
+    "next minor release; import CoverPlugin from engineering_influence.covers",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
-class CoverPlugin(ABC):
-    """Supplies named painters and per-book styles from a private project.
-
-    The loader passes the project root, so a plugin can find project-local source art.
-    """
-
-    def __init__(self, root: Path | None = None) -> None:
-        self.root = root or Path.cwd()
-
-    @abstractmethod
-    def painters(self) -> dict[str, CoverPainter]:
-        """Painters by the name a CoverStyle refers to."""
-
-    @abstractmethod
-    def styles(self) -> dict[str, CoverStyle]:
-        """Cover styles by book slug."""
+__all__ = ["CoverPlugin"]

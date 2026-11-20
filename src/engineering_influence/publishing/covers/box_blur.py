@@ -1,28 +1,15 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
-"""Fast approximate Gaussian blur."""
+"""Deprecated path: ``BoxBlur`` moved to ``engineering_influence.covers``."""
 
-from typing import Any
+import warnings
 
-import numpy as np
-from numpy.typing import NDArray
+from engineering_influence.covers import BoxBlur
 
+warnings.warn(
+    "engineering_influence.publishing.covers.box_blur is deprecated and will be removed in the "
+    "next minor release; import BoxBlur from engineering_influence.covers",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
-class BoxBlur:
-    """Three separable box blurs, edge-clamped."""
-
-    def apply(self, a: NDArray[Any], sigma: float) -> NDArray[Any]:
-        """Blur `a` by roughly `sigma` pixels; below 0.5 the input is returned unchanged."""
-        if sigma < 0.5:
-            return a
-        r = max(1, round(sigma * 1.0))
-        out = a.astype(np.float32)
-        for axis in (0, 1):
-            for _ in range(3):
-                pad = [(0, 0)] * out.ndim
-                pad[axis] = (r + 1, r)
-                c = np.cumsum(np.pad(out, pad, mode="edge"), axis=axis, dtype=np.float64)
-                n = out.shape[axis]
-                hi = np.take(c, np.arange(2 * r + 1, 2 * r + 1 + n), axis=axis)
-                lo = np.take(c, np.arange(0, n), axis=axis)
-                out = ((hi - lo) / (2 * r + 1)).astype(np.float32)
-        return out
+__all__ = ["BoxBlur"]

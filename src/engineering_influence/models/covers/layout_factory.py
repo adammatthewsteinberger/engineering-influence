@@ -1,9 +1,9 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """KDP layouts for the ebook cover, the paperback wrap, and the hardcover wrap."""
 
-from engineering_influence.publishing.covers.box import Box
-from engineering_influence.publishing.covers.cover_layout import CoverLayout
-from engineering_influence.publishing.covers.kdp_cover_spec import KdpCoverSpec as Kdp
+from engineering_influence.models.covers.box import Box
+from engineering_influence.models.covers.cover_layout import CoverLayout
+from engineering_influence.models.covers.kdp_cover_spec import KdpCoverSpec as Kdp
 
 
 class LayoutFactory:

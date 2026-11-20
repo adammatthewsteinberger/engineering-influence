@@ -13,6 +13,7 @@ from pypdf import PdfWriter
 
 from engineering_influence.controllers.publishing_controller import PublishingController
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
+from engineering_influence.infrastructure.covers.cover_builder import CoverBuilder
 from engineering_influence.infrastructure.epub.cover_image import CoverImage
 from engineering_influence.infrastructure.epub.epub_archive import EpubArchive
 from engineering_influence.infrastructure.epub.epub_cover_inspector import EpubCoverInspector
@@ -29,12 +30,12 @@ from engineering_influence.infrastructure.typesetting.filesystem_build_workspace
 )
 from engineering_influence.infrastructure.typesetting.latex_compiler import LatexCompiler
 from engineering_influence.models.publishing.project_config import ProjectConfig
-from engineering_influence.publishing.covers.cover_builder import CoverBuilder
 from engineering_influence.publishing.qa.page_record import PageRecord
 from engineering_influence.publishing.qa.render_qa import RenderQa
 from engineering_influence.publishing.qa.render_report import RenderReport
 from engineering_influence.repositories.typesetting.book_loader import BookLoader
 from engineering_influence.runtime.cli_runtime import CliRuntime
+from engineering_influence.runtime.cover_builder_provider import CoverBuilderProvider
 from engineering_influence.services.epub.epub_builder import EpubBuilder
 from engineering_influence.services.epub.epub_identifier import EpubIdentifier
 from engineering_influence.services.epub.epub_repacker import EpubRepacker
@@ -143,6 +144,7 @@ def controller(root: Path, **kwargs: Any) -> PublishingController:
             identifier,
         ),
         "epub_verifier": EpubVerifier(EpubArchive(), EpubcheckRunner(), EpubCoverInspector()),
+        "covers": CoverBuilderProvider(config),
         **kwargs,
     }
     return PublishingController(config, files, PypdfPdfInspector(), **collaborators)
@@ -224,17 +226,17 @@ def test_controller_covers_without_a_plugin(root: Path, stubs: dict[str, list[An
 
 PLUGIN = """
 import numpy as np
-from engineering_influence.publishing.covers.builtin_cover_style import BuiltinCoverStyle
-from engineering_influence.publishing.covers.cover_painter import CoverPainter
-from engineering_influence.publishing.covers.cover_plugin import CoverPlugin
+from engineering_influence.models.covers.builtin_cover_style import BuiltinCoverStyle
+from engineering_influence.interfaces.cover_painter_interface import CoverPainterInterface
+from engineering_influence.interfaces.cover_plugin_interface import CoverPluginInterface
 
 
-class Flat(CoverPainter):
+class Flat(CoverPainterInterface):
     def paint(self, layout, style):
         return np.full((layout.px[1], layout.px[0], 3), 0.1, np.float32)
 
 
-class Plugin(CoverPlugin):
+class Plugin(CoverPluginInterface):
     def painters(self):
         return {"flat": Flat()}
 

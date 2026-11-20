@@ -20,7 +20,10 @@ infrastructure/ RabbitMQ queue and consumer, in-memory adapters, security, obser
 runtime/      composition roots (CLI, API, worker), settings loader, entry points
 publishing/   the book toolchain behind `ei book` (optional `publishing` extra); being split into the
               layers above: the audit and check classes live in `<layer>/publishing/`, the typesetting
-              classes in `<layer>/typesetting/` and the EPUB classes in `<layer>/epub/`
+              classes in `<layer>/typesetting/`, the EPUB classes in `<layer>/epub/` and the cover
+              classes in `<layer>/covers/`
+covers/       the public cover-plugin API (`engineering_influence.covers`); a facade over classes that
+              live in the layers, so a private project's imports survive moves
 ```
 
 Dependencies only point inward. `services` and `controllers` never import adapters or
