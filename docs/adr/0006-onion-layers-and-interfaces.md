@@ -1,6 +1,6 @@
 # ADR 0006: Onion layers, interfaces and one class per file
 
-Status: accepted
+Status: accepted and implemented (see "As built")
 
 ## Context
 
@@ -94,3 +94,25 @@ change. These classes keep their names even where they do not end in `Interface`
   calls that patch production classes (33 `setattr` calls today, some of them on `sys`).
 - Moving every class changes every import path. The public cover-plugin paths are protected by shims;
   everything else is internal.
+
+## As built
+
+The restructure shipped as pull requests R0 to R13 (`changelog.d/m1-r*.md` has one entry for each).
+Four things differ from the plan above, and the plan is left as written so the difference is visible:
+
+- **The ratchets were retired.** The plan lowered counts in `tests/architecture/ratchet.json` until
+  every rule reached zero. They did, so R11 deleted the file and `test_rules.py` now asserts that each
+  of nine metrics is zero everywhere and that none has been dropped. A violation fails the build; it
+  is not recorded.
+- **The cover-plugin shims were removed in R11, with no deprecation window.** `publishing.covers.*` and
+  `publishing.project_layout` re-exported the real classes for a time, then were deleted. ADR 0004
+  lets a minor version before 1.0 break a contract if the changelog says so, and the R11 entry is
+  marked **Breaking**. The names live on in the `engineering_influence.covers` facade.
+- **Test doubles replaced the patches.** The plan counted 33 `monkeypatch.setattr` calls. R12 and R13
+  injected fakes through constructors, and `tests/architecture/test_no_patching.py` now permits only
+  standard-library calls at the system boundary (`subprocess.run`, `sys.argv`, `sys.path`,
+  `zipfile.ZipFile.testzip`) and one class a test defines. A new patch of anything else fails the
+  build, and a boundary entry no test uses any more fails it too.
+- **Some pure helpers are still built where they are used.** `PublishingController` builds its audit
+  classes and `EpubVerifier` builds its own checks, because no test has to replace them. Anything a
+  test replaces, and every adapter, is injected.

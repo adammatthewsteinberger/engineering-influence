@@ -79,6 +79,6 @@ result with `tests/fixtures/fixture_book/expected/snapshot.json`.
 
 ## Writing tests
 
-- Prefer a fake adapter behind a port over a mock of a library.
+- Prefer a fake that implements the interface (or subclasses the class and overrides one method) over a mock or a patch.
 - Anything that crosses a process boundary needs a failure and recovery test, not only the happy path.
 - `hypothesis` is a declared test dependency, but no property tests exist yet; keep strategies small when adding them.

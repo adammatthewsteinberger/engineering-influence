@@ -37,15 +37,16 @@ deprecation rules are [ADR 0004](docs/adr/0004-versioning-compatibility-and-depr
 
 ## Architecture rules
 
-Interactions call controllers, controllers call services, services use domain types and ports,
-and adapters implement ports ([docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). The tests enforce:
+Interactions call controllers, controllers call services, services use models, contracts and
+interfaces, and adapters implement interfaces ([docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). The tests enforce:
 
 - one class per file, no loose production functions;
-- interfaces live in sibling `interfaces/` folders;
+- every class implements an interface, and interfaces live in sibling `interfaces/` folders;
 - layers point inward only (`lint-imports` runs a strict layers contract);
-- only `runtime/` composes concrete classes; everything else receives its collaborators.
+- only `runtime/` composes concrete classes; everything else receives its collaborators;
+- tests pass fakes instead of patching production code.
 
-A new external integration needs a **port**, an **adapter**, an **ADR** when the choice is
+A new external integration needs an **interface**, an **adapter**, an **ADR** when the choice is
 architectural (`docs/adr/`), and failure and recovery tests. Every pipeline side effect must be
 bounded, idempotent, observable and recoverable.
 
@@ -78,7 +79,6 @@ the text of one bullet (see `changelog.d/README.md` and `docs/adr/0005-release-f
   Pull requests Dependabot opens are exempt from that one check.
 - Use your GitHub no-reply address if you want to keep your email out of history.
 - Restructuring commits that only move or rename files are listed in `.git-blame-ignore-revs`; GitHub honours it, and locally run `git config blame.ignoreRevsFile .git-blame-ignore-revs`.
-- Update `CHANGELOG.md` under `## Unreleased` for anything a user would notice.
 
 ## Dependency updates
 

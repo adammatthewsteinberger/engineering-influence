@@ -11,7 +11,7 @@
 
 ## Understand and operate
 
-- [Architecture](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/ARCHITECTURE.md): layers, request flow, trust boundaries, extension points
+- [Architecture](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/ARCHITECTURE.md): the onion layers and interface rules, request flow, trust boundaries, extension points
 - [Configuration](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/CONFIGURATION.md): every EI_* variable, security settings, observability, limits
 - [Troubleshooting](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/TROUBLESHOOTING.md): symptom, cause, fix
 - [Architecture decision records](https://github.com/adammatthewsteinberger/engineering-influence/tree/main/docs/adr)
