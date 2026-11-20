@@ -30,11 +30,12 @@ from engineering_influence.interfaces.secret_provider_interface import SecretPro
 from engineering_influence.repositories.sqlmodel_ledger import SqlModelLedger
 from engineering_influence.runtime.app_settings import AppSettings
 from engineering_influence.runtime.endpoint_checks import EndpointChecks
+from engineering_influence.runtime.interfaces.api_runtime_interface import ApiRuntimeInterface
 from engineering_influence.services.readiness_probe import ReadinessProbe
 from engineering_influence.services.start_pipeline import StartPipeline
 
 
-class ApiRuntime:
+class ApiRuntime(ApiRuntimeInterface):
     """Build the API from settings and serve it.
 
     ``EI_API_KEYS`` is required: with no key the API cannot be built, so a

@@ -10,6 +10,9 @@ from engineering_influence.errors.typesetting.book_build_error import BookBuildE
 from engineering_influence.infrastructure.covers.back_typesetter import BackTypesetter
 from engineering_influence.infrastructure.covers.font_loader import FontLoader
 from engineering_influence.infrastructure.covers.front_typesetter import FrontTypesetter
+from engineering_influence.infrastructure.covers.interfaces.cover_renderer_interface import (
+    CoverRendererInterface,
+)
 from engineering_influence.infrastructure.covers.painter_registry import PainterRegistry
 from engineering_influence.infrastructure.covers.spine_typesetter import SpineTypesetter
 from engineering_influence.infrastructure.covers.text_placement_check import TextPlacementCheck
@@ -21,7 +24,7 @@ from engineering_influence.models.covers.layout_check import LayoutCheck
 from engineering_influence.models.covers.text_recorder import TextRecorder
 
 
-class CoverRenderer:
+class CoverRenderer(CoverRendererInterface):
     """Painter output plus ordered dither, then front, back, and spine text on a layer."""
 
     def __init__(self, registry: PainterRegistry, fonts: FontLoader) -> None:

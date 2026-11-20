@@ -5,13 +5,16 @@ from typing import Any
 
 from PIL import Image, ImageDraw
 
+from engineering_influence.infrastructure.covers.interfaces.spine_typesetter_interface import (
+    SpineTypesetterInterface,
+)
 from engineering_influence.infrastructure.covers.typography import Typography
 from engineering_influence.models.covers.cover_layout import CoverLayout
 from engineering_influence.models.covers.cover_style import CoverStyle
 from engineering_influence.models.covers.kdp_cover_spec import KdpCoverSpec as Kdp
 
 
-class SpineTypesetter:
+class SpineTypesetter(SpineTypesetterInterface):
     """Title and author surname, when the book is thick enough to carry them."""
 
     def __init__(self, typography: Typography) -> None:

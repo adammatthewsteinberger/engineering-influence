@@ -29,13 +29,14 @@ from engineering_influence.infrastructure.rabbitmq_queue import RabbitMqQueueAda
 from engineering_influence.infrastructure.rabbitmq_topology import RabbitMqTopology
 from engineering_influence.repositories.sqlmodel_ledger import SqlModelLedger
 from engineering_influence.runtime.app_settings import AppSettings
+from engineering_influence.runtime.interfaces.worker_runtime_interface import WorkerRuntimeInterface
 from engineering_influence.services.process_job import ProcessJob
 from engineering_influence.services.run_phase import RunPhase
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class WorkerRuntime:
+class WorkerRuntime(WorkerRuntimeInterface):
     """Build the worker from settings and consume until a stop signal.
 
     The runner and gate are deterministic placeholders: this process exercises the whole

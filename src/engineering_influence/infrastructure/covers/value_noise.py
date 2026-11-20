@@ -7,8 +7,12 @@ import numpy as np
 from numpy.typing import NDArray
 from PIL import Image
 
+from engineering_influence.infrastructure.covers.interfaces.value_noise_interface import (
+    ValueNoiseInterface,
+)
 
-class ValueNoise:
+
+class ValueNoise(ValueNoiseInterface):
     """Single-octave noise and fractal (fBm) sums of it, both in [0, 1]."""
 
     def noise(self, h: int, w: int, cells: float, rng: np.random.Generator) -> NDArray[Any]:

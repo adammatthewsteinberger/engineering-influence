@@ -6,8 +6,12 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
+from engineering_influence.infrastructure.covers.interfaces.box_blur_interface import (
+    BoxBlurInterface,
+)
 
-class BoxBlur:
+
+class BoxBlur(BoxBlurInterface):
     """Three separable box blurs, edge-clamped."""
 
     def apply(self, a: NDArray[Any], sigma: float) -> NDArray[Any]:

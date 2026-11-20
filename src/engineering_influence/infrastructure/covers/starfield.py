@@ -8,9 +8,12 @@ from numpy.typing import NDArray
 
 from engineering_influence.infrastructure.covers.box_blur import BoxBlur
 from engineering_influence.infrastructure.covers.compositing import Compositing
+from engineering_influence.infrastructure.covers.interfaces.starfield_interface import (
+    StarfieldInterface,
+)
 
 
-class Starfield:
+class Starfield(StarfieldInterface):
     """Brightness follows a power law, with a slight colour-temperature spread."""
 
     def add(

@@ -6,9 +6,12 @@ from pathlib import Path
 from pypdf import PdfReader
 
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
+from engineering_influence.infrastructure.covers.interfaces.interior_page_count_interface import (
+    InteriorPageCountInterface,
+)
 
 
-class InteriorPageCount:
+class InteriorPageCount(InteriorPageCountInterface):
     """Reads the finished interior, never an estimate."""
 
     def of(self, pdf: Path) -> int:

@@ -6,11 +6,14 @@ from collections.abc import Mapping
 
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
 from engineering_influence.runtime.app_settings import AppSettings
+from engineering_influence.runtime.interfaces.environment_settings_loader_interface import (
+    EnvironmentSettingsLoaderInterface,
+)
 
 _LEVELS = frozenset({"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"})
 
 
-class EnvironmentSettingsLoader:
+class EnvironmentSettingsLoader(EnvironmentSettingsLoaderInterface):
     """``EI_DATABASE_URL`` and ``EI_RABBITMQ_URL`` are required; the rest have safe defaults.
 
     The API binds to loopback unless ``EI_HOST`` says otherwise, so a bare run is never

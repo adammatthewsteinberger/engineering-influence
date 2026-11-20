@@ -5,8 +5,12 @@ from typing import Any, cast
 
 import httpx
 
+from engineering_influence_sdk.interfaces.client_interface import (
+    EngineeringInfluenceClientInterface,
+)
 
-class EngineeringInfluenceClient:
+
+class EngineeringInfluenceClient(EngineeringInfluenceClientInterface):
     """Small typed client with a stable pipeline-start operation."""
 
     def __init__(self, base_url: str, api_key: str | None = None, transport: Any = None) -> None:

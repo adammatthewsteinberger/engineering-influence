@@ -6,11 +6,14 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
+from engineering_influence.infrastructure.covers.interfaces.quiet_zone_interface import (
+    QuietZoneInterface,
+)
 from engineering_influence.infrastructure.covers.soft_rect import SoftRect
 from engineering_influence.models.covers.cover_layout import CoverLayout
 
 
-class QuietZone:
+class QuietZone(QuietZoneInterface):
     """A soft mask over the back-cover text column and the spine."""
 
     def mask(self, layout: CoverLayout, h: int, w: int) -> NDArray[Any]:

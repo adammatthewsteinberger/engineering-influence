@@ -4,12 +4,15 @@
 import re
 
 from engineering_influence.contracts.readiness_report import ReadinessReport
+from engineering_influence.interactions.api.interfaces.prometheus_renderer_interface import (
+    PrometheusRendererInterface,
+)
 
 _INVALID = re.compile(r"[^a-zA-Z0-9_]")
 _QUANTILES = (("p50", "0.5"), ("p95", "0.95"), ("p99", "0.99"))
 
 
-class PrometheusRenderer:
+class PrometheusRenderer(PrometheusRendererInterface):
     """Render the text format (version 0.0.4) that Prometheus and compatible agents scrape."""
 
     def render(

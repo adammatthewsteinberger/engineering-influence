@@ -7,8 +7,10 @@ import numpy as np
 from numpy.typing import NDArray
 from PIL import Image, ImageDraw
 
+from engineering_influence.infrastructure.covers.interfaces.ink_interface import InkInterface
 
-class Ink:
+
+class Ink(InkInterface):
     """Draws at `scale` times the resolution, then reduces to a float mask in [0, 1]."""
 
     def __init__(self, w: int, h: int, scale: int = 3) -> None:

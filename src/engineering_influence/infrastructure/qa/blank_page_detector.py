@@ -4,8 +4,12 @@
 import numpy as np
 from PIL import Image
 
+from engineering_influence.infrastructure.qa.interfaces.blank_page_detector_interface import (
+    BlankPageDetectorInterface,
+)
 
-class BlankPageDetector:
+
+class BlankPageDetector(BlankPageDetectorInterface):
     """A page is blank when nothing on it is darker than light gray."""
 
     def is_blank(self, image: Image.Image) -> bool:

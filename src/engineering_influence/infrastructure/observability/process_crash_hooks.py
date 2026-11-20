@@ -5,8 +5,12 @@ from typing import ClassVar
 
 from vibey_bootstrap.alerts.dispatcher import install_global_exception_hooks
 
+from engineering_influence.infrastructure.observability.interfaces.process_crash_hooks_interface import (
+    ProcessCrashHooksInterface,
+)
 
-class ProcessCrashHooks:
+
+class ProcessCrashHooks(ProcessCrashHooksInterface):
     """Install vibey_bootstrap's crash hooks exactly once.
 
     The library chains onto whatever hook was there before, so installing twice would

@@ -3,8 +3,12 @@
 
 from typing import Any
 
+from engineering_influence.infrastructure.interfaces.rabbitmq_topology_interface import (
+    RabbitMqTopologyInterface,
+)
 
-class RabbitMqTopology:
+
+class RabbitMqTopology(RabbitMqTopologyInterface):
     """A durable job queue whose rejected messages go to a dead-letter queue.
 
     Both sides declare it. Publishing to the default exchange with a routing key for a

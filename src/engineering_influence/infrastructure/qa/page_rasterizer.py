@@ -6,10 +6,13 @@ import subprocess  # nosec B404
 from pathlib import Path
 
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
+from engineering_influence.infrastructure.qa.interfaces.page_rasterizer_interface import (
+    PageRasterizerInterface,
+)
 from engineering_influence.models.qa.page_file_number import PageFileNumber
 
 
-class PageRasterizer:
+class PageRasterizer(PageRasterizerInterface):
     """Uses poppler's pdftoppm when present, otherwise MuPDF's mutool."""
 
     def command(self) -> str:

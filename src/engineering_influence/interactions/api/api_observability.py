@@ -3,6 +3,9 @@
 
 from dataclasses import dataclass
 
+from engineering_influence.interactions.api.interfaces.api_observability_interface import (
+    ApiObservabilityInterface,
+)
 from engineering_influence.interfaces.correlation_interface import CorrelationInterface
 from engineering_influence.interfaces.metrics_interface import MetricsInterface
 from engineering_influence.services.interfaces.readiness_probe_interface import (
@@ -11,7 +14,7 @@ from engineering_influence.services.interfaces.readiness_probe_interface import 
 
 
 @dataclass(frozen=True, slots=True)
-class ApiObservability:
+class ApiObservability(ApiObservabilityInterface):
     """Readiness, metrics and correlation for the REST application."""
 
     readiness: ReadinessProbeInterface

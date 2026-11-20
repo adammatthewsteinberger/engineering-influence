@@ -5,16 +5,13 @@ import json
 
 from sqlmodel import Session, SQLModel, col, create_engine, select
 
-from engineering_influence.repositories.interfaces.ledger_repository_interface import (
+from engineering_influence.interfaces.ledger_repository_interface import (
     LedgerRepositoryInterface,
-)
-from engineering_influence.repositories.interfaces.sqlmodel_ledger_interface import (
-    SqlModelLedgerInterface,
 )
 from engineering_influence.repositories.ledger_event_record import LedgerEventRecord
 
 
-class SqlModelLedger(SqlModelLedgerInterface, LedgerRepositoryInterface):
+class SqlModelLedger(LedgerRepositoryInterface):
     """Persist ledger events through SQLite or PostgreSQL SQLModel engines."""
 
     def __init__(self, database_url: str = "sqlite://") -> None:

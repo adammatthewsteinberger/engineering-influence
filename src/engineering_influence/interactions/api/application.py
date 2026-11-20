@@ -10,13 +10,16 @@ from engineering_influence.controllers.interfaces.project_controller_interface i
 )
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interactions.api.api_observability import ApiObservability
+from engineering_influence.interactions.api.interfaces.application_interface import (
+    ApiApplicationInterface,
+)
 from engineering_influence.interactions.api.prometheus_renderer import PrometheusRenderer
 
 if TYPE_CHECKING:
     from engineering_influence.interactions.api.api_guard import ApiGuard
 
 
-class ApiApplication:
+class ApiApplication(ApiApplicationInterface):
     """Builds the REST application without duplicating application logic.
 
     The guard is required: there is no way to construct an unauthenticated API.

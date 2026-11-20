@@ -5,12 +5,15 @@ from typing import Any
 
 from PIL import Image, ImageDraw
 
+from engineering_influence.infrastructure.covers.interfaces.front_typesetter_interface import (
+    FrontTypesetterInterface,
+)
 from engineering_influence.infrastructure.covers.typography import Typography
 from engineering_influence.models.covers.cover_layout import CoverLayout
 from engineering_influence.models.covers.cover_style import CoverStyle
 
 
-class FrontTypesetter:
+class FrontTypesetter(FrontTypesetterInterface):
     """Title, subtitle, and author, centred in the front safe area."""
 
     def __init__(self, typography: Typography) -> None:

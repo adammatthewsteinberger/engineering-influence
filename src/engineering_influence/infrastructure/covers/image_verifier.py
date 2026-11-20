@@ -6,10 +6,13 @@ from pathlib import Path
 
 from PIL import Image
 
+from engineering_influence.infrastructure.covers.interfaces.image_verifier_interface import (
+    ImageVerifierInterface,
+)
 from engineering_influence.models.covers.kdp_cover_spec import KdpCoverSpec as Kdp
 
 
-class ImageVerifier:
+class ImageVerifier(ImageVerifierInterface):
     """Checks a print panel against the exact KDP page size."""
 
     def run(self, path: Path, width_in: float, height_in: float, ppi: float) -> list[str]:

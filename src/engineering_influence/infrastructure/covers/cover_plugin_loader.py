@@ -7,12 +7,15 @@ from pathlib import Path
 from typing import Any
 
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
+from engineering_influence.infrastructure.covers.interfaces.cover_plugin_loader_interface import (
+    CoverPluginLoaderInterface,
+)
 from engineering_influence.infrastructure.covers.painter_registry import PainterRegistry
 from engineering_influence.interfaces.cover_plugin_interface import CoverPluginInterface
 from engineering_influence.models.covers.cover_style import CoverStyle
 
 
-class CoverPluginLoader:
+class CoverPluginLoader(CoverPluginLoaderInterface):
     """A plugin class supplies painters and per-book styles; both are merged into the engine.
 
     Entry points suit an installed package (group `engineering_influence.covers`). A project that

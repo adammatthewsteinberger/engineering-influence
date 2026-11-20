@@ -93,8 +93,9 @@ def test_interfaces_pair_with_their_class_by_name_and_location() -> None:
             assert entry["interface"] == "" and entry["kind"] == "interface", entry["old"]
             continue
         if entry["interface_style"] == "port":
-            # The class implements a top-level port that already exists; no new interface file.
-            assert entry["interface_module"].startswith("engineering_influence.interfaces."), entry
+            # The class implements an interface that already exists (a top-level port, or the
+            # interface of the service or controller it stands in for); no new interface file.
+            assert ".interfaces." in entry["interface_module"], entry
             assert (entry["interface_module"], entry["interface"]) in ports, entry["old"]
             continue
         parent, _, stem = entry["new"].rpartition(".")

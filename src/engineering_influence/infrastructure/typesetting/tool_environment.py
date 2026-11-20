@@ -4,8 +4,12 @@
 import os
 from collections.abc import Mapping
 
+from engineering_influence.infrastructure.typesetting.interfaces.tool_environment_interface import (
+    ToolEnvironmentInterface,
+)
 
-class ToolEnvironment:
+
+class ToolEnvironment(ToolEnvironmentInterface):
     """Model-written text reaches TeX, so the build tools must not inherit secrets.
 
     A copy of ``os.environ`` would hand every API key and token in the parent process to

@@ -4,10 +4,13 @@
 import numpy as np
 from PIL import Image
 
+from engineering_influence.infrastructure.covers.interfaces.text_placement_check_interface import (
+    TextPlacementCheckInterface,
+)
 from engineering_influence.models.covers.cover_layout import CoverLayout
 
 
-class TextPlacementCheck:
+class TextPlacementCheck(TextPlacementCheckInterface):
     """Checks the transparent text layer against the layout."""
 
     def run(self, layer: Image.Image, L: CoverLayout) -> list[str]:

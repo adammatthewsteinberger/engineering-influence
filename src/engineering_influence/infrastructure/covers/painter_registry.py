@@ -2,10 +2,13 @@
 """Named cover painters."""
 
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
+from engineering_influence.infrastructure.covers.interfaces.painter_registry_interface import (
+    PainterRegistryInterface,
+)
 from engineering_influence.interfaces.cover_painter_interface import CoverPainterInterface
 
 
-class PainterRegistry:
+class PainterRegistry(PainterRegistryInterface):
     """Maps the painter name in a style to the painter that draws it."""
 
     def __init__(self) -> None:
