@@ -21,6 +21,7 @@ def load(module: str, name: str) -> Any:
 
 def test_the_map_lists_the_enums_this_test_covers() -> None:
     assert {e["new_name"] for e in ENUMS} == {
+        "BookKind",
         "GateKind",
         "JobOutcome",
         "PhaseState",
