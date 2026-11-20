@@ -5,8 +5,10 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from engineering_influence.contracts.interfaces.job_message_interface import JobMessageInterface
 
-class JobMessage(BaseModel):
+
+class JobMessage(JobMessageInterface, BaseModel):
     """The broker message body: an id, a kind such as ``pipeline.thesis``, and a payload."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")

@@ -3,9 +3,11 @@
 
 from dataclasses import dataclass
 
+from engineering_influence.models.publishing.interfaces.entry_interface import EntryInterface
+
 
 @dataclass
-class Entry:
+class Entry(EntryInterface):
     """A front-matter, chapter, or back-matter file as printed."""
 
     kind: str

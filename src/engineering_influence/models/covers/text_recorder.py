@@ -1,8 +1,12 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Records the size of every run of text a render draws."""
 
+from engineering_influence.models.covers.interfaces.text_recorder_interface import (
+    TextRecorderInterface,
+)
 
-class TextRecorder:
+
+class TextRecorder(TextRecorderInterface):
     """Per-render state that replaces a module-level list, so renders never share it."""
 
     def __init__(self) -> None:

@@ -3,8 +3,12 @@
 
 import re
 
+from engineering_influence.models.epub.interfaces.xhtml_patterns_interface import (
+    XhtmlPatternsInterface,
+)
 
-class XhtmlPatterns:
+
+class XhtmlPatterns(XhtmlPatternsInterface):
     """Headings, ids, and the empty blocks TeX4ht leaves behind."""
 
     HEADING = re.compile(r"<h([1-6])\b([^>]*)>(.*?)</h\1>", re.DOTALL)

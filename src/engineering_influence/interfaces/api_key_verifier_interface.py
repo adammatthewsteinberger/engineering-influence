@@ -7,6 +7,8 @@ from abc import ABC, abstractmethod
 class ApiKeyVerifierInterface(ABC):
     """Decide whether a presented API key is valid."""
 
+    __slots__ = ()
+
     @abstractmethod
     def verify(self, presented: str | None) -> bool:
         """Return True only for a configured key; missing input is never valid."""

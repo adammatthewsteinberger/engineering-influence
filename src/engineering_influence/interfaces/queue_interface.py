@@ -7,6 +7,8 @@ from abc import ABC, abstractmethod
 class QueueInterface(ABC):
     """Queue boundary used by services and implemented by infrastructure."""
 
+    __slots__ = ()
+
     @abstractmethod
     def enqueue(self, kind: str, payload: dict[str, object]) -> str:
         """Enqueue one idempotent job and return its identifier."""

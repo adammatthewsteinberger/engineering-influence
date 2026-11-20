@@ -5,10 +5,13 @@ import math
 from dataclasses import dataclass
 
 from engineering_influence.models.covers.box import Box
+from engineering_influence.models.covers.interfaces.cover_layout_interface import (
+    CoverLayoutInterface,
+)
 
 
 @dataclass
-class CoverLayout:
+class CoverLayout(CoverLayoutInterface):
     """Everything in inches except ppi; kind is "ebook", "paperback", or "hardcover"."""
 
     kind: str

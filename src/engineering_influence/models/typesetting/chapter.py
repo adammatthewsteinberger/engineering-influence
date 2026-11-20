@@ -4,9 +4,11 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+from engineering_influence.models.typesetting.interfaces.chapter_interface import ChapterInterface
+
 
 @dataclass
-class Chapter:
+class Chapter(ChapterInterface):
     """A manuscript file with its parsed title, body, and optional epigraph."""
 
     path: Path

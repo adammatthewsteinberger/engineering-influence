@@ -3,8 +3,12 @@
 
 from pydantic import BaseModel, ConfigDict
 
+from engineering_influence.contracts.interfaces.security_verdict_interface import (
+    SecurityVerdictInterface,
+)
 
-class SecurityVerdict(BaseModel):
+
+class SecurityVerdict(SecurityVerdictInterface, BaseModel):
     """Accepted, or rejected with a short stable reason code."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")

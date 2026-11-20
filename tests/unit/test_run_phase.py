@@ -4,7 +4,7 @@ import asyncio
 
 import pytest
 
-from engineering_influence.interfaces.gate_interface import GateInterface
+from engineering_influence.interfaces.gate_evaluator_interface import GateEvaluatorInterface
 from engineering_influence.interfaces.runner_interface import RunnerInterface
 from engineering_influence.models.gate import Gate
 from engineering_influence.models.gate_kind import GateKind
@@ -20,7 +20,7 @@ class RunnerFake(RunnerInterface):
         return f"{phase}:{context['project_slug']}"
 
 
-class GateFake(GateInterface):
+class GateFake(GateEvaluatorInterface):
     """Returns a configured automatic-gate decision."""
 
     def __init__(self, accepted: bool) -> None:

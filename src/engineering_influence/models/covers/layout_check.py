@@ -2,10 +2,13 @@
 """A layout's safe areas and barcode box against KDP's published minimums."""
 
 from engineering_influence.models.covers.cover_layout import CoverLayout
+from engineering_influence.models.covers.interfaces.layout_check_interface import (
+    LayoutCheckInterface,
+)
 from engineering_influence.models.covers.kdp_cover_spec import KdpCoverSpec as Kdp
 
 
-class LayoutCheck:
+class LayoutCheck(LayoutCheckInterface):
     """Reports each rule a layout breaks."""
 
     def run(self, layout: CoverLayout) -> list[str]:

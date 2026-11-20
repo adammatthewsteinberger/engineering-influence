@@ -4,9 +4,13 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+from engineering_influence.models.epub.interfaces.epub_contents_interface import (
+    EpubContentsInterface,
+)
+
 
 @dataclass
-class EpubContents:
+class EpubContents(EpubContentsInterface):
     """Everything the verification checks read, loaded once."""
 
     path: Path

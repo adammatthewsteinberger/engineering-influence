@@ -3,9 +3,13 @@
 
 from dataclasses import dataclass
 
+from engineering_influence.models.interfaces.governing_postulates_interface import (
+    GoverningPostulatesInterface,
+)
+
 
 @dataclass(frozen=True, slots=True)
-class GoverningPostulates:
+class GoverningPostulates(GoverningPostulatesInterface):
     """The project-specific principles required before Phase 1."""
 
     statements: tuple[str, ...]

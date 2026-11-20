@@ -6,9 +6,11 @@ import secrets
 from dataclasses import dataclass
 from typing import ClassVar
 
+from engineering_influence.models.interfaces.trace_context_interface import TraceContextInterface
+
 
 @dataclass(frozen=True, slots=True)
-class TraceContext:
+class TraceContext(TraceContextInterface):
     """A W3C ``traceparent`` identity: one trace, one span."""
 
     trace_id: str

@@ -3,8 +3,12 @@
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from engineering_influence.contracts.interfaces.project_request_interface import (
+    ProjectRequestInterface,
+)
 
-class ProjectRequest(BaseModel):
+
+class ProjectRequest(ProjectRequestInterface, BaseModel):
     """Validated project data accepted by an interaction."""
 
     model_config = ConfigDict(extra="forbid")

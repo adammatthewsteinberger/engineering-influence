@@ -7,6 +7,8 @@ from abc import ABC, abstractmethod
 class LedgerInterface(ABC):
     """Append-only persistence required by the application layer."""
 
+    __slots__ = ()
+
     @abstractmethod
     def append(self, event_name: str, payload: dict[str, object]) -> None:
         """Append one event without mutating prior events."""

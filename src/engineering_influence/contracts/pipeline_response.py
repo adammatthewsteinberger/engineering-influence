@@ -3,8 +3,12 @@
 
 from pydantic import BaseModel, ConfigDict
 
+from engineering_influence.contracts.interfaces.pipeline_response_interface import (
+    PipelineResponseInterface,
+)
 
-class PipelineResponse(BaseModel):
+
+class PipelineResponse(PipelineResponseInterface, BaseModel):
     """Stable response shared by API, MCP, CLI, and SDK adapters."""
 
     model_config = ConfigDict(extra="forbid")

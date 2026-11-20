@@ -4,12 +4,13 @@
 from dataclasses import dataclass, field
 
 from engineering_influence.models.governing_postulates import GoverningPostulates
+from engineering_influence.models.interfaces.project_interface import ProjectInterface
 from engineering_influence.models.limits_on_means import LimitsOnMeans
 from engineering_influence.models.pipeline_stage import PipelineStage
 
 
 @dataclass(frozen=True, slots=True)
-class Project:
+class Project(ProjectInterface):
     """A project with neutral governing postulates and fixed means limits."""
 
     slug: str

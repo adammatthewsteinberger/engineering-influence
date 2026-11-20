@@ -8,6 +8,8 @@ from pathlib import Path
 class PathGuardInterface(ABC):
     """Keep caller-supplied names and paths inside a directory they may not leave."""
 
+    __slots__ = ()
+
     @abstractmethod
     def confine(self, raw: str | Path, root: Path) -> Path:
         """Return the resolved path or raise an ApplicationError when it escapes root."""

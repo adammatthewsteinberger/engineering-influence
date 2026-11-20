@@ -3,8 +3,12 @@
 
 from pathlib import Path
 
+from engineering_influence.models.publishing.interfaces.path_relativizer_interface import (
+    PathRelativizerInterface,
+)
 
-class PathRelativizer:
+
+class PathRelativizer(PathRelativizerInterface):
     """Reports stable root-relative paths, falling back to the absolute path."""
 
     def __init__(self, root: Path) -> None:

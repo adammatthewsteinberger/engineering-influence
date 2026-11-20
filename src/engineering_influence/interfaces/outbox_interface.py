@@ -7,6 +7,8 @@ from abc import ABC, abstractmethod
 class OutboxInterface(ABC):
     """Store delivery intents until their recipient acknowledges them."""
 
+    __slots__ = ()
+
     @abstractmethod
     def enqueue(
         self,

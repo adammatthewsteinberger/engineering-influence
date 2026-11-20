@@ -7,6 +7,8 @@ from abc import ABC, abstractmethod
 class RunnerInterface(ABC):
     """Execute one phase with an already-loaded runner or skill."""
 
+    __slots__ = ()
+
     @abstractmethod
     async def run(self, phase: str, context: dict[str, object]) -> str:
         """Return the phase artifact content."""

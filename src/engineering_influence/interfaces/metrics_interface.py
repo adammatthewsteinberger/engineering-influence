@@ -7,6 +7,8 @@ from abc import ABC, abstractmethod
 class MetricsInterface(ABC):
     """Count events and expose what has been measured."""
 
+    __slots__ = ()
+
     @abstractmethod
     def increment(self, name: str, amount: int = 1) -> None:
         """Add to a named counter."""
