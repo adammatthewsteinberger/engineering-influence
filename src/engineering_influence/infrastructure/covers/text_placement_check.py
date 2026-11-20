@@ -4,7 +4,7 @@
 import numpy as np
 from PIL import Image
 
-from engineering_influence.publishing.covers.cover_layout import CoverLayout
+from engineering_influence.models.covers.cover_layout import CoverLayout
 
 
 class TextPlacementCheck:

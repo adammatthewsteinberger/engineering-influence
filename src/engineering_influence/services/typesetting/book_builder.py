@@ -2,7 +2,6 @@
 """Builds one book: Markdown manuscripts to LaTeX to PDF."""
 
 import datetime as dt
-import re
 from pathlib import Path
 
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
@@ -12,13 +11,14 @@ from engineering_influence.interfaces.latex_compiler_interface import LatexCompi
 from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
 from engineering_influence.interfaces.package_assets_interface import PackageAssetsInterface
 from engineering_influence.models.publishing.project_layout import ProjectLayout
+from engineering_influence.models.typesetting.book_slug import BookSlug
 from engineering_influence.services.typesetting.print_document import PrintDocument
 
 
 class BookBuilder:
     """Writes the .tex source, compiles it, and copies the PDF to the output directory."""
 
-    SLUG = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]*")
+    SLUG = BookSlug.PATTERN
 
     def __init__(
         self,

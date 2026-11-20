@@ -21,6 +21,7 @@ from engineering_influence.infrastructure.typesetting.filesystem_build_workspace
 from engineering_influence.infrastructure.typesetting.latex_compiler import LatexCompiler
 from engineering_influence.models.publishing.project_config import ProjectConfig
 from engineering_influence.repositories.typesetting.book_loader import BookLoader
+from engineering_influence.runtime.cover_builder_provider import CoverBuilderProvider
 from engineering_influence.runtime.interfaces.publishing_controller_factory_interface import (
     PublishingControllerFactoryInterface,
 )
@@ -63,4 +64,5 @@ class PublishingControllerFactory(PublishingControllerFactoryInterface):
             LatexCompiler(),
             epub,
             epub_verifier,
+            CoverBuilderProvider(config),
         )

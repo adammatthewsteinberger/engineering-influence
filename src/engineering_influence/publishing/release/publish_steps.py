@@ -8,11 +8,11 @@ from engineering_influence.errors.typesetting.book_build_error import BookBuildE
 from engineering_influence.infrastructure.epub.epub_archive import EpubArchive
 from engineering_influence.infrastructure.epub.epub_cover_inspector import EpubCoverInspector
 from engineering_influence.infrastructure.epub.epubcheck_runner import EpubcheckRunner
+from engineering_influence.interfaces.cover_builder_interface import CoverBuilderInterface
 from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
 from engineering_influence.interfaces.pdf_inspector_interface import PdfInspectorInterface
 from engineering_influence.models.publishing.path_relativizer import PathRelativizer
 from engineering_influence.models.publishing.project_layout import ProjectLayout
-from engineering_influence.publishing.covers.cover_builder import CoverBuilder
 from engineering_influence.repositories.typesetting.book_loader import BookLoader
 from engineering_influence.services.epub.epub_builder import EpubBuilder
 from engineering_influence.services.epub.epub_verifier import EpubVerifier
@@ -32,7 +32,7 @@ class PublishSteps:
         self,
         layout: ProjectLayout,
         builder: BookBuilder,
-        covers: CoverBuilder,
+        covers: CoverBuilderInterface,
         epub: EpubBuilder,
         files: ManuscriptSourceInterface,
         pdfs: PdfInspectorInterface,

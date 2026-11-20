@@ -7,17 +7,16 @@ from typing import Any
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 from engineering_influence.interfaces.book_loader_interface import BookLoaderInterface
 from engineering_influence.interfaces.build_workspace_interface import BuildWorkspaceInterface
+from engineering_influence.interfaces.cover_builder_interface import CoverBuilderInterface
+from engineering_influence.interfaces.cover_builder_provider_interface import (
+    CoverBuilderProviderInterface,
+)
 from engineering_influence.interfaces.latex_compiler_interface import LatexCompilerInterface
 from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
 from engineering_influence.interfaces.package_assets_interface import PackageAssetsInterface
 from engineering_influence.interfaces.pdf_inspector_interface import PdfInspectorInterface
 from engineering_influence.models.publishing.project_config import ProjectConfig
 from engineering_influence.models.publishing.project_layout import ProjectLayout
-from engineering_influence.publishing.covers.cover_builder import CoverBuilder
-from engineering_influence.publishing.covers.cover_plugin_loader import CoverPluginLoader
-from engineering_influence.publishing.covers.cover_style import CoverStyle
-from engineering_influence.publishing.covers.gradient_painter import GradientPainter
-from engineering_influence.publishing.covers.painter_registry import PainterRegistry
 from engineering_influence.publishing.qa.render_qa import RenderQa
 from engineering_influence.publishing.release.publish_pipeline import PublishPipeline
 from engineering_influence.publishing.release.publish_steps import PublishSteps
@@ -49,6 +48,7 @@ class PublishingController:
         latex: LatexCompilerInterface,
         epub: EpubBuilder,
         epub_verifier: EpubVerifier,
+        covers: CoverBuilderProviderInterface,
         qa: RenderQa | None = None,
     ) -> None:
         self._config = config
@@ -61,6 +61,7 @@ class PublishingController:
         self._latex = latex
         self._epub = epub
         self._epub_verifier = epub_verifier
+        self._covers = covers
         self._qa = qa or RenderQa(config.root)
 
     @property
@@ -158,19 +159,8 @@ class PublishingController:
         """Every book the project configures."""
         return sorted(path.stem for path in self._layout.books.glob("*.toml"))
 
-    def _cover_builder(self) -> CoverBuilder:
-        registry = PainterRegistry()
-        registry.register("gradient", GradientPainter())
-        loader = CoverPluginLoader()
-        self._config.activate()
-        styles: dict[str, CoverStyle] = loader.load(registry, self._config.root)
-        if self._config.cover_plugin:
-            styles.update(
-                loader.load_reference(self._config.cover_plugin, registry, self._config.root)
-            )
-        return CoverBuilder(
-            self._layout, registry=registry, styles=styles, font_dirs=self._config.font_dirs()
-        )
+    def _cover_builder(self) -> CoverBuilderInterface:
+        return self._covers.provide()
 
     def _book_config(self, slug: str) -> Path:
         path = self._layout.books / f"{slug}.toml"
