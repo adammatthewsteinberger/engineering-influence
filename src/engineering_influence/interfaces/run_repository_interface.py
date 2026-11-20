@@ -20,6 +20,14 @@ class RunRepositoryInterface(ABC):
         """Store the run, replacing any earlier state saved under the same id."""
 
     @abstractmethod
+    def swap(self, expected: BookRun, replacement: BookRun) -> bool:
+        """Store ``replacement`` only if the stored run is still exactly ``expected``.
+
+        Returns False, changing nothing, when another worker changed the run first or the run
+        was never saved. This is how two deliveries of one stage avoid overwriting each other.
+        """
+
+    @abstractmethod
     def get(self, run_id: str) -> BookRun | None:
         """The last saved state of a run, or None if it was never saved."""
 

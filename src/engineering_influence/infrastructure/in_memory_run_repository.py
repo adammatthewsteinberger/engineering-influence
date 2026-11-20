@@ -14,6 +14,14 @@ class InMemoryRunRepository(RunRepositoryInterface):
     def save(self, run: BookRun) -> None:
         self._runs[run.run_id] = run
 
+    def swap(self, expected: BookRun, replacement: BookRun) -> bool:
+        if replacement.run_id != expected.run_id:
+            raise ValueError("a swap cannot change the run id")
+        if self._runs.get(expected.run_id) != expected:
+            return False
+        self._runs[replacement.run_id] = replacement
+        return True
+
     def get(self, run_id: str) -> BookRun | None:
         return self._runs.get(run_id)
 

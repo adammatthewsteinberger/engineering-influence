@@ -24,7 +24,7 @@ class Budget(BudgetInterface):
         if min(self.cap, self.spent, self.reserved) < 0:
             raise ValueError("budget amounts cannot be negative")
         if self.spent + self.reserved > self.cap:
-            raise ValueError("spent and reserved cannot exceed the cap")
+            raise BudgetExceededError("spent and reserved cannot exceed the cap")
 
     def remaining(self) -> int:
         """Micro-dollars still free to reserve."""

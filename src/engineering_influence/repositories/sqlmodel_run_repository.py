@@ -3,7 +3,7 @@
 
 from datetime import UTC, datetime
 
-from sqlmodel import Session, col, create_engine, select
+from sqlmodel import Session, col, create_engine, select, update
 
 from engineering_influence.interfaces.run_repository_interface import RunRepositoryInterface
 from engineering_influence.models.book_run import BookRun
@@ -32,6 +32,24 @@ class SqlModelRunRepository(RunRepositoryInterface):
             record.updated_at = datetime.now(UTC)
             session.add(record)
             session.commit()
+
+    def swap(self, expected: BookRun, replacement: BookRun) -> bool:
+        if replacement.run_id != expected.run_id:
+            raise ValueError("a swap cannot change the run id")
+        with Session(self._engine) as session:
+            result = session.exec(
+                update(BookRunRecord)
+                .where(col(BookRunRecord.run_id) == expected.run_id)
+                .where(col(BookRunRecord.document_json) == self._codec.encode(expected))
+                .values(
+                    status=replacement.status.value,
+                    stage=replacement.stage,
+                    document_json=self._codec.encode(replacement),
+                    updated_at=datetime.now(UTC),
+                )
+            )
+            session.commit()
+            return bool(result.rowcount == 1)
 
     def get(self, run_id: str) -> BookRun | None:
         with Session(self._engine) as session:

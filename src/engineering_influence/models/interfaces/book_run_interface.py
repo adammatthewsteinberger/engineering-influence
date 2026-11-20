@@ -18,6 +18,10 @@ class BookRunInterface(ABC):
     __slots__ = ()
 
     @abstractmethod
+    def start(self) -> BookRun:
+        """Mark a pending run as running, before its first stage begins."""
+
+    @abstractmethod
     def advance(self) -> BookRun:
         """Move to the next stage, or complete the run after the last one."""
 

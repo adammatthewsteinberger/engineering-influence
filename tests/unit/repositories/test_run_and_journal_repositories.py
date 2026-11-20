@@ -92,6 +92,37 @@ def test_saving_again_replaces_the_earlier_state(runs: RunRepositoryInterface) -
     assert runs.run_ids() == ["run-1"]
 
 
+def test_a_swap_stores_the_replacement_when_the_run_is_unchanged(
+    runs: RunRepositoryInterface,
+) -> None:
+    runs.save(make_run())
+    moved = make_run().advance()
+    assert runs.swap(make_run(), moved) is True
+    assert runs.get("run-1") == moved
+
+
+def test_a_swap_changes_nothing_when_another_worker_got_there_first(
+    runs: RunRepositoryInterface,
+) -> None:
+    runs.save(make_run())
+    rival = make_run().advance()
+    runs.save(rival)
+    assert runs.swap(make_run(), make_run().advance().advance()) is False
+    assert runs.get("run-1") == rival
+
+
+def test_a_swap_on_a_run_that_was_never_saved_changes_nothing(runs: RunRepositoryInterface) -> None:
+    assert runs.swap(make_run(), make_run().advance()) is False
+    assert runs.get("run-1") is None
+
+
+def test_a_swap_cannot_move_a_run_to_another_id(runs: RunRepositoryInterface) -> None:
+    runs.save(make_run())
+    with pytest.raises(ValueError, match="cannot change the run id"):
+        runs.swap(make_run(), make_run("run-2"))
+    assert runs.run_ids() == ["run-1"]
+
+
 def test_runs_are_listed_in_sorted_order(runs: RunRepositoryInterface) -> None:
     for run_id in ("run-b", "run-a", "run-c"):
         runs.save(make_run(run_id))

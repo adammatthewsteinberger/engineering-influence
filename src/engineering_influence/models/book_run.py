@@ -39,6 +39,12 @@ class BookRun(BookRunInterface):
         elif self.stage not in self.plan.stages:
             raise ValueError(f"{self.stage!r} is not a stage of this plan")
 
+    def start(self) -> "BookRun":
+        """Mark a pending run as running, before its first stage begins."""
+        if self.status is not RunStatus.PENDING:
+            raise ValueError("only a pending run can start")
+        return replace(self, status=RunStatus.RUNNING)
+
     def advance(self) -> "BookRun":
         """Move to the next stage, or complete the run after the last one."""
         self._require_unfinished()
