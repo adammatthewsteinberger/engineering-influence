@@ -215,3 +215,16 @@ def test_a_run_collects_issues_and_knows_whether_one_blocks() -> None:
     assert (noted.issues, noted.has_blocking_issue()) == ((minor,), False)
     blocked = noted.with_issue(blocker)
     assert (blocked.issues, blocked.has_blocking_issue()) == ((minor, blocker), True)
+
+
+def test_a_pending_run_starts() -> None:
+    started = run().start()
+    assert (started.status, started.stage) == (RunStatus.RUNNING, "brief")
+
+
+@pytest.mark.parametrize(
+    "status", [RunStatus.RUNNING, RunStatus.PARKED_CAPACITY, RunStatus.COMPLETED, RunStatus.FAILED]
+)
+def test_only_a_pending_run_can_start(status: RunStatus) -> None:
+    with pytest.raises(ValueError, match="only a pending run can start"):
+        run(status=status).start()
