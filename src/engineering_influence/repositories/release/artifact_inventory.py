@@ -4,12 +4,13 @@
 from pathlib import Path
 from typing import Any
 
+from engineering_influence.interfaces.artifact_inventory_interface import ArtifactInventoryInterface
 from engineering_influence.models.publishing.path_relativizer import PathRelativizer
 from engineering_influence.models.publishing.project_layout import ProjectLayout
-from engineering_influence.publishing.release.file_digest import FileDigest
+from engineering_influence.repositories.release.file_digest import FileDigest
 
 
-class ArtifactInventory:
+class ArtifactInventory(ArtifactInventoryInterface):
     """Lists required artifacts and reports the ones that are missing."""
 
     def __init__(self, layout: ProjectLayout) -> None:

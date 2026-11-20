@@ -4,8 +4,10 @@
 import zipfile
 from pathlib import Path
 
+from engineering_influence.interfaces.epub_zip_check_interface import EpubZipCheckInterface
 
-class EpubZipCheck:
+
+class EpubZipCheck(EpubZipCheckInterface):
     """Structural checks that do not need to parse any content."""
 
     def run(self, path: Path) -> list[str]:

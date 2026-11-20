@@ -15,11 +15,12 @@ from engineering_influence.interfaces.latex_compiler_interface import LatexCompi
 from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
 from engineering_influence.interfaces.package_assets_interface import PackageAssetsInterface
 from engineering_influence.interfaces.pdf_inspector_interface import PdfInspectorInterface
+from engineering_influence.interfaces.publish_pipeline_provider_interface import (
+    PublishPipelineProviderInterface,
+)
+from engineering_influence.interfaces.render_qa_interface import RenderQaInterface
 from engineering_influence.models.publishing.project_config import ProjectConfig
 from engineering_influence.models.publishing.project_layout import ProjectLayout
-from engineering_influence.publishing.qa.render_qa import RenderQa
-from engineering_influence.publishing.release.publish_pipeline import PublishPipeline
-from engineering_influence.publishing.release.publish_steps import PublishSteps
 from engineering_influence.services.epub.epub_builder import EpubBuilder
 from engineering_influence.services.epub.epub_verifier import EpubVerifier
 from engineering_influence.services.publishing.audit_report_text import AuditReportText
@@ -49,7 +50,8 @@ class PublishingController:
         epub: EpubBuilder,
         epub_verifier: EpubVerifier,
         covers: CoverBuilderProviderInterface,
-        qa: RenderQa | None = None,
+        qa: RenderQaInterface,
+        publisher: PublishPipelineProviderInterface,
     ) -> None:
         self._config = config
         self._files = files
@@ -62,7 +64,8 @@ class PublishingController:
         self._epub = epub
         self._epub_verifier = epub_verifier
         self._covers = covers
-        self._qa = qa or RenderQa(config.root)
+        self._qa = qa
+        self._publisher = publisher
 
     @property
     def layout(self) -> ProjectLayout:
@@ -137,15 +140,7 @@ class PublishingController:
         strict_release: bool = False,
     ) -> tuple[dict[str, Any], bool]:
         """Run the complete acceptance pipeline for one book."""
-        steps = PublishSteps(
-            self._layout,
-            self._book_builder(),
-            self._cover_builder(),
-            self._epub,
-            self._files,
-            self._pdfs,
-        )
-        pipeline = PublishPipeline(self._layout, steps, self._files, self._pdfs, qa=self._qa)
+        pipeline = self._publisher.provide()
         return pipeline.publish(
             slug,
             dpi=dpi,

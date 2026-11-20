@@ -18,10 +18,12 @@ interfaces/   ports: Ledger, Queue, Runner, Gate, Outbox, WebhookDelivery, Secre
 repositories/ SQLModel ledger and outbox (Postgres)
 infrastructure/ RabbitMQ queue and consumer, in-memory adapters, security, observability, vibey adapters
 runtime/      composition roots (CLI, API, worker), settings loader, entry points
-publishing/   the book toolchain behind `ei book` (optional `publishing` extra); being split into the
-              layers above: the audit and check classes live in `<layer>/publishing/`, the typesetting
-              classes in `<layer>/typesetting/`, the EPUB classes in `<layer>/epub/` and the cover
-              classes in `<layer>/covers/`
+publishing/   the book toolchain behind `ei book` (optional `publishing` extra) now lives in the layers
+              above: audit and check classes in `<layer>/publishing/`, typesetting in
+              `<layer>/typesetting/`, EPUB in `<layer>/epub/`, covers in `<layer>/covers/`, page QA in
+              `<layer>/qa/` and release evidence in `<layer>/release/`. The bundled LaTeX classes and
+              fonts are in `infrastructure/publishing/assets/`. Only deprecation shims stay in
+              `publishing/`.
 covers/       the public cover-plugin API (`engineering_influence.covers`); a facade over classes that
               live in the layers, so a private project's imports survive moves
 ```

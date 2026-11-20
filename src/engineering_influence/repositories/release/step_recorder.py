@@ -2,29 +2,26 @@
 """Runs one pipeline step and records the evidence for it."""
 
 from collections.abc import Callable
-from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from engineering_influence.interfaces.clock_interface import ClockInterface
+from engineering_influence.interfaces.step_recorder_interface import StepRecorderInterface
 from engineering_influence.models.publishing.path_relativizer import PathRelativizer
 
 
-class StepRecorder:
+class StepRecorder(StepRecorderInterface):
     """A step passes when it returns and fails when it raises; either way it is logged."""
 
-    def __init__(
-        self,
-        relativizer: PathRelativizer,
-        clock: Callable[[], datetime] | None = None,
-    ) -> None:
+    def __init__(self, relativizer: PathRelativizer, clock: ClockInterface) -> None:
         self._relativizer = relativizer
-        self._clock = clock or (lambda: datetime.now(UTC))
+        self._clock = clock
 
     def run(
         self, name: str, command: list[str], action: Callable[[], str], log_path: Path
     ) -> dict[str, Any]:
         """Run the action, write its output (or error) to log_path, and return the record."""
-        started = self._clock()
+        started = self._clock.now()
         failed = False
         try:
             output = action()
@@ -37,7 +34,7 @@ class StepRecorder:
             "status": "fail" if failed else "pass",
             "returncode": 1 if failed else 0,
             "started_at": started.isoformat(),
-            "finished_at": self._clock().isoformat(),
+            "finished_at": self._clock.now().isoformat(),
             "log": self._relativizer.relative(log_path),
             "stdout_tail": output[-4000:],
         }

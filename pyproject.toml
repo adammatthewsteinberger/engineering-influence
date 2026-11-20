@@ -144,10 +144,6 @@ layers = [
   "models",
   "errors",
 ]
-# Temporary: PublishingController still imports the legacy publishing/ modules, which now reach
-# infrastructure. The ratchet (imports_that_cross_the_layer_matrix) counts these edges; delete this
-# line when the publishing split (R3-R7) rewires the controller.
-ignore_imports = ["engineering_influence.controllers.publishing_controller -> engineering_influence.publishing.**"]
 
 [[tool.importlinter.contracts]]
 name = "Models depend on nothing else"
@@ -168,10 +164,6 @@ forbidden_modules = [
   "engineering_influence.infrastructure", "engineering_influence.repositories",
   "engineering_influence.interactions", "engineering_influence.runtime",
 ]
-# Temporary: PublishingController still imports the legacy publishing/ modules, which now reach
-# infrastructure. The ratchet (imports_that_cross_the_layer_matrix) counts these edges; delete this
-# line when the publishing split (R3-R7) rewires the controller.
-ignore_imports = ["engineering_influence.controllers.publishing_controller -> engineering_influence.publishing.**"]
 
 [[tool.mypy.overrides]]
 module = ["pdfplumber", "pdfplumber.*", "reportlab.*", "defusedxml", "defusedxml.*"]

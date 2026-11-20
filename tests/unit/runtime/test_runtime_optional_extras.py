@@ -70,7 +70,8 @@ def test_a_book_command_without_the_extra_explains_how_to_install_it() -> None:
 
     assert result.returncode == 1
     assert "pip install 'engineering-influence[publishing]'" in result.stderr
-    assert "PIL" in result.stderr
+    # It names the first missing library of the extra; which one that is depends on import order.
+    assert any(f"({name} is missing)" in result.stderr for name in BLOCKED)
     assert "Traceback" not in result.stderr
 
 

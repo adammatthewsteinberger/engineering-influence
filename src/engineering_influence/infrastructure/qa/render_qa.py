@@ -6,16 +6,17 @@ from pathlib import Path
 from PIL import Image
 from pypdf import PdfReader
 
+from engineering_influence.infrastructure.qa.blank_page_detector import BlankPageDetector
+from engineering_influence.infrastructure.qa.contact_sheet_builder import ContactSheetBuilder
+from engineering_influence.infrastructure.qa.page_rasterizer import PageRasterizer
+from engineering_influence.interfaces.render_qa_interface import RenderQaInterface
 from engineering_influence.models.publishing.path_relativizer import PathRelativizer
-from engineering_influence.publishing.qa.blank_page_detector import BlankPageDetector
-from engineering_influence.publishing.qa.contact_sheet_builder import ContactSheetBuilder
-from engineering_influence.publishing.qa.page_file_number import PageFileNumber
-from engineering_influence.publishing.qa.page_rasterizer import PageRasterizer
-from engineering_influence.publishing.qa.page_record import PageRecord
-from engineering_influence.publishing.qa.render_report import RenderReport
+from engineering_influence.models.qa.page_file_number import PageFileNumber
+from engineering_influence.models.qa.page_record import PageRecord
+from engineering_influence.models.qa.render_report import RenderReport
 
 
-class RenderQa:
+class RenderQa(RenderQaInterface):
     """Replaces the manual part of visual review: rendering every page, keeping page numbers
     aligned with images, and assembling a reviewable set. It does not replace a human reading
     the contact sheets."""

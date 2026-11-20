@@ -5,8 +5,10 @@ import json
 from pathlib import Path
 from typing import Any
 
+from engineering_influence.interfaces.json_report_interface import JsonReportInterface
 
-class JsonReport:
+
+class JsonReport(JsonReportInterface):
     """One format for every report the pipeline leaves behind."""
 
     def write(self, path: Path, data: dict[str, Any], *, ensure_ascii: bool = False) -> None:

@@ -17,7 +17,7 @@ pytestmark = pytest.mark.distribution
 
 ROOT = Path(__file__).resolve().parents[2]
 VERSION = engineering_influence.__version__
-ASSETS = "engineering_influence/publishing/assets/"
+ASSETS = "engineering_influence/infrastructure/publishing/assets/"
 
 
 def run(
@@ -197,7 +197,7 @@ def test_the_publishing_extra_makes_the_book_commands_and_assets_available(
         clean_env / "bin" / "python",
         "-c",
         "from importlib.resources import files;"
-        "root = files('engineering_influence.publishing') / 'assets';"
+        "root = files('engineering_influence.infrastructure.publishing') / 'assets';"
         "print((root / 'fine-book.cls').is_file(), (root / 'fonts' / 'EBGaramond-Regular.otf').is_file())",
     )
 

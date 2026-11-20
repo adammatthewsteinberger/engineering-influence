@@ -32,6 +32,10 @@ class FilesystemBuildWorkspace(BuildWorkspaceInterface):
         """Create the directory if it does not exist; its parent must."""
         path.mkdir(exist_ok=True)
 
+    def ensure_tree(self, path: Path) -> None:
+        """Create the directory and any missing parents; it may already exist."""
+        path.mkdir(parents=True, exist_ok=True)
+
     def write_text(self, path: Path, text: str) -> None:
         """Write UTF-8 text."""
         path.write_text(text, encoding="utf-8")

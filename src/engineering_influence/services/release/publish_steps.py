@@ -5,17 +5,14 @@ from collections.abc import Callable
 from pathlib import Path
 
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
-from engineering_influence.infrastructure.epub.epub_archive import EpubArchive
-from engineering_influence.infrastructure.epub.epub_cover_inspector import EpubCoverInspector
-from engineering_influence.infrastructure.epub.epubcheck_runner import EpubcheckRunner
+from engineering_influence.interfaces.book_loader_interface import BookLoaderInterface
 from engineering_influence.interfaces.cover_builder_interface import CoverBuilderInterface
+from engineering_influence.interfaces.epub_verifier_interface import EpubVerifierInterface
 from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
 from engineering_influence.interfaces.pdf_inspector_interface import PdfInspectorInterface
 from engineering_influence.models.publishing.path_relativizer import PathRelativizer
 from engineering_influence.models.publishing.project_layout import ProjectLayout
-from engineering_influence.repositories.typesetting.book_loader import BookLoader
 from engineering_influence.services.epub.epub_builder import EpubBuilder
-from engineering_influence.services.epub.epub_verifier import EpubVerifier
 from engineering_influence.services.publishing.pdf_verifier import PdfVerifier
 from engineering_influence.services.typesetting.book_builder import BookBuilder
 
@@ -36,6 +33,9 @@ class PublishSteps:
         epub: EpubBuilder,
         files: ManuscriptSourceInterface,
         pdfs: PdfInspectorInterface,
+        loader: BookLoaderInterface,
+        verifier: EpubVerifierInterface,
+        strict_verifier: EpubVerifierInterface,
     ) -> None:
         self._layout = layout
         self._files = files
@@ -43,6 +43,9 @@ class PublishSteps:
         self._builder = builder
         self._covers = covers
         self._epub = epub
+        self._loader = loader
+        self._verifier = verifier
+        self._strict_verifier = strict_verifier
         self._relativizer = PathRelativizer(layout.root)
 
     def plan(self, slug: str, *, hardcover: bool, strict: bool = False) -> list[Step]:
@@ -80,10 +83,8 @@ class PublishSteps:
     def epub(self, slug: str, *, strict: bool = False) -> str:
         """Build and verify the EPUB; a strict release also requires epubcheck to run."""
         path = self._epub.build(slug)
-        book = BookLoader(self._layout.root).load(self._layout.books / f"{slug}.toml")
-        verifier = EpubVerifier(
-            EpubArchive(), EpubcheckRunner(required=strict), EpubCoverInspector()
-        )
+        book = self._loader.load(self._layout.books / f"{slug}.toml")
+        verifier = self._strict_verifier if strict else self._verifier
         self._raise_on(slug, verifier.verify(path, book))
         return f"[{slug}] built {self._relativizer.relative(path)}\n[{slug}] all checks passed"
 

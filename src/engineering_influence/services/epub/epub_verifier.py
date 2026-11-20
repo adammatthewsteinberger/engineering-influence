@@ -9,6 +9,7 @@ from engineering_influence.interfaces.epub_archive_reader_interface import (
 from engineering_influence.interfaces.epub_cover_inspector_interface import (
     EpubCoverInspectorInterface,
 )
+from engineering_influence.interfaces.epub_verifier_interface import EpubVerifierInterface
 from engineering_influence.interfaces.epubcheck_interface import EpubcheckInterface
 from engineering_influence.models.typesetting.book import Book
 from engineering_influence.services.epub.contents_links_check import ContentsLinksCheck
@@ -22,7 +23,7 @@ from engineering_influence.services.epub.text_rules_check import TextRulesCheck
 from engineering_influence.services.epub.xml_check import XmlCheck
 
 
-class EpubVerifier:
+class EpubVerifier(EpubVerifierInterface):
     """Runs the built-in checks, then epubcheck when it is installed."""
 
     def __init__(

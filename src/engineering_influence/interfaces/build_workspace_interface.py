@@ -23,6 +23,10 @@ class BuildWorkspaceInterface(ABC):
         """Create the directory if it does not exist; its parent must."""
 
     @abstractmethod
+    def ensure_tree(self, path: Path) -> None:
+        """Create the directory and any missing parents; it may already exist."""
+
+    @abstractmethod
     def write_text(self, path: Path, text: str) -> None:
         """Write UTF-8 text."""
 

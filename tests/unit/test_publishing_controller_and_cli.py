@@ -25,17 +25,18 @@ from engineering_influence.infrastructure.publishing.filesystem_manuscript_sourc
 )
 from engineering_influence.infrastructure.publishing.package_assets import PackageAssets
 from engineering_influence.infrastructure.publishing.pypdf_pdf_inspector import PypdfPdfInspector
+from engineering_influence.infrastructure.qa.render_qa import RenderQa
 from engineering_influence.infrastructure.typesetting.filesystem_build_workspace import (
     FilesystemBuildWorkspace,
 )
 from engineering_influence.infrastructure.typesetting.latex_compiler import LatexCompiler
 from engineering_influence.models.publishing.project_config import ProjectConfig
-from engineering_influence.publishing.qa.page_record import PageRecord
-from engineering_influence.publishing.qa.render_qa import RenderQa
-from engineering_influence.publishing.qa.render_report import RenderReport
+from engineering_influence.models.qa.page_record import PageRecord
+from engineering_influence.models.qa.render_report import RenderReport
 from engineering_influence.repositories.typesetting.book_loader import BookLoader
 from engineering_influence.runtime.cli_runtime import CliRuntime
 from engineering_influence.runtime.cover_builder_provider import CoverBuilderProvider
+from engineering_influence.runtime.publish_pipeline_provider import PublishPipelineProvider
 from engineering_influence.services.epub.epub_builder import EpubBuilder
 from engineering_influence.services.epub.epub_identifier import EpubIdentifier
 from engineering_influence.services.epub.epub_repacker import EpubRepacker
@@ -147,7 +148,24 @@ def controller(root: Path, **kwargs: Any) -> PublishingController:
         "covers": CoverBuilderProvider(config),
         **kwargs,
     }
-    return PublishingController(config, files, PypdfPdfInspector(), **collaborators)
+    pdfs = PypdfPdfInspector()
+    collaborators.setdefault("qa", RenderQa(config.root))
+    collaborators.setdefault(
+        "publisher",
+        PublishPipelineProvider(
+            config,
+            files,
+            pdfs,
+            collaborators["loader"],
+            collaborators["workspace"],
+            collaborators["assets"],
+            collaborators["latex"],
+            collaborators["epub"],
+            collaborators["covers"],
+            collaborators["qa"],
+        ),
+    )
+    return PublishingController(config, files, pdfs, **collaborators)
 
 
 class FakeQa(RenderQa):

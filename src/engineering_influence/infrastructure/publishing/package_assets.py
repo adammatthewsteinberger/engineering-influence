@@ -25,4 +25,4 @@ class PackageAssets(PackageAssetsInterface):
         """
         if self._override is not None:
             return nullcontext(self._override)
-        return as_file(files("engineering_influence.publishing") / "assets")
+        return as_file(files("engineering_influence.infrastructure.publishing") / "assets")

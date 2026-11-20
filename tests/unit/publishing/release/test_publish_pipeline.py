@@ -11,19 +11,36 @@ from pypdf import PdfWriter
 
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 from engineering_influence.infrastructure.covers.cover_builder import CoverBuilder
+from engineering_influence.infrastructure.epub.epub_archive import EpubArchive
+from engineering_influence.infrastructure.epub.epub_cover_inspector import EpubCoverInspector
+from engineering_influence.infrastructure.epub.epubcheck_runner import EpubcheckRunner
 from engineering_influence.infrastructure.publishing.filesystem_manuscript_source import (
     FilesystemManuscriptSource,
 )
 from engineering_influence.infrastructure.publishing.pypdf_pdf_inspector import PypdfPdfInspector
+from engineering_influence.infrastructure.publishing.system_clock import SystemClock
+from engineering_influence.infrastructure.qa.render_qa import RenderQa
+from engineering_influence.infrastructure.release.epub_zip_check import EpubZipCheck
+from engineering_influence.infrastructure.release.git_state import GitState
+from engineering_influence.infrastructure.release.tool_versions import ToolVersions
+from engineering_influence.infrastructure.typesetting.filesystem_build_workspace import (
+    FilesystemBuildWorkspace,
+)
+from engineering_influence.interfaces.clock_interface import ClockInterface
+from engineering_influence.interfaces.render_qa_interface import RenderQaInterface
+from engineering_influence.models.publishing.path_relativizer import PathRelativizer
 from engineering_influence.models.publishing.project_layout import ProjectLayout
-from engineering_influence.publishing.qa.page_record import PageRecord
-from engineering_influence.publishing.qa.render_qa import RenderQa
-from engineering_influence.publishing.qa.render_report import RenderReport
-from engineering_influence.publishing.release.publish_pipeline import PublishPipeline
-from engineering_influence.publishing.release.publish_steps import PublishSteps, Step
+from engineering_influence.models.qa.page_record import PageRecord
+from engineering_influence.models.qa.render_report import RenderReport
+from engineering_influence.repositories.release.artifact_inventory import ArtifactInventory
+from engineering_influence.repositories.release.json_report import JsonReport
+from engineering_influence.repositories.release.step_recorder import StepRecorder
+from engineering_influence.repositories.typesetting.book_loader import BookLoader
 from engineering_influence.services.epub.epub_builder import EpubBuilder
 from engineering_influence.services.epub.epub_verifier import EpubVerifier
 from engineering_influence.services.publishing.pdf_verifier import PdfVerifier
+from engineering_influence.services.release.publish_pipeline import PublishPipeline
+from engineering_influence.services.release.publish_steps import PublishSteps, Step
 from engineering_influence.services.typesetting.book_builder import BookBuilder
 
 BASE = (
@@ -145,17 +162,35 @@ CLOCK = iter(
 )
 
 
-def pipeline(
-    layout: ProjectLayout, steps: PublishSteps, qa: RenderQa | None = None
+class TickClock(ClockInterface):
+    def now(self) -> datetime:
+        return next(CLOCK)
+
+
+def wire(
+    layout: ProjectLayout, steps: PublishSteps, qa: RenderQaInterface, clock: ClockInterface
 ) -> PublishPipeline:
     return PublishPipeline(
         layout,
         steps,
         FilesystemManuscriptSource(),
         PypdfPdfInspector(),
-        qa=qa,
-        clock=lambda: next(CLOCK),
+        qa,
+        clock,
+        JsonReport(),
+        ArtifactInventory(layout),
+        GitState(layout.root),
+        ToolVersions(),
+        EpubZipCheck(),
+        StepRecorder(PathRelativizer(layout.root), clock),
+        FilesystemBuildWorkspace(),
     )
+
+
+def pipeline(
+    layout: ProjectLayout, steps: PublishSteps, qa: RenderQa | None = None
+) -> PublishPipeline:
+    return wire(layout, steps, qa or RenderQa(layout.root), TickClock())
 
 
 def test_unknown_books_are_rejected(tmp_path: Path) -> None:
@@ -300,11 +335,11 @@ def test_a_required_release_contract_tells_the_steps_to_require_epubcheck(tmp_pa
     assert plain_steps.strict_seen == [False]
 
 
-def test_the_real_clock_and_default_renderer_are_used_when_not_injected(tmp_path: Path) -> None:
+def test_the_system_clock_stamps_the_report(tmp_path: Path) -> None:
     layout = project(tmp_path)
-    result, _ = PublishPipeline(
-        layout, FakeSteps(layout), FilesystemManuscriptSource(), PypdfPdfInspector()
-    ).publish("demo", audit_only=True)
+    result, _ = wire(layout, FakeSteps(layout), RenderQa(layout.root), SystemClock()).publish(
+        "demo", audit_only=True
+    )
     assert result["started_at"].endswith("+00:00")
 
 
@@ -339,6 +374,10 @@ class StubEpub(EpubBuilder):
         return path
 
 
+def verifier(required: bool = False) -> EpubVerifier:
+    return EpubVerifier(EpubArchive(), EpubcheckRunner(required=required), EpubCoverInspector())
+
+
 def real_steps(layout: ProjectLayout) -> tuple[PublishSteps, StubBuilder, StubCovers]:
     builder, covers = StubBuilder(layout), StubCovers(layout)
     return (
@@ -349,6 +388,9 @@ def real_steps(layout: ProjectLayout) -> tuple[PublishSteps, StubBuilder, StubCo
             StubEpub(layout),
             FilesystemManuscriptSource(),
             PypdfPdfInspector(),
+            BookLoader(layout.root),
+            verifier(),
+            verifier(required=True),
         ),
         builder,
         covers,

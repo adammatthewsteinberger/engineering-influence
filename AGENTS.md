@@ -12,7 +12,7 @@ infrastructure code. `llms.txt` lists the documents.
   `infrastructure/` or `repositories/`.
 - One class per file; no loose production functions; interfaces in sibling `interfaces/` folders.
 - Layers point inward: transports call controllers, controllers call services. `uv run lint-imports` enforces it.
-- Only `runtime/` builds concrete classes: interactions, controllers and services receive their collaborators as interfaces. (`publishing/` still composes itself until R3-R7.)
+- Only `runtime/` builds concrete classes: interactions, controllers and services receive their collaborators as interfaces. (Until R9, services still construct their own pure helper services; adapters and ports are always injected.)
 - The restructure in `docs/adr/0006-onion-layers-and-interfaces.md` is in progress: `scripts/refactor/move_map.toml` says where each class is going, and `tests/architecture/ratchet.json` holds each unmet rule at its current count. Never raise a count; a change that lowers one records the new number.
 - Every pipeline side effect must be bounded, idempotent, observable and recoverable.
 - Fail closed: missing keys, secrets and settings stop the process; they never open it.

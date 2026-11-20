@@ -3,17 +3,20 @@
 
 from pathlib import Path
 
-from pypdf import PdfReader
+from engineering_influence.interfaces.pdf_inspector_interface import PdfInspectorInterface
 
 
 class PageLimitCheck:
     """Compares a built interior's page count with the limit."""
 
+    def __init__(self, pdfs: PdfInspectorInterface) -> None:
+        self._pdfs = pdfs
+
     def run(self, path: Path, *, label: str, maximum: int) -> str | None:
         """A problem when the PDF exists and is too long; None otherwise."""
-        if not path.exists():
+        pages = self._pdfs.page_count(path)
+        if pages is None:
             return None
-        pages = len(PdfReader(str(path)).pages)
         if pages > maximum:
             return f"{label} has {pages} pages; configured maximum is {maximum}"
         return None
