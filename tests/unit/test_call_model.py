@@ -306,3 +306,14 @@ def test_when_another_worker_journaled_the_request_first_its_answer_is_the_one_r
 
     assert result.text == "theirs"
     assert len(journal.entries("run-1")) == 1
+
+
+def test_replay_finds_a_complete_answer_and_nothing_else() -> None:
+    _, _, guard, caller = setup(answer("cut", stop="max_tokens"), answer("Done."))
+    assert caller.replay("run-1", "draft", REQUEST) is None  # nothing yet
+    caller.call(guard, "run-1", "draft", 1, REQUEST)
+    assert caller.replay("run-1", "draft", REQUEST) is None  # a cut-off answer is not a replay
+    caller.call(guard, "run-1", "draft", 2, REQUEST)
+    assert caller.replay("run-1", "draft", REQUEST) == ModelCallResult("Done.", "end_turn", 0, True)
+    assert caller.replay("run-2", "draft", REQUEST) is None  # another run
+    assert caller.replay("run-1", "other", REQUEST) is None  # another stage

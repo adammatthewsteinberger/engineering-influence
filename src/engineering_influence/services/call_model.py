@@ -45,11 +45,10 @@ class CallModel(CallModelInterface):
         request: ModelRequest,
     ) -> ModelCallResult:
         """Replay the journaled answer, or reserve, call, journal and settle."""
+        replayed = self.replay(run_id, stage, request)
+        if replayed is not None:
+            return replayed
         descriptor = self._model.describe()
-        key = self._key(descriptor.model, request, "")
-        recorded = self._journal.find(run_id, stage, key.digest())
-        if recorded is not None:
-            return ModelCallResult(recorded.response, "end_turn", 0, True)
         reserved = descriptor.worst_case_micro_usd(
             self._model.count_tokens(request), request.max_output_tokens
         )
@@ -60,14 +59,24 @@ class CallModel(CallModelInterface):
             guard.release(reserved)
             raise
         actual = descriptor.cost_micro_usd(response.usage)
-        if response.stop_reason != "end_turn":
-            key = self._key(
-                descriptor.model, request, f"|stop={response.stop_reason}|attempt={attempt}"
-            )
+        outcome = (
+            ""
+            if response.stop_reason == "end_turn"
+            else f"|stop={response.stop_reason}|attempt={attempt}"
+        )
+        key = self._key(descriptor.model, request, outcome)
         entry = JournalEntry(run_id, stage, attempt, key, response.text, actual)
         stored = self._journal.record(entry)
         guard.settle(reserved, actual)
         return ModelCallResult(stored.response, response.stop_reason, actual, False)
+
+    def replay(self, run_id: str, stage: str, request: ModelRequest) -> ModelCallResult | None:
+        """The complete answer this run already has for the request, or None; costs nothing."""
+        key = self._key(self._model.describe().model, request, "")
+        recorded = self._journal.find(run_id, stage, key.digest())
+        if recorded is None:
+            return None
+        return ModelCallResult(recorded.response, "end_turn", 0, True)
 
     @staticmethod
     def _key(model: str, request: ModelRequest, outcome: str) -> JournalKey:
