@@ -12,3 +12,7 @@ class LatexEscaperInterface(ABC):
     @abstractmethod
     def escape(self, text: str) -> str:
         """Return text safe to place in a LaTeX body."""
+
+    @abstractmethod
+    def url(self, text: str) -> str:
+        """Return a URL safe to place inside \\url{} or \\href{}."""

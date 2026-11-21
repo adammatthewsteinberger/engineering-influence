@@ -73,4 +73,4 @@ class InlineRenderer(InlineRendererInterface):
         return "".join(out)
 
     def _url(self, url: str) -> str:
-        return url.replace("%", r"\%").replace("#", r"\#")
+        return self._escaper.url(url)
