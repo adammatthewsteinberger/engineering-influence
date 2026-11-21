@@ -1,6 +1,7 @@
 """Each verifier branch, driven by corrupting a known-good finished EPUB one way at a time."""
 
 from collections.abc import Callable
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -288,3 +289,41 @@ def test_epubcheck_findings_are_appended(finished: Path, book: Book) -> None:
             return ["epubcheck: ERROR something"]
 
     assert make_verifier(Fake()).verify(finished, book) == ["epubcheck: ERROR something"]
+
+
+def novel_edition(book: Book) -> Book:
+    return replace(book, meta={**book.meta, "kind": "novel"})
+
+
+def test_a_novel_ebook_may_use_em_dashes(finished: Path, book: Book, rewrite: Rewrite) -> None:
+    mutant = rewrite(
+        finished, edits={"c1.xhtml": lambda s: s.replace("one text", "one \u2014 text")}
+    )
+    problems = make_verifier().verify(mutant, novel_edition(book))
+    assert not any("em dash" in problem for problem in problems), problems
+    assert any("em dash" in problem for problem in make_verifier().verify(mutant, book))
+
+
+def test_a_novel_ebook_still_refuses_en_dashes(
+    finished: Path, book: Book, rewrite: Rewrite
+) -> None:
+    mutant = rewrite(
+        finished, edits={"c1.xhtml": lambda s: s.replace("one text", "one \u2013 text")}
+    )
+    problems = make_verifier().verify(mutant, novel_edition(book))
+    assert any("en dash" in problem for problem in problems), problems
+
+
+def test_a_novel_ebook_may_quote_the_word_draft_but_not_narrate_it(
+    finished: Path, book: Book, rewrite: Rewrite
+) -> None:
+    quoted = rewrite(
+        finished,
+        edits={"c1.xhtml": lambda s: s.replace("one text", "\u201cDraft beer,\u201d she said")},
+    )
+    assert not any("Draft" in p for p in make_verifier().verify(quoted, novel_edition(book)))
+    assert any("Draft" in p for p in make_verifier().verify(quoted, book))
+    narrated = rewrite(
+        finished, edits={"c1.xhtml": lambda s: s.replace("one text", "A Draft copy sat there")}
+    )
+    assert any("Draft" in p for p in make_verifier().verify(narrated, novel_edition(book)))

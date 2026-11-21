@@ -167,3 +167,18 @@ def test_a_message_states_its_version_and_keeps_it() -> None:
 def test_a_message_of_another_version_is_refused(version: object) -> None:
     with pytest.raises(ValidationError):
         JobMessage.parse(message(schema_version=version))
+
+
+def test_a_book_config_is_nonfiction_unless_it_says_it_is_a_novel() -> None:
+    assert BookConfigV1.model_validate({"source": "src"}).kind is BookKind.NONFICTION
+    assert BookConfigV1.model_validate({"source": "src", "kind": "novel"}).kind is BookKind.NOVEL
+
+
+def test_a_book_config_with_an_unknown_kind_is_refused() -> None:
+    with pytest.raises(ValidationError):
+        BookConfigV1.model_validate({"source": "src", "kind": "poem"})
+
+
+def test_the_kind_is_a_field_of_the_config_and_not_left_among_the_extras() -> None:
+    config = BookConfigV1.model_validate({"source": "src", "kind": "novel", "title": "T"})
+    assert config.model_extra == {"title": "T"}

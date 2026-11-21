@@ -16,5 +16,7 @@ class ChapterTexInterface(ABC):
     __slots__ = ()
 
     @abstractmethod
-    def render(self, chapter: Chapter, number_chapters: bool = True) -> str:
+    def render(
+        self, chapter: Chapter, number_chapters: bool = True, scene_breaks: bool = False
+    ) -> str:
         """Return the chapter's LaTeX."""

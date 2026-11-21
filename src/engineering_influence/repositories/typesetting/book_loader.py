@@ -10,6 +10,7 @@ from engineering_influence.interfaces.book_loader_interface import BookLoaderInt
 from engineering_influence.models.publishing.path_relativizer import PathRelativizer
 from engineering_influence.models.typesetting.book import Book
 from engineering_influence.models.typesetting.chapter import Chapter
+from engineering_influence.models.typesetting.text_policy import TextPolicy
 from engineering_influence.repositories.typesetting.chapter_loader import ChapterLoader
 
 
@@ -19,17 +20,21 @@ class BookLoader(BookLoaderInterface):
     def __init__(self, root: Path, strict: bool = True) -> None:
         self._root = root
         self._relativizer = PathRelativizer(root)
-        self._loader = ChapterLoader(self._relativizer, strict)
+        self._strict = strict
 
     def load(self, config_path: Path) -> Book:
         """Return the book described by the config."""
         config = tomllib.loads(config_path.read_text(encoding="utf-8"))
+        policy = TextPolicy.for_name(config.get("kind"))  # an unknown kind stops the build here
+        loader = ChapterLoader(self._relativizer, self._strict, policy)
         source = self._root / config["source"]
         book = Book(slug=config_path.stem, meta=config)
-        book.front = self._entries(source, config.get("front", []), "front")
+        book.front = self._entries(loader, source, config.get("front", []), "front")
         for part in config.get("parts", []):
-            book.parts.append((part["title"], self._entries(source, part["chapters"], "chapter")))
-        book.back = self._entries(source, config.get("back", []), "back")
+            book.parts.append(
+                (part["title"], self._entries(loader, source, part["chapters"], "chapter"))
+            )
+        book.back = self._entries(loader, source, config.get("back", []), "back")
         # Only the main argument receives chapter numbers. Back matter stays unnumbered so the
         # scholarly apparatus reads as apparatus, not as a continuation of the narrative.
         number = 0
@@ -48,12 +53,14 @@ class BookLoader(BookLoaderInterface):
                 )
         return book
 
-    def _entries(self, source: Path, items: list[Any], kind: str) -> list[Chapter]:
+    def _entries(
+        self, loader: ChapterLoader, source: Path, items: list[Any], kind: str
+    ) -> list[Chapter]:
         chapters = []
         for item in items:
             entry = {"file": item} if isinstance(item, str) else item
             chapters.append(
-                self._loader.load(
+                loader.load(
                     source / entry["file"], kind, entry.get("style", "prose"), entry.get("short")
                 )
             )

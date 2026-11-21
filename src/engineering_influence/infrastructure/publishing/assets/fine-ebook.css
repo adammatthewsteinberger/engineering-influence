@@ -15,6 +15,10 @@ p.noindent { text-indent: 0; }
 p + p, p + div, div + p { margin-top: 0; }
 span.lead { font-variant: small-caps; letter-spacing: 0.05em; }
 
+/* Scene breaks in fiction: a centred ornament, and the paragraph after it is not indented. */
+p.scenebreak { text-indent: 0; text-align: center; margin: 1.4em 0; letter-spacing: 0.5em; }
+p.scenebreak + p.indent { text-indent: 0; }
+
 /* Headings. */
 h1, h2, h3, h4, h5 { font-weight: normal; line-height: 1.25; hyphens: none; -webkit-hyphens: none;
   page-break-after: avoid; break-after: avoid; }

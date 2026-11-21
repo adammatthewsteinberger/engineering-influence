@@ -61,6 +61,9 @@
 \newenvironment{illustration}{\par}{\par}
 \newcommand{\epigraphsourceline}[1]{\par #1\par}
 \newenvironment{chapterepigraph}[1]{\def\epigraphsource{#1}\par}{\par\epigraphsourceline{\epigraphsource}}
+% A scene break in fiction, mapped to a classed <p> by fine-ebook.cfg.
+\newcommand{\scenebreakmark}[1]{\par #1\par}
+\newcommand{\scenebreak}{\scenebreakmark{* * *}}
 \newenvironment{referencelist}{\par}{\par}
 \newcommand{\refentry}[1]{\par #1\par}
 

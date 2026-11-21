@@ -56,6 +56,25 @@ and research apparatus (claims need sources; the research check enforces it). Fi
 `novel` and `screenplay` stages. Choose the stages in the request, for example
 `["thesis", "book"]` or `["novel", "distribution", "publish"]`.
 
+### Book kind and the text rules
+
+A book's config (`books/<slug>.toml`) may say `kind = "novel"`; without it the book is
+non-fiction. The kind picks the text rules the typesetter and the checks apply. An unknown kind
+stops the build with a message naming the two valid ones.
+
+| Rule | `nonfiction` (the default) | `novel` |
+|---|---|---|
+| Em dash (`—`) in the text | Refused, in the manuscript, the PDF and the EPUB | Allowed |
+| En dash (`–`) | Refused | Refused |
+| A `---` line inside a chapter | Prints nothing | Prints a scene break: a centred `* * *`, and the next paragraph is not indented. A rule that opens or ends a passage, sits beside another rule, or is inside a quote or list prints nothing |
+| The word `Draft` | Refused anywhere | Refused in narration; allowed inside curly quotation marks, so a character may say it |
+| Unfinished markers such as `[TODO]` | Refused | Refused |
+
+A quoted span for the `Draft` rule is at most 500 characters, so an opening quote that never
+closes cannot hide a stray `Draft` later in the text. Narration that legitimately starts a
+sentence with `Draft` still has to be reworded. `tests/fixtures/fixture_novel/` is a small novel
+that shows each rule and is built with the real toolchain in CI.
+
 ## Where to go next
 
 [Getting started](GETTING_STARTED.md) · [Interfaces](INTERACTIONS.md) ·

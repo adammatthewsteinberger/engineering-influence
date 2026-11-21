@@ -8,6 +8,7 @@ from typing import Any
 import pytest
 
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
+from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
 from engineering_influence.infrastructure.publishing.filesystem_manuscript_source import (
     FilesystemManuscriptSource,
 )
@@ -221,3 +222,29 @@ def test_builder_rejects_slugs_that_are_not_plain_names(tmp_path: Path, slug: st
     layout, assets = project(tmp_path)
     with pytest.raises(BookBuildError, match="invalid book slug"):
         make_builder(layout, assets, FakeCompiler()).build(slug)
+
+
+def story_book(meta: dict[str, Any]) -> Book:
+    body = "One.\n\n---\n\nTwo.\n"
+    chapter = Chapter(Path("x.md"), "chapter", title="T", short="s", body=body)
+    return Book("demo", meta, parts=[("Part One", [chapter])])
+
+
+def test_a_novel_prints_its_rules_as_scene_breaks_in_both_formats() -> None:
+    novel = story_book({**MINIMAL, "kind": "novel"})
+    assert "\\scenebreak" in PrintDocument().render(novel)
+    assert "\\scenebreak" in PrintDocument().render(novel, hardcover=True)
+    assert "\\scenebreak" in EbookDocument().render(novel)
+
+
+def test_a_book_with_no_kind_leaves_its_rules_unprinted_in_both_formats() -> None:
+    plain = story_book(MINIMAL)
+    assert "scenebreak" not in PrintDocument().render(plain)
+    assert "scenebreak" not in EbookDocument().render(plain)
+
+
+def test_an_unknown_kind_stops_the_document_before_any_tex_is_written() -> None:
+    with pytest.raises(ManuscriptError, match="'nonfiction' or 'novel'"):
+        PrintDocument().render(story_book({**MINIMAL, "kind": "poem"}))
+    with pytest.raises(ManuscriptError, match="'nonfiction' or 'novel'"):
+        EbookDocument().render(story_book({**MINIMAL, "kind": "poem"}))

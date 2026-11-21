@@ -18,7 +18,9 @@ class ChapterTex(ChapterTexInterface):
         self._tex = TexText()
         self._converter = MarkdownLatexConverter()
 
-    def render(self, chapter: Chapter, number_chapters: bool = True) -> str:
+    def render(
+        self, chapter: Chapter, number_chapters: bool = True, scene_breaks: bool = False
+    ) -> str:
         """Return the chapter's LaTeX."""
         text = self._tex.text
         title = text(chapter.title)
@@ -51,5 +53,7 @@ class ChapterTex(ChapterTexInterface):
                 f"\\begin{{chapterepigraph}}{{{text(source)}}}\n{text(quote)}\n"
                 "\\end{chapterepigraph}\n"
             )
-        parts.append(self._converter.convert(chapter.body, style=chapter.style))
+        parts.append(
+            self._converter.convert(chapter.body, style=chapter.style, scene_breaks=scene_breaks)
+        )
         return "".join(parts)

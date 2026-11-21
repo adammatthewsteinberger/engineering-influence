@@ -31,8 +31,15 @@ class BlockRenderer(BlockRendererInterface):
         }
     )
 
-    def __init__(self, style: str = "prose", openings: OpeningFormatter | None = None) -> None:
+    def __init__(
+        self,
+        style: str = "prose",
+        openings: OpeningFormatter | None = None,
+        scene_breaks: bool = False,
+    ) -> None:
         self.style = style
+        self._scene_breaks = scene_breaks
+        self.printed = False  # set once the chapter has printed anything, across its pieces
         self.first_paragraph_pending = style == "prose"
         self._inline = InlineRenderer()
         self._openings = openings or OpeningFormatter()
@@ -103,7 +110,28 @@ class BlockRenderer(BlockRendererInterface):
                 out.append(LatexTable().render(table_rows))
             elif kind in ("fence", "code_block"):
                 out.append("\n\\begin{verbatim}\n" + token.content + "\\end{verbatim}\n")
+            elif kind == "hr" and self._is_scene_break(tokens, i, out, quote_depth, list_stack):
+                out.append("\n\\scenebreak\n")
             elif kind not in self.IGNORED:
                 raise ManuscriptError(f"unhandled block token {kind}")
             i += 1
+        self.printed = self.printed or bool(out)
         return "".join(out)
+
+    def _is_scene_break(
+        self, tokens: list[Token], i: int, out: list[str], quote_depth: int, list_stack: list[str]
+    ) -> bool:
+        """A rule is a scene break only in fiction, between two passages, outside quotes and lists.
+
+        A rule that opens or closes a passage, or that sits beside another rule, would print an
+        ornament with nothing on one side, so it is left out. A callout or illustration counts as
+        content on its side, so a rule right after one is kept.
+        """
+        return (
+            self._scene_breaks
+            and (bool(out) or self.printed)
+            and quote_depth == 0
+            and not list_stack
+            and i + 1 < len(tokens)
+            and tokens[i + 1].type != "hr"
+        )

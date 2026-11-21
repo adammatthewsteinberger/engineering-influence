@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from engineering_influence.models.epub.epub_contents import EpubContents
     from engineering_influence.models.typesetting.book import Book
+    from engineering_influence.models.typesetting.text_policy import TextPolicy
 
 
 class TextRulesCheckInterface(ABC):
@@ -17,5 +18,5 @@ class TextRulesCheckInterface(ABC):
     __slots__ = ()
 
     @abstractmethod
-    def run(self, contents: EpubContents, book: Book, full: str) -> list[str]:
+    def run(self, contents: EpubContents, book: Book, full: str, policy: TextPolicy) -> list[str]:
         """Return a problem for each rule the text breaks."""
