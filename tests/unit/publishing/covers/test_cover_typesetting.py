@@ -7,6 +7,9 @@ import numpy as np
 import pytest
 from PIL import Image
 
+from engineering_influence.errors.typesetting.back_cover_text_too_long_error import (
+    BackCoverTextTooLongError,
+)
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 from engineering_influence.infrastructure.covers.back_typesetter import BackTypesetter
 from engineering_influence.infrastructure.covers.cover_renderer import CoverRenderer
@@ -21,6 +24,8 @@ from engineering_influence.models.covers.cover_style import CoverStyle
 from engineering_influence.models.covers.kdp_cover_spec import KdpCoverSpec
 from engineering_influence.models.covers.layout_factory import LayoutFactory
 from engineering_influence.models.covers.text_recorder import TextRecorder
+from engineering_influence.models.typesetting.paper_stock import PaperStock
+from engineering_influence.models.typesetting.trim_size import TrimSize
 
 FACTORY = LayoutFactory()
 
@@ -251,3 +256,101 @@ def test_renderer_uses_the_painter_named_in_the_style(
     style.painter = "nonexistent"
     with pytest.raises(BookBuildError, match="no cover painter named 'nonexistent'"):
         CoverRenderer(registry, fonts).render(FACTORY.ebook(), style, meta)
+
+
+SENTENCE = (
+    "The keeper climbed the stairs every evening, counting the steps as her mother taught her. "
+)
+
+
+def blurb(characters: int) -> str:
+    """Original filler of about this many characters, in paragraphs of about 400."""
+    text = (SENTENCE * (characters // len(SENTENCE) + 1))[:characters].rstrip()
+    return "\n\n".join(text[i : i + 400] for i in range(0, len(text), 400))
+
+
+def trimmed_factory(trim: str) -> LayoutFactory:
+    return LayoutFactory(TrimSize.for_name(trim), PaperStock.for_name("white"))
+
+
+def too_long(
+    fonts: FontLoader, style: CoverStyle, meta: dict[str, Any], layout: Any, characters: int
+) -> BackCoverTextTooLongError:
+    meta["description"] = blurb(characters)
+    with pytest.raises(BackCoverTextTooLongError) as raised:
+        BackTypesetter(typography(fonts)).typeset(layer_for(layout), layout, style, meta)
+    return raised.value
+
+
+def test_a_description_that_cannot_fit_above_the_barcode_is_refused_with_the_numbers(
+    fonts: FontLoader, style: CoverStyle, meta: dict[str, Any]
+) -> None:
+    error = too_long(fonts, style, meta, trimmed_factory("5x8").paperback(249), 4000)
+    assert 0 < error.capacity < error.characters
+    assert error.overflow_in > 0
+    assert f"{error.characters} characters" in str(error)
+    assert f"about {error.capacity} fit" in str(error)
+    assert isinstance(error, BookBuildError)
+
+
+@pytest.mark.parametrize("trim", ["5x8", "5.5x8.5", "6x9"])
+def test_the_reported_capacity_really_fits_and_a_little_more_does_not(
+    fonts: FontLoader, style: CoverStyle, meta: dict[str, Any], trim: str
+) -> None:
+    layout = trimmed_factory(trim).paperback(249)
+    capacity = too_long(fonts, style, meta, layout, 4500).capacity
+
+    meta["description"] = blurb(capacity)
+    layer = layer_for(layout)
+    BackTypesetter(typography(fonts)).typeset(layer, layout, style, meta)
+    assert TextPlacementCheck().run(layer, layout) == []
+
+    assert too_long(fonts, style, meta, layout, capacity + 300).capacity >= capacity - 50
+
+
+def test_a_narrower_trim_size_carries_less_back_cover_text(
+    fonts: FontLoader, style: CoverStyle, meta: dict[str, Any]
+) -> None:
+    capacity = {
+        trim: too_long(fonts, style, meta, trimmed_factory(trim).paperback(249), 6000).capacity
+        for trim in ("5x8", "5.5x8.5", "6x9")
+    }
+    assert capacity["5x8"] < capacity["5.5x8.5"] < capacity["6x9"]
+
+
+@pytest.mark.parametrize(
+    ("trim", "kind"),
+    [
+        ("5x8", "paperback"),
+        ("5.5x8.5", "paperback"),
+        ("5.5x8.5", "hardcover"),
+        ("6x9", "hardcover"),
+    ],
+)
+def test_text_at_the_limit_never_reaches_the_barcode_area_at_any_size(
+    fonts: FontLoader, style: CoverStyle, meta: dict[str, Any], trim: str, kind: str
+) -> None:
+    made = trimmed_factory(trim)
+    layout = made.paperback(249) if kind == "paperback" else made.hardcover(249)
+    capacity = too_long(fonts, style, meta, layout, 6000).capacity
+    meta["description"] = blurb(capacity)
+    layer = layer_for(layout)
+    BackTypesetter(typography(fonts)).typeset(layer, layout, style, meta)
+    assert layout.barcode is not None
+    x0, y0, x1, y1 = layout.box_px(layout.barcode)
+    assert not (np.asarray(layer.getchannel("A")) > 8)[y0:y1, x0:x1].any()
+    assert TextPlacementCheck().run(layer, layout) == []
+
+
+@pytest.mark.parametrize("trim", ["5x8", "5.5x8.5", "6x9"])
+def test_ink_in_the_barcode_area_is_always_caught(trim: str) -> None:
+    made = trimmed_factory(trim)
+    layouts = [made.paperback(249)] + (
+        [made.hardcover(249)] if TrimSize.for_name(trim).hardcover else []
+    )
+    for layout in layouts:
+        layer = layer_for(layout)
+        assert layout.barcode is not None
+        x0, y0, _, _ = layout.box_px(layout.barcode)
+        layer.paste((0, 0, 0, 255), (x0 + 5, y0 + 5, x0 + 40, y0 + 40))
+        assert "text inside the barcode area" in TextPlacementCheck().run(layer, layout)

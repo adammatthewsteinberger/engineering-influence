@@ -11,7 +11,13 @@ from engineering_influence.services.publishing.text_statistics import TextStatis
 
 
 class MetadataCheck(MetadataCheckInterface):
-    """Requires complete listing metadata and exactly seven unique keywords."""
+    """Requires complete listing metadata, a description within KDP's limits, seven unique keywords.
+
+    KDP accepts a description of up to 4,000 characters; ``release.maximum_description_characters``
+    lowers that limit for a book that wants a shorter listing.
+    """
+
+    DESCRIPTION_LIMIT = 4000
 
     def run(
         self,
@@ -43,6 +49,15 @@ class MetadataCheck(MetadataCheckInterface):
                 f"description has {words} words; minimum is {minimum}",
                 ref,
             )
+        characters = len(description)
+        maximum = int(release.get("maximum_description_characters", self.DESCRIPTION_LIMIT))
+        if characters > maximum:
+            report.add(
+                severity,
+                "description-too-long",
+                f"description has {characters} characters; KDP allows {maximum}",
+                ref,
+            )
         if not isinstance(keywords, list) or len(keywords) != 7:
             report.add(
                 severity,
@@ -57,6 +72,7 @@ class MetadataCheck(MetadataCheckInterface):
             if len(set(normalised)) != len(normalised):
                 report.add(severity, "duplicate-keyword", "keywords must be unique", ref)
         report.counts["description_words"] = words
+        report.counts["description_characters"] = characters
         report.metadata = {
             "title": title,
             "subtitle": subtitle,

@@ -5,6 +5,9 @@ from typing import Any
 
 from PIL import Image, ImageDraw, ImageFont
 
+from engineering_influence.errors.typesetting.back_cover_text_too_long_error import (
+    BackCoverTextTooLongError,
+)
 from engineering_influence.infrastructure.covers.interfaces.back_typesetter_interface import (
     BackTypesetterInterface,
 )
@@ -16,7 +19,11 @@ Block = tuple[str, ImageFont.FreeTypeFont, list[str], float, float]
 
 
 class BackTypesetter(BackTypesetterInterface):
-    """Lays the description out above the barcode, shrinking it until it fits."""
+    """Lays the description out above the barcode, shrinking it until it fits.
+
+    If it still does not fit at the smallest type it raises ``BackCoverTextTooLongError`` instead
+    of drawing text into the barcode area, which KDP keeps clear.
+    """
 
     def __init__(self, typography: Typography) -> None:
         self._t = typography
@@ -51,6 +58,12 @@ class BackTypesetter(BackTypesetterInterface):
         while bottom > barcode_top and size > L.to_px(0.11):
             size *= 0.97
             blocks, bottom = self._lay_out(L, st, paras, bio_text, width, y0, size)
+        if bottom > barcode_top:
+            raise BackCoverTextTooLongError(
+                characters=sum(len(p) for p in paras),
+                capacity=self._capacity(L, st, paras, bio_text, width, y0, size, barcode_top),
+                overflow_in=(bottom - barcode_top) / L.ppi,
+            )
         # Centre the block in the space above the barcode, leaning slightly high.
         shift = max(0.0, (barcode_top - bottom) * 0.42)
         for kind, f_, ls, y, lh in blocks:
@@ -69,6 +82,39 @@ class BackTypesetter(BackTypesetterInterface):
         if site:
             sf = t.font(st.author_font, t.floor_px(L, L.to_px(0.085)))
             t.draw_tracked(d, (x0, py + pf.size * 1.6), site, sf, t.c8(st.accent), 0.06 * sf.size)
+
+    def _capacity(
+        self,
+        L: CoverLayout,
+        st: CoverStyle,
+        paras: list[str],
+        bio_text: str,
+        width: float,
+        y0: float,
+        size: float,
+        barcode_top: float,
+    ) -> int:
+        """How many characters of the description fit above the barcode at this type size."""
+        low, high = 0, sum(len(p) for p in paras)
+        while low < high:
+            middle = (low + high + 1) // 2
+            kept = self._first_characters(paras, middle)
+            _, bottom = self._lay_out(L, st, kept, bio_text, width, y0, size)
+            if bottom <= barcode_top:
+                low = middle
+            else:
+                high = middle - 1
+        return low
+
+    @staticmethod
+    def _first_characters(paras: list[str], count: int) -> list[str]:
+        kept: list[str] = []
+        for paragraph in paras:
+            if count <= 0:
+                break
+            kept.append(paragraph[:count])
+            count -= len(paragraph)
+        return kept
 
     def _lay_out(
         self,

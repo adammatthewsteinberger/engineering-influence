@@ -17,6 +17,7 @@ parts = [
 required = true
 keywords = ["fixture", "typesetting", "test book", "latex", "epub", "synthetic", "toolchain"]
 minimum_description_words = 10
+categories = ["Books > Fixtures > Typesetting", "Books > Fixtures > Test Books"]
 
 [release.pricing]
 verified_on = "2026-11-19"

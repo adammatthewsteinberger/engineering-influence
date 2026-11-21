@@ -8,6 +8,9 @@ import pytest
 from PIL import Image
 from pypdf import PdfReader, PdfWriter
 
+from engineering_influence.errors.typesetting.back_cover_text_too_long_error import (
+    BackCoverTextTooLongError,
+)
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
 from engineering_influence.infrastructure.covers.cover_builder import CoverBuilder
@@ -210,3 +213,31 @@ def test_an_unknown_trim_size_or_paper_stops_the_cover_build(tmp_path: Path, ext
     layout = project(tmp_path, extra)
     with pytest.raises(ManuscriptError, match="must be one of"):
         CoverBuilder(layout).build("demo")
+
+
+def with_description(root: Path, trim: str, characters: int) -> ProjectLayout:
+    sentence = "The keeper climbed the stairs every evening, counting the steps as her mother. "
+    text = (sentence * (characters // len(sentence) + 1))[:characters].rstrip()
+    paragraphs = "\\n\\n".join(text[i : i + 400] for i in range(0, len(text), 400))
+    (root / "books").mkdir()
+    (root / "books" / "demo.toml").write_text(
+        'title = "Demo Cover"\nsubtitle = "A Subtitle"\nauthor = "Ann Author"\n'
+        'publisher = "Pub House"\nauthor_bio = "Ann writes."\n'
+        f'trim_size = "{trim}"\ndescription = "{paragraphs}"\n',
+        encoding="utf-8",
+    )
+    blank_pdf(root / "output" / "demo.pdf", 120)
+    return ProjectLayout(root)
+
+
+def test_a_long_description_builds_at_six_by_nine_but_not_at_five_by_eight(tmp_path: Path) -> None:
+    roomy = tmp_path / "roomy"
+    roomy.mkdir()
+    CoverBuilder(with_description(roomy, "6x9", 3000)).build("demo")
+    tight = tmp_path / "tight"
+    tight.mkdir()
+    with pytest.raises(BackCoverTextTooLongError) as raised:
+        CoverBuilder(with_description(tight, "5x8", 3000)).build("demo")
+    assert raised.value.characters > raised.value.capacity > 0
+    assert "does not fit above the barcode area" in str(raised.value)
+    assert isinstance(raised.value, BookBuildError)
