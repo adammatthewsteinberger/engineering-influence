@@ -111,22 +111,20 @@ so none of this is implemented; these are the rules M6 must meet, written down f
 | A book slug that escapes the project | A slug must match `BookSlug.PATTERN` before any build (`BookBuilder`). | |
 | An artifact key that escapes the artifact store | `ConfinedPathGuard` confines the path (`FileArtifactStore`). | |
 | A key in an error message or log | The adapters never put the key in an exception (tested). `EnvSecretProvider` fails closed when a secret is absent. | Logging has not been audited for keys. |
-| A build that never finishes | `latexmk` runs with `-halt-on-error`, so text that errors stops the build. | **The build tools have no timeout** (`latexmk`, `tex4ebook`, `epubcheck` and the page rasterizer; only the release helpers `git` and the tool-version probe do). Escaped text cannot loop TeX, but a huge or pathological manuscript can run long. |
+| A build that never finishes | `latexmk` runs with `-halt-on-error`, so text that errors stops the build. Every build tool (`latexmk`, `tex4ebook`, `epubcheck` and the page rasterizer) runs through `ProcessRunner`, which gives it a deadline (30 minutes for the two TeX tools, 10 for the other two). A tool still running at the deadline is killed together with everything it started, and the build fails with a `BookBuildError` that names the tool and shows its last output. A toolchain test hangs real `latexmk` and real `tex4ebook` and checks that nothing is left running. | The deadlines are constructor defaults, not settings, so a book that legitimately needs longer must be built with a larger one. Nothing limits the memory or disk a tool uses. Stopping a tree needs process groups: Linux and macOS, not Windows. |
 
 ## Known gaps
 
 These are open, in the order they would be fixed.
 
-1. **No timeout on `latexmk`, `tex4ebook`, `epubcheck` or the page rasterizer.** A hung build
-   holds a worker.
-2. **Control characters in body text** (other than newline and tab) are not removed or tested.
+1. **Control characters in body text** (other than newline and tab) are not removed or tested.
    They are not an injection path (they are not TeX syntax), but a stray one may fail the build or
    print oddly. This has not been tried.
-3. **tex4ebook's shell-escape-off state is its default, not enforced** (above).
-4. **The journal key** (`JournalKey`) joins its four parts with a separator. The model and the
+2. **tex4ebook's shell-escape-off state is its default, not enforced** (above).
+3. **The journal key** (`JournalKey`) joins its four parts with a separator. The model and the
    prompt version are free strings but come from configuration, not from untrusted text.
-5. **Two workers journaling the same request at once** record only the first, so the second
+4. **Two workers journaling the same request at once** record only the first, so the second
    call's cost is not counted.
-6. **The print and ebook documents were checked field by field in M5**; a new metadata field
+5. **The print and ebook documents were checked field by field in M5**; a new metadata field
    that bypasses `TexText` would be caught by `test_latex_injection.py` only if it is added to
    that test's field list.

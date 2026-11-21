@@ -124,6 +124,15 @@ things it cannot make safe (the full picture is in [THREAT_MODEL.md](THREAT_MODE
   `\ { } % # ^ ~`, control characters and unbalanced parentheses are dropped. An ordinary title,
   including balanced parentheses, is unchanged.
 
+### A build that runs too long
+
+Each build tool has a deadline: 30 minutes for `latexmk` and `tex4ebook`, and 10 minutes for `epubcheck`
+and the page renderer. A tool that is still running then is stopped, together with everything it
+started, and the build fails with a message such as
+`latexmk did not finish within 1800 seconds and was stopped`, followed by the tool's last output so
+you can see where it stopped. The deadlines are fixed in the code, not settings. A book that
+legitimately needs longer than that is not supported yet.
+
 ### Trim size and paper
 
 A book's config sets the page size and the interior paper. Both default to what every book used

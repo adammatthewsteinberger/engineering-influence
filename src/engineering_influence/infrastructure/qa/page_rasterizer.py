@@ -2,10 +2,13 @@
 """Renders every page of a PDF to a numbered PNG with pdftoppm or mutool."""
 
 import shutil
-import subprocess  # nosec B404
 from pathlib import Path
 
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
+from engineering_influence.infrastructure.process.interfaces.process_runner_interface import (
+    ProcessRunnerInterface,
+)
+from engineering_influence.infrastructure.process.process_runner import ProcessRunner
 from engineering_influence.infrastructure.qa.interfaces.page_rasterizer_interface import (
     PageRasterizerInterface,
 )
@@ -13,7 +16,16 @@ from engineering_influence.models.qa.page_file_number import PageFileNumber
 
 
 class PageRasterizer(PageRasterizerInterface):
-    """Uses poppler's pdftoppm when present, otherwise MuPDF's mutool."""
+    """Uses poppler's pdftoppm when present, otherwise MuPDF's mutool.
+
+    A renderer still running after ``timeout_seconds`` is stopped, with a BookBuildError.
+    """
+
+    def __init__(
+        self, runner: ProcessRunnerInterface | None = None, timeout_seconds: float = 600.0
+    ) -> None:
+        self._runner = runner or ProcessRunner()
+        self._timeout = timeout_seconds
 
     def command(self) -> str:
         """The renderer found on PATH."""
@@ -60,9 +72,9 @@ class PageRasterizer(PageRasterizerInterface):
                 str(pdf),
             ]
         # Fixed argument list, no shell; the PDF path is absolute so it cannot read as an option.
-        proc = subprocess.run(cmd, capture_output=True, text=True, check=False)  # nosec B603
-        if proc.returncode:
-            detail = (proc.stderr or proc.stdout)[-4000:]
+        status, stdout, stderr = self._runner.run(cmd, self._timeout)
+        if status:
+            detail = (stderr or stdout)[-4000:]
             raise BookBuildError(f"PDF renderer failed:\n{detail}")
         numbers = PageFileNumber()
         rendered = sorted(pages_dir.glob("render-*.png"), key=numbers.of)
