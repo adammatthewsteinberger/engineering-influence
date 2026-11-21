@@ -26,6 +26,7 @@ def test_the_map_lists_the_enums_this_test_covers() -> None:
         "FailureKind",
         "GateKind",
         "JobOutcome",
+        "ModelAvailability",
         "PhaseState",
         "PipelineStage",
         "RunStatus",
