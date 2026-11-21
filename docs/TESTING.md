@@ -42,8 +42,8 @@ runs the curl example against the full stack. If you change an interface, the ex
 
 - The 100% gate includes branches. Code that only runs in a fresh interpreter (missing optional
   extras) is measured through `patch = ["subprocess"]` in `[tool.coverage.run]`; do not remove it.
-- The `distribution`, `toolchain` and `integration` markers are deselected by default. The default suite builds no
-  real PDF or EPUB; the `toolchain` job (below) does.
+- The `distribution`, `toolchain`, `integration` and `paid` markers are deselected by default. The default suite
+  builds no real PDF or EPUB (the `toolchain` job, below, does) and makes no paid model call.
 
 ## Architecture rules
 
@@ -62,6 +62,39 @@ collaborators through their constructors, so a test passes a fake. The only patc
 standard-library calls at the system boundary (`subprocess.run`, `sys.argv`, `sys.path`,
 `zipfile.ZipFile.testzip`) and one class the test defines itself; they are listed there, and a new
 patch of anything else fails the build.
+
+## Cassettes and paid tests
+
+A model adapter takes its `httpx.Client` through its constructor (ADR 0007), so a test hands it a
+client built on a cassette transport instead of the network. The classes are in
+`engineering_influence/infrastructure/cassettes/`.
+
+| Class | What it does |
+|---|---|
+| `CassetteReplayTransport` | Answers from a cassette, in order. A request must match the next recorded one in method, path (with query) and JSON body, or it raises `CASSETTE_MISMATCH`. That is an `ApplicationError`, not an httpx error, so an adapter cannot take it for a network failure and retry. `finish()` fails if the code stopped asking before the cassette ran out. |
+| `CassetteRecordingTransport` | Wraps a real transport. The caller gets the real answer. The cassette gets a masked copy of the method, path, JSON bodies and status, and no headers, because the API key is one. A body that is not JSON stops the recording. |
+| `CassetteRedactor` | Replaces each key it is told about, and anything shaped like `sk-` plus sixteen more characters, with `[REDACTED]`. The replay masks the request the same way, so a cassette recorded under one key replays under another and a refusal never prints a key. |
+| `JsonCassetteStore` | One JSON file per cassette in `tests/cassettes/`, written the same way every time. It refuses to save, and to load, a cassette that still looks like it holds a secret. |
+
+Matching the body is deliberate. A replay that ignored the request would pass while the prompt
+changed underneath it. The cost is that changing a prompt or a request field means re-recording
+the cassettes that use it, and recording is the paid step.
+
+Cassettes are made only from synthetic briefs (`CONTRIBUTING.md`). `tests/cassettes/` holds none
+yet: recording spends money, so the first one waits for the maintainer's go-ahead. The cassettes
+under `tests/fixtures/model_cassettes/` are different: they are hand-written from each API's
+documented response shape (each says so in its `note`), and test how an adapter classifies a
+reply, not what a real model said.
+
+The `paid` marker is for a test that calls a real provider. It is deselected by default, and
+`pytest -m paid` is still refused unless `EI_ALLOW_PAID=1` is set (`tests/paid_gate.py`), so
+nobody spends by typing one flag. Without the variable the test errors rather than skips, so a
+scheduled run that is missing it goes red. A paid test wraps its live transport in
+`CassetteRecordingTransport`, so one paid run also produces the cassette later runs replay.
+
+Two things the machinery does not do. It has not been run against a live provider, because that
+spends money. And nothing in the product composes it yet: the runtime will use the replay
+transport when a cassette-backed run is added.
 
 ## The toolchain test
 

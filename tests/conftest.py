@@ -1,9 +1,11 @@
 """Shared fixtures."""
 
+import os
 import shutil
 from pathlib import Path
 
 import pytest
+from paid_gate import PaidGate
 
 from engineering_influence.infrastructure.schema_migrator import SchemaMigrator
 from engineering_influence.infrastructure.security.constant_time_api_key_verifier import (
@@ -15,6 +17,11 @@ from engineering_influence.infrastructure.security.token_bucket_rate_limiter imp
 from engineering_influence.interactions.api.api_guard import ApiGuard
 
 TEST_API_KEY = "test-api-key-0123456789abcdef"  # gitleaks:allow
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """Lock every test marked ``paid`` behind EI_ALLOW_PAID=1 (see tests/paid_gate.py)."""
+    config.pluginmanager.register(PaidGate(os.environ), "paid-gate")
 
 
 @pytest.fixture
