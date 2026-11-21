@@ -1,0 +1,12 @@
+{
+  "status": 503,
+  "body": {
+    "error": {
+      "message": "The server is overloaded",
+      "type": "server_error",
+      "param": null,
+      "code": null
+    }
+  },
+  "note": "hand-written from the documented response shape; not recorded from a live call"
+}
