@@ -198,7 +198,7 @@ def test_an_error_without_a_json_body_still_names_the_status() -> None:
         {
             "content": [],
             "usage": {"input_tokens": 1, "output_tokens": 1},
-            "stop_reason": "tool_use",
+            "stop_reason": "pause_turn",
             "model": "m",
         },
         {"content": [{"type": "text", "text": "x"}], "stop_reason": "end_turn", "model": "m"},

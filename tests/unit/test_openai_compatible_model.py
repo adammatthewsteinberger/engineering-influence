@@ -228,7 +228,7 @@ def choice(**changes: Any) -> dict[str, Any]:
     "body",
     [
         choice(choices=[]),
-        choice(choices=[{"message": {"content": "x"}, "finish_reason": "tool_calls"}]),
+        choice(choices=[{"message": {"content": "x"}, "finish_reason": "function_call"}]),
         choice(usage=None),
         choice(usage={"prompt_tokens": "many", "completion_tokens": 1}),
         {"model": "m"},

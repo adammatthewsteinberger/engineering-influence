@@ -1,6 +1,7 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Any server that speaks the OpenAI Chat Completions shape, called with plain httpx (ADR 0007)."""
 
+import json
 from typing import Any, ClassVar
 
 import httpx
@@ -14,6 +15,7 @@ from engineering_influence.models.model_request import ModelRequest
 from engineering_influence.models.model_response import ModelResponse
 from engineering_influence.models.model_usage import ModelUsage
 from engineering_influence.models.provider_descriptor import ProviderDescriptor
+from engineering_influence.models.tool_call import ToolCall
 
 
 class OpenAICompatibleModel(ModelInterface):
@@ -29,6 +31,7 @@ class OpenAICompatibleModel(ModelInterface):
         "stop": "end_turn",
         "length": "max_tokens",
         "content_filter": "refusal",
+        "tool_calls": "tool_use",
     }
     MESSAGE_OVERHEAD_TOKENS = 8
 
@@ -64,8 +67,15 @@ class OpenAICompatibleModel(ModelInterface):
         from the real ``prompt_tokens`` the server reports.
         """
         messages = self._messages(request)
-        text_bytes = sum(len(message["content"].encode("utf-8")) for message in messages)
-        return text_bytes + self.MESSAGE_OVERHEAD_TOKENS * len(messages)
+        text_bytes = sum(len((message["content"] or "").encode("utf-8")) for message in messages)
+        calls = [message["tool_calls"] for message in messages if "tool_calls" in message]
+        tools = self._tools(request)
+        extra_bytes = (
+            len(json.dumps([calls, tools], ensure_ascii=False).encode("utf-8"))
+            if calls or tools
+            else 0
+        )
+        return text_bytes + extra_bytes + self.MESSAGE_OVERHEAD_TOKENS * len(messages)
 
     def complete(self, request: ModelRequest) -> ModelResponse:
         """Send the request and map the reply onto the vendor-neutral response."""
@@ -74,6 +84,8 @@ class OpenAICompatibleModel(ModelInterface):
             "messages": self._messages(request),
             self._output_cap_field: request.max_output_tokens,
         }
+        if request.tools:
+            body["tools"] = self._tools(request)
         data = self._post("/v1/chat/completions", body)
         try:
             choice = data["choices"][0]
@@ -81,6 +93,11 @@ class OpenAICompatibleModel(ModelInterface):
             reason = self.FINISH_REASONS.get(choice["finish_reason"])
             if message.get("refusal"):
                 reason = "refusal"
+            calls = self._calls(message)
+            if calls and not request.tools:
+                raise self._unexpected("tool call that was not offered")
+            if calls and reason == "end_turn":
+                reason = "tool_use"  # some local servers say "stop" even when they call a tool
             if reason is None:
                 raise self._unexpected(f"finish reason {choice['finish_reason']!r}")
             usage = data["usage"]
@@ -94,16 +111,61 @@ class OpenAICompatibleModel(ModelInterface):
                 ),
                 model_snapshot=str(data["model"]),
                 stop_reason=reason,
+                calls=calls,
             )
         except (KeyError, IndexError, TypeError, ValueError, AttributeError) as error:
             raise self._unexpected("response") from error
 
     @staticmethod
-    def _messages(request: ModelRequest) -> list[dict[str, str]]:
-        messages = [{"role": "user", "content": request.prompt}]
+    def _messages(request: ModelRequest) -> list[dict[str, Any]]:
+        messages: list[dict[str, Any]] = [{"role": "user", "content": request.prompt}]
         if request.system.strip():
             messages.insert(0, {"role": "system", "content": request.system})
+        for turn in request.transcript:
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": turn.text if turn.text.strip() else None,
+                    "tool_calls": [
+                        {
+                            "id": call.id,
+                            "type": "function",
+                            "function": {"name": call.name, "arguments": call.arguments_json()},
+                        }
+                        for call in turn.calls
+                    ],
+                }
+            )
+            for call in turn.calls:
+                result = turn.result_for(call.id)
+                text = f"Error: {result.content}" if result.is_error else result.content
+                messages.append({"role": "tool", "tool_call_id": call.id, "content": text})
         return messages
+
+    @staticmethod
+    def _tools(request: ModelRequest) -> list[dict[str, Any]]:
+        return [
+            {
+                "type": "function",
+                "function": {
+                    "name": tool.name,
+                    "description": tool.description,
+                    "parameters": tool.json_schema(),
+                },
+            }
+            for tool in request.tools
+        ]
+
+    @staticmethod
+    def _calls(message: dict[str, Any]) -> tuple[ToolCall, ...]:
+        calls: list[ToolCall] = []
+        for entry in message.get("tool_calls") or []:
+            function = entry["function"]
+            arguments = function["arguments"]
+            if isinstance(arguments, str):
+                arguments = json.loads(arguments or "{}")
+            calls.append(ToolCall(str(entry["id"]), str(function["name"]), arguments))
+        return tuple(calls)
 
     def _post(self, path: str, body: dict[str, Any]) -> dict[str, Any]:
         headers = {"content-type": "application/json"}

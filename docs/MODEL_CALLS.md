@@ -38,3 +38,20 @@ whether it is `complete`, the `issues` if it is not, and what it cost.
 - **Every call is counted.** Each live call is journaled under `attempt * max_attempts + i`, so a stage's own
   retries and these attempts never share a journal key and no cost is lost.
 - The issue detail quotes the model's own words, so treat it as untrusted text wherever it is shown.
+
+## Tools in the model port (the first slice of ADR 0008)
+
+A `ModelRequest` can offer `tools` (a `ToolDefinition`: a name, a description and a JSON schema) and carry a
+`transcript` of earlier rounds (`ModelTurn`: what the model said, the `ToolCall`s it made and the `ToolResult`
+of each). A `ModelResponse` can come back with `calls` and the stop reason `tool_use`, which goes with calls
+and only with them. Each adapter speaks its provider's format: `tool_use` and `tool_result` content blocks
+for Anthropic, `tool_calls` and `role: tool` messages for OpenAI-compatible servers. Some local servers
+report `stop` next to a tool call; that is read as `tool_use`. A tool call nobody offered, a malformed
+call, or `tool_use` with no call is refused as an unexpected reply.
+
+An adapter never runs a tool. It returns what the model asked for.
+
+**Nothing offers tools yet.** `CallModel` refuses a request that has tools or a transcript, because it
+journals text, and a tool turn has to be journaled whole so a resumed run replays it. The tool loop, that
+journal and the per-stage allowlist are the next slices. Neither adapter has been run against a live
+provider with tools.
