@@ -4,6 +4,7 @@
 import hashlib
 import json
 
+from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interfaces.journal_interface import JournalInterface
 from engineering_influence.interfaces.model_interface import ModelInterface
 from engineering_influence.models.journal_entry import JournalEntry
@@ -45,7 +46,7 @@ class CallModel(CallModelInterface):
         request: ModelRequest,
     ) -> ModelCallResult:
         """Replay the journaled answer, or reserve, call, journal and settle."""
-        replayed = self.replay(run_id, stage, request)
+        replayed = self.replay(run_id, stage, request)  # refuses a request with tools
         if replayed is not None:
             return replayed
         descriptor = self._model.describe()
@@ -72,11 +73,22 @@ class CallModel(CallModelInterface):
 
     def replay(self, run_id: str, stage: str, request: ModelRequest) -> ModelCallResult | None:
         """The complete answer this run already has for the request, or None; costs nothing."""
+        self._refuse_tools(request)
         key = self._key(self._model.describe().model, request, "")
         recorded = self._journal.find(run_id, stage, key.digest())
         if recorded is None:
             return None
         return ModelCallResult(recorded.response, "end_turn", 0, True)
+
+    @staticmethod
+    def _refuse_tools(request: ModelRequest) -> None:
+        """Tool turns are journaled by the tool loop; this call only knows text, so it refuses them."""
+        if request.tools or request.transcript:
+            raise ApplicationError(
+                code="MODEL_TOOLS_NEED_THE_TOOL_LOOP",
+                message="a request with tools cannot be journaled as plain text",
+                http_status=500,
+            )
 
     @staticmethod
     def _key(model: str, request: ModelRequest, outcome: str) -> JournalKey:

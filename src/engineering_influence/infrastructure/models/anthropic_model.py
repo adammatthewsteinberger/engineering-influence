@@ -12,8 +12,11 @@ from engineering_influence.interfaces.model_interface import ModelInterface
 from engineering_influence.models.model_availability import ModelAvailability
 from engineering_influence.models.model_request import ModelRequest
 from engineering_influence.models.model_response import ModelResponse
+from engineering_influence.models.model_turn import ModelTurn
 from engineering_influence.models.model_usage import ModelUsage
 from engineering_influence.models.provider_descriptor import ProviderDescriptor
+from engineering_influence.models.tool_call import ToolCall
+from engineering_influence.models.tool_result import ToolResult
 
 
 class AnthropicModel(ModelInterface):
@@ -30,6 +33,7 @@ class AnthropicModel(ModelInterface):
         "stop_sequence": "end_turn",
         "max_tokens": "max_tokens",
         "refusal": "refusal",
+        "tool_use": "tool_use",
     }
 
     def __init__(
@@ -73,6 +77,13 @@ class AnthropicModel(ModelInterface):
             text = "".join(
                 block["text"] for block in data["content"] if block.get("type") == "text"
             )
+            calls = tuple(
+                ToolCall(str(block["id"]), str(block["name"]), block["input"])
+                for block in data["content"]
+                if block.get("type") == "tool_use"
+            )
+            if calls and not request.tools:
+                raise self._unexpected("tool call that was not offered")
             usage = data["usage"]
             reason = self.STOP_REASONS.get(data["stop_reason"])
             if reason is None:
@@ -87,6 +98,7 @@ class AnthropicModel(ModelInterface):
                 ),
                 model_snapshot=str(data["model"]),
                 stop_reason=reason,
+                calls=calls,
             )
         except (KeyError, TypeError, ValueError, AttributeError) as error:
             raise self._unexpected("response") from error
@@ -94,8 +106,17 @@ class AnthropicModel(ModelInterface):
     def _body(self, request: ModelRequest, with_output_cap: bool) -> dict[str, Any]:
         body: dict[str, Any] = {
             "model": self._descriptor.model,
-            "messages": [{"role": "user", "content": request.prompt}],
+            "messages": self._messages(request),
         }
+        if request.tools:
+            body["tools"] = [
+                {
+                    "name": tool.name,
+                    "description": tool.description,
+                    "input_schema": tool.json_schema(),
+                }
+                for tool in request.tools
+            ]
         if request.system.strip():
             body["system"] = [
                 {
@@ -107,6 +128,41 @@ class AnthropicModel(ModelInterface):
         if with_output_cap:
             body["max_tokens"] = request.max_output_tokens
         return body
+
+    @classmethod
+    def _messages(cls, request: ModelRequest) -> list[dict[str, Any]]:
+        messages: list[dict[str, Any]] = [{"role": "user", "content": request.prompt}]
+        for turn in request.transcript:
+            messages.append({"role": "assistant", "content": cls._assistant_blocks(turn)})
+            messages.append(
+                {
+                    "role": "user",
+                    "content": [cls._result_block(turn.result_for(call.id)) for call in turn.calls],
+                }
+            )
+        return messages
+
+    @staticmethod
+    def _assistant_blocks(turn: ModelTurn) -> list[dict[str, Any]]:
+        blocks: list[dict[str, Any]] = []
+        if turn.text.strip():
+            blocks.append({"type": "text", "text": turn.text})
+        blocks.extend(
+            {"type": "tool_use", "id": call.id, "name": call.name, "input": dict(call.arguments)}
+            for call in turn.calls
+        )
+        return blocks
+
+    @staticmethod
+    def _result_block(result: ToolResult) -> dict[str, Any]:
+        block: dict[str, Any] = {
+            "type": "tool_result",
+            "tool_use_id": result.call_id,
+            "content": result.content,
+        }
+        if result.is_error:
+            block["is_error"] = True
+        return block
 
     def _post(self, path: str, body: dict[str, Any]) -> dict[str, Any]:
         headers = {

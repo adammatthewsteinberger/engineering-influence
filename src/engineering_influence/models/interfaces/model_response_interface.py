@@ -16,3 +16,7 @@ class ModelResponseInterface(ABC):
     @abstractmethod
     def was_refused(self) -> bool:
         """True when the model declined to answer."""
+
+    @abstractmethod
+    def wants_tools(self) -> bool:
+        """True when the model asked for tools to be run before it goes on."""
