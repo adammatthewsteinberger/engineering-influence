@@ -2,7 +2,7 @@
 # Starts a throwaway PostgreSQL and RabbitMQ for the integration tests and prints the settings.
 #
 #   eval "$(sh tests/integration/stack.sh up)"   # start, then export the two URLs
-#   uv run pytest -m integration
+#   uv run pytest -m integration tests/integration
 #   eval "$(sh tests/integration/stack.sh env)"  # export the URLs again from the running stack
 #   sh tests/integration/stack.sh down            # remove both containers
 #

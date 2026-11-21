@@ -177,7 +177,7 @@ jobs:
           for url in "$EI_TEST_DATABASE_URL" "$EI_TEST_RABBITMQ_URL"; do
             echo "::add-mask::$(printf '%s' "$url" | sed 's#^[^:]*://[^:]*:\([^@]*\)@.*#\1#')"
           done
-          uv run pytest -m integration -q
+          uv run pytest -m integration -q tests/integration
       - if: always()
         run: sh tests/integration/stack.sh down
 

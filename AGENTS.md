@@ -28,7 +28,7 @@ uv run mypy --strict src packages
 uv run pytest --cov --cov-branch --cov-fail-under=100
 sh examples/compose_smoke.sh     # if you changed the runtime, compose file or an example
 # if you changed persistence, the broker or how runs advance; then `sh tests/integration/stack.sh down`
-eval "$(sh tests/integration/stack.sh up)" && uv run pytest -m integration
+eval "$(sh tests/integration/stack.sh up)" && uv run pytest -m integration tests/integration
 ```
 
 Check each command's real exit status; do not trust a pipe. For a user-visible change add a

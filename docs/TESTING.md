@@ -14,7 +14,7 @@ uv sync --extra test --extra runtime --extra dev --extra publishing
 | Dependencies | `uv run pip-audit` | known vulnerabilities (the two local packages are reported as unauditable; that is expected) |
 | Types | `uv run mypy --strict src packages` | strict typing |
 | Tests | `uv run pytest --cov --cov-branch --cov-fail-under=100` | all tests and **100% branch coverage** |
-| Integration | `eval "$(sh tests/integration/stack.sh up)"`, then `uv run pytest -m integration` | the migrations on PostgreSQL, the stores under concurrent writers, jobs through RabbitMQ, and a book run that finishes through the stack however its workers die |
+| Integration | `eval "$(sh tests/integration/stack.sh up)"`, then `uv run pytest -m integration tests/integration` | the migrations on PostgreSQL, the stores under concurrent writers, jobs through RabbitMQ, and a book run that finishes through the stack however its workers die |
 | Compose smoke | `sh examples/compose_smoke.sh` | the real stack: credentials refused, a two-stage pipeline completes, a malformed message is dead-lettered, the curl example works |
 | Provenance | `vibey-gh check --ci`; on pull requests `vibey-gh provenance-check` and `conventional-check` | file headers, `Made-With:` trailers, Conventional Commit subjects |
 | Leak scan | gitleaks plus a path check | no secrets and no private-content paths in history |
@@ -94,11 +94,13 @@ random credentials on random `127.0.0.1` ports and prints the two settings the t
 
 ```bash
 eval "$(sh tests/integration/stack.sh up)"     # start, then export EI_TEST_DATABASE_URL and EI_TEST_RABBITMQ_URL
-uv run pytest -m integration
+uv run pytest -m integration tests/integration
 sh tests/integration/stack.sh down             # remove both containers
 ```
 
-`stack.sh env` prints the exports again for a stack that is already running. Without the settings
+Name the directory: the integration job installs only the `test` and `runtime` extras, and a bare
+`pytest -m integration` would still try to import every other test module and fail on the ones that
+need the `publishing` extra. `stack.sh env` prints the exports again for a stack that is already running. Without the settings
 the tests skip; with `EI_REQUIRE_INTEGRATION=1`, which the `integration` CI job sets, a missing stack
 fails them instead, so the job cannot pass with nothing tested. Each test gets its own PostgreSQL
 schema (dropped afterwards) and its own queue names, so they can run against one stack.

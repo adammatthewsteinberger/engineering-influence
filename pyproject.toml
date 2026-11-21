@@ -96,7 +96,7 @@ addopts = "--strict-markers -m 'not distribution and not toolchain and not integ
 markers = [
   "distribution: builds and installs the real artifacts; needs network access (pytest -m distribution)",
   "toolchain: builds the fixture book with real TeX and checks a snapshot (pytest -m toolchain)",
-  "integration: runs against real PostgreSQL and RabbitMQ; start them with tests/integration/stack.sh (pytest -m integration)",
+  "integration: runs against real PostgreSQL and RabbitMQ; start them with tests/integration/stack.sh (pytest -m integration tests/integration)",
 ]
 
 [tool.coverage.run]
