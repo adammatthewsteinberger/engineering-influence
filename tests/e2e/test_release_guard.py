@@ -1,5 +1,6 @@
 """The release workflow's guard decides whether a tag may publish; test the real script."""
 
+import fnmatch
 import subprocess
 from pathlib import Path
 
@@ -221,21 +222,51 @@ def release_jobs() -> dict[str, dict[str, object]]:
     return jobs
 
 
+PUBLISHING = {
+    # job: (index host or None for PyPI, file stem, environment)
+    "testpypi": ("test.pypi.org", "engineering_influence", "testpypi"),
+    "testpypi-sdk": ("test.pypi.org", "engineering_influence_sdk", "testpypi-sdk"),
+    "pypi": (None, "engineering_influence", "pypi"),
+    "pypi-sdk": (None, "engineering_influence_sdk", "pypi-sdk"),
+}
+BUILT = [
+    "engineering_influence-0.1.0a2-py3-none-any.whl",
+    "engineering_influence-0.1.0a2.tar.gz",
+    "engineering_influence_sdk-0.1.0a2-py3-none-any.whl",
+    "engineering_influence_sdk-0.1.0a2.tar.gz",
+    "SHA256SUMS",
+    "sbom.cdx.json",
+]
+
+
+def publish_step(job: dict[str, object]) -> dict[str, object]:
+    steps = [s for s in job["steps"] if "gh-action-pypi-publish" in s.get("uses", "")]
+    assert len(steps) == 1
+    return steps[0]
+
+
 def test_the_testpypi_rehearsal_is_off_until_its_own_variable_is_set() -> None:
-    job = release_jobs()["testpypi"]
+    jobs = release_jobs()
 
-    assert job["if"] == "vars.PUBLISH_TO_TESTPYPI == 'true'"
-    assert job["needs"] == "github-release"
-    assert job["environment"]["name"] == "testpypi"
+    for name in ("testpypi", "testpypi-sdk"):
+        assert jobs[name]["if"] == "vars.PUBLISH_TO_TESTPYPI == 'true'"
+    assert jobs["testpypi"]["needs"] == "github-release"
+    assert jobs["testpypi-sdk"]["needs"] == "testpypi"
 
 
-def test_both_uploads_are_authorised_by_the_runs_identity_and_use_no_token() -> None:
-    for name, host in (("testpypi", "test.pypi.org"), ("pypi", None)):
+def test_each_package_is_uploaded_from_an_environment_of_its_own() -> None:
+    jobs = release_jobs()
+
+    names = [jobs[name]["environment"]["name"] for name in PUBLISHING]
+    assert names == [env for _, _, env in PUBLISHING.values()]
+    assert len(set(names)) == 4  # PyPI tells pending publishers apart by environment
+
+
+def test_every_upload_is_authorised_by_the_runs_identity_and_uses_no_token() -> None:
+    for name, (host, _, _) in PUBLISHING.items():
         job = release_jobs()[name]
         assert job["permissions"] == {"id-token": "write"}
-        publish = [s for s in job["steps"] if "gh-action-pypi-publish" in s.get("uses", "")]
-        assert len(publish) == 1
-        options = publish[0]["with"]
+        options = publish_step(job)["with"]
         assert not {"password", "user"} & options.keys()
         assert options["attestations"] is True
         assert ("repository-url" in options) is (host is not None)
@@ -243,29 +274,54 @@ def test_both_uploads_are_authorised_by_the_runs_identity_and_use_no_token() -> 
             assert options["repository-url"] == f"https://{host}/legacy/"
 
 
-def test_the_rehearsal_publishes_only_the_distributions_not_the_sbom_or_checksums() -> None:
-    steps = release_jobs()["testpypi"]["steps"]
-    keep = next(s for s in steps if s.get("name") == "Keep only the distributions")
+def test_each_job_uploads_only_its_own_package_and_not_the_sbom_or_checksums() -> None:
+    for name, (_, stem, _) in PUBLISHING.items():
+        job = release_jobs()[name]
+        move = next(
+            s
+            for s in job["steps"]
+            if s.get("name") == "Keep only the distributions of this package"
+        )
+        patterns = [word for word in move["run"].split() if word.startswith("dist/")]
+        assert patterns == [f"dist/{stem}-*.whl", f"dist/{stem}-*.tar.gz"]
+        taken = {f for f in BUILT for p in patterns if fnmatch.fnmatch(f"dist/{f}", p)}
+        assert taken == {f for f in BUILT if f.startswith(f"{stem}-")}
+        assert publish_step(job)["with"]["packages-dir"] == move["run"].split()[-1]
 
-    assert "mv dist/*.whl dist/*.tar.gz testpypi-dist/" in keep["run"]
-    publish = next(s for s in steps if "gh-action-pypi-publish" in s.get("uses", ""))
-    assert publish["with"]["packages-dir"] == "testpypi-dist/"
+
+def test_the_two_packages_never_take_each_others_files() -> None:
+    core = {f for f in BUILT if fnmatch.fnmatch(f, "engineering_influence-*")}
+    sdk = {f for f in BUILT if fnmatch.fnmatch(f, "engineering_influence_sdk-*")}
+
+    assert len(core) == len(sdk) == 2
+    assert not core & sdk
 
 
 def test_pypi_waits_for_the_rehearsal_and_stops_if_it_failed_but_not_if_it_was_skipped() -> None:
     job = release_jobs()["pypi"]
     condition = " ".join(str(job["if"]).split())
 
-    assert job["needs"] == ["github-release", "testpypi"]
+    assert job["needs"] == ["github-release", "testpypi", "testpypi-sdk"]
     assert "always()" in condition
     assert "vars.PUBLISH_TO_PYPI == 'true'" in condition
     assert "needs.github-release.result == 'success'" in condition
-    assert "needs.testpypi.result != 'failure'" in condition
-    assert "needs.testpypi.result != 'cancelled'" in condition
+    for rehearsal in ("testpypi", "testpypi-sdk"):
+        assert f"needs.{rehearsal}.result != 'failure'" in condition
+        assert f"needs.{rehearsal}.result != 'cancelled'" in condition
     assert "'skipped'" not in condition  # a skipped rehearsal is allowed, so it is not named
 
 
-def test_every_publishing_job_waits_for_the_github_release() -> None:
+def test_the_sdk_goes_up_to_pypi_only_after_the_core_did() -> None:
+    job = release_jobs()["pypi-sdk"]
+    condition = " ".join(str(job["if"]).split())
+
+    assert job["needs"] == "pypi"
+    assert "always()" in condition
+    assert "vars.PUBLISH_TO_PYPI == 'true'" in condition
+    assert "needs.pypi.result == 'success'" in condition
+
+
+def test_every_publishing_chain_starts_after_the_github_release() -> None:
     jobs = release_jobs()
 
     assert jobs["testpypi"]["needs"] == "github-release"

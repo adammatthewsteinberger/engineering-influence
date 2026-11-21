@@ -3,10 +3,12 @@
 #   1. The guard job checks the tag matches the code, the changelog and the main branch.
 #   2. The build job is the same reusable workflow CI runs on every push, plus the full tests.
 #   3. The GitHub release attaches the artifacts with signed build provenance.
-#   4. A rehearsal on TestPyPI runs only if the repository variable PUBLISH_TO_TESTPYPI is 'true'.
+#   4. A rehearsal on TestPyPI (the core, then the SDK) runs only if the repository variable
+#      PUBLISH_TO_TESTPYPI is 'true'.
 #   5. Publishing to PyPI is last, is skipped unless the repository variable PUBLISH_TO_PYPI is
 #      'true', waits for the rehearsal if there was one (a failed rehearsal stops it), and waits
-#      for approval of the 'pypi' environment.
+#      for approval of the 'pypi' environment. The SDK is uploaded by its own job after the core,
+#      from its own environment ('pypi-sdk'), because PyPI tells pending publishers apart by it.
 name: Release
 
 on:
@@ -99,9 +101,10 @@ jobs:
     if: vars.PUBLISH_TO_TESTPYPI == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # A rehearsal of the PyPI upload. Configure the trusted publisher for both projects on
-    # TestPyPI, and require reviewers on this environment, before setting PUBLISH_TO_TESTPYPI.
-    # See docs/RELEASING.md. No token is used: the upload is authorised by the run's identity.
+    # A rehearsal of the PyPI upload, one job and one environment for each package, because a pending
+    # trusted publisher is told apart by its environment. Configure the trusted publisher for each
+    # project on TestPyPI, and require reviewers on each environment, before setting
+    # PUBLISH_TO_TESTPYPI. See docs/RELEASING.md. No token is used: the run's identity authorises it.
     environment:
       name: testpypi
       url: https://test.pypi.org/project/engineering-influence/
@@ -112,11 +115,11 @@ jobs:
         with:
           name: dist
           path: dist
-      - name: Keep only the distributions
+      - name: Keep only the distributions of this package
         run: |
           set -eu
           mkdir testpypi-dist
-          mv dist/*.whl dist/*.tar.gz testpypi-dist/
+          mv dist/engineering_influence-*.whl dist/engineering_influence-*.tar.gz testpypi-dist/
       - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
         with:
           repository-url: https://test.pypi.org/legacy/
@@ -124,9 +127,37 @@ jobs:
           attestations: true
           skip-existing: true
 
+  testpypi-sdk:
+    needs: testpypi
+    if: vars.PUBLISH_TO_TESTPYPI == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # The SDK, after the core has gone up. A failed or skipped core upload skips this.
+    environment:
+      name: testpypi-sdk
+      url: https://test.pypi.org/project/engineering-influence-sdk/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: dist
+          path: dist
+      - name: Keep only the distributions of this package
+        run: |
+          set -eu
+          mkdir testpypi-sdk-dist
+          mv dist/engineering_influence_sdk-*.whl dist/engineering_influence_sdk-*.tar.gz testpypi-sdk-dist/
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          packages-dir: testpypi-sdk-dist/
+          attestations: true
+          skip-existing: true
+
   pypi:
-    needs: [github-release, testpypi]
-    # PUBLISH_TO_PYPI must be 'true'. If the TestPyPI rehearsal ran, it must not have failed or
+    needs: [github-release, testpypi, testpypi-sdk]
+    # PUBLISH_TO_PYPI must be 'true'. If the TestPyPI rehearsal ran, neither upload may have failed or
     # been cancelled; if it was skipped, this goes ahead. `always()` is needed so that a skipped
     # rehearsal does not skip this job, so the release job's success is checked here by hand.
     if: >-
@@ -134,11 +165,14 @@ jobs:
       && vars.PUBLISH_TO_PYPI == 'true'
       && needs.github-release.result == 'success'
       && needs.testpypi.result != 'failure'
-      && needs.testpypi.result != 'cancelled' }}
+      && needs.testpypi.result != 'cancelled'
+      && needs.testpypi-sdk.result != 'failure'
+      && needs.testpypi-sdk.result != 'cancelled' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Configure the trusted publisher for both projects on PyPI, and require reviewers on this
-    # environment, before setting PUBLISH_TO_PYPI. See docs/RELEASING.md.
+    # One job and one environment for each package, because a pending trusted publisher is told apart
+    # by its environment. Configure the trusted publisher for each project on PyPI, and require
+    # reviewers on each environment, before setting PUBLISH_TO_PYPI. See docs/RELEASING.md.
     environment:
       name: pypi
       url: https://pypi.org/project/engineering-influence/
@@ -149,12 +183,38 @@ jobs:
         with:
           name: dist
           path: dist
-      - name: Keep only the distributions
+      - name: Keep only the distributions of this package
         run: |
           set -eu
           mkdir pypi-dist
-          mv dist/*.whl dist/*.tar.gz pypi-dist/
+          mv dist/engineering_influence-*.whl dist/engineering_influence-*.tar.gz pypi-dist/
       - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
         with:
           packages-dir: pypi-dist/
+          attestations: true
+
+  pypi-sdk:
+    needs: pypi
+    if: ${{ always() && vars.PUBLISH_TO_PYPI == 'true' && needs.pypi.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # The SDK, after the core has been published. If the core was not published, this does not run.
+    environment:
+      name: pypi-sdk
+      url: https://pypi.org/project/engineering-influence-sdk/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: dist
+          path: dist
+      - name: Keep only the distributions of this package
+        run: |
+          set -eu
+          mkdir pypi-sdk-dist
+          mv dist/engineering_influence_sdk-*.whl dist/engineering_influence_sdk-*.tar.gz pypi-sdk-dist/
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          packages-dir: pypi-sdk-dist/
           attestations: true
