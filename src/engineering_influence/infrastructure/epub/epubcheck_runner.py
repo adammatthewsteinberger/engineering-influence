@@ -9,20 +9,28 @@ from engineering_influence.infrastructure.process.interfaces.process_runner_inte
 )
 from engineering_influence.infrastructure.process.process_runner import ProcessRunner
 from engineering_influence.interfaces.epubcheck_interface import EpubcheckInterface
+from engineering_influence.models.tool_limits import ToolLimits
 
 
 class EpubcheckRunner(EpubcheckInterface):
-    """Finds epubcheck on PATH (Debian installs it as a bare .jar) and reports its findings."""
+    """Finds epubcheck on PATH (Debian installs it as a bare .jar) and reports its findings.
+
+    It writes nothing, so only its time and memory are limited; a JVM may hold a good deal.
+    """
+
+    DEFAULT_LIMITS = ToolLimits(
+        timeout_seconds=600.0, max_memory_bytes=4 * 2**30, max_disk_bytes=2**30
+    )
 
     def __init__(
         self,
         required: bool = False,
         runner: ProcessRunnerInterface | None = None,
-        timeout_seconds: float = 600.0,
+        limits: ToolLimits | None = None,
     ) -> None:
         self._required = required
         self._runner = runner or ProcessRunner()
-        self._timeout = timeout_seconds
+        self._limits = limits or self.DEFAULT_LIMITS
 
     def command(self) -> list[str] | None:
         """epubcheck as a command, or None when it is not installed."""
@@ -46,7 +54,7 @@ class EpubcheckRunner(EpubcheckInterface):
                 return ["epubcheck: not installed, but a strict release requires it"]
             return []
         # Argument list built from a located executable and a file path; no shell.
-        status, stdout, stderr = self._runner.run([*command, "--quiet", str(path)], self._timeout)
+        status, stdout, stderr = self._runner.run([*command, "--quiet", str(path)], self._limits)
         if status == 0:
             return []
         lines = (stdout + stderr).strip().splitlines()
