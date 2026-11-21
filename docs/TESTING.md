@@ -96,11 +96,13 @@ cannot go stale with the TeX Live release. `tests/unit/publishing/typesetting/te
 is its fast counterpart in the default suite: it fills every field with a tripwire and fails if a live
 macro reaches the generated TeX. See [THREAT_MODEL.md](THREAT_MODEL.md).
 
-`tests/toolchain/test_build_timeout.py` is the third. It hangs real `latexmk` and real `tex4ebook` with a
-document that loops forever, and checks that the build fails at its deadline and that no process it
-started is left running. The document writes a marker first, so the test shows the tool reached the
-loop. `tests/unit/test_process_runner.py` covers the same stop with real child processes in the default
-suite: a grandchild in the group, one that left it, and an interrupt.
+`tests/toolchain/test_build_limits.py` is the third. It makes real `latexmk` and real `tex4ebook` hang with a
+document that loops forever, and makes real `lualatex` allocate far more memory than its limit and write far
+more disk than its limit. It checks that each build fails at its limit and that no process it started is
+left running. A hang test's document writes a marker first, so the test shows the tool reached the loop.
+`tests/unit/test_process_runner.py` and `tests/unit/test_process_meter.py` cover the same stops, and the
+measurements behind them, with real child processes in the default suite: a grandchild in the group, one
+that left it, an interrupt, memory summed over a group, and a directory's size.
 
 ## Writing tests
 

@@ -13,19 +13,25 @@ from engineering_influence.infrastructure.qa.interfaces.page_rasterizer_interfac
     PageRasterizerInterface,
 )
 from engineering_influence.models.qa.page_file_number import PageFileNumber
+from engineering_influence.models.tool_limits import ToolLimits
 
 
 class PageRasterizer(PageRasterizerInterface):
     """Uses poppler's pdftoppm when present, otherwise MuPDF's mutool.
 
-    A renderer still running after ``timeout_seconds`` is stopped, with a BookBuildError.
+    A renderer that passes its time, memory or disk limit is stopped, with a BookBuildError.
+    The disk limit applies to the page directory.
     """
 
+    DEFAULT_LIMITS = ToolLimits(
+        timeout_seconds=600.0, max_memory_bytes=2 * 2**30, max_disk_bytes=4 * 2**30
+    )
+
     def __init__(
-        self, runner: ProcessRunnerInterface | None = None, timeout_seconds: float = 600.0
+        self, runner: ProcessRunnerInterface | None = None, limits: ToolLimits | None = None
     ) -> None:
         self._runner = runner or ProcessRunner()
-        self._timeout = timeout_seconds
+        self._limits = limits or self.DEFAULT_LIMITS
 
     def command(self) -> str:
         """The renderer found on PATH."""
@@ -72,7 +78,7 @@ class PageRasterizer(PageRasterizerInterface):
                 str(pdf),
             ]
         # Fixed argument list, no shell; the PDF path is absolute so it cannot read as an option.
-        status, stdout, stderr = self._runner.run(cmd, self._timeout)
+        status, stdout, stderr = self._runner.run(cmd, self._limits, watch=pages_dir)
         if status:
             detail = (stderr or stdout)[-4000:]
             raise BookBuildError(f"PDF renderer failed:\n{detail}")

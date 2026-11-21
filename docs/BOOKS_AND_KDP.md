@@ -124,14 +124,25 @@ things it cannot make safe (the full picture is in [THREAT_MODEL.md](THREAT_MODE
   `\ { } % # ^ ~`, control characters and unbalanced parentheses are dropped. An ordinary title,
   including balanced parentheses, is unchanged.
 
-### A build that runs too long
+### A build that runs too long, or uses too much
 
-Each build tool has a deadline: 30 minutes for `latexmk` and `tex4ebook`, and 10 minutes for `epubcheck`
-and the page renderer. A tool that is still running then is stopped, together with everything it
-started, and the build fails with a message such as
-`latexmk did not finish within 1800 seconds and was stopped`, followed by the tool's last output so
-you can see where it stopped. The deadlines are fixed in the code, not settings. A book that
-legitimately needs longer than that is not supported yet.
+Each build tool has limits, and a tool that passes one is stopped, together with everything it started:
+
+| Tool | Time | Memory | Disk written |
+|---|---|---|---|
+| `latexmk` and `tex4ebook` | 30 minutes | 8 GiB | 4 GiB |
+| `epubcheck` | 10 minutes | 4 GiB | not measured |
+| the page renderer | 10 minutes | 2 GiB | 4 GiB |
+
+Memory is the resident size of the tool and everything it started. Disk is the size of the directory it
+writes into. The build then fails with a message such as
+`latexmk did not finish within 1800 seconds and was stopped`,
+`latexmk used 8300 MiB of memory, over its limit of 8192 MiB and was stopped` or
+`latexmk wrote 4300 MiB to disk, over its limit of 4096 MiB and was stopped`, followed by the tool's last
+output so you can see where it stopped. Memory and disk are checked twice a second, so the figure in the
+message can be a little over the limit. A normal book is far below all of these (the fixture books peak
+at about 400 MiB). The limits are fixed in the code, not settings, and a book that legitimately needs
+more than this is not supported yet.
 
 ### Trim size and paper
 

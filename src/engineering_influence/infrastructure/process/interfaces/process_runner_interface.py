@@ -10,9 +10,11 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
     from pathlib import Path
 
+    from engineering_influence.models.tool_limits import ToolLimits
+
 
 class ProcessRunnerInterface(ABC):
-    """Runs an external tool and never lets it run past a deadline."""
+    """Runs an external tool and never lets it pass its limits."""
 
     __slots__ = ()
 
@@ -20,12 +22,14 @@ class ProcessRunnerInterface(ABC):
     def run(
         self,
         command: list[str],
-        timeout_seconds: float,
+        limits: ToolLimits,
         cwd: Path | None = None,
         env: Mapping[str, str] | None = None,
+        watch: Path | None = None,
     ) -> tuple[int, str, str]:
         """Run the command; return (exit status, stdout, stderr).
 
-        Raises BookBuildError when the tool is still running after timeout_seconds, once the
-        tool and everything it started have been stopped.
+        Raises BookBuildError when the tool passes its time, memory or disk limit, once the
+        tool and everything it started have been stopped. The disk limit applies to the
+        directory named by ``watch``; with none given, disk is not measured.
         """
