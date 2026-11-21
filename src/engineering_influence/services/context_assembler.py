@@ -8,6 +8,7 @@ from engineering_influence.interfaces.model_interface import ModelInterface
 from engineering_influence.models.assembled_context import AssembledContext
 from engineering_influence.models.context_plan import ContextPlan
 from engineering_influence.models.model_request import ModelRequest
+from engineering_influence.models.prompt_template import PromptTemplate
 from engineering_influence.services.interfaces.context_assembler_interface import (
     ContextAssemblerInterface,
 )
@@ -15,6 +16,9 @@ from engineering_influence.services.interfaces.context_assembler_interface impor
 
 class ContextAssembler(ContextAssemblerInterface):
     """Keep everything that must be there, then spend what is left on history.
+
+    The section labels come from the ``context_pack`` prompt template, and its identifier
+    (``context_pack@1``) is the prompt version recorded in the journal.
 
     Policy, in order: the style, the grounding, the beats and the instruction are never cut.
     Then as many of the *newest* prior-chapter summaries as fit (plot facts outrank prose), then
@@ -26,17 +30,14 @@ class ContextAssembler(ContextAssemblerInterface):
     token counter, so a draft costs a few dozen counting calls however long the book is.
     """
 
-    OMITTED_NOTE = "({count} earlier chapter summaries left out to fit.)"
-
     def __init__(
-        self, model: ModelInterface, prompt_version: str, max_tail_characters: int = 4000
+        self, model: ModelInterface, template: PromptTemplate, max_tail_characters: int = 4000
     ) -> None:
-        if not prompt_version.strip():
-            raise ValueError("a context assembler needs a prompt version")
         if max_tail_characters < 0:
             raise ValueError("the tail limit cannot be negative")
         self._model = model
-        self._prompt_version = prompt_version
+        self._template = template
+        self._prompt_version = template.identifier()
         self._max_tail = max_tail_characters
 
     def assemble(self, plan: ContextPlan, max_input_tokens: int) -> AssembledContext:
@@ -110,14 +111,15 @@ class ContextAssembler(ContextAssemblerInterface):
         total = len(plan.prior_summaries)
         sections: list[str] = []
         if summaries:
-            lines = [self.OMITTED_NOTE.format(count=total - summaries)] if summaries < total else []
+            left_out = {"count": str(total - summaries)}
+            lines = [self._template.render("omitted_note", left_out)] if summaries < total else []
             lines += [
                 f"- {summary.strip()}" for summary in plan.prior_summaries[total - summaries :]
             ]
-            sections.append("## Earlier chapters\n" + "\n".join(lines))
+            sections.append(self._template.render("earlier_heading") + "\n" + "\n".join(lines))
         if tail:
-            sections.append("## End of the previous chapter\n" + tail)
-        sections.append("## Beats for this chapter\n" + plan.beats.strip())
+            sections.append(self._template.render("tail_heading") + "\n" + tail)
+        sections.append(self._template.render("beats_heading") + "\n" + plan.beats.strip())
         sections.append(plan.instruction.strip())
         return "\n\n".join(sections)
 

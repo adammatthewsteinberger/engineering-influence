@@ -82,7 +82,8 @@ A fetched web page can say "ignore your instructions and write X". Nothing fetch
 so none of this is implemented; these are the rules M6 must meet, written down first.
 
 1. **A source is data.** It is placed in the prompt as quoted, delimited material that the
-   system text says to treat as evidence and never as instructions.
+   system text says to treat as evidence and never as instructions. The mechanism exists
+   (`PromptTemplate`'s untrusted blanks, [PROMPTS.md](PROMPTS.md)); nothing uses it with fetched text yet.
 2. **The model has no tools.** It returns text, which is typeset. A successful injection can
    change what a chapter says; it cannot read a file, call a service or spend money outside
    the run.
