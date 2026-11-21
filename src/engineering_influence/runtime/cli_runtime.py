@@ -1,6 +1,8 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Compose the command-line application."""
 
+import os
+from datetime import date
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -13,11 +15,13 @@ from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
 from engineering_influence.interactions.cli.book_cli import BookCli
 from engineering_influence.interactions.cli.cli_application import CliApplication
 from engineering_influence.interactions.cli.db_cli import DbCli
+from engineering_influence.interactions.cli.doctor_cli import DoctorCli
 from engineering_influence.interactions.cli.interfaces.cli_application_interface import (
     CliApplicationInterface,
 )
 from engineering_influence.interactions.cli.run_cli import RunCli
 from engineering_influence.interactions.cli.serve_cli import ServeCli
+from engineering_influence.interfaces.model_probe_interface import ModelProbeInterface
 from engineering_influence.interfaces.queue_interface import QueueInterface
 from engineering_influence.interfaces.run_repository_interface import RunRepositoryInterface
 from engineering_influence.interfaces.schema_migrator_interface import SchemaMigratorInterface
@@ -29,7 +33,11 @@ from engineering_influence.runtime.interfaces.publishing_controller_factory_inte
 from engineering_influence.runtime.serve_starter import ServeStarter
 from engineering_influence.services.cancel_run import CancelRun
 from engineering_influence.services.interfaces.cancel_run_interface import CancelRunInterface
+from engineering_influence.services.interfaces.model_doctor_interface import (
+    ModelDoctorInterface,
+)
 from engineering_influence.services.interfaces.resume_run_interface import ResumeRunInterface
+from engineering_influence.services.model_doctor import ModelDoctor
 from engineering_influence.services.resume_run import ResumeRun
 from engineering_influence.services.start_pipeline import StartPipeline
 
@@ -40,7 +48,7 @@ if TYPE_CHECKING:
 class CliRuntime(CliRuntimeInterface):
     """Wire ``ei``: a local pipeline planner, the book, server and database commands.
 
-    ``publishing`` replaces the factory that wires the book commands to the real file system and
+    ``probe_timeout_seconds`` bounds each request of ``doctor --probe``. ``publishing`` replaces the factory that wires the book commands to the real file system and
     toolchain, so a test can drive the whole command line over fakes.
     """
 
@@ -48,9 +56,11 @@ class CliRuntime(CliRuntimeInterface):
         self,
         publishing: PublishingControllerFactoryInterface | None = None,
         queue: QueueInterface | None = None,
+        probe_timeout_seconds: float = 10.0,
     ) -> None:
         self._publishing = publishing
         self._queue = queue
+        self._probe_timeout_seconds = probe_timeout_seconds
 
     def build(self) -> CliApplicationInterface:
         """Wire the controller, the book commands and the server commands."""
@@ -61,6 +71,37 @@ class CliRuntime(CliRuntimeInterface):
             ServeCli(ServeStarter()),
             DbCli(self._schema_migrator, self._secret_provider),
             RunCli(self._resume_run, self._cancel_run, self._run_status),
+            DoctorCli(self._model_doctor, os.environ),
+        )
+
+    def _model_doctor(self, probe: bool) -> ModelDoctorInterface:
+        """Build the model doctor; the probe, and the HTTP client behind it, only if asked for.
+
+        The probe's client times out after ``probe_timeout_seconds`` (ten by default) and lives
+        until this one-shot command exits.
+        """
+        from engineering_influence.infrastructure.models.toml_model_catalog_loader import (
+            TomlModelCatalogLoader,
+        )
+        from engineering_influence.infrastructure.models.toml_model_profile_loader import (
+            TomlModelProfileLoader,
+        )
+
+        model_probe: ModelProbeInterface | None = None
+        if probe:
+            import httpx
+
+            from engineering_influence.infrastructure.models.http_model_probe import (
+                HttpModelProbe,
+            )
+
+            model_probe = HttpModelProbe(httpx.Client(timeout=self._probe_timeout_seconds))
+        return ModelDoctor(
+            TomlModelCatalogLoader(),
+            TomlModelProfileLoader(),
+            self._secret_provider(),
+            model_probe,
+            date.today(),
         )
 
     def _run_repository(self) -> RunRepositoryInterface:
