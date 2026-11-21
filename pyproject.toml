@@ -92,11 +92,12 @@ exclude = ["**/__pycache__", "**/*.pyc"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--strict-markers -m 'not distribution and not toolchain and not integration'"
+addopts = "--strict-markers -m 'not distribution and not toolchain and not integration and not paid'"
 markers = [
   "distribution: builds and installs the real artifacts; needs network access (pytest -m distribution)",
   "toolchain: builds the fixture book with real TeX and checks a snapshot (pytest -m toolchain)",
   "integration: runs against real PostgreSQL and RabbitMQ; start them with tests/integration/stack.sh (pytest -m integration tests/integration)",
+  "paid: calls a real model provider and spends money; needs EI_ALLOW_PAID=1 as well (pytest -m paid)",
 ]
 
 [tool.coverage.run]
