@@ -19,7 +19,7 @@ from engineering_influence.infrastructure.research.brave_search_provider import 
 from engineering_influence.interfaces.search_provider_interface import SearchProviderInterface
 from engineering_influence.models.search_hit import SearchHit
 
-KEY = "brave-test-key-0123456789"
+KEY = "brave-test-key-0123456789"  # gitleaks:allow
 
 
 def reply(body: Any, status: int = 200) -> Reply:
