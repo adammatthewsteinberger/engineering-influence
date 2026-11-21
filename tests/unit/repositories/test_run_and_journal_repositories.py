@@ -253,3 +253,11 @@ def test_the_database_itself_refuses_a_duplicate_request(database_url: str) -> N
         session.add(journal._row(make_entry(response="again"), make_entry().key.digest()))
         session.commit()
     journal.close()
+
+
+def test_an_unpooled_sql_repository_works_and_holds_no_connection_open(database_url: str) -> None:
+    repository = SqlModelRunRepository(database_url, pooled=False)
+    repository.save(make_run())
+    assert repository.get("run-1") == make_run()
+    assert repository.swap(make_run(), make_run().advance()) is True
+    assert type(repository._engine.pool).__name__ == "NullPool"

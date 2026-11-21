@@ -158,14 +158,21 @@ a compare-and-swap, so two overlapping deliveries cannot overwrite each other. T
 by the prefix before the first dot: `pipeline.*` and `run.*` are handled, and any other kind is
 dead-lettered.
 
+A run that parks for lack of credit stays parked: further `run.advance` messages for it are
+skipped until `ei run resume RUN_ID` moves it back to running and queues its stage. `ei run cancel
+RUN_ID` ends a run for good; a stage already executing is not interrupted, but its result cannot
+be stored, so the run stays cancelled and nothing more is queued. Both commands change the same
+stored run the worker does, through the same compare-and-swap, and refuse a run that is already
+completed or failed.
+
 A job that is malformed, or that fails, is rejected without requeue and lands in the
 `.dead` queue, with an alert for failures. Nothing retries it automatically: inspect it
 and republish it by hand. Stopping the worker finishes the job in flight first.
 
 ### Limits to know
 
-- **Nothing starts a run yet.** The worker can advance a run that exists, but no command or
-  endpoint creates one; `ei book create` arrives with the model-backed stages. The stage
+- **Nothing starts a run yet.** The worker can advance a run that exists, and `ei run` can
+  resume or cancel one, but no command or endpoint creates one; `ei book create` arrives with the model-backed stages. The stage
   executor is a placeholder too: `DeterministicStageExecutor` writes `<stage>.md` from the
   brief's idea, at no cost, through the same journal and write-once store a model-backed
   executor will use.
