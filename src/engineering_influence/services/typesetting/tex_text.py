@@ -15,8 +15,12 @@ from engineering_influence.services.typesetting.markdown_parser import MarkdownP
 class TexText(TexTextInterface):
     """Escapes plain metadata, keeping line breaks."""
 
-    # A URL scheme: a letter, then letters, digits, "+", "-" or "."; "host:8080" is not one.
-    SCHEME = re.compile(r"^([A-Za-z][A-Za-z0-9+.-]*):(?!\d+(?:/|$))")
+    # A web address is an http(s) URL, or a bare host name with an optional path (pub.example,
+    # www.pub.example/about). Nothing with a colon before the first slash is accepted but
+    # http(s): that rules out every other scheme, and "host:port" with it, because "a:0/b" is
+    # also how a script URL looks. A port is written with its scheme (https://pub.example:8080).
+    WEB_ADDRESS = re.compile(r"(?i)https?://\S+|[A-Za-z0-9.-]+(?:[/?#]\S*)?")
+
     # TeX would act on these in the PDF info string, so none of them can be carried into it.
     PDF_INFO_UNSAFE = re.compile(r"[\\{}%#^~\x00-\x1f\x7f]")
 
@@ -39,16 +43,17 @@ class TexText(TexTextInterface):
         return self._escaper.url(s.strip())
 
     def web_url(self, s: str) -> str:
-        """A web address safe inside \\url{}, refusing any scheme but http and https.
+        """A web address safe inside \\url{}, accepting only http(s) or a bare host name.
 
         A link with another scheme, such as ``javascript:``, would be clickable in an ebook.
         """
-        match = self.SCHEME.match(s.strip())
-        if match and match.group(1).lower() not in ("http", "https"):
+        text = s.strip()
+        if not self.WEB_ADDRESS.fullmatch(text):
             raise ManuscriptError(
-                f"a website must be an http or https address, not a {match.group(1)}: link"
+                "a website must be an http or https address (https://pub.example) or a bare "
+                "host name (pub.example); write a port with its scheme"
             )
-        return self.url(s)
+        return self.url(text)
 
     def pdf_info(self, s: str) -> str:
         """A string safe inside the PDF info dictionary's ``( )`` after TeX has expanded it.

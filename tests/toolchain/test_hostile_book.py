@@ -7,9 +7,11 @@ text is escaped and not merely that shell escape is switched off. Run with
 ``uv run pytest -m toolchain``; a machine without the TeX tools skips it.
 """
 
+import re
 import shutil
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -65,8 +67,8 @@ def hostile_root(tmp_path: Path, hostile_title: bool = True) -> Path:
         text = text.replace(line, line.rstrip('"') + "'", 1)
     text = text.replace(
         'author_bio = "',
-        f"website = 'https://x.test/{PAYLOAD}'\n"
-        f"email = 'a{PAYLOAD}@x.test'\n"
+        f"website = 'https://x.test/{PAYLOAD}\"onmouseover=\"EICANARYATTR^^5cEIcanary'\n"
+        f"email = 'a\"onmouseover=\"EICANARYATTR {PAYLOAD}@x.test'\n"
         f"dedication = '{PAYLOAD}'\n"
         f"copyright_notes = '{PAYLOAD}'\n"
         'author_bio = "',
@@ -126,6 +128,16 @@ def test_hostile_text_builds_into_an_epub_and_runs_nothing(tmp_path: Path) -> No
     written = sorted(path.name for path in root.rglob("EICANARY*"))
     assert written == [], f"hostile text ran and wrote {written}"
     assert not list(Path.cwd().glob("EICANARY*"))
+
+    # The website and email are printed as inert text, and neither can open an HTML attribute.
+    with zipfile.ZipFile(next(root.rglob("fixture.epub"))) as archive:
+        pages = "\n".join(
+            archive.read(name).decode("utf-8", "replace")
+            for name in archive.namelist()
+            if name.endswith((".xhtml", ".html"))
+        )
+    assert "EICANARYATTR" in pages
+    assert not re.search(r"[\s\"']onmouseover\s*=", pages)
 
 
 def test_a_hostile_title_stops_the_ebook_build_before_tex(tmp_path: Path) -> None:

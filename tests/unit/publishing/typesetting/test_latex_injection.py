@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 
 from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
 from engineering_influence.models.typesetting.book import Book
@@ -29,11 +31,16 @@ URL_PAYLOADS = [
     r"https://x.test/}\EIcanary{",
     r"https://x.test/a\EIcanary",
     r"https://x.test/{\EIcanary",
+    "https://x.test/^^5cEIcanary",
+    "https://x.test/^^^^5cEIcanary",
+    'https://x.test/"onmouseover="EICANARY',
 ]
 
 
 def assert_dead(tex: str) -> None:
     assert LIVE not in tex, f"live TeX reached the output:\n{tex}"
+    # TeX reads "^^5c" as a backslash, so the macro only becomes live when TeX tokenizes it.
+    assert "^^" not in tex.replace("\\textasciicircum{}", ""), f"notation survived:\n{tex}"
 
 
 def unescaped_braces(tex: str) -> tuple[int, int]:
@@ -85,6 +92,25 @@ def test_a_link_target_cannot_close_its_group_or_start_a_macro(url: str) -> None
 def test_an_encoded_url_has_no_bare_percent_that_would_start_a_tex_comment() -> None:
     tex = convert(r"See https://x.test/}\EIcanary{ and https://x.test/100%25 now.")
     assert not re.search(r"(?<!\\)%", tex)
+
+
+@pytest.mark.parametrize(
+    "template",
+    [
+        "## see {url}",
+        "*{url}*",
+        "**{url}**",
+        "- {url}",
+        "> {url}",
+        "| a | b |\n|---|---|\n| {url} | x |",
+        "[label]({url})",
+        "[*{url}*]({url})",
+    ],
+)
+@pytest.mark.parametrize("url", ["https://x.test/^^5cEIcanary", "https://x.test/}\\EIcanary{"])
+def test_a_url_is_dead_wherever_it_sits_in_a_macro_argument(template: str, url: str) -> None:
+    """Emphasis, headings, table cells and footnotes are all macro arguments, tokenized early."""
+    assert_dead(convert(template.format(url=url)))
 
 
 def test_a_url_keeps_balanced_braces_in_the_output() -> None:
@@ -157,7 +183,8 @@ def metadata(field: str) -> dict[str, Any]:
         "author_bio": "Bio.",
         "year": 2030,
     }
-    base[field] = PAYLOAD
+    # A website must at least look like a web address, so it carries the payload after a scheme.
+    base[field] = "https://x.test/" + PAYLOAD if field == "website" else PAYLOAD
     return base
 
 
@@ -249,16 +276,32 @@ def test_pdf_info_drops_only_what_tex_or_pdf_would_act_on(raw: str, safe: str) -
     ("raw", "safe"),
     [
         ("https://x.test/a?b=c&d=e", "https://x.test/a?b=c&d=e"),
+        ("https://x.test/my_page~user", "https://x.test/my_page~user"),
         ("  https://x.test  ", "https://x.test"),
         ("https://x.test/50%", r"https://x.test/50\%"),
         ("https://x.test/#top", r"https://x.test/\#top"),
         (r"https://x.test/}\y{", r"https://x.test/\%7D\%5Cy\%7B"),
+        ("https://x.test/^^5c", r"https://x.test/\%5E\%5E5c"),
+        ("https://x.test/a\"b'c<d>e f", r"https://x.test/a\%22b\%27c\%3Cd\%3Ee\%20f"),
+        ("https://x.test/$5|x`y", r"https://x.test/\%245\%7Cx\%60y"),
+        ("https://x.test/caf\u00e9", r"https://x.test/caf\%C3\%A9"),
+        ("https://x.test/a\x01b\tc", r"https://x.test/a\%01b\%09c"),
     ],
 )
-def test_url_encodes_braces_and_backslashes_and_escapes_percent_and_hash(
-    raw: str, safe: str
-) -> None:
+def test_url_becomes_a_valid_uri_with_percent_and_hash_escaped_for_tex(raw: str, safe: str) -> None:
     assert TEXT.url(raw) == safe
+
+
+@given(st.text())
+def test_a_url_can_only_ever_contain_characters_that_are_inert_in_tex_and_html(raw: str) -> None:
+    out = TEXT.url(raw)
+    # "\\%" and "\\#" are the only backslashes allowed; once they go, only plain URL characters remain.
+    plain = out.replace("\\%", "").replace("\\#", "")
+    assert re.fullmatch(r"[A-Za-z0-9\-._~:/?\[\]@!&()*+,;=]*", plain), out
+
+
+def test_surrounding_space_is_ignored_in_a_web_address() -> None:
+    assert TEXT.web_url("  https://pub.example \n") == "https://pub.example"
 
 
 @pytest.mark.parametrize(
@@ -266,13 +309,14 @@ def test_url_encodes_braces_and_backslashes_and_escapes_percent_and_hash(
     [
         "https://pub.example",
         "HTTP://pub.example",
+        "https://pub.example:8080/x",
         "pub.example",
-        "www.pub.example/x",
-        "pub.example:8080/x",
-        "pub.example:8080",
+        "www.pub.example/about",
+        "pub.example/a:b",
+        "pub.example?x=1",
     ],
 )
-def test_a_web_address_with_no_scheme_or_an_http_one_is_accepted(address: str) -> None:
+def test_an_http_address_or_a_bare_host_is_accepted(address: str) -> None:
     assert TEXT.web_url(address) == TEXT.url(address)
 
 
@@ -282,13 +326,28 @@ def test_a_web_address_with_no_scheme_or_an_http_one_is_accepted(address: str) -
         "javascript:alert(1)",
         "JavaScript:alert(1)",
         "  javascript:alert(1)",
+        "javascript:0/alert(1)",
+        "javascript:1",
+        "java\tscript:alert(1)",
+        "java\nscript:alert(1)",
+        "\x01javascript:alert(1)",
+        "http://x.test\njavascript:alert(1)",
         "data:text/html,x",
         "file:///etc/passwd",
         "mailto:a@b.test",
         "vbscript:x",
         "ftp://x.test",
+        "pub.example:8080",
+        "pub.example:8080/x",
+        "pub.example/a b",
+        "pub.example/a\nb",
+        "pub.example?x=1 2",
+        "a b",
+        "https://",
+        "",
+        "   ",
     ],
 )
-def test_a_web_address_with_any_other_scheme_is_refused(address: str) -> None:
+def test_anything_else_is_refused_including_every_script_url_and_host_port(address: str) -> None:
     with pytest.raises(ManuscriptError, match="http or https"):
         TEXT.web_url(address)
