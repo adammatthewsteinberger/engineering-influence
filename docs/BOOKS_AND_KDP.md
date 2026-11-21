@@ -113,8 +113,12 @@ things it cannot make safe (the full picture is in [THREAT_MODEL.md](THREAT_MODE
 
 - A **code block that contains `\end{verbatim}`** stops the build with a message, because TeX would
   end the code environment there and read the rest of the line as TeX.
-- A **`website` that is not an http or https address** (for example `javascript:...`) stops the
-  build. A bare host such as `pub.example`, or with a port, is accepted.
+- A **`website` that is not an http or https address** stops the build: write `https://pub.example`
+  or a bare host name such as `pub.example`. Another scheme (`javascript:`, `data:`), a space, or a
+  `host:port` is refused; write a port with its scheme (`https://pub.example:8080`).
+- Any URL, including a `website` and an `email`, is printed with every character outside the
+  ordinary URL set percent-encoded, so a space, a quote or an accented letter appears as `%20`, `%22`
+  or `%C3%A9`.
 - An **ebook title** with any of `& < > " # % \ { } ~ ^ $ _` is refused.
 - The title, subtitle, author and edition also go into the PDF's metadata, where the characters
   `\ { } % # ^ ~`, control characters and unbalanced parentheses are dropped. An ordinary title,

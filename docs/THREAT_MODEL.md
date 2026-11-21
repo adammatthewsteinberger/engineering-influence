@@ -38,19 +38,31 @@ field in the print and ebook documents) and fails if a live `\EIcanary` reaches 
 | Path | Defence |
 |---|---|
 | Body text, headings, list items, table cells, quotes, titles, metadata | The twelve TeX specials are escaped (`LatexEscaper`). Raw HTML in Markdown is dropped, and images are refused in the print pipeline. |
-| Bare URLs and link targets | `\`, `{` and `}` are percent-encoded and `%` and `#` escaped, so a URL cannot close `\url{` and leave the rest live. Found and fixed in M5. |
+| Bare URLs and link targets | A URL is turned into a valid URI: every character outside `A-Z a-z 0-9 - . _ ~ : / ? # [ ] @ ! & ( ) * + , ; = %` is percent-encoded (`LatexEscaper.url`), and `%` and `#` are then escaped for TeX. A URL therefore cannot contain a backslash, a brace, `^`, a quote, `<`, `>`, a space or a control character. Found and fixed in M5; see the note below on `^`. |
 | Code blocks | A block containing `\end{verbatim}` is refused, because TeX ends the environment there and reads the rest of the line as TeX. Found and fixed in M5. |
 | The PDF info dictionary (`\setpdfinfo`) | The title, subtitle, author and edition go into a PDF string after TeX expands them, so they are cleaned of `\ { } % # ^ ~`, control characters and unbalanced parentheses. Found and fixed in M5. |
-| `website` and `email` | Neutralised as URLs. A website with a scheme other than http or https (`javascript:`, `data:`) is refused, because it would be a clickable link in an ebook. Found and fixed in M5. |
-| The `^^5c` character notation | `^` is always escaped, so it cannot spell a backslash. |
+| `website` and `email` | Both go through the same URL encoding. A website must be an `http://` or `https://` address or a bare host name (`pub.example`, with an optional path); anything with another scheme (`javascript:`, `data:`), a space, or a colon before the first slash is refused. That also refuses `host:port`, which cannot be told from `javascript:0/...`; write a port with its scheme. Found and fixed in M5. |
+| The `^^5c` character notation | `^` is escaped in text and percent-encoded in URLs, so it cannot spell a backslash. |
 | The ebook `<title>` | A title with any of `& < > " # % \ { } ~ ^ $ _` is refused outright (`EpubIdentifier`). |
+
+A note on `^`, because it was found by review and then tried for real. TeX reads `^^5c` as a
+backslash when it tokenizes the characters, which in a macro argument (emphasis, a heading, a
+footnote) is before `\url` sees them. An earlier version of the URL encoding left `^` alone. I
+could not make that execute anything: in LuaLaTeX, with hyperref's `\url`, a payload that
+should have written a file did not, in the plain, nested and footnote positions. In tex4ebook it
+did change how TeX parsed the argument (a live control sequence reached tex4ht, and the build
+stopped with "Argument of `\S:p` has an extra `}`"), so there it is an injection that breaks the
+build; whether it can do worse was not established. It is closed either way, and
+`test_latex_injection.py` holds it closed in every position.
 
 **Layer 2: TeX that did run live could not run a shell.** `test_hostile_book.py` builds a
 book whose every field carries a payload that, if live, writes a file by TeX's own `\openout`
 and by Lua's `io.open`. Neither needs shell escape, so a passing test shows the text is escaped,
 not merely that shell escape is off. A control proves the technique detects live TeX at all.
-Separately, live TeX containing `\write18{touch ...}` is fed straight to LuaLaTeX and to
-tex4ebook, and no shell command runs in either.
+The same test also checks the EPUB's HTML: a website and an email carrying a quote and
+`onmouseover=` never become an attribute of an element. Separately, live TeX containing
+`\write18{touch ...}` is fed straight to LuaLaTeX and to tex4ebook, and no shell command runs
+in either.
 
 - LuaLaTeX is started with `-no-shell-escape` (`LatexCompiler`).
 - tex4ebook is started without any shell-escape option, and **it did not run a shell command
