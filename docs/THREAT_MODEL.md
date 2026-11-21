@@ -103,9 +103,12 @@ yet, so only rule 6 is met by code that exists. The rest are what M6 must meet, 
    injection that invents a claim has to survive a check made against the source's own text.
 6. **Fetching is restricted.** `HttpSourceFetcher` asks the outbound URL policy
    (`PublicHttpsUrlPolicy`, as webhooks do) before the first request and again before every
-   redirect, refuses any scheme but http and https, accepts only HTML and plain text, caps the
-   decoded size (so a compressed file cannot expand past it), and sends no cookies or
-   credentials. `HtmlTextExtractor` drops scripts, comments, hidden elements and invisible
+   redirect, refuses any scheme but http and https, accepts only HTML and plain text, refuses a
+   declared length over the cap before reading and stops reading at the cap, and sends no
+   cookies or credentials. It asks for an uncompressed body and refuses a compressed one, because
+   a decoder expands each chunk in full before a byte count can see it, so a small download
+   could fill memory. A page nested more than 512 elements deep is refused, so a hostile page
+   cannot make the parser slow. `HtmlTextExtractor` drops scripts, comments, hidden elements and invisible
    characters, so a page cannot hide instructions from the reader; visible text stays and is
    treated as data. **The gap:** the policy resolves DNS when asked, not when the connection is
    opened, so a hostile DNS server could answer differently the second time (rebinding). Egress

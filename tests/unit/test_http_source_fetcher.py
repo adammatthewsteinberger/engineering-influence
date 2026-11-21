@@ -113,12 +113,6 @@ def test_a_charset_nobody_knows_falls_back_to_utf8_instead_of_failing() -> None:
         assert fetcher()[0].fetch(server.url).text == "caf\u00e9"
 
 
-def test_a_compressed_page_is_decoded() -> None:
-    body = gzip.compress(b"<p>zipped words</p>")
-    with LocalServer(lambda r: page(body, HTML, **{"content-encoding": "gzip"})) as server:
-        assert fetcher()[0].fetch(server.url).text == "zipped words"
-
-
 def test_the_policy_is_asked_before_the_request_and_a_refusal_sends_nothing() -> None:
     with LocalServer(lambda r: page("<p>x</p>")) as server:
         fetch, policy = fetcher(Policy(paths=("/private",)))
@@ -221,13 +215,6 @@ def test_a_page_exactly_at_the_size_limit_is_read_and_one_byte_over_is_not() -> 
     assert message == "127.0.0.1 sent more than 1000 bytes"
 
 
-def test_a_small_download_that_expands_past_the_limit_is_stopped() -> None:
-    bomb = gzip.compress(b"a" * 5_000_000)
-    assert len(bomb) < 20_000
-    with LocalServer(lambda r: page(bomb, "text/plain", **{"content-encoding": "gzip"})) as server:
-        refused(lambda: fetcher(max_bytes=100_000)[0].fetch(server.url), "SOURCE_TOO_LARGE")
-
-
 @pytest.mark.parametrize(
     "kind", ["application/pdf", "image/png", "application/json", "text/css", ""]
 )
@@ -323,3 +310,61 @@ def test_the_limits_must_allow_a_fetch_at_all(limits: dict[str, int], message: s
 def test_a_reply_that_is_neither_a_page_nor_a_redirect_is_unavailable(status: int) -> None:
     with LocalServer(lambda r: page("<p>x</p>", status=status)) as server:
         refused(lambda: fetcher()[0].fetch(server.url), "SOURCE_UNAVAILABLE")
+
+
+def test_it_asks_for_an_uncompressed_body() -> None:
+    with LocalServer(lambda r: page("<p>x</p>")) as server:
+        fetcher()[0].fetch(server.url)
+    assert server.seen[0].headers["accept-encoding"] == "identity"
+
+
+@pytest.mark.parametrize(
+    "encoding", ["gzip", "deflate", "br", "zstd", "GZIP", " gzip ", "gzip, br"]
+)
+def test_a_compressed_reply_is_refused_before_any_of_it_is_decoded(encoding: str) -> None:
+    body = gzip.compress(b"<p>zipped</p>")
+    with LocalServer(lambda r: page(body, HTML, **{"content-encoding": encoding})) as server:
+        message = refused(lambda: fetcher()[0].fetch(server.url), "SOURCE_UNSUPPORTED_ENCODING")
+    assert "only uncompressed pages are read" in message
+    assert encoding.strip().lower() in message
+
+
+def test_a_small_download_that_would_expand_enormously_is_never_expanded() -> None:
+    bomb = gzip.compress(b"a" * 50_000_000)
+    assert len(bomb) < 100_000
+    with LocalServer(lambda r: page(bomb, "text/plain", **{"content-encoding": "gzip"})) as server:
+        refused(
+            lambda: fetcher(max_bytes=100_000)[0].fetch(server.url), "SOURCE_UNSUPPORTED_ENCODING"
+        )
+
+
+@pytest.mark.parametrize("encoding", ["identity", "Identity"])
+def test_an_explicitly_uncompressed_reply_is_read(encoding: str) -> None:
+    with LocalServer(
+        lambda r: page("<p>plain</p>", HTML, **{"content-encoding": encoding})
+    ) as server:
+        assert fetcher()[0].fetch(server.url).text == "plain"
+
+
+def test_a_declared_length_over_the_limit_is_refused_before_the_body_is_read() -> None:
+    with LocalServer(lambda r: page("ok", "text/plain", **{"content-length": "1001"})) as server:
+        message = refused(lambda: fetcher(max_bytes=1000)[0].fetch(server.url), "SOURCE_TOO_LARGE")
+    assert message == "127.0.0.1 sent more than 1000 bytes"
+
+
+def test_a_declared_length_at_the_limit_is_allowed() -> None:
+    with LocalServer(
+        lambda r: page("a" * 1000, "text/plain", **{"content-length": "1000"})
+    ) as server:
+        assert len(fetcher(max_bytes=1000)[0].fetch(server.url).text) == 1000
+
+
+def test_a_body_with_no_declared_length_is_capped_as_it_streams() -> None:
+    with LocalServer(lambda r: page("a" * 5000, "text/plain", **{"x-omit-length": "1"})) as server:
+        refused(lambda: fetcher(max_bytes=1000)[0].fetch(server.url), "SOURCE_TOO_LARGE")
+    assert "content-length" not in server.seen[0].headers
+
+
+def test_a_body_with_no_declared_length_under_the_cap_is_read() -> None:
+    with LocalServer(lambda r: page("a" * 500, "text/plain", **{"x-omit-length": "1"})) as server:
+        assert len(fetcher(max_bytes=1000)[0].fetch(server.url).text) == 500

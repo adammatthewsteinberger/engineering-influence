@@ -2,8 +2,10 @@
 """Walks one HTML page and keeps only the text a reader would see."""
 
 import re
+from collections import Counter
 from html.parser import HTMLParser
 
+from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.infrastructure.research.interfaces.html_collector_interface import (
     HtmlCollectorInterface,
 )
@@ -14,7 +16,9 @@ class HtmlCollector(HTMLParser, HtmlCollectorInterface):
 
     It tracks which elements are open, so everything inside a skipped or hidden element is
     dropped however deeply it is nested, and a stray or missing end tag cannot leave it skipping
-    the rest of the page. One collector reads one page: it is not shared.
+    the rest of the page. Whether a tag is open is a counter lookup, so a page full of stray end
+    tags costs time in proportion to its size. A page nested more than ``MAX_DEPTH`` deep is
+    refused rather than read, as browsers also stop at a limit. One collector reads one page.
     """
 
     SKIPPED = frozenset(
@@ -29,6 +33,7 @@ class HtmlCollector(HTMLParser, HtmlCollectorInterface):
         | {"header", "footer", "main", "nav", "aside", "blockquote", "pre", "hr", "figure"}
         | {"figcaption", "form", "h1", "h2", "h3", "h4", "h5", "h6"}
     )
+    MAX_DEPTH = 512
     HIDDEN_STYLE = re.compile(r"(?:display\s*:\s*none|visibility\s*:\s*hidden)", re.IGNORECASE)
 
     def __init__(self) -> None:
@@ -36,6 +41,7 @@ class HtmlCollector(HTMLParser, HtmlCollectorInterface):
         self._parts: list[str] = []
         self._title: list[str] = []
         self._open: list[tuple[str, bool]] = []
+        self._counts: Counter[str] = Counter()
         self._hidden_depth = 0
         self._in_title = False
 
@@ -49,8 +55,15 @@ class HtmlCollector(HTMLParser, HtmlCollectorInterface):
             self._parts.append("\n")
         if tag in self.VOID:
             return
+        if len(self._open) >= self.MAX_DEPTH:
+            raise ApplicationError(
+                code="SOURCE_TOO_COMPLEX",
+                message=f"the page nests elements more than {self.MAX_DEPTH} deep",
+                http_status=422,
+            )
         hidden = tag in self.SKIPPED or self._is_hidden(dict(attrs))
         self._open.append((tag, hidden))
+        self._counts[tag] += 1
         self._hidden_depth += hidden
         if tag == "title":
             self._in_title = True
@@ -59,11 +72,12 @@ class HtmlCollector(HTMLParser, HtmlCollectorInterface):
         """Close the nearest open element of that name, and everything opened inside it."""
         if tag in self.BLOCKS and not self._hidden_depth:
             self._parts.append("\n")
-        if tag not in [name for name, _ in self._open]:
+        if not self._counts[tag]:
             return
         # The tag is open, so this stops at it; it cannot run the stack dry.
         while True:
             name, hidden = self._open.pop()
+            self._counts[name] -= 1
             self._hidden_depth -= hidden
             if name == "title":
                 self._in_title = False

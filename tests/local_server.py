@@ -60,9 +60,12 @@ class LocalServer:
                 owner.seen.append(request)
                 status, headers, body = owner._route(request)
                 self.send_response(status)
+                names = {name.lower() for name in headers}
                 for name, value in headers.items():
-                    self.send_header(name, value)
-                self.send_header("content-length", str(len(body)))
+                    if name.lower() != "x-omit-length":
+                        self.send_header(name, value)
+                if not {"content-length", "x-omit-length"} & names:
+                    self.send_header("content-length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
 

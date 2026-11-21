@@ -24,8 +24,11 @@ class HttpSourceFetcher(SourceFetcherInterface):
       again before each redirect, so a page cannot send the fetcher inward by redirecting. A
       scheme other than http or https is refused here before the client sees it. Redirects are
       followed by hand, up to ``max_redirects``.
-    - **How much it reads** is capped on the decoded bytes, and reading stops at the cap, so a
-      compressed file that expands past it is stopped, not stored.
+    - **How much it reads** is capped: a declared length over the cap is refused before any of
+      the body is read, and reading stops at the cap. Compression is not accepted at all (the
+      request asks for ``identity`` and any other ``content-encoding`` is refused), because a
+      decoder expands each chunk in full before a byte count can see it, so a small download
+      could fill memory. The cost is that a server that insists on compressing is not read.
     - **What it accepts** is HTML and plain text. A PDF or an image is refused.
     - **What it sends** is a generic user agent and no identity. The client it is given must not
       carry credentials or cookies of its own.
@@ -71,7 +74,11 @@ class HttpSourceFetcher(SourceFetcherInterface):
                 with self._client.stream(
                     "GET",
                     current,
-                    headers={"user-agent": self.USER_AGENT, "accept": "text/html,text/plain"},
+                    headers={
+                        "user-agent": self.USER_AGENT,
+                        "accept": "text/html,text/plain",
+                        "accept-encoding": "identity",
+                    },
                     follow_redirects=False,
                 ) as response:
                     if response.status_code not in self.REDIRECTS:
@@ -112,6 +119,15 @@ class HttpSourceFetcher(SourceFetcherInterface):
             raise self._error(
                 "SOURCE_UNSUPPORTED_TYPE", f"{host} sent {kind or 'no content type'}, not text"
             )
+        encoding = response.headers.get("content-encoding", "identity").lower()
+        if encoding not in ("", "identity"):
+            raise self._error(
+                "SOURCE_UNSUPPORTED_ENCODING",
+                f"{host} sent a {encoding} body; only uncompressed pages are read",
+            )
+        declared = response.headers.get("content-length", "")
+        if declared.isdigit() and int(declared) > self._max_bytes:
+            raise self._error("SOURCE_TOO_LARGE", f"{host} sent more than {self._max_bytes} bytes")
         body = bytearray()
         for chunk in response.iter_bytes():
             body.extend(chunk)

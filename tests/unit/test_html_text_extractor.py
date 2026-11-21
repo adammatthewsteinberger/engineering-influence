@@ -2,8 +2,11 @@
 
 """HtmlTextExtractor: a reader\'s text only, so a page cannot hide instructions from the reader."""
 
+import time
+
 import pytest
 
+from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.infrastructure.research.html_text_extractor import HtmlTextExtractor
 from engineering_influence.interfaces.page_text_extractor_interface import (
     PageTextExtractorInterface,
@@ -166,3 +169,26 @@ def test_a_block_inside_a_hidden_element_leaves_no_line_break_behind() -> None:
 
 def test_exactly_three_newlines_in_plain_text_collapse_to_a_blank_line() -> None:
     assert EXTRACTOR.extract_plain("a\n\n\nb").text == "a\n\nb"
+
+
+def test_a_page_nested_exactly_to_the_limit_is_read_and_one_deeper_is_refused() -> None:
+    assert text("<div>" * 512 + "deep" + "</div>" * 512) == "deep"
+    with pytest.raises(ApplicationError) as error:
+        text("<div>" * 513)
+    assert (error.value.code, error.value.http_status) == ("SOURCE_TOO_COMPLEX", 422)
+    assert "more than 512 deep" in error.value.message
+
+
+def test_elements_that_were_closed_do_not_count_towards_the_depth() -> None:
+    assert text("<div>x</div>" * 2000) == "x\n\n" * 1999 + "x"
+
+
+def test_a_tag_name_stops_counting_as_open_once_its_element_is_closed() -> None:
+    assert text("<div hidden><b>x</b></div>y</b>z") == "yz"
+
+
+def test_a_page_of_stray_end_tags_is_read_in_time_proportional_to_its_size() -> None:
+    page = "<b>" * 500 + "</i>" * 1_500_000 + "</b>" * 500 + "text"
+    started = time.monotonic()
+    assert text(page) == "text"
+    assert time.monotonic() - started < 10.0
