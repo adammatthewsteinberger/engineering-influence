@@ -27,6 +27,10 @@ VALID: dict[str, Any] = {
     "description": "word " * 90,
     "release": {
         "keywords": ["a", "b", "c", "d", "e", "f", "g"],
+        "categories": [
+            "Books > Literature & Fiction > Genre Fiction > Historical",
+            "Books > History > World",
+        ],
         "required_research_files": ["research.md"],
         "minimum_source_urls": 2,
         "pricing": {
@@ -296,3 +300,123 @@ def test_a_five_and_a_half_by_eight_and_a_half_book_may_claim_a_kdp_hardcover(
 
     report = audit(tmp_path, dump, change)
     assert "hardcover-trim-unsupported" not in codes(report)
+
+
+def clean(*changes: Callable[[dict[str, Any]], None]) -> Callable[[dict[str, Any]], None]:
+    """A baseline with nothing to report (a KDP hardcover, so no external-provider warning)."""
+
+    def apply(config: dict[str, Any]) -> None:
+        config["release"]["formats"] = {"kdp_hardcover": True}
+        for change in changes:
+            change(config)
+
+    return apply
+
+
+def longer_than(limit: int) -> str:
+    """Exactly ``limit`` characters of words, ending in a letter so stripping cannot shorten it."""
+    text = ("word " * (limit // 5 + 1))[:limit]
+    return text[:-1] + "x" if text.endswith(" ") else text
+
+
+def test_a_description_at_kdps_limit_passes_and_one_character_over_does_not(
+    tmp_path: Path, dump: Dump
+) -> None:
+    def at_limit(config: dict[str, Any]) -> None:
+        config["description"] = longer_than(4000)
+
+    def over(config: dict[str, Any]) -> None:
+        config["description"] = longer_than(4001)
+
+    assert len(longer_than(4000)) == 4000 and not longer_than(4000).endswith(" ")
+    assert audit(tmp_path, dump, clean(at_limit)).findings == []
+    report = audit(tmp_path, dump, clean(over))
+    assert codes(report) == ["description-too-long"]
+    assert report.findings[0].message == "description has 4001 characters; KDP allows 4000"
+    assert report.counts["description_characters"] == 4001
+
+
+def test_a_book_can_set_a_shorter_description_limit(tmp_path: Path, dump: Dump) -> None:
+    def change(config: dict[str, Any]) -> None:
+        config["description"] = longer_than(1200)
+        config["release"]["maximum_description_characters"] = 1000
+
+    assert codes(audit(tmp_path, dump, clean(change))) == ["description-too-long"]
+
+
+def test_a_description_over_the_limit_is_an_error_in_a_strict_release(
+    tmp_path: Path, dump: Dump
+) -> None:
+    def change(config: dict[str, Any]) -> None:
+        config["description"] = longer_than(4500)
+
+    report = audit(tmp_path, dump, clean(change), strict=True)
+    assert [f.severity for f in report.findings] == ["error"] and report.status == "fail"
+
+
+def with_categories(value: Any) -> Callable[[dict[str, Any]], None]:
+    def change(config: dict[str, Any]) -> None:
+        if value is None:
+            del config["release"]["categories"]
+        else:
+            config["release"]["categories"] = value
+
+    return change
+
+
+def test_up_to_three_browse_paths_pass_and_are_recorded(tmp_path: Path, dump: Dump) -> None:
+    three = [
+        "Books > Literature & Fiction > Genre Fiction > Historical",
+        "Books > History > World",
+        "Books \u203a Science Fiction & Fantasy \u203a Fantasy",
+    ]
+    report = audit(tmp_path, dump, clean(with_categories(three)))
+    assert report.findings == [] and report.status == "pass"
+    assert report.metadata["categories"] == three
+
+
+def test_a_fourth_category_is_too_many(tmp_path: Path, dump: Dump) -> None:
+    four = [f"Books > Fiction > Genre {n}" for n in range(4)]
+    assert codes(audit(tmp_path, dump, clean(with_categories(four)))) == ["too-many-categories"]
+
+
+@pytest.mark.parametrize("code", ["FIC009000", "BUS070000", "HIS037000"])
+def test_a_bisac_code_is_not_a_browse_category(tmp_path: Path, dump: Dump, code: str) -> None:
+    report = audit(tmp_path, dump, clean(with_categories([code])))
+    assert codes(report) == ["category-is-bisac"]
+    assert "BISAC subject code" in report.findings[0].message
+
+
+@pytest.mark.parametrize("entry", ["Fiction", "Books >", "  ", "> Fiction", 7])
+def test_a_category_that_is_not_a_browse_path_is_refused(
+    tmp_path: Path, dump: Dump, entry: Any
+) -> None:
+    assert codes(audit(tmp_path, dump, clean(with_categories([entry])))) == ["category-not-a-path"]
+
+
+def test_the_same_category_twice_is_refused_however_it_is_spaced_or_cased(
+    tmp_path: Path, dump: Dump
+) -> None:
+    twice = ["Books > History > World", "books>history  >  WORLD"]
+    assert codes(audit(tmp_path, dump, clean(with_categories(twice)))) == ["duplicate-category"]
+
+
+def test_categories_that_are_not_a_list_are_refused(tmp_path: Path, dump: Dump) -> None:
+    assert codes(audit(tmp_path, dump, clean(with_categories("Books > History")))) == [
+        "categories-invalid"
+    ]
+
+
+@pytest.mark.parametrize("value", [None, []])
+def test_a_book_with_no_categories_gets_a_warning_and_still_passes_a_strict_release(
+    tmp_path: Path, dump: Dump, value: Any
+) -> None:
+    report = audit(tmp_path, dump, clean(with_categories(value)), strict=True)
+    assert codes(report) == ["categories-not-declared"]
+    assert [f.severity for f in report.findings] == ["warning"]
+    assert report.status == "warning" and report.errors == []
+
+
+def test_category_problems_are_errors_in_a_strict_release(tmp_path: Path, dump: Dump) -> None:
+    report = audit(tmp_path, dump, clean(with_categories(["FIC009000"])), strict=True)
+    assert [f.severity for f in report.findings] == ["error"] and report.status == "fail"

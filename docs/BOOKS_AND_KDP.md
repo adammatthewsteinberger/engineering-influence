@@ -75,6 +75,37 @@ closes cannot hide a stray `Draft` later in the text. Narration that legitimatel
 sentence with `Draft` still has to be reworded. `tests/fixtures/fixture_novel/` is a small novel
 that shows each rule and is built with the real toolchain in CI.
 
+### Listing metadata
+
+The release contract (`[release]` in the book's config) is checked before anything is built.
+Beyond the title, subtitle and author, it covers the listing:
+
+| Setting | Rule | Finding |
+|---|---|---|
+| `description` (top level) | at least 80 words (`release.minimum_description_words`), at most 4,000 characters (`release.maximum_description_characters`, which can only lower KDP's limit in practice) | `description-too-short`, `description-too-long` |
+| `release.keywords` | exactly seven, unique, none empty | `keyword-count`, `duplicate-keyword`, `empty-keyword` |
+| `release.categories` | up to three Amazon browse paths such as `Books > Literature & Fiction > Mystery`; unique; at least two levels | `too-many-categories`, `category-not-a-path`, `duplicate-category`, `categories-invalid` |
+
+Categories are Amazon's browse tree, not BISAC subject codes (`FIC009000`), which are a different
+scheme: a BISAC code in `categories` is refused as `category-is-bisac`. The check cannot know
+Amazon's tree, which changes and has no API. It checks the count, the shape and the uniqueness; you
+confirm the names when you upload. A book with no categories gets the warning
+`categories-not-declared`, never an error, so books written before this check keep passing a strict
+release. The 4,000-character and three-category limits are KDP's published limits as I understand
+them; confirm them against KDP's current help pages.
+
+### The back cover and the barcode area
+
+The back cover carries the description and the author note, and KDP keeps a 2 x 1.2 in area clear
+for the barcode it adds. The description is set above that area, shrinking until it fits, down to a
+smallest size. If it still does not fit, the build stops with `BackCoverTextTooLongError`, which
+reports how many characters the description has, how many fit at this trim size and how far it
+overflows, instead of drawing text into the barcode area. The limit on the cover is lower than
+KDP's 4,000-character listing limit and depends on the trim size and the cover style: with the
+default style, about 3,000 characters fit at 6x9 and 5.5x8.5 and about 2,200 at 5x8, and the error
+gives the exact figure for your book. Text, and any ink, in the barcode area is also caught after
+rendering, at every trim size, for the paperback and the hardcover.
+
 ### Trim size and paper
 
 A book's config sets the page size and the interior paper. Both default to what every book used

@@ -10,6 +10,7 @@ from engineering_influence.interfaces.pdf_inspector_interface import PdfInspecto
 from engineering_influence.models.publishing.path_relativizer import PathRelativizer
 from engineering_influence.models.publishing.release_readiness_report import ReleaseReadinessReport
 from engineering_influence.models.typesetting.trim_size import TrimSize
+from engineering_influence.services.publishing.category_check import CategoryCheck
 from engineering_influence.services.publishing.format_check import FormatCheck
 from engineering_influence.services.publishing.interfaces.release_auditor_interface import (
     ReleaseAuditorInterface,
@@ -55,6 +56,7 @@ class ReleaseAuditor(ReleaseAuditorInterface):
             return report
         severity = "error" if (strict or bool(release.get("required", False))) else "warning"
         MetadataCheck().run(report, config, release, severity, ref)
+        CategoryCheck().run(report, release, severity, ref)
         ResearchCheck(self._files).run(
             report, self._root / config["source"], release, severity, self._relativizer
         )
