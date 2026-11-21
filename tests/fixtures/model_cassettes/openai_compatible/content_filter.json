@@ -1,0 +1,24 @@
+{
+  "status": 200,
+  "body": {
+    "id": "chatcmpl-test",
+    "object": "chat.completion",
+    "model": "gpt-test-2026-11-01",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "refusal": null
+        },
+        "finish_reason": "content_filter"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 10,
+      "completion_tokens": 0
+    }
+  },
+  "note": "hand-written from the documented response shape; not recorded from a live call"
+}
