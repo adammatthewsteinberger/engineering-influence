@@ -42,6 +42,7 @@ Be exact about today's state (alpha `0.1.0a1`):
 | Orchestration: queue, worker, ledger, gates, dead-letter, API, MCP, CLI, SDK, webhooks | Built and tested |
 | KDP packaging and verification (`ei book …`): audits, PDF, EPUB, covers, QA, readiness report | Built, tested, used to build ten real books |
 | **The writing itself** | **Not yet autonomous.** The runner and gate that ship are deterministic placeholders (`DeterministicRunner` returns fixed text). A model-backed runner and rubric gates implement the same interfaces and are the next milestone |
+| Web search and page fetch | Adapters built and tested against local servers (Brave Search; a safe fetcher with a hidden-text-stripping extractor); no stage uses them yet and they have never touched the live internet |
 | Non-fiction stages | Started: brief, positioning and outline can be done by a model (`EI_STAGE_EXECUTOR=model`), never yet run against a live provider. Research, drafting, revision, copy edit, front and back matter and assembly are not built |
 | Methodology stages (P1 to P14), autonomy modes | Not built |
 | Budget caps, and retry of a run's transient stage failures | Built and tested, but not yet exercised by a live model run |

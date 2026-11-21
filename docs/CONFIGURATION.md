@@ -183,6 +183,9 @@ and republish it by hand. Stopping the worker finishes the job in flight first.
   present never switches it on, because this spends money. Only non-fiction runs have stages so
   far: brief, positioning and outline. An answer that is refused, cut off or empty stops the run.
   Nothing has been run against a live provider.
+- **Web search is built but nothing uses it.** `BraveSearchProvider` will read the key from
+  `BRAVE_SEARCH_API_KEY` once a stage calls it; nothing reads that variable today, and the
+  adapter has not been run against Brave's live API. A search sends the query to Brave.
 - **Retries are immediate.** A transient failure is re-queued with no delay, because the
   queue port has none yet.
 - **The runner and gate are placeholders.** `DeterministicRunner` returns a fixed line
