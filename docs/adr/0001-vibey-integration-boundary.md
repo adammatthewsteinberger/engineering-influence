@@ -34,6 +34,6 @@ release may receive a native adapter without changing the application core.
 - Crash recovery and at-least-once event delivery (consumers must deduplicate) remain explicit contracts of
   the engineering-influence adapters.
 - The adapter must preserve lease, retry, dead-letter, and gate semantics and
-  must be covered by integration tests against PostgreSQL and RabbitMQ. Those tests do not exist yet; today only `examples/compose_smoke.sh` exercises the real stack (milestone M1 of the 1.0 plan adds them).
+  must be covered by integration tests against PostgreSQL and RabbitMQ. Those tests exist in `tests/integration` and run in the `integration` CI job. They cover dead-lettering, redelivery of an unacknowledged message, retries, and a run that finishes through the stack when workers die; lease and gate semantics are covered by unit tests, because the adapters do not use vibey's leases.
 - Native vibey worker registration remains an optimization, not an architectural
   prerequisite.

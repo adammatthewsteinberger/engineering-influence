@@ -28,6 +28,8 @@ uv run pip-audit
 uv lock --check
 uv run pytest --cov --cov-branch --cov-fail-under=100
 sh examples/compose_smoke.sh      # when you touch the runtime, compose file or examples
+# when you touch persistence, the broker or how runs advance (then: sh tests/integration/stack.sh down)
+eval "$(sh tests/integration/stack.sh up)" && uv run pytest -m integration tests/integration
 ```
 
 Coverage is 100% with branches. New code arrives with its tests.
