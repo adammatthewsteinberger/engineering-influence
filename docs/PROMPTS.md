@@ -6,8 +6,8 @@ in `src/engineering_influence/infrastructure/prompt_library/templates/`, one TOM
 is called `templates`, never `prompts`, because the `leak-scan` CI job rejects any path containing
 `prompts/`.
 
-Today one template ships, `context_pack`: the section labels the context assembler puts between the parts
-of a chapter prompt. The stage prompts arrive with the non-fiction stages (M6).
+Today four templates ship. `stage_brief`, `stage_positioning` and `stage_outline` are the prompts for the first three non-fiction stages; every blank in them that is filled from outside (the author's idea, and what an earlier stage wrote) is declared untrusted. `context_pack` holds the section labels the context assembler puts between the parts
+of a chapter prompt.
 
 ## A template
 
