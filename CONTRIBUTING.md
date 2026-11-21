@@ -61,7 +61,7 @@ covers or built books. The `leak-scan` CI job rejects any path containing `manus
 
 - **Prompts the product sends to a model are code.** They live in a package folder named
   `templates/` (never `prompts/`), are versioned, are tested, and are written generically, with no
-  author's voice or content in them.
+  author's voice or content in them. How to write and change one: [docs/PROMPTS.md](docs/PROMPTS.md).
 - **Test fixtures** live in `tests/fixtures/<name>/` and use original, synthetic text. Built PDFs are
   never committed; a build is checked by a structural snapshot (`docs/TESTING.md`).
 - **Recorded model responses** (cassettes) live in `tests/cassettes/` and are made only from
