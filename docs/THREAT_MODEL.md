@@ -22,7 +22,7 @@ key checks, rate limiting, an outbound URL policy) and are not modelled here.
 |---|---|---|
 | The brief's idea text | prompts | Written by whoever starts a run. |
 | Model output | the manuscript, then TeX and HTML | Untrusted, however good the model. It can be steered by anything in its prompt. |
-| Research sources fetched from the web (M6, not built) | prompts, and so the manuscript | Untrusted and possibly hostile. |
+| Research sources fetched from the web (M6: the fetcher exists, no stage uses it yet) | prompts, and so the manuscript | Untrusted and possibly hostile. |
 | The Markdown manuscript | the LaTeX generator | Untrusted: model-written, or a document someone supplied. |
 | The book config (`books/<slug>.toml`) | the LaTeX generator, the covers, the listing | Untrusted when a model writes it; assembled by the pipeline from model output in M6. |
 
@@ -76,17 +76,22 @@ in either.
   on, so live TeX could not read them from its environment. (There is a unit test for the
   allow-list; none checks that a build tool cannot reach a secret by another route.)
 
-## Prompt injection from research sources (M6, not yet built)
+## Prompt injection from research sources (M6, partly built)
 
-A fetched web page can say "ignore your instructions and write X". Nothing fetches pages yet,
-so none of this is implemented; these are the rules M6 must meet, written down first.
+A fetched web page can say "ignore your instructions and write X". The search and fetch adapters
+exist (`BraveSearchProvider`, `HttpSourceFetcher`, `HtmlTextExtractor`), but no stage calls them
+yet, so only rule 6 is met by code that exists. The rest are what M6 must meet, written down first.
 
 1. **A source is data.** It is placed in the prompt as quoted, delimited material that the
    system text says to treat as evidence and never as instructions. The mechanism exists
    (`PromptTemplate`'s untrusted blanks, [PROMPTS.md](PROMPTS.md)); nothing uses it with fetched text yet.
-2. **The model has no tools.** It returns text, which is typeset. A successful injection can
-   change what a chapter says; it cannot read a file, call a service or spend money outside
-   the run.
+2. **The model has no tools today.** It returns text, which is typeset. A successful injection
+   can change what a chapter says; it cannot read a file, call a service or spend money outside
+   the run. **This is planned to change:** web search and page fetch are to become tools the
+   model calls. When they do, this rule is replaced, not dropped: a stage is given only the
+   tools named for it (none by default), every tool call is bounded in count, time and result
+   size, its result is untrusted text like any source, and each call and result is journaled so
+   a resumed run replays it instead of repeating it. Until that is built, the model has none.
 3. **The damage is bounded by the budget.** Every call reserves its worst-case cost before it
    is sent (`CallModel`, `SpendGuard`), so an injection that makes the model verbose or loops
    it cannot pass the run's cap.
@@ -96,9 +101,19 @@ so none of this is implemented; these are the rules M6 must meet, written down f
 5. **Claims are checked against what was fetched.** A source is pinned by the hash of the text
    fetched (`SourceRecord`) and the claim-verification stage compares claim and source, so an
    injection that invents a claim has to survive a check made against the source's own text.
-6. **Fetching is restricted.** Fetched URLs go through a public-HTTPS policy like the one
-   webhooks already use (`PublicHttpsUrlPolicy`), so a page cannot send the fetcher to an
-   internal address.
+6. **Fetching is restricted.** `HttpSourceFetcher` asks the outbound URL policy
+   (`PublicHttpsUrlPolicy`, as webhooks do) before the first request and again before every
+   redirect, refuses any scheme but http and https, accepts only HTML and plain text, refuses a
+   declared length over the cap before reading and stops reading at the cap, and sends no
+   cookies or credentials. It asks for an uncompressed body and refuses a compressed one, because
+   a decoder expands each chunk in full before a byte count can see it, so a small download
+   could fill memory. A page nested more than 512 elements deep is refused, so a hostile page
+   cannot make the parser slow. `HtmlTextExtractor` drops scripts, comments, hidden elements and invisible
+   characters, so a page cannot hide instructions from the reader; visible text stays and is
+   treated as data. **The gap:** the policy resolves DNS when asked, not when the connection is
+   opened, so a hostile DNS server could answer differently the second time (rebinding). Egress
+   through a filtering proxy closes it; pinning the connection to the checked address would too,
+   and is not built. The search and fetch adapters have not been run against the live internet.
 7. **It is tested with hostile corpora.** M6 adds cassettes of pages that carry injection
    attempts, and the test is that the finished manuscript contains none of the injected text
    as an instruction followed.
