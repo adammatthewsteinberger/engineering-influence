@@ -1,6 +1,7 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Block-level Markdown tokens to LaTeX for the fine-book class."""
 
+import re
 from typing import ClassVar
 
 from markdown_it.token import Token
@@ -30,6 +31,10 @@ class BlockRenderer(BlockRendererInterface):
             "html_block",
         }
     )
+
+    # LaTeX's verbatim environment ends at this text wherever it appears, and what follows on the
+    # line is read as TeX, so a code block that contains it would run the rest of the line.
+    VERBATIM_END = re.compile(r"\\end\s*\{\s*verbatim\*?\s*\}")
 
     def __init__(
         self,
@@ -109,6 +114,11 @@ class BlockRenderer(BlockRendererInterface):
             elif kind == "table_close":
                 out.append(LatexTable().render(table_rows))
             elif kind in ("fence", "code_block"):
+                if self.VERBATIM_END.search(token.content):
+                    raise ManuscriptError(
+                        "a code block contains \\end{verbatim}, which would end the code "
+                        "environment early and let the rest of the line run as TeX"
+                    )
                 out.append("\n\\begin{verbatim}\n" + token.content + "\\end{verbatim}\n")
             elif kind == "hr" and self._is_scene_break(tokens, i, out, quote_depth, list_stack):
                 out.append("\n\\scenebreak\n")

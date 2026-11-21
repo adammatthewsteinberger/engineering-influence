@@ -106,6 +106,24 @@ default style, about 3,000 characters fit at 6x9 and 5.5x8.5 and about 2,200 at 
 gives the exact figure for your book. Text, and any ink, in the barcode area is also caught after
 rendering, at every trim size, for the paperback and the hardcover.
 
+### What the typesetter refuses
+
+Text that reaches TeX may be written by a model, so the typesetter escapes it and refuses a few
+things it cannot make safe (the full picture is in [THREAT_MODEL.md](THREAT_MODEL.md)):
+
+- A **code block that contains `\end{verbatim}`** stops the build with a message, because TeX would
+  end the code environment there and read the rest of the line as TeX.
+- A **`website` that is not an http or https address** stops the build: write `https://pub.example`
+  or a bare host name such as `pub.example`. Another scheme (`javascript:`, `data:`), a space, or a
+  `host:port` is refused; write a port with its scheme (`https://pub.example:8080`).
+- Any URL, including a `website` and an `email`, is printed with every character outside the
+  ordinary URL set percent-encoded, so a space, a quote or an accented letter appears as `%20`, `%22`
+  or `%C3%A9`.
+- An **ebook title** with any of `& < > " # % \ { } ~ ^ $ _` is refused.
+- The title, subtitle, author and edition also go into the PDF's metadata, where the characters
+  `\ { } % # ^ ~`, control characters and unbalanced parentheses are dropped. An ordinary title,
+  including balanced parentheses, is unchanged.
+
 ### Trim size and paper
 
 A book's config sets the page size and the interior paper. Both default to what every book used

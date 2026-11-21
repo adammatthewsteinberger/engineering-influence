@@ -35,9 +35,11 @@ class EbookDocument(EbookDocumentInterface):
         )
         contact = [f"Published by {publisher}"]
         if m.get("website"):
-            contact.append(r"\url{" + m["website"] + "}")
+            contact.append(r"\url{" + self._tex.web_url(m["website"]) + "}")
         if m.get("email"):
-            contact.append(r"\href{mailto:" + m["email"] + "}{" + tex_text(m["email"]) + "}")
+            contact.append(
+                r"\href{mailto:" + self._tex.url(m["email"]) + "}{" + tex_text(m["email"]) + "}"
+            )
         contact_tex = "\\\\\n".join(contact)
         notes = self._tex.paragraphs(m.get("copyright_notes", ""))
         dedication = tex_text(m.get("dedication", "").strip())
