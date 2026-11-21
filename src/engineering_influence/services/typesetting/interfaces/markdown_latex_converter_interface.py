@@ -10,5 +10,5 @@ class MarkdownLatexConverterInterface(ABC):
     __slots__ = ()
 
     @abstractmethod
-    def convert(self, body: str, *, style: str) -> str:
+    def convert(self, body: str, *, style: str, scene_breaks: bool = False) -> str:
         """Return the LaTeX for the body in the given chapter style."""

@@ -10,6 +10,7 @@ from engineering_influence.contracts.book_config.v1.book_config_part_v1 import B
 from engineering_influence.contracts.book_config.v1.interfaces.book_config_v1_interface import (
     BookConfigV1Interface,
 )
+from engineering_influence.models.book_kind import BookKind
 
 NonBlank = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
@@ -17,6 +18,7 @@ NonBlank = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)
 class BookConfigV1(BookConfigV1Interface, BaseModel):
     """The structural keys of a book config; every other key is kept as metadata.
 
+    ``kind`` is ``nonfiction`` unless the config says ``novel``; it picks the text policy.
     ``source`` names the manuscript directory. ``front``, ``parts`` and ``back`` give the
     printed order, and ``not_in_book`` lists Markdown files the loader should not insist on.
     Title, author, release and format tables are free-form for now and travel as extras.
@@ -25,6 +27,7 @@ class BookConfigV1(BookConfigV1Interface, BaseModel):
     model_config = ConfigDict(frozen=True, extra="allow")
 
     source: NonBlank
+    kind: BookKind = BookKind.NONFICTION
     front: tuple[BookConfigEntryV1, ...] = ()
     parts: tuple[BookConfigPartV1, ...] = ()
     back: tuple[BookConfigEntryV1, ...] = ()

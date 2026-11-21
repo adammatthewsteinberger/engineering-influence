@@ -2,6 +2,7 @@
 """The ebook LaTeX document, converted to EPUB 3 by tex4ebook."""
 
 from engineering_influence.models.typesetting.book import Book
+from engineering_influence.models.typesetting.text_policy import TextPolicy
 from engineering_influence.services.typesetting.chapter_tex import ChapterTex
 from engineering_influence.services.typesetting.interfaces.ebook_document_interface import (
     EbookDocumentInterface,
@@ -47,15 +48,16 @@ class EbookDocument(EbookDocumentInterface):
         )
         subtitle_tex = f"\\textit{{{subtitle}}}\\par\n" if subtitle else ""
         numbered = m.get("number_chapters", True)
+        scene_breaks = TextPolicy.for_name(m.get("kind")).keeps_scene_breaks
         body = []
         for chapter in book.front:
-            body.append(self._chapters.render(chapter, numbered))
+            body.append(self._chapters.render(chapter, numbered, scene_breaks))
         for part_title, chapters in book.parts:
             body.append(f"\\part{{{tex_text(part_title)}}}\n")
             for chapter in chapters:
-                body.append(self._chapters.render(chapter, numbered))
+                body.append(self._chapters.render(chapter, numbered, scene_breaks))
         for chapter in book.back:
-            body.append(self._chapters.render(chapter, numbered))
+            body.append(self._chapters.render(chapter, numbered, scene_breaks))
         about = self._tex.paragraphs(m["author_bio"])
         also_by = m.get("also_by", [])
         if also_by:

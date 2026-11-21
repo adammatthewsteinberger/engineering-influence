@@ -6,6 +6,7 @@ from pathlib import Path
 
 from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
 from engineering_influence.interfaces.pdf_inspector_interface import PdfInspectorInterface
+from engineering_influence.models.typesetting.text_policy import TextPolicy
 from engineering_influence.services.publishing.contents_check import ContentsCheck
 from engineering_influence.services.publishing.forbidden_content_check import ForbiddenContentCheck
 from engineering_influence.services.publishing.interfaces.pdf_verifier_interface import (
@@ -30,7 +31,8 @@ class PdfVerifier(PdfVerifierInterface):
         problems = PdfStructureCheck().run(document)
         layout, texts, folios = PdfLayoutCheck().run(document.pages)
         problems += layout
-        problems += ForbiddenContentCheck().run(texts, config.get("edition", ""))
+        policy = TextPolicy.for_name(config.get("kind"))
+        problems += ForbiddenContentCheck().run(texts, config.get("edition", ""), policy)
         contents, checked = ContentsCheck().run(texts, folios, config["title"])
         problems += contents
         if checked is None:

@@ -12,6 +12,7 @@ from engineering_influence.interfaces.epub_cover_inspector_interface import (
 from engineering_influence.interfaces.epub_verifier_interface import EpubVerifierInterface
 from engineering_influence.interfaces.epubcheck_interface import EpubcheckInterface
 from engineering_influence.models.typesetting.book import Book
+from engineering_influence.models.typesetting.text_policy import TextPolicy
 from engineering_influence.services.epub.contents_links_check import ContentsLinksCheck
 from engineering_influence.services.epub.contents_page_check import ContentsPageCheck
 from engineering_influence.services.epub.cover_check import CoverCheck
@@ -45,7 +46,8 @@ class EpubVerifier(EpubVerifierInterface):
         problems += StylesheetCheck().run(contents)
         xml_problems, full = XmlCheck().run(contents)
         problems += xml_problems
-        problems += TextRulesCheck().run(contents, book, full)
+        policy = TextPolicy.for_name(book.meta.get("kind"))
+        problems += TextRulesCheck().run(contents, book, full, policy)
         problems += ContentsLinksCheck().run(contents, book)
         nav_problems, ncx_tree = NavNcxCheck().run(contents)
         problems += nav_problems

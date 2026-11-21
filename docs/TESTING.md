@@ -65,10 +65,14 @@ patch of anything else fails the build.
 
 ## The toolchain test
 
-`tests/fixtures/fixture_book/` is a small synthetic book (original text, a strict release contract,
-a KDP hardcover). The `toolchain` CI job installs LuaLaTeX, tex4ebook and epubcheck on a pinned
-`ubuntu-24.04` runner, builds it with `ei book publish fixture --strict-release`, and compares the
-result with `tests/fixtures/fixture_book/expected/snapshot.json`.
+`tests/fixtures/fixture_book/` is a small synthetic non-fiction book and `tests/fixtures/fixture_novel/` a
+small synthetic novel (original text, a strict release contract, a KDP hardcover each). The novel has
+scene breaks, em-dash dialogue and a character who says "Draft", so it exercises the rules that differ
+by kind. The `toolchain` CI job installs LuaLaTeX, tex4ebook and epubcheck on a pinned
+`ubuntu-24.04` runner, builds each with `ei book publish <slug> --strict-release`, and compares each
+result with the `expected/snapshot.json` beside its fixture. Beyond the snapshot, a test states what
+the novel must show: three scene breaks in the PDF and in the EPUB, the em dashes, and no stray
+`Draft` complaint.
 
 - The snapshot is structural, so no PDFs live in git: page count, page size and a hash of each
   page's text for both interiors, the sha256 of every EPUB member (the repacker is deterministic),
@@ -78,7 +82,7 @@ result with `tests/fixtures/fixture_book/expected/snapshot.json`.
 - A different TeX Live release can legitimately change the snapshot, which is why the runner image is
   pinned. To accept a deliberate change, run `EI_UPDATE_SNAPSHOT=1 uv run pytest -m toolchain` on
   a machine with the same toolchain (or download the `fixture-snapshot` artifact from the failed CI
-  run) and commit the new file.
+  run, which holds one `<name>.json` per book) and commit the new file.
 - A machine without the tools skips the test.
 
 ## Writing tests

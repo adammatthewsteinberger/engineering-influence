@@ -2,6 +2,7 @@
 """The print-interior LaTeX document for the fine-book classes."""
 
 from engineering_influence.models.typesetting.book import Book
+from engineering_influence.models.typesetting.text_policy import TextPolicy
 from engineering_influence.services.typesetting.chapter_tex import ChapterTex
 from engineering_influence.services.typesetting.interfaces.print_document_interface import (
     PrintDocumentInterface,
@@ -45,17 +46,18 @@ class PrintDocument(PrintDocumentInterface):
                 + "\n\\end{center}\n"
             )
         numbered = m.get("number_chapters", True)
+        scene_breaks = TextPolicy.for_name(m.get("kind")).keeps_scene_breaks
         body = []
         for chapter in book.front:
-            body.append(self._chapters.render(chapter, numbered))
+            body.append(self._chapters.render(chapter, numbered, scene_breaks))
         for part_title, chapters in book.parts:
             body.append(f"\\part{{{tex_text(part_title)}}}\n")
             for chapter in chapters:
-                body.append(self._chapters.render(chapter, numbered))
+                body.append(self._chapters.render(chapter, numbered, scene_breaks))
         if book.back:
             body.append("\\backmatter\n\\pagestyle{fine}\n")
         for chapter in book.back:
-            body.append(self._chapters.render(chapter, numbered))
+            body.append(self._chapters.render(chapter, numbered, scene_breaks))
         about = self._tex.paragraphs(m["author_bio"])
         dedication = tex_text(m.get("dedication", "").strip())
         notes = self._tex.paragraphs(m.get("copyright_notes", ""))

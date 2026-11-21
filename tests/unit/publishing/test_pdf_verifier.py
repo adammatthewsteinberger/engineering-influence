@@ -2,8 +2,10 @@
 
 from pathlib import Path
 
+import pytest
 from reportlab.pdfgen import canvas
 
+from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
 from engineering_influence.infrastructure.publishing.filesystem_manuscript_source import (
     FilesystemManuscriptSource,
 )
@@ -72,3 +74,37 @@ def test_book_without_contents_stops_before_the_log(tmp_path: Path) -> None:
         tmp_path / "b.pdf", tmp_path / "b.toml", log
     )
     assert problems == ["no Contents page found"]
+
+
+def dashed_book(path: Path) -> None:
+    make_pdf(
+        path,
+        [
+            [(100, 560, "Contents"), (100, 540, "Chapter One 1"), (100, 520, "Chapter Two 2")],
+            [(200, 612, "1"), (100, 500, "Chapter One"), (100, 480, "Wait \u2014 what is that")],
+            [(200, 612, "2"), (100, 500, "Chapter Two"), (100, 480, "Lorem ipsum dolor")],
+            [(100, 500, "Copyright First Edition")],
+        ],
+    )
+
+
+def verify(tmp_path: Path, config: str) -> list[str]:
+    (tmp_path / "b.toml").write_text(config, encoding="utf-8")
+    dashed_book(tmp_path / "b.pdf")
+    return PdfVerifier(PypdfPdfInspector(), FilesystemManuscriptSource()).verify(
+        tmp_path / "b.pdf", tmp_path / "b.toml"
+    )
+
+
+def test_a_novel_interior_may_use_em_dashes(tmp_path: Path) -> None:
+    assert verify(tmp_path, CONFIG + 'kind = "novel"\n') == []
+
+
+def test_a_nonfiction_interior_with_the_same_em_dash_is_refused(tmp_path: Path) -> None:
+    assert verify(tmp_path, CONFIG) == ["page 2: contains an em dash"]
+    assert verify(tmp_path, CONFIG + 'kind = "nonfiction"\n') == ["page 2: contains an em dash"]
+
+
+def test_an_unknown_kind_stops_verification_with_a_clear_message(tmp_path: Path) -> None:
+    with pytest.raises(ManuscriptError, match="'nonfiction' or 'novel'"):
+        verify(tmp_path, CONFIG + 'kind = "novell"\n')

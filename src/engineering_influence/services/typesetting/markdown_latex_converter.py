@@ -21,11 +21,11 @@ class MarkdownLatexConverter(MarkdownLatexConverterInterface):
     def __init__(self) -> None:
         self._parser = MarkdownParser()
 
-    def convert(self, body: str, *, style: str) -> str:
+    def convert(self, body: str, *, style: str, scene_breaks: bool = False) -> str:
         """Return the LaTeX for the body in the given chapter style."""
         pieces: list[str] = []
         pos = 0
-        renderer = BlockRenderer(style)
+        renderer = BlockRenderer(style, scene_breaks=scene_breaks)
         pattern = re.compile(
             self.CALLOUT.pattern + "|" + self.ILLUSTRATION.pattern, re.DOTALL | re.MULTILINE
         )
@@ -36,6 +36,7 @@ class MarkdownLatexConverter(MarkdownLatexConverterInterface):
             else:
                 pieces.append(self._block("illustration", match.group(2)))
             renderer.first_paragraph_pending = False
+            renderer.printed = True
             pos = match.end()
         pieces.append(renderer.render(self._parser.parse(body[pos:])))
         latex = "".join(pieces)

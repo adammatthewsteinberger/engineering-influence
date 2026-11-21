@@ -5,10 +5,14 @@ from pathlib import Path
 import pytest
 
 from engineering_influence.models.publishing.path_relativizer import PathRelativizer
+from engineering_influence.models.typesetting.text_policy import TextPolicy
 from engineering_influence.services.publishing.forbidden_content_check import ForbiddenContentCheck
 from engineering_influence.services.publishing.kdp_geometry import KdpGeometry
 from engineering_influence.services.publishing.latex_log_check import LatexLogCheck
 from engineering_influence.services.publishing.text_normalizer import TextNormalizer
+
+NONFICTION = TextPolicy.for_name(None)
+NOVEL = TextPolicy.for_name("novel")
 
 
 @pytest.mark.parametrize(
@@ -28,12 +32,13 @@ def test_normalizer_folds_quotes_case_and_punctuation() -> None:
 
 
 def test_clean_text_passes() -> None:
-    assert ForbiddenContentCheck().run(["Some page", "Second Edition here"], "Second Edition") == []
+    clean = ["Some page", "Second Edition here"]
+    assert ForbiddenContentCheck().run(clean, "Second Edition", NONFICTION) == []
 
 
 def test_dashes_markers_and_draft_are_reported() -> None:
     texts = ["a — b", "c – d — e", "[CALLOUT x]", "A Draft copy"]
-    problems = ForbiddenContentCheck().run(texts, "First Edition")
+    problems = ForbiddenContentCheck().run(texts, "First Edition", NONFICTION)
     assert "page 1: contains an em dash" in problems
     assert "page 2: contains an en dash" in problems
     assert "marker '[CALLOUT' printed in the book" in problems
@@ -42,9 +47,55 @@ def test_dashes_markers_and_draft_are_reported() -> None:
 
 
 def test_edition_must_say_edition() -> None:
-    assert ForbiddenContentCheck().run(["text"], "") == [
+    assert ForbiddenContentCheck().run(["text"], "", NONFICTION) == [
         "the edition in the config does not say Edition"
     ]
+
+
+def problems_for(texts: list[str], policy: TextPolicy) -> list[str]:
+    """The problems in some pages that otherwise carry the edition line the check insists on."""
+    return ForbiddenContentCheck().run([*texts, "First Edition"], "First Edition", policy)
+
+
+def test_a_novel_may_use_em_dashes_but_en_dashes_are_still_refused() -> None:
+    assert problems_for(["wait \u2014 what"], NOVEL) == []
+    assert problems_for(["wait \u2014 what", "1990\u20131995"], NOVEL) == [
+        "page 2: contains an en dash"
+    ]
+
+
+def test_nonfiction_refuses_the_same_em_dash() -> None:
+    assert problems_for(["wait \u2014 what"], NONFICTION) == ["page 1: contains an em dash"]
+
+
+def test_a_character_in_a_novel_may_say_draft() -> None:
+    assert problems_for(["\u201cDraft beer is a penny,\u201d she said."], NOVEL) == []
+
+
+def test_dialogue_that_runs_across_a_page_break_still_counts_as_dialogue() -> None:
+    assert problems_for(["\u201cDraft", "beer,\u201d she said."], NOVEL) == []
+
+
+def test_a_novel_still_refuses_draft_in_narration() -> None:
+    assert problems_for(["A Draft copy sat on the desk."], NOVEL) == [
+        "the word 'Draft' appears in the book"
+    ]
+
+
+def test_a_novel_refuses_draft_outside_the_quotes_even_when_it_also_appears_inside() -> None:
+    texts = ["\u201cDraft,\u201d she said. Draft was stamped on the page."]
+    assert problems_for(texts, NOVEL) == ["the word 'Draft' appears in the book"]
+
+
+def test_nonfiction_refuses_draft_even_inside_quotation_marks() -> None:
+    assert problems_for(["\u201cDraft beer,\u201d she said."], NONFICTION) == [
+        "the word 'Draft' appears in the book"
+    ]
+
+
+def test_an_opening_quote_that_never_closes_cannot_hide_a_later_draft() -> None:
+    text = "\u201c" + "x" * 600 + " Draft stamped here \u201d"
+    assert problems_for([text], NOVEL) == ["the word 'Draft' appears in the book"]
 
 
 def test_log_reports_glyphs_and_only_significant_overfull_lines() -> None:

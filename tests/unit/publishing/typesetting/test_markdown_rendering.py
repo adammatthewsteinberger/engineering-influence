@@ -168,3 +168,58 @@ def test_converter_wraps_callouts_illustrations_and_references() -> None:
     assert wrapped.startswith("\\begin{referencelist}\n") and wrapped.endswith(
         "\\end{referencelist}\n"
     )
+
+
+def fiction(markdown: str) -> str:
+    return BlockRenderer("prose", scene_breaks=True).render(PARSER.parse(markdown))
+
+
+def test_a_rule_between_two_passages_is_a_scene_break_in_fiction() -> None:
+    latex = fiction("One.\n\n---\n\nTwo.\n")
+    assert latex.count("\\scenebreak") == 1
+    assert latex.index("One.") < latex.index("\\scenebreak") < latex.index("Two.")
+
+
+def test_a_rule_is_not_printed_in_nonfiction() -> None:
+    assert "scenebreak" not in blocks("One.\n\n---\n\nTwo.\n", "prose")
+
+
+@pytest.mark.parametrize("markdown", ["---\n\nOne.\n", "One.\n\n---\n"])
+def test_a_rule_that_opens_or_closes_a_passage_prints_nothing(markdown: str) -> None:
+    assert "scenebreak" not in fiction(markdown)
+
+
+def test_two_rules_in_a_row_make_a_single_break() -> None:
+    assert fiction("One.\n\n---\n\n---\n\nTwo.\n").count("\\scenebreak") == 1
+
+
+@pytest.mark.parametrize("markdown", ["> One.\n>\n> ---\n>\n> Two.\n", "- One\n\n---\n\n- Two\n"])
+def test_a_rule_inside_a_quote_prints_nothing_but_one_after_a_list_is_a_break(
+    markdown: str,
+) -> None:
+    latex = fiction(markdown)
+    assert latex.count("\\scenebreak") == (1 if markdown.startswith("-") else 0)
+
+
+def test_the_converter_passes_the_flag_on_and_a_break_survives_a_callout() -> None:
+    body = "One.\n\n---\n\nTwo.\n\n[CALLOUT]\nNote.\n[/CALLOUT]\n\n---\n\nThree.\n"
+    assert (
+        MarkdownLatexConverter()
+        .convert(body, style="prose", scene_breaks=True)
+        .count("\\scenebreak")
+        == 2
+    )
+    assert "scenebreak" not in MarkdownLatexConverter().convert(body, style="prose")
+
+
+def test_a_rule_right_after_a_callout_is_a_break_but_one_at_the_very_start_is_not() -> None:
+    body = "[CALLOUT]\nNote.\n[/CALLOUT]\n\n---\n\nThree.\n"
+    assert (
+        MarkdownLatexConverter()
+        .convert(body, style="prose", scene_breaks=True)
+        .count("\\scenebreak")
+        == 1
+    )
+    assert "scenebreak" not in MarkdownLatexConverter().convert(
+        "---\n\nOne.\n", style="prose", scene_breaks=True
+    )

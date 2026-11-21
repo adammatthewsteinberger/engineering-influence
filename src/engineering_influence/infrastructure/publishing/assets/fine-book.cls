@@ -258,6 +258,12 @@
   {\par\vskip 4pt\upshape\footnotesize\spacedcaps{\epigraphsource}%
    \end{minipage}\end{flushright}\vskip 1.2\baselineskip}
 
+% A scene break in fiction (a "---" rule in a novel): a centred ornament with air around it, and the
+% paragraph after it is not indented, as after a heading.
+\newcommand{\scenebreak}{\par\vskip 0.8\baselineskip
+  \begin{center}\textasteriskcentered\hspace{0.9em}\textasteriskcentered\hspace{0.9em}\textasteriskcentered\end{center}%
+  \vskip 0.2\baselineskip\@afterindentfalse\@afterheading}
+
 % Bibliography and reference lists: hanging indent, smaller type.
 \newenvironment{referencelist}
   {\par\fontsize{10}{13.5}\selectfont}
