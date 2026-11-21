@@ -78,10 +78,10 @@ Read these before you depend on it:
 
 - The writing is not autonomous yet: the runner and gate are placeholders (`DeterministicRunner`, `NonEmptyArtifactGate`).
 - Delivery is at least once: a crash between the ledger write and the acknowledgement re-runs a stage.
-- There is no read API and no endpoint to resolve a human gate; progress is in the ledger table and the logs.
+- There is no endpoint to resolve a human gate. A book run can be read with `GET /v1/runs/{id}` and `ei run status`, but pipeline progress is still only in the ledger table and the logs.
 - No service emits webhooks yet, although signing, the outbox and a verifier exist.
 - `ei pipeline start` and the MCP server use in-memory adapters; they plan work but do not reach the stack.
-- There is no database migration tool; recreate databases created by an earlier build.
+- The schema is managed by `ei db upgrade`; run it before starting a new release. A database created before the outbox gained its `dead_at` column must be recreated, because the baseline migration does not add it.
 
 Details and the full list: [docs/CONFIGURATION.md](docs/CONFIGURATION.md#limits-to-know).
 

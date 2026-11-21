@@ -4,6 +4,9 @@
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from engineering_influence.controllers.interfaces.run_controller_interface import (
+    RunControllerInterface,
+)
 from engineering_influence.controllers.project_controller import ProjectController
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
@@ -57,7 +60,7 @@ class CliRuntime(CliRuntimeInterface):
             BookCli(self._publishing_controller),
             ServeCli(ServeStarter()),
             DbCli(self._schema_migrator, self._secret_provider),
-            RunCli(self._resume_run, self._cancel_run),
+            RunCli(self._resume_run, self._cancel_run, self._run_status),
         )
 
     def _run_repository(self) -> RunRepositoryInterface:
@@ -84,6 +87,26 @@ class CliRuntime(CliRuntimeInterface):
                 os.environ.get("EI_QUEUE_NAME", "engineering-influence.jobs"),
             )
         return ResumeRun(self._run_repository(), queue)
+
+    def _run_status(self) -> RunControllerInterface:
+        """Build the read controller; it needs only the database."""
+        from engineering_influence.controllers.run_controller import RunController
+        from engineering_influence.repositories.sqlmodel_artifact_store import (
+            SqlModelArtifactStore,
+        )
+        from engineering_influence.repositories.sqlmodel_run_repository import (
+            SqlModelRunRepository,
+        )
+        from engineering_influence.services.read_run import ReadRun
+
+        url = self._secret_provider().require("EI_DATABASE_URL")
+        self._schema_migrator().check(url)
+        return RunController(
+            ReadRun(
+                SqlModelRunRepository(url, pooled=False),
+                SqlModelArtifactStore(url, pooled=False),
+            )
+        )
 
     def _cancel_run(self) -> CancelRunInterface:
         """Build the cancel service; it needs only the database."""

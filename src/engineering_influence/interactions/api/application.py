@@ -5,8 +5,12 @@ from typing import TYPE_CHECKING, Any, cast
 
 from engineering_influence import __version__
 from engineering_influence.contracts.project_request import ProjectRequest
+from engineering_influence.contracts.run.v1.run_summary_v1 import RunSummaryV1
 from engineering_influence.controllers.interfaces.project_controller_interface import (
     ProjectControllerInterface,
+)
+from engineering_influence.controllers.interfaces.run_controller_interface import (
+    RunControllerInterface,
 )
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interactions.api.api_observability import ApiObservability
@@ -32,8 +36,10 @@ class ApiApplication(ApiApplicationInterface):
         controller: ProjectControllerInterface,
         guard: "ApiGuard",
         observability: ApiObservability | None = None,
+        runs: RunControllerInterface | None = None,
     ) -> None:
         self._controller = controller
+        self._runs = runs
         self._guard = guard
         self._observability = observability
         self._renderer = PrometheusRenderer()
@@ -51,9 +57,30 @@ class ApiApplication(ApiApplicationInterface):
             response_model=dict,
             dependencies=[Depends(self._guard)],
         )
+        if self._runs is not None:
+            self._add_run_routes(app)
         if self._observability is not None:
             self._add_observability(app, self._observability)
         return app
+
+    def _add_run_routes(self, app: Any) -> None:
+        from fastapi import Depends
+        from fastapi.responses import Response
+
+        app.add_api_route(
+            "/v1/runs/{run_id}",
+            self._run_summary,
+            methods=["GET"],
+            response_model=RunSummaryV1,
+            dependencies=[Depends(self._guard)],
+        )
+        app.add_api_route(
+            "/v1/runs/{run_id}/artifacts/{name:path}",
+            self._run_artifact,
+            methods=["GET"],
+            response_class=Response,
+            dependencies=[Depends(self._guard)],
+        )
 
     def _add_observability(self, app: Any, observability: ApiObservability) -> None:
         from fastapi import Depends
@@ -83,6 +110,18 @@ class ApiApplication(ApiApplicationInterface):
     def _start(self, request: ProjectRequest) -> dict[str, str]:
         response = self._controller.start(request)
         return response.model_dump()
+
+    def _run_summary(self, run_id: str) -> RunSummaryV1:
+        return cast(RunControllerInterface, self._runs).summary(run_id)
+
+    def _run_artifact(self, run_id: str, name: str) -> Any:
+        from fastapi.responses import Response
+
+        return Response(
+            content=cast(RunControllerInterface, self._runs).artifact(run_id, name),
+            media_type="application/octet-stream",
+            headers={"X-Content-Type-Options": "nosniff", "Cache-Control": "no-store"},
+        )
 
     def _live(self) -> dict[str, str]:
         return {"status": "alive"}

@@ -4,6 +4,7 @@
 import hashlib
 
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.pool import NullPool
 from sqlmodel import Session, col, create_engine, select
 
 from engineering_influence.errors.artifact_conflict_error import ArtifactConflictError
@@ -15,9 +16,11 @@ from engineering_influence.repositories.artifact_record import ArtifactRecord
 class SqlModelArtifactStore(ArtifactStoreInterface):
     """Persist artifacts as rows; the database refuses a second row for the same run and name."""
 
-    def __init__(self, database_url: str) -> None:
+    def __init__(self, database_url: str, pooled: bool = True) -> None:
         connect_args = {"check_same_thread": False} if database_url.startswith("sqlite") else {}
-        self._engine = create_engine(database_url, connect_args=connect_args)
+        self._engine = create_engine(
+            database_url, connect_args=connect_args, **({} if pooled else {"poolclass": NullPool})
+        )
 
     def put(self, run_id: str, name: str, data: bytes) -> str:
         address = ArtifactAddress(run_id, name)

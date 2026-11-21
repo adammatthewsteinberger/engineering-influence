@@ -362,3 +362,31 @@ def test_the_built_worker_runs_a_run_advance_job_against_the_database(tmp_path: 
     assert artifacts.get("run-1", "brief.md") == b"brief: draft for sourdough"
     artifacts.close()
     runs.close()
+
+
+def test_the_composed_api_serves_a_run_and_its_artifact_from_the_database(
+    tmp_path: Path, api_runtime: Any
+) -> None:
+    settings = settings_for(tmp_path)
+    runs, artifacts = (
+        SqlModelRunRepository(settings.database_url),
+        SqlModelArtifactStore(settings.database_url),
+    )
+    brief = BookBrief(kind=BookKind.NONFICTION, idea="sourdough", budget_micro_usd=1_000)
+    plan = StagePlan(kind=BookKind.NONFICTION, stages=("brief", "outline"))
+    runs.save(BookRun("run-1", brief, plan, Budget(cap=1_000), status=RunStatus.RUNNING))
+    artifacts.put("run-1", "brief.md", b"# Brief")
+    runtime = api_runtime(settings, Secrets({"EI_API_KEYS": KEY}))
+    client = TestClient(runtime.build_app())
+
+    summary = client.get("/v1/runs/run-1", headers=AUTH)
+    artifact = client.get("/v1/runs/run-1/artifacts/brief.md", headers=AUTH)
+
+    assert summary.status_code == 200 and summary.json()["artifacts"] == ["brief.md"]
+    assert artifact.status_code == 200 and artifact.content == b"# Brief"
+    assert client.get("/v1/runs/run-1").status_code == 401
+    assert len(runtime._stores) == 2
+    runtime.close()
+    assert runtime._stores == []
+    artifacts.close()
+    runs.close()
