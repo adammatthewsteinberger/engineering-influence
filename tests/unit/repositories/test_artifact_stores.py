@@ -202,3 +202,11 @@ def test_a_duplicate_whose_original_cannot_be_found_is_an_error(database_url: st
     with pytest.raises(RuntimeError, match="cannot find the original"):
         store.put("run-1", "a.md", b"text")
     store.close()
+
+
+def test_an_unpooled_sql_store_works_and_holds_no_connection_open(database_url: str) -> None:
+    store = SqlModelArtifactStore(database_url, pooled=False)
+    assert store.put("run-1", "a.md", b"text") == hashlib.sha256(b"text").hexdigest()
+    assert store.get("run-1", "a.md") == b"text"
+    assert store.names("run-1") == ["a.md"]
+    assert type(store._engine.pool).__name__ == "NullPool"

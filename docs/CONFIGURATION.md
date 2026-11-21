@@ -93,8 +93,9 @@ are configured. So `BootstrapAlertDispatcher` always writes the alert to the log
 first, at its own level. **Alert on those log lines** (`message` starting with
 `alert:`, fields `alert_severity` and `dedup_key`) rather than relying on mail.
 
-The outbox table gained a `dead_at` column. There is no migration tool yet:
-recreate any database created before this change.
+The outbox table gained a `dead_at` column before migrations existed. `ei db upgrade` adopts an
+existing table as it is and does not add the column, so recreate any database created before that
+change.
 
 ### Limits to know
 
@@ -187,6 +188,8 @@ and republish it by hand. Stopping the worker finishes the job in flight first.
   reaches one stays parked.
 - **No webhook is emitted.** The outbox, signing and dispatch exist, but no service
   creates outbox intents, and the worker does not run the dispatcher.
-- **No read API.** Progress is visible only in the ledger table and the logs.
+- **The read API covers book runs only.** `GET /v1/runs/{id}` and `ei run status` show a run;
+  pipeline progress is still visible only in the ledger table and the logs. The SDK and the MCP
+  server have no run methods yet.
 - **The base images are tags, not digests**, and the worker has no container
   healthcheck; it logs a heartbeat and raises a critical alert if it stalls.

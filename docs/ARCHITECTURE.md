@@ -94,7 +94,7 @@ The correlation id travels the whole way: request, queued job, worker log lines 
 
 - **Runs** (`bookrunrecord`), the **run journal** (`journalrecord`) and **artifacts** (`artifactrecord`)
   back resumable book runs. The worker writes them when it advances a `run.advance` job; nothing yet
-  creates a run.
+  creates a run. The API and `ei run status` read them (`RunSummaryV1`) and never write.
 
 The schema is owned by Alembic. The migrations ship in the wheel
 (`infrastructure/migrations/`), `ei db upgrade` applies them to `EI_DATABASE_URL`, and the compose

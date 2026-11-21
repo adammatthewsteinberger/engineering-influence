@@ -34,6 +34,8 @@ compose stack publishes it on `127.0.0.1:8000`.
 | Method and path | Auth | Purpose |
 |---|---|---|
 | `POST /v1/pipelines` | key | Start a pipeline. Body: a project. `200` with the result. |
+| `GET /v1/runs/{run_id}` | key | A book run: status, stage, plan, budget in micro-dollars, issues and the names of its artifacts. `200` with a `RunSummaryV1`. |
+| `GET /v1/runs/{run_id}/artifacts/{name}` | key | One stored artifact, byte for byte, as `application/octet-stream` with `nosniff` and `no-store`. Names may contain `/`. |
 | `GET /health/live` | none | `{"status":"alive"}` while the process runs. |
 | `GET /health/ready` | none | `200 {"status":"ready"}` or `503 {"status":"unavailable"}`. |
 | `GET /metrics` | key | Prometheus text format. |
@@ -52,6 +54,8 @@ copied into the queued job, restored by the worker and sent on outbound webhooks
 |---|---|---|---|
 | 401 | `UNAUTHORIZED` | Missing or wrong key | no |
 | 429 | `RATE_LIMITED` | Per-address or per-key budget spent | yes, with backoff |
+| 404 | `RUN_NOT_FOUND` | No run has that id | no |
+| 404 | `ARTIFACT_NOT_FOUND` | The run has no such artifact; a name that could never be stored (absolute, `..`, backslash) gets the same answer | no |
 | 422 | n/a | Body failed validation (FastAPI's `detail` list) | no, fix the body |
 | 503 | `SECRET_MISSING` | A required secret is not configured | after fixing configuration |
 
@@ -119,7 +123,7 @@ ei --version
 ei pipeline start --slug S --title T --postulate P [--postulate P …] [--stage STAGE …]
 ei serve api|worker
 ei db upgrade
-ei run resume|cancel RUN_ID
+ei run status|resume|cancel RUN_ID
 ei book [--root DIR] audit|build|epub|covers|qa|publish …
 ```
 
@@ -128,6 +132,7 @@ ei book [--root DIR] audit|build|epub|covers|qa|publish …
 | `ei pipeline start` | Validates a project and prints the result as JSON. In-memory only: it does not queue work on the stack. `--stage` defaults to `thesis`. | `0`; `2` on a usage error |
 | `ei serve api` / `worker` | Runs the API or the worker from `EI_*` settings. | `2` and one line naming the bad variable; never a traceback |
 | `ei db upgrade` | Applies the database migrations to `EI_DATABASE_URL` and prints the revision reached. Needs the `runtime` extra. | `0`; `1` extra missing; `2` and one line for a missing setting or an unreachable database |
+| `ei run status RUN_ID` | Prints the run as one line of JSON (the same `RunSummaryV1` the API returns). Needs only `EI_DATABASE_URL`. | `0`; `1` unknown run; `2` setup trouble |
 | `ei run resume RUN_ID` | Moves a parked run back to running and queues its current stage; on a run that is already running it only queues the stage again, which repairs a resume that died half-way. Reads `EI_DATABASE_URL` and `EI_RABBITMQ_URL`. | `0`; `1` unknown run, finished run or a run that kept changing; `2` setup trouble |
 | `ei run cancel RUN_ID` | Stops a run for good; cancelling twice is fine, and a completed or failed run is refused. Needs only `EI_DATABASE_URL`. | same |
 | `ei book …` | Audit, build and publish books (needs the `publishing` extra and, for PDFs, a TeX toolchain). Reads `engineering-influence.toml` in `--root`. | `0` ok; `1` a build or audit failure; `2` bad arguments |

@@ -1,10 +1,15 @@
 """The ``run`` command group."""
 
 import argparse
+import json
 from pathlib import Path
 
 import pytest
 
+from engineering_influence.contracts.run.v1.run_summary_v1 import RunSummaryV1
+from engineering_influence.controllers.interfaces.run_controller_interface import (
+    RunControllerInterface,
+)
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
 from engineering_influence.interactions.cli.run_cli import RunCli
@@ -15,6 +20,7 @@ from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget import Budget
 from engineering_influence.models.run_status import RunStatus
 from engineering_influence.models.stage_plan import StagePlan
+from engineering_influence.repositories.sqlmodel_artifact_store import SqlModelArtifactStore
 from engineering_influence.repositories.sqlmodel_run_repository import SqlModelRunRepository
 from engineering_influence.runtime.cli_runtime import CliRuntime
 from engineering_influence.services.interfaces.cancel_run_interface import CancelRunInterface
@@ -51,8 +57,33 @@ class Canceller(CancelRunInterface):
         return a_run(RunStatus.CANCELLED)
 
 
-def cli(resumer: Resumer | None = None, canceller: Canceller | None = None) -> RunCli:
-    return RunCli(lambda: resumer or Resumer(), lambda: canceller or Canceller())
+class Reader(RunControllerInterface):
+    def __init__(self, failure: BaseException | None = None) -> None:
+        self.failure = failure
+
+    def summary(self, run_id: str) -> RunSummaryV1:
+        if self.failure is not None:
+            raise self.failure
+        return RunSummaryV1.from_run(a_run(RunStatus.RUNNING), ["brief.md"])
+
+    def artifact(self, run_id: str, name: str) -> bytes:
+        raise NotImplementedError
+
+
+def cli(
+    resumer: Resumer | None = None,
+    canceller: Canceller | None = None,
+    reader: Reader | None = None,
+) -> RunCli:
+    return RunCli(
+        lambda: resumer or Resumer(),
+        lambda: canceller or Canceller(),
+        lambda: reader or Reader(),
+    )
+
+
+def status_args() -> argparse.Namespace:
+    return argparse.Namespace(run_command="status", run_id="run-1")
 
 
 def resume_args() -> argparse.Namespace:
@@ -100,7 +131,7 @@ def test_a_missing_runtime_extra_says_how_to_install_it(capsys: pytest.CaptureFi
     def missing() -> ResumeRunInterface:
         raise ImportError("no alembic", name="alembic")
 
-    assert RunCli(missing, lambda: Canceller()).run(resume_args()) == 1
+    assert RunCli(missing, lambda: Canceller(), lambda: Reader()).run(resume_args()) == 1
     err = capsys.readouterr().err
     assert "pip install 'engineering-influence[runtime]'" in err
     assert "alembic is missing" in err
@@ -217,3 +248,58 @@ def test_the_run_group_needs_a_command(capsys: pytest.CaptureFixture[str]) -> No
         CliRuntime().build().run(["run"])
     assert raised.value.code == 2
     assert "required" in capsys.readouterr().err
+
+
+def test_status_prints_the_run_as_one_line_of_json(capsys: pytest.CaptureFixture[str]) -> None:
+    assert cli().run(status_args()) == 0
+    out = capsys.readouterr().out
+    assert out.count("\n") == 1
+    document = json.loads(out)
+    assert (document["run_id"], document["status"], document["stage"]) == (
+        "run-1",
+        "running",
+        "outline",
+    )
+    assert document["artifacts"] == ["brief.md"]
+    assert document["budget"]["cap_micro_usd"] == 1_000
+
+
+def test_status_of_an_unknown_run_exits_1(capsys: pytest.CaptureFixture[str]) -> None:
+    failure = ApplicationError("RUN_NOT_FOUND", "no run 'run-1'", http_status=404)
+    assert cli(reader=Reader(failure)).run(status_args()) == 1
+    captured = capsys.readouterr()
+    assert (captured.out, captured.err.strip()) == ("", "error: no run 'run-1'")
+
+
+def test_the_real_status_command_reports_the_run_and_its_artifacts(
+    database_url: str, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setenv("EI_DATABASE_URL", database_url)
+    monkeypatch.delenv("EI_RABBITMQ_URL", raising=False)
+    runs = seeded(database_url, RunStatus.PARKED_CAPACITY)
+    artifacts = SqlModelArtifactStore(database_url)
+    artifacts.put("run-1", "brief.md", b"# Brief")
+
+    assert CliRuntime().build().run(["run", "status", "run-1"]) == 0
+
+    document = json.loads(capsys.readouterr().out)
+    assert (document["status"], document["stage"]) == ("parked_capacity", "outline")
+    assert document["artifacts"] == ["brief.md"]
+    artifacts.close()
+    runs.close()
+
+
+def test_the_real_status_command_refuses_an_unknown_run(
+    database_url: str, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setenv("EI_DATABASE_URL", database_url)
+    assert CliRuntime().build().run(["run", "status", "nope"]) == 1
+    assert "no run 'nope'" in capsys.readouterr().err
+
+
+def test_the_real_status_command_stops_on_a_database_that_was_never_migrated(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setenv("EI_DATABASE_URL", f"sqlite:///{tmp_path / 'fresh.db'}")
+    assert CliRuntime().build().run(["run", "status", "run-1"]) == 2
+    assert "ei db upgrade" in capsys.readouterr().err

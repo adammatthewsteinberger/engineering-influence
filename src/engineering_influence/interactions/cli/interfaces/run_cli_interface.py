@@ -6,13 +6,13 @@ from abc import ABC, abstractmethod
 
 
 class RunCliInterface(ABC):
-    """The ``run`` command group: resume or cancel a book run."""
+    """The ``run`` command group: look at, resume or cancel a book run."""
 
     __slots__ = ()
 
     @abstractmethod
     def register(self, subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]") -> None:
-        """Add ``run resume`` and ``run cancel`` to the command line."""
+        """Add ``run status``, ``run resume`` and ``run cancel`` to the command line."""
 
     @abstractmethod
     def run(self, arguments: argparse.Namespace) -> int:
