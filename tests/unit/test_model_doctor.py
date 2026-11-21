@@ -170,6 +170,15 @@ def test_an_unreachable_server_fails_the_probe_with_the_reason() -> None:
     )
 
 
+def test_a_key_that_would_travel_in_clear_is_never_given_to_the_probe() -> None:
+    risky = ModelProfile("r", "openai_compatible", "local", "m", "http://10.0.0.5:8000", "K")
+    probe = Probe(ModelAvailability.AVAILABLE)
+    out = lines(doctor(risky, secrets={"K": KEY}, probe=probe))
+    assert probe.asked == []
+    assert "FAIL r: probe: not tried: the key would be sent over plain http" in out
+    assert KEY not in "".join(out)
+
+
 def test_a_missing_key_means_the_probe_is_not_tried() -> None:
     probe = Probe(ModelAvailability.AVAILABLE)
     out = lines(doctor(HOSTED, probe=probe))

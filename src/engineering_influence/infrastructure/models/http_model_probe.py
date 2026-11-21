@@ -18,7 +18,7 @@ class HttpModelProbe(ModelProbeInterface):
 
     It tells you the server is reachable and accepts the key. It cannot tell you the account has
     credit, or that the model you named is served: a listing can be paged, so an absent name
-    proves nothing. A redirect is reported, never followed, because following one would send the
+    proves nothing. It refuses to send a key over plain http to another machine. A redirect is reported, never followed, because following one would send the
     key to a host nobody configured. The client is injected and carries the timeout.
     """
 
@@ -34,6 +34,10 @@ class HttpModelProbe(ModelProbeInterface):
 
     def probe(self, profile: ModelProfile, api_key: str) -> ModelAvailability:
         """What the server's answer says about the key."""
+        if profile.sends_key_in_clear():
+            raise self._failed(
+                f"{self._host(profile)} is plain http and the key would be sent in clear; use https"
+            )
         headers: dict[str, str] = {}
         if profile.adapter == "anthropic":
             headers["x-api-key"] = api_key

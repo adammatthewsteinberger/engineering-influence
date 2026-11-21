@@ -33,6 +33,22 @@ def test_the_probe_is_a_port() -> None:
     )
 
 
+def test_the_probe_itself_refuses_to_send_a_key_over_plain_http_to_another_host() -> None:
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(200)
+
+    risky = ModelProfile("r", "openai_compatible", "p", "m", "http://10.0.0.5:8000", "K")
+    with pytest.raises(ApplicationError) as caught:
+        probe_with(httpx.MockTransport(handler)).probe(risky, KEY)
+    assert caught.value.code == "MODEL_PROBE_FAILED"
+    assert "10.0.0.5:8000" in caught.value.message
+    assert KEY not in caught.value.message
+    assert seen == []
+
+
 def test_an_anthropic_probe_sends_its_headers_to_the_models_list() -> None:
     seen: list[httpx.Request] = []
 

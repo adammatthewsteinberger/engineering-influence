@@ -93,7 +93,8 @@ profile's server, with the key, and reports `available`, `authentication failed`
 anything. It shows that the server is reachable and accepts the key. It does **not** show that
 the account has credit, or that the model you named is served (a listing can be paged, so a
 missing name proves nothing). A redirect is reported and not followed, because following one
-would send your key to a host you did not configure.
+would send your key to a host you did not configure. A profile whose key would go over plain
+`http` to another machine is not probed at all (the `transport` check already fails it).
 
 There is no check that bills. A real completion test would belong behind the `paid` marker, with
 your approval.

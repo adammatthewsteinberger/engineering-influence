@@ -95,6 +95,10 @@ class ModelDoctor(ModelDoctorInterface):
     ) -> DoctorFinding:
         if key is None:
             return DoctorFinding(profile.name, "probe", False, "not tried: the key is missing")
+        if profile.sends_key_in_clear():
+            return DoctorFinding(
+                profile.name, "probe", False, "not tried: the key would be sent over plain http"
+            )
         try:
             availability = probe.probe(profile, key)
         except ApplicationError as error:
