@@ -139,4 +139,7 @@ def test_a_build_that_fills_the_disk_is_stopped_with_everything_latexmk_started(
         tmp_path,
         name,
         reason="to disk, over its limit of 50 MiB",
+        # The script writes its big file before the marker, so the disk watcher can stop the
+        # build first: the stop reason is the evidence, as it is for the memory test.
+        reached_the_marker=None,
     )
