@@ -40,7 +40,8 @@ the build and the attestation are all unchanged.
 | `guard` | Compares the tag with the code | the tag is not `v<version>`; core and SDK versions differ; the changelog has no section for exactly this version; unfolded fragments remain in `changelog.d/`; the commit is not on `main` |
 | `build` | Runs the whole test suite, builds both packages, installs the real artifacts in clean environments, writes `SHA256SUMS` and a CycloneDX SBOM | any test, `twine check --strict`, or an install check fails |
 | `github-release` | Attests the build provenance, then creates the GitHub release with the artifacts, a checksum file and the SBOM | it cannot create the release |
-| `pypi` | Publishes both packages with PyPI attestations | `PUBLISH_TO_PYPI` is not `true`, or the `pypi` environment is not approved |
+| `testpypi` | Rehearses the upload to TestPyPI with the same files | `PUBLISH_TO_TESTPYPI` is not `true` (the job is skipped, and the release goes on), or the `testpypi` environment is not approved |
+| `pypi` | Publishes both packages with PyPI attestations | `PUBLISH_TO_PYPI` is not `true`, the `pypi` environment is not approved, or the TestPyPI rehearsal ran and failed or was cancelled |
 
 The `build` job is the same reusable workflow that CI runs on every push (`distribution`),
 without the full test run. A release therefore cannot fail on packaging for the first time
@@ -48,6 +49,21 @@ at tag time. Versions with `a`, `b`, `rc` or `.dev` are marked as pre-releases.
 
 Builds are reproducible: with the commit's timestamp fixed as `SOURCE_DATE_EPOCH`, two
 builds of the same commit give byte-identical files.
+
+## One-time setup for TestPyPI (optional rehearsal)
+
+The rehearsal uploads the same files to TestPyPI, which accepts a version once, like PyPI. Do this
+once, before setting `PUBLISH_TO_TESTPYPI`:
+
+1. On test.pypi.org, add a **pending trusted publisher** for each project,
+   `engineering-influence` and `engineering-influence-sdk`: owner `adammatthewsteinberger`,
+   repository `engineering-influence`, workflow `release.yml`, environment `testpypi`.
+2. In the repository settings, add **required reviewers** to the `testpypi` environment.
+3. Set the repository variable `PUBLISH_TO_TESTPYPI` to `true`.
+
+A rerun of a rehearsal passes over files TestPyPI already has (`skip-existing`), so a failed run can be
+repeated. If the rehearsal runs and fails, the `pypi` job does not run; if it is skipped, `pypi`
+goes ahead as before.
 
 ## One-time setup for PyPI
 
@@ -77,7 +93,7 @@ CI runs `actionlint` and `zizmor` (medium severity and above) on every workflow.
 
 ## What has not been exercised
 
-- The `pypi` job has never run: it needs the trusted publishers and the variable described above.
+- The `testpypi` and `pypi` jobs have never run: they need the trusted publishers and the variables described above.
 - The guard is tested against its own script (`tests/e2e/test_release_guard.py`).
 - `zizmor` reports two low-severity suggestions to write `./.github/workflows/…` as `$/…`.
   The documented `./` form is kept deliberately.

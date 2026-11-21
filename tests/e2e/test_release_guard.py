@@ -212,3 +212,61 @@ def test_the_fragments_readme_alone_does_not_block_a_release(repo: Path) -> None
     git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
 
     assert run_guard(repo, f"v{VERSION}").returncode == 0
+
+
+def release_jobs() -> dict[str, dict[str, object]]:
+    workflow = yaml.safe_load((ROOT / ".github/workflows/release.yml").read_text())
+    jobs = workflow["jobs"]
+    assert isinstance(jobs, dict)
+    return jobs
+
+
+def test_the_testpypi_rehearsal_is_off_until_its_own_variable_is_set() -> None:
+    job = release_jobs()["testpypi"]
+
+    assert job["if"] == "vars.PUBLISH_TO_TESTPYPI == 'true'"
+    assert job["needs"] == "github-release"
+    assert job["environment"]["name"] == "testpypi"
+
+
+def test_both_uploads_are_authorised_by_the_runs_identity_and_use_no_token() -> None:
+    for name, host in (("testpypi", "test.pypi.org"), ("pypi", None)):
+        job = release_jobs()[name]
+        assert job["permissions"] == {"id-token": "write"}
+        publish = [s for s in job["steps"] if "gh-action-pypi-publish" in s.get("uses", "")]
+        assert len(publish) == 1
+        options = publish[0]["with"]
+        assert not {"password", "user"} & options.keys()
+        assert options["attestations"] is True
+        assert ("repository-url" in options) is (host is not None)
+        if host:
+            assert options["repository-url"] == f"https://{host}/legacy/"
+
+
+def test_the_rehearsal_publishes_only_the_distributions_not_the_sbom_or_checksums() -> None:
+    steps = release_jobs()["testpypi"]["steps"]
+    keep = next(s for s in steps if s.get("name") == "Keep only the distributions")
+
+    assert "mv dist/*.whl dist/*.tar.gz testpypi-dist/" in keep["run"]
+    publish = next(s for s in steps if "gh-action-pypi-publish" in s.get("uses", ""))
+    assert publish["with"]["packages-dir"] == "testpypi-dist/"
+
+
+def test_pypi_waits_for_the_rehearsal_and_stops_if_it_failed_but_not_if_it_was_skipped() -> None:
+    job = release_jobs()["pypi"]
+    condition = " ".join(str(job["if"]).split())
+
+    assert job["needs"] == ["github-release", "testpypi"]
+    assert "always()" in condition
+    assert "vars.PUBLISH_TO_PYPI == 'true'" in condition
+    assert "needs.github-release.result == 'success'" in condition
+    assert "needs.testpypi.result != 'failure'" in condition
+    assert "needs.testpypi.result != 'cancelled'" in condition
+    assert "'skipped'" not in condition  # a skipped rehearsal is allowed, so it is not named
+
+
+def test_every_publishing_job_waits_for_the_github_release() -> None:
+    jobs = release_jobs()
+
+    assert jobs["testpypi"]["needs"] == "github-release"
+    assert "github-release" in jobs["pypi"]["needs"]
