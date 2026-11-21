@@ -18,9 +18,18 @@ class PricingCheck(PricingCheckInterface):
         self._today = today or date.today()
 
     def validate(
-        self, report: ReleaseReadinessReport, release: dict[str, Any], severity: str, ref: str
+        self,
+        report: ReleaseReadinessReport,
+        release: dict[str, Any],
+        severity: str,
+        ref: str,
+        hardcover_required: bool = True,
     ) -> tuple[dict[str, Any], float | None, float | None, float | None]:
-        """Return (pricing table, ebook, paperback, hardcover list prices)."""
+        """Return (pricing table, ebook, paperback, hardcover list prices).
+
+        A hardcover price is required unless the trim size has no KDP hardcover and the book does
+        not offer one; a price that is given is still checked.
+        """
         pricing = release.get("pricing", {})
         if not isinstance(pricing, dict):
             report.add(severity, "missing-pricing", "[release.pricing] must be a table", ref)
@@ -49,7 +58,9 @@ class PricingCheck(PricingCheckInterface):
             )
         ebook = self._price(report, pricing, "ebook", severity, ref)
         paperback = self._price(report, pricing, "paperback", severity, ref)
-        hardcover = self._price(report, pricing, "hardcover", severity, ref)
+        hardcover = self._price(
+            report, pricing, "hardcover", severity, ref, required=hardcover_required
+        )
         if ebook is not None and not 2.99 <= ebook <= 12.99:
             report.add(
                 severity,
@@ -121,11 +132,16 @@ class PricingCheck(PricingCheckInterface):
         name: str,
         severity: str,
         ref: str,
+        required: bool = True,
     ) -> float | None:
         try:
             return float(pricing.get(name))  # type: ignore[arg-type]
         except (TypeError, ValueError):
-            report.add(
-                severity, f"{name}-price-missing", f"pricing must define {name} as a number", ref
-            )
+            if required or pricing.get(name) is not None:
+                report.add(
+                    severity,
+                    f"{name}-price-missing",
+                    f"pricing must define {name} as a number",
+                    ref,
+                )
             return None

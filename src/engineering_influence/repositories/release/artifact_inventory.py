@@ -17,7 +17,9 @@ class ArtifactInventory(ArtifactInventoryInterface):
         self._layout = layout
         self._relativizer = PathRelativizer(layout.root)
 
-    def artifacts(self, slug: str, *, hardcover: bool = False) -> list[dict[str, Any]]:
+    def artifacts(
+        self, slug: str, *, hardcover: bool = False, hardcover_wrap: bool = True
+    ) -> list[dict[str, Any]]:
         """The required artifacts for the book, each with existence, size, and hash."""
         output = self._layout.output
         covers = output / "covers" / slug
@@ -26,8 +28,9 @@ class ArtifactInventory(ArtifactInventoryInterface):
             (output / f"{slug}.epub", "epub"),
             (covers / f"{slug}-ebook.jpg", "ebook-cover"),
             (covers / f"{slug}-paperback-wrap.pdf", "paperback-wrap"),
-            (covers / f"{slug}-hardcover-wrap.pdf", "hardcover-wrap"),
         ]
+        if hardcover_wrap:
+            required.append((covers / f"{slug}-hardcover-wrap.pdf", "hardcover-wrap"))
         if hardcover:
             required.insert(1, (output / f"{slug}-hardcover.pdf", "hardcover-interior"))
         return [self._artifact(path, kind) for path, kind in required]

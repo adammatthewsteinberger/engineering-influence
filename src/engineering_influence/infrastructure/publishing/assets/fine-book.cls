@@ -8,12 +8,15 @@
 \LoadClass[11pt,twoside,openright]{memoir}
 
 % ---------------------------------------------------------------------------
-% Page geometry. KDP 6x9, no bleed.
+% Page geometry. KDP 6x9 by default, no bleed. A book of another trim size (5x8, 5.5x8.5) has its
+% generated document set \finetrimwidth and \finetrimheight before the class loads.
 % Inside (gutter) 0.875in covers every KDP page-count tier up to 828 pages.
 % Outside 0.6875in, well above the 0.25in KDP minimum. Running heads and folios
 % sit inside the live area.
 % ---------------------------------------------------------------------------
-\setstocksize{9in}{6in}
+\providecommand{\finetrimheight}{9in}
+\providecommand{\finetrimwidth}{6in}
+\setstocksize{\finetrimheight}{\finetrimwidth}
 \settrimmedsize{\stockheight}{\stockwidth}{*}
 \settrims{0pt}{0pt}
 \setlrmarginsandblock{0.875in}{0.6875in}{*}

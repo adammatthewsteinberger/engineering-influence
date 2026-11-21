@@ -189,3 +189,22 @@ def test_book_loader_refuses_an_unknown_kind_before_reading_any_chapter(tmp_path
     config = make_book(tmp_path, 'kind = "novell"\n')
     with pytest.raises(ManuscriptError, match="'nonfiction' or 'novel'"):
         BookLoader(tmp_path).load(config)
+
+
+@pytest.mark.parametrize(
+    ("extra", "message"),
+    [('trim_size = "A5"\n', "5x8, 5.5x8.5, 6x9"), ('paper = "glossy"\n', "white, cream")],
+)
+def test_book_loader_refuses_an_unknown_trim_size_or_paper(
+    tmp_path: Path, extra: str, message: str
+) -> None:
+    with pytest.raises(ManuscriptError, match=message):
+        BookLoader(tmp_path).load(make_book(tmp_path, extra))
+
+
+def test_book_loader_accepts_every_trim_size_and_paper(tmp_path: Path) -> None:
+    for trim in ("5x8", "5.5x8.5", "6x9"):
+        for paper in ("white", "cream"):
+            root = tmp_path / f"{trim}-{paper}"
+            config = make_book(root, f'trim_size = "{trim}"\npaper = "{paper}"\n')
+            assert BookLoader(root).load(config).meta["trim_size"] == trim

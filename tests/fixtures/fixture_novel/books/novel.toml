@@ -1,5 +1,7 @@
 source = "src"
 kind = "novel"
+trim_size = "5.5x8.5"
+paper = "cream"
 title = "The Salt Road"
 subtitle = "A Synthetic Novel for Testing the Toolchain"
 author = "Test Author"

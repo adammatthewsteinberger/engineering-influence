@@ -245,3 +245,54 @@ def test_default_today_is_used_when_not_injected(tmp_path: Path, dump: Dump) -> 
     path.write_text(dump(VALID), encoding="utf-8")
     report = ReleaseAuditor(tmp_path, FilesystemManuscriptSource(), PypdfPdfInspector()).audit(path)
     assert isinstance(report.pricing["verified_age_days"], int)
+
+
+def five_by_eight(config: dict[str, Any]) -> None:
+    config["trim_size"] = "5x8"
+    config["release"]["formats"] = {"kdp_hardcover": False}
+    del config["release"]["pricing"]["hardcover"]
+
+
+def test_a_five_by_eight_paperback_only_book_needs_no_hardcover_price(
+    tmp_path: Path, dump: Dump
+) -> None:
+    report = audit(tmp_path, dump, five_by_eight)
+    assert report.status == "pass" and report.findings == []
+
+
+def test_a_six_by_nine_book_still_needs_its_hardcover_price(tmp_path: Path, dump: Dump) -> None:
+    def change(config: dict[str, Any]) -> None:
+        config["trim_size"] = "6x9"
+        del config["release"]["pricing"]["hardcover"]
+
+    assert codes(audit(tmp_path, dump, change)) == ["hardcover-price-missing"]
+
+
+def test_a_five_by_eight_book_that_gives_a_hardcover_price_is_still_checked_for_a_provider(
+    tmp_path: Path, dump: Dump
+) -> None:
+    def change(config: dict[str, Any]) -> None:
+        five_by_eight(config)
+        config["release"]["pricing"]["hardcover"] = 24.99
+        config["release"]["formats"] = {"kdp_hardcover": False}
+
+    assert codes(audit(tmp_path, dump, change)) == ["hardcover-provider-missing"]
+
+
+def test_a_five_by_eight_book_may_not_claim_a_kdp_hardcover(tmp_path: Path, dump: Dump) -> None:
+    def change(config: dict[str, Any]) -> None:
+        five_by_eight(config)
+        config["release"]["formats"] = {"kdp_hardcover": True}
+
+    assert "hardcover-trim-unsupported" in codes(audit(tmp_path, dump, change))
+
+
+def test_a_five_and_a_half_by_eight_and_a_half_book_may_claim_a_kdp_hardcover(
+    tmp_path: Path, dump: Dump
+) -> None:
+    def change(config: dict[str, Any]) -> None:
+        config["trim_size"] = "5.5x8.5"
+        config["release"]["formats"] = {"kdp_hardcover": True}
+
+    report = audit(tmp_path, dump, change)
+    assert "hardcover-trim-unsupported" not in codes(report)

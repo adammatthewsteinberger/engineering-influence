@@ -7,12 +7,14 @@ from engineering_influence.models.covers.interfaces.kdp_cover_spec_interface imp
 
 
 class KdpCoverSpec(KdpCoverSpecInterface):
-    """Constants from KDP's published cover guidelines, checked on every build."""
+    """Constants from KDP's published cover guidelines, checked on every build.
+
+    The trim size and the paper thickness are not here: a book chooses them (``TrimSize`` and
+    ``PaperStock``), and the layouts take them as arguments.
+    """
 
     PPI = 300
-    TRIM_W, TRIM_H = 6.0, 9.0
     BLEED = 0.125
-    PAPER_WHITE = 0.002252  # inches per page, KDP white paper with black ink
     MM = 1 / 25.4
     HC_SPINE_EXTRA = 4.8 * MM  # case laminate spine allowance (0.189 in)
     HC_BOARD_W, HC_BOARD_H = 5 * MM, 6 * MM  # boards are 5 mm wider and 6 mm taller than trim

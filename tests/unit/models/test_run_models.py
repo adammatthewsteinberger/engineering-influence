@@ -73,7 +73,8 @@ def test_a_brief_keeps_what_it_is_given() -> None:
         ({"language": " "}, "needs a language"),
         ({"title_hint": ""}, "cannot be blank"),
         ({"audience": " "}, "cannot be blank"),
-        ({"trim_size": ""}, "cannot be blank"),
+        ({"trim_size": ""}, "trim size must be one of"),
+        ({"trim_size": "7x10"}, "5x8, 5.5x8.5, 6x9"),
     ],
 )
 def test_a_brief_refuses_what_cannot_start_a_run(changes: dict[str, object], message: str) -> None:

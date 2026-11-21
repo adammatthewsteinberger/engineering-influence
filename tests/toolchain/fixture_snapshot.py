@@ -24,7 +24,7 @@ class FixtureSnapshot:
         return {
             "report": self._report(json.loads(report_path.read_text(encoding="utf-8"))),
             "pdf": self._pdf(output / f"{slug}.pdf"),
-            "hardcover_pdf": self._pdf(output / f"{slug}-hardcover.pdf"),
+            "hardcover_pdf": self._optional_pdf(output / f"{slug}-hardcover.pdf"),
             "epub": self._epub(output / f"{slug}.epub"),
             "covers": sorted(
                 path.name for path in (output / "covers" / slug).iterdir() if path.is_file()
@@ -41,6 +41,10 @@ class FixtureSnapshot:
                 for finding in report["release_readiness"]["findings"]
             ],
         }
+
+    def _optional_pdf(self, path: Path) -> dict[str, Any] | None:
+        """A book with no hardcover (KDP offers none at 5x8) has no hardcover interior."""
+        return self._pdf(path) if path.exists() else None
 
     def _pdf(self, path: Path) -> dict[str, Any]:
         reader = PdfReader(str(path))

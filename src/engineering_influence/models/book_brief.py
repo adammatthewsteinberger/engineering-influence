@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.interfaces.book_brief_interface import BookBriefInterface
+from engineering_influence.models.typesetting.trim_size import TrimSize
 
 
 @dataclass(frozen=True, slots=True)
@@ -33,6 +34,8 @@ class BookBrief(BookBriefInterface):
             raise ValueError("target words must be positive")
         if not self.language.strip():
             raise ValueError("a brief needs a language")
-        for text in (self.title_hint, self.audience, self.trim_size):
+        if self.trim_size is not None and self.trim_size not in TrimSize.names():
+            raise ValueError(f"trim size must be one of {', '.join(TrimSize.names())}")
+        for text in (self.title_hint, self.audience):
             if text is not None and not text.strip():
                 raise ValueError("optional brief text cannot be blank")

@@ -1,5 +1,6 @@
 % Hardcover variant of fine-book.cls for a one-volume KDP hardcover.
-% It uses the identical generated text and 6 x 9 trim, with a denser but
+% It uses the identical generated text and the book's trim size (a hardcover is only built at 5.5 x 8.5
+% or 6 x 9), with a denser but
 % still readable page design.  This file changes layout only.
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{fine-book-hardcover}[2026/11/01 Fine book hardcover interior]

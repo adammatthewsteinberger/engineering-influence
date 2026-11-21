@@ -6,9 +6,10 @@ from typing import Any
 import numpy as np
 import pytest
 from PIL import Image
-from pypdf import PdfWriter
+from pypdf import PdfReader, PdfWriter
 
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
+from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
 from engineering_influence.infrastructure.covers.cover_builder import CoverBuilder
 from engineering_influence.infrastructure.covers.interfaces.ebook_cover_verifier_interface import (
     EbookCoverVerifierInterface,
@@ -162,3 +163,50 @@ def test_custom_font_directories_are_searched_before_the_bundled_fonts(tmp_path:
     empty = tmp_path / "no-fonts"
     empty.mkdir()
     assert CoverBuilder(layout, font_dirs=[empty]).build("demo").is_dir()
+
+
+def pages_of(path: Path) -> int:
+    return len(PdfReader(str(path)).pages)
+
+
+def test_a_five_by_eight_book_gets_a_paperback_wrap_and_no_hardcover_wrap(tmp_path: Path) -> None:
+    layout = project(tmp_path, 'trim_size = "5x8"\n')
+    out = CoverBuilder(layout).build("demo", preview=True)
+    names = sorted(p.name for p in out.iterdir())
+    assert not any("hardcover" in name for name in names)
+    assert "demo-paperback-wrap.pdf" in names and "demo-ebook.jpg" in names
+    with Image.open(out / "demo-paperback-wrap.tif") as wrap:
+        # 120 pages on white paper: 0.25 + 10 + 120 * 0.002252 in wide, 8.25 in tall, at 300 ppi.
+        assert wrap.size == (3157, 2475)
+    with Image.open(out / "demo-front.tif") as front:
+        # Cropped on pixel boundaries, so it can differ from the idealised 5.25 in by a pixel.
+        assert abs(front.size[0] - round((5 + 0.125 + 0.125) * 300)) <= 1
+
+
+def test_a_cream_paper_book_gets_a_wider_spine_than_the_same_book_on_white(tmp_path: Path) -> None:
+    white = tmp_path / "white"
+    white.mkdir()
+    cream = tmp_path / "cream"
+    cream.mkdir()
+    CoverBuilder(project(white)).build("demo")
+    CoverBuilder(project(cream, 'paper = "cream"\n')).build("demo")
+    wide = "output/covers/demo/demo-paperback-wrap.tif"
+    with Image.open(white / wide) as w, Image.open(cream / wide) as c:
+        # 120 pages: 0.27024 in on white and 0.3 in on cream, at 300 ppi.
+        assert (w.size[0], c.size[0]) == (3757, 3765)
+
+
+def test_a_five_and_a_half_by_eight_and_a_half_book_builds_every_cover_file(tmp_path: Path) -> None:
+    layout = project(tmp_path, 'trim_size = "5.5x8.5"\npaper = "cream"\n')
+    out = CoverBuilder(layout).build("demo")
+    assert sorted(p.name for p in out.iterdir()) == sorted(f"demo-{f}" for f in FILES)
+    with Image.open(out / "demo-paperback-wrap.tif") as wrap:
+        # 120 cream pages: 0.25 + 11 + 120 * 0.0025 = 11.55 in = 3465 px, which rounds up by at most one.
+        assert abs(wrap.size[0] - 3465) <= 1 and wrap.size[1] == 2625
+
+
+@pytest.mark.parametrize("extra", ['trim_size = "7x10"\n', 'paper = "glossy"\n'])
+def test_an_unknown_trim_size_or_paper_stops_the_cover_build(tmp_path: Path, extra: str) -> None:
+    layout = project(tmp_path, extra)
+    with pytest.raises(ManuscriptError, match="must be one of"):
+        CoverBuilder(layout).build("demo")

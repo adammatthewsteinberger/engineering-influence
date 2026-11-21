@@ -13,6 +13,7 @@ from pathlib import Path
 import pytest
 from pypdf import PdfWriter
 
+from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
 from engineering_influence.infrastructure.publishing.pypdf_pdf_inspector import PypdfPdfInspector
 from engineering_influence.infrastructure.publishing.system_clock import SystemClock
 from engineering_influence.infrastructure.release.epub_zip_check import EpubZipCheck
@@ -247,3 +248,38 @@ def test_step_recorder_stamps_with_the_system_clock(tmp_path: Path) -> None:
         "x", [], lambda: "", tmp_path / "x.log"
     )
     assert record["started_at"].endswith("+00:00")
+
+
+def test_a_hardcover_is_refused_at_a_trim_size_kdp_does_not_print_one() -> None:
+    with pytest.raises(ManuscriptError, match="does not print a hardcover at the 5x8 trim"):
+        FormatPolicy().of({"trim_size": "5x8", "formats": {"hardcover": True}})
+    with pytest.raises(ManuscriptError, match="use 5.5x8.5, 6x9"):
+        FormatPolicy().of({"trim_size": "5x8", "formats": {"hardcover": True}})
+
+
+@pytest.mark.parametrize("trim", ["5.5x8.5", "6x9"])
+def test_a_hardcover_is_allowed_where_kdp_prints_one(trim: str) -> None:
+    formats = FormatPolicy().of({"trim_size": trim, "formats": {"hardcover": True}})
+    assert formats["hardcover"] is True
+
+
+def test_a_five_by_eight_book_that_asks_for_no_hardcover_is_fine() -> None:
+    assert FormatPolicy().of({"trim_size": "5x8"})["hardcover"] is False
+    assert (
+        FormatPolicy().of({"trim_size": "5x8", "formats": {"hardcover": False}})["hardcover"]
+        is False
+    )
+
+
+def test_an_unknown_trim_size_stops_the_format_policy() -> None:
+    with pytest.raises(ManuscriptError, match="5x8, 5.5x8.5, 6x9"):
+        FormatPolicy().of({"trim_size": "7x10"})
+
+
+def test_the_inventory_leaves_out_the_hardcover_wrap_when_there_is_none_to_make(
+    tmp_path: Path,
+) -> None:
+    inventory = ArtifactInventory(ProjectLayout(tmp_path))
+    kinds = [a["kind"] for a in inventory.artifacts("demo", hardcover_wrap=False)]
+    assert kinds == ["pdf-interior", "epub", "ebook-cover", "paperback-wrap"]
+    assert "hardcover-wrap" in [a["kind"] for a in inventory.artifacts("demo")]

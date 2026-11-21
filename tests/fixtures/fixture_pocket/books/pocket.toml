@@ -1,0 +1,26 @@
+source = "src"
+trim_size = "5x8"
+title = "The Pocket Ledger"
+subtitle = "A Synthetic Pocket Book for Testing the Toolchain"
+author = "Test Author"
+publisher = "Fixture Press"
+edition = "First Edition"
+author_bio = "Test Author is a fictional person who exists only to give the build something to typeset."
+description = "A short synthetic pocket book. It exists so every build of the publishing toolchain can be compared byte for byte, and it contains nothing worth reading twice."
+front = ["00-foreword.md"]
+back = ["90-notes.md"]
+parts = [
+  { title = "Part One: Light", chapters = ["01-first.md", "02-second.md"] },
+  { title = "Part Two: Dark", chapters = ["03-third.md"] },
+]
+
+[release]
+required = true
+keywords = ["fixture", "typesetting", "pocket book", "latex", "epub", "synthetic", "toolchain"]
+minimum_description_words = 10
+
+[release.pricing]
+verified_on = "2026-11-19"
+source_url = "https://kdp.amazon.com/en_US/help/topic/G201834170"
+ebook = 4.99
+paperback = 12.99

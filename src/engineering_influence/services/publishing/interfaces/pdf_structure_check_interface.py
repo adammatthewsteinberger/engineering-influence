@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from engineering_influence.models.publishing.pdf_document import PdfDocument
+    from engineering_influence.models.typesetting.trim_size import TrimSize
 
 
 class PdfStructureCheckInterface(ABC):
@@ -16,5 +17,5 @@ class PdfStructureCheckInterface(ABC):
     __slots__ = ()
 
     @abstractmethod
-    def run(self, document: PdfDocument) -> list[str]:
+    def run(self, document: PdfDocument, trim: TrimSize) -> list[str]:
         """Return a problem for each structural violation."""

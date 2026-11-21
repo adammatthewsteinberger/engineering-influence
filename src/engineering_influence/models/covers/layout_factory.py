@@ -1,32 +1,46 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """KDP layouts for the ebook cover, the paperback wrap, and the hardcover wrap."""
 
+from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
 from engineering_influence.models.covers.box import Box
 from engineering_influence.models.covers.cover_layout import CoverLayout
 from engineering_influence.models.covers.interfaces.layout_factory_interface import (
     LayoutFactoryInterface,
 )
 from engineering_influence.models.covers.kdp_cover_spec import KdpCoverSpec as Kdp
+from engineering_influence.models.typesetting.paper_stock import PaperStock
+from engineering_influence.models.typesetting.trim_size import TrimSize
 
 
 class LayoutFactory(LayoutFactoryInterface):
-    """Spine width follows page count; the back cover keeps a clear barcode box."""
+    """Spine width follows page count and paper; the back cover keeps a clear barcode box.
+
+    With no arguments the layouts are for a 6 x 9 in book on white paper.
+    """
+
+    def __init__(self, trim: TrimSize | None = None, paper: PaperStock | None = None) -> None:
+        self._trim = trim or TrimSize.for_name(None)
+        self._paper = paper or PaperStock.for_name(None)
 
     def ebook(self) -> CoverLayout:
         """The 1600 x 2560 px Kindle cover."""
-        ppi = Kdp.EBOOK_PX[0] / Kdp.TRIM_W
+        ppi = Kdp.EBOOK_PX[0] / self._trim.width_in
         height = Kdp.EBOOK_PX[1] / ppi
-        front = Box(0, 0, Kdp.TRIM_W, height)
-        return CoverLayout("ebook", Kdp.TRIM_W, height, ppi, front, front.inset(0.42, 0.5))
+        front = Box(0, 0, self._trim.width_in, height)
+        return CoverLayout("ebook", self._trim.width_in, height, ppi, front, front.inset(0.42, 0.5))
 
     def paperback(self, pages: int) -> CoverLayout:
         """Back + spine + front with bleed."""
-        spine_w = pages * Kdp.PAPER_WHITE
-        width = 2 * Kdp.BLEED + 2 * Kdp.TRIM_W + spine_w
-        height = 2 * Kdp.BLEED + Kdp.TRIM_H
-        back = Box(Kdp.BLEED, Kdp.BLEED, Kdp.BLEED + Kdp.TRIM_W, Kdp.BLEED + Kdp.TRIM_H)
-        spine = Box(back.x1, Kdp.BLEED, back.x1 + spine_w, Kdp.BLEED + Kdp.TRIM_H)
-        front = Box(spine.x1, Kdp.BLEED, spine.x1 + Kdp.TRIM_W, Kdp.BLEED + Kdp.TRIM_H)
+        spine_w = pages * self._paper.inches_per_page
+        width = 2 * Kdp.BLEED + 2 * self._trim.width_in + spine_w
+        height = 2 * Kdp.BLEED + self._trim.height_in
+        back = Box(
+            Kdp.BLEED, Kdp.BLEED, Kdp.BLEED + self._trim.width_in, Kdp.BLEED + self._trim.height_in
+        )
+        spine = Box(back.x1, Kdp.BLEED, back.x1 + spine_w, Kdp.BLEED + self._trim.height_in)
+        front = Box(
+            spine.x1, Kdp.BLEED, spine.x1 + self._trim.width_in, Kdp.BLEED + self._trim.height_in
+        )
         barcode = Box(
             back.x1 - 0.25 - Kdp.BARCODE_W,
             back.y1 - 0.25 - Kdp.BARCODE_H,
@@ -50,8 +64,10 @@ class LayoutFactory(LayoutFactoryInterface):
 
     def hardcover(self, pages: int) -> CoverLayout:
         """Case laminate: boards, hinge, spine, and a 15 mm wrap."""
-        spine_w = pages * Kdp.PAPER_WHITE + Kdp.HC_SPINE_EXTRA
-        bw, bh = Kdp.TRIM_W + Kdp.HC_BOARD_W, Kdp.TRIM_H + Kdp.HC_BOARD_H
+        if not self._trim.hardcover:
+            raise ManuscriptError(f"KDP does not print a hardcover at the {self._trim.name} trim")
+        spine_w = pages * self._paper.inches_per_page + Kdp.HC_SPINE_EXTRA
+        bw, bh = self._trim.width_in + Kdp.HC_BOARD_W, self._trim.height_in + Kdp.HC_BOARD_H
         width = 2 * Kdp.HC_WRAP + 2 * bw + spine_w
         height = 2 * Kdp.HC_WRAP + bh
         back = Box(Kdp.HC_WRAP, Kdp.HC_WRAP, Kdp.HC_WRAP + bw, Kdp.HC_WRAP + bh)

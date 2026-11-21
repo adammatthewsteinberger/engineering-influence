@@ -7,6 +7,7 @@ from pathlib import Path
 from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
 from engineering_influence.interfaces.pdf_inspector_interface import PdfInspectorInterface
 from engineering_influence.models.typesetting.text_policy import TextPolicy
+from engineering_influence.models.typesetting.trim_size import TrimSize
 from engineering_influence.services.publishing.contents_check import ContentsCheck
 from engineering_influence.services.publishing.forbidden_content_check import ForbiddenContentCheck
 from engineering_influence.services.publishing.interfaces.pdf_verifier_interface import (
@@ -28,7 +29,8 @@ class PdfVerifier(PdfVerifierInterface):
         """Return every problem found; an empty list means the interior passes."""
         config = tomllib.loads(self._files.read_text(config_path))
         document = self._pdfs.inspect(pdf_path)
-        problems = PdfStructureCheck().run(document)
+        trim = TrimSize.for_name(config.get("trim_size"))
+        problems = PdfStructureCheck().run(document, trim)
         layout, texts, folios = PdfLayoutCheck().run(document.pages)
         problems += layout
         policy = TextPolicy.for_name(config.get("kind"))

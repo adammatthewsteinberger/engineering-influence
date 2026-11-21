@@ -15,8 +15,12 @@ from engineering_influence.services.publishing.pdf_verifier import PdfVerifier
 CONFIG = 'title = "Test Book"\nedition = "First Edition"\n'
 
 
-def make_pdf(path: Path, pages: list[list[tuple[float, float, str]]]) -> None:
-    pdf = canvas.Canvas(str(path), pagesize=(432, 648))
+def make_pdf(
+    path: Path,
+    pages: list[list[tuple[float, float, str]]],
+    size: tuple[float, float] = (432, 648),
+) -> None:
+    pdf = canvas.Canvas(str(path), pagesize=size)
     for page in pages:
         for x, y, text in page:
             pdf.drawString(x, y, text)
@@ -108,3 +112,41 @@ def test_a_nonfiction_interior_with_the_same_em_dash_is_refused(tmp_path: Path) 
 def test_an_unknown_kind_stops_verification_with_a_clear_message(tmp_path: Path) -> None:
     with pytest.raises(ManuscriptError, match="'nonfiction' or 'novel'"):
         verify(tmp_path, CONFIG + 'kind = "novell"\n')
+
+
+def sized_book(path: Path, size: tuple[float, float]) -> None:
+    make_pdf(
+        path,
+        [
+            [(100, 520, "Contents"), (100, 500, "Chapter One 1"), (100, 480, "Chapter Two 2")],
+            [(190, 570, "1"), (100, 460, "Chapter One"), (100, 440, "Lorem ipsum dolor")],
+            [(190, 570, "2"), (100, 460, "Chapter Two"), (100, 440, "Lorem ipsum dolor")],
+            [(100, 460, "Copyright First Edition")],
+        ],
+        size,
+    )
+
+
+def verify_sized(tmp_path: Path, config: str, size: tuple[float, float]) -> list[str]:
+    (tmp_path / "b.toml").write_text(config, encoding="utf-8")
+    sized_book(tmp_path / "b.pdf", size)
+    return PdfVerifier(PypdfPdfInspector(), FilesystemManuscriptSource()).verify(
+        tmp_path / "b.pdf", tmp_path / "b.toml"
+    )
+
+
+def test_an_interior_at_the_books_own_trim_size_passes(tmp_path: Path) -> None:
+    assert verify_sized(tmp_path, CONFIG + 'trim_size = "5.5x8.5"\n', (396, 612)) == []
+
+
+def test_an_interior_at_another_size_is_refused_with_the_expected_one_named(
+    tmp_path: Path,
+) -> None:
+    problems = verify_sized(tmp_path, CONFIG + 'trim_size = "5.5x8.5"\n', (432, 648))
+    assert "page 1 is 432.0 x 648.0 pt, expected 396 x 612" in problems
+
+
+def test_a_book_that_says_nothing_about_trim_is_still_checked_at_six_by_nine(
+    tmp_path: Path,
+) -> None:
+    assert "expected 432 x 648" in " ".join(verify_sized(tmp_path, CONFIG, (396, 612)))
