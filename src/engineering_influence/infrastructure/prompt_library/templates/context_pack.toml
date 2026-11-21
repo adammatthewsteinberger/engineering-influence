@@ -1,0 +1,11 @@
+# The labels the context assembler puts between the parts of a chapter prompt.
+# Change a word here and the version must go up (docs/PROMPTS.md).
+name = "context_pack"
+version = 1
+description = "Section labels for the prompt that drafts one chapter."
+
+[parts]
+earlier_heading = "## Earlier chapters"
+omitted_note = "({{count}} earlier chapter summaries left out to fit.)"
+tail_heading = "## End of the previous chapter"
+beats_heading = "## Beats for this chapter"
