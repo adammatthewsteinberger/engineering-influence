@@ -3,12 +3,11 @@
 
 import asyncio
 import logging
+import os
 import signal
+from datetime import date
 
 from engineering_influence.infrastructure.deterministic_runner import DeterministicRunner
-from engineering_influence.infrastructure.deterministic_stage_executor import (
-    DeterministicStageExecutor,
-)
 from engineering_influence.infrastructure.job_message_handler import JobMessageHandler
 from engineering_influence.infrastructure.non_empty_artifact_gate import NonEmptyArtifactGate
 from engineering_influence.infrastructure.observability.bootstrap_alert_dispatcher import (
@@ -31,13 +30,18 @@ from engineering_influence.infrastructure.rabbitmq_job_consumer import RabbitMqJ
 from engineering_influence.infrastructure.rabbitmq_queue import RabbitMqQueueAdapter
 from engineering_influence.infrastructure.rabbitmq_topology import RabbitMqTopology
 from engineering_influence.infrastructure.schema_migrator import SchemaMigrator
+from engineering_influence.infrastructure.security.env_secret_provider import EnvSecretProvider
 from engineering_influence.interfaces.schema_migrator_interface import SchemaMigratorInterface
 from engineering_influence.repositories.sqlmodel_artifact_store import SqlModelArtifactStore
 from engineering_influence.repositories.sqlmodel_journal import SqlModelJournal
 from engineering_influence.repositories.sqlmodel_ledger import SqlModelLedger
 from engineering_influence.repositories.sqlmodel_run_repository import SqlModelRunRepository
 from engineering_influence.runtime.app_settings import AppSettings
+from engineering_influence.runtime.interfaces.stage_executor_runtime_interface import (
+    StageExecutorRuntimeInterface,
+)
 from engineering_influence.runtime.interfaces.worker_runtime_interface import WorkerRuntimeInterface
+from engineering_influence.runtime.stage_executor_runtime import StageExecutorRuntime
 from engineering_influence.services.advance_run import AdvanceRun
 from engineering_influence.services.failure_classifier import FailureClassifier
 from engineering_influence.services.job_router import JobRouter
@@ -51,15 +55,21 @@ _LOGGER = logging.getLogger(__name__)
 class WorkerRuntime(WorkerRuntimeInterface):
     """Build the worker from settings and consume until a stop signal.
 
-    The runner and gate are deterministic placeholders: this process exercises the whole
-    pipeline offline. A model-backed runner replaces ``DeterministicRunner`` here.
+    The pipeline runner and gate are deterministic placeholders. A run's stages are done by the
+    offline placeholder too, unless ``EI_STAGE_EXECUTOR=model`` opts in (``StageExecutorRuntime``).
     """
 
     def __init__(
-        self, settings: AppSettings, migrator: SchemaMigratorInterface | None = None
+        self,
+        settings: AppSettings,
+        migrator: SchemaMigratorInterface | None = None,
+        executors: StageExecutorRuntimeInterface | None = None,
     ) -> None:
         self._settings = settings
         self._migrator = migrator or SchemaMigrator()
+        self._executors = executors or StageExecutorRuntime(
+            os.environ, EnvSecretProvider(), date.today()
+        )
         self._ledger: SqlModelLedger | None = None
         self._stores: list[SqlModelRunRepository | SqlModelJournal | SqlModelArtifactStore] = []
 
@@ -85,7 +95,7 @@ class WorkerRuntime(WorkerRuntimeInterface):
         advance = AdvanceRun(
             runs,
             journal,
-            DeterministicStageExecutor(artifacts, journal),
+            self._executors.build(artifacts, journal),
             queue,
             FailureClassifier(),
         )
@@ -126,6 +136,7 @@ class WorkerRuntime(WorkerRuntimeInterface):
         for store in self._stores:
             store.close()
         self._stores = []
+        self._executors.close()
 
     def run(self) -> None:
         """Configure the process and serve until SIGINT or SIGTERM."""

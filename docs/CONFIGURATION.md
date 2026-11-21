@@ -173,10 +173,16 @@ and republish it by hand. Stopping the worker finishes the job in flight first.
 ### Limits to know
 
 - **Nothing starts a run yet.** The worker can advance a run that exists, and `ei run` can
-  resume or cancel one, but no command or endpoint creates one; `ei book create` arrives with the model-backed stages. The stage
-  executor is a placeholder too: `DeterministicStageExecutor` writes `<stage>.md` from the
-  brief's idea, at no cost, through the same journal and write-once store a model-backed
-  executor will use.
+  resume or cancel one, but no command or endpoint creates one; `ei book create` arrives with the model-backed stages.
+- **The worker does a run's stages offline unless you opt in.** By default
+  `DeterministicStageExecutor` writes `<stage>.md` from the brief's idea, at no cost. With
+  `EI_STAGE_EXECUTOR=model` a model does the stages instead, and the worker refuses to start
+  unless `EI_STAGE_MODEL_PROFILE` (a profile's name), `EI_MODEL_PROFILES` and `EI_MODEL_CATALOG`
+  (the files `ei doctor --models` checks, see [MODEL_PROFILES.md](MODEL_PROFILES.md)) are set,
+  the profile exists, a price is in force today, and its key is available. A profile file being
+  present never switches it on, because this spends money. Only non-fiction runs have stages so
+  far: brief, positioning and outline. An answer that is refused, cut off or empty stops the run.
+  Nothing has been run against a live provider.
 - **Retries are immediate.** A transient failure is re-queued with no delay, because the
   queue port has none yet.
 - **The runner and gate are placeholders.** `DeterministicRunner` returns a fixed line

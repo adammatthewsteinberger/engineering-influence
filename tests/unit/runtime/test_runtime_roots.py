@@ -15,6 +15,9 @@ import uvicorn
 from fastapi.testclient import TestClient
 
 from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.infrastructure.deterministic_stage_executor import (
+    DeterministicStageExecutor,
+)
 from engineering_influence.infrastructure.observability.process_crash_hooks import ProcessCrashHooks
 from engineering_influence.infrastructure.observability.worker_heartbeat import WorkerHeartbeat
 from engineering_influence.infrastructure.rabbitmq_job_consumer import RabbitMqJobConsumer
@@ -27,10 +30,14 @@ from engineering_influence.models.budget import Budget
 from engineering_influence.models.run_status import RunStatus
 from engineering_influence.models.stage_plan import StagePlan
 from engineering_influence.repositories.sqlmodel_artifact_store import SqlModelArtifactStore
+from engineering_influence.repositories.sqlmodel_journal import SqlModelJournal
 from engineering_influence.repositories.sqlmodel_ledger import SqlModelLedger
 from engineering_influence.repositories.sqlmodel_run_repository import SqlModelRunRepository
 from engineering_influence.runtime.api_runtime import ApiRuntime
 from engineering_influence.runtime.app_settings import AppSettings
+from engineering_influence.runtime.interfaces.stage_executor_runtime_interface import (
+    StageExecutorRuntimeInterface,
+)
 from engineering_influence.runtime.worker_runtime import WorkerRuntime
 
 KEY = "a-valid-api-key-0123456789"  # gitleaks:allow
@@ -319,6 +326,36 @@ def test_the_worker_opens_the_run_stores_and_releases_them_on_close(tmp_path: Pa
     assert len(worker._stores) == 3
     worker.close()
     assert worker._stores == []
+
+
+class Executors(StageExecutorRuntimeInterface):
+    """Stands in for the choice of stage executor, and notes how the worker used it."""
+
+    def __init__(self) -> None:
+        self.built: list[tuple[Any, Any]] = []
+        self.closed = 0
+
+    def build(self, artifacts: Any, journal: Any) -> Any:
+        self.built.append((artifacts, journal))
+        return DeterministicStageExecutor(artifacts, journal)
+
+    def close(self) -> None:
+        self.closed += 1
+
+
+def test_the_worker_gets_its_stage_executor_from_the_executor_runtime_and_closes_it(
+    tmp_path: Path,
+) -> None:
+    executors = Executors()
+    worker = WorkerRuntime(settings_for(tmp_path), executors=executors)
+    worker.build()
+    assert len(executors.built) == 1
+    artifacts, journal = executors.built[0]
+    assert isinstance(artifacts, SqlModelArtifactStore)
+    assert isinstance(journal, SqlModelJournal)
+    assert executors.closed == 0
+    worker.close()
+    assert executors.closed == 1
 
 
 class Delivery:

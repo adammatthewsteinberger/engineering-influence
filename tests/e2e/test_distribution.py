@@ -246,4 +246,6 @@ def test_the_prompt_templates_are_installed_and_load_without_any_extra(
         "print(library.names(), library.get('context_pack').identifier())",
     )
 
-    assert result.stdout.strip() == "['context_pack'] context_pack@1"
+    assert result.stdout.strip() == (
+        "['context_pack', 'stage_brief', 'stage_outline', 'stage_positioning'] context_pack@1"
+    )
