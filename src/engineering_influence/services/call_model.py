@@ -2,6 +2,7 @@
 """One model call, made at most once per request and never past the run's cap."""
 
 import hashlib
+import json
 
 from engineering_influence.interfaces.journal_interface import JournalInterface
 from engineering_influence.interfaces.model_interface import ModelInterface
@@ -71,7 +72,8 @@ class CallModel(CallModelInterface):
     @staticmethod
     def _key(model: str, request: ModelRequest, outcome: str) -> JournalKey:
         params = f"max_output_tokens={request.max_output_tokens}{outcome}"
-        context = request.system + "\x1e" + request.prompt
+        # JSON quotes and escapes both texts, so no system/prompt split can read as another.
+        context = json.dumps([request.system, request.prompt])
         return JournalKey(
             model=model,
             params_hash=hashlib.sha256(params.encode("utf-8")).hexdigest(),

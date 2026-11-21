@@ -141,6 +141,18 @@ def test_any_change_to_the_request_is_a_new_call(other: ModelRequest) -> None:
     assert len(journal.entries("run-1")) == 2
 
 
+def test_moving_the_boundary_between_system_and_prompt_is_a_different_request() -> None:
+    # Joined with a separator, both pairs would read "a<sep>b<sep>c" and share one journal key.
+    first = ModelRequest("a\x1eb", "c", 100, "v1")
+    second = ModelRequest("a", "b\x1ec", 100, "v1")
+    model, _, guard, caller = setup(answer("first"), answer("second"))
+    one = caller.call(guard, "run-1", "draft", 1, first)
+    two = caller.call(guard, "run-1", "draft", 1, second)
+    assert (one.text, two.text) == ("first", "second")
+    assert two.replayed is False
+    assert len(model.calls) == 2
+
+
 def test_the_same_request_in_another_stage_or_run_is_not_replayed() -> None:
     model, _, guard, caller = setup()
     caller.call(guard, "run-1", "draft", 1, REQUEST)
