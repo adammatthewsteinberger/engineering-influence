@@ -3,6 +3,7 @@
 
 import re
 from typing import ClassVar
+from urllib.parse import quote
 
 from engineering_influence.services.typesetting.interfaces.latex_escaper_interface import (
     LatexEscaperInterface,
@@ -27,6 +28,12 @@ class LatexEscaper(LatexEscaperInterface):
         ">": r"\textgreater{}",
     }
     PATTERN = re.compile("|".join(re.escape(key) for key in SPECIALS))
+    # What may appear in a URL unencoded. Everything else, including backslash, braces, "^"
+    # (TeX reads "^^5c" as a backslash inside any macro argument), quotes, "<", ">", spaces,
+    # "$", control characters and every non-ASCII character, is percent-encoded, so the result
+    # is a valid URI that can neither be TeX nor break out of an HTML attribute. "%" and "#"
+    # are kept here and escaped for TeX below.
+    URL_SAFE = "-._~:/?#[]@!&()*+,;=%"
 
     def escape(self, text: str) -> str:
         """Return text safe to place in a LaTeX body."""
@@ -34,3 +41,8 @@ class LatexEscaper(LatexEscaperInterface):
         # A non-breaking space keeps "Chapter 7", "p. 12" and initials together.
         text = re.sub(r"\b(Chapters?|Psalms?|Part|pp?\.|No\.|vol\.) (\d)", r"\1~\2", text)
         return text.replace("...", r"\dots{}")
+
+    def url(self, text: str) -> str:
+        """Return a URL safe to place inside \\url{} or \\href{}: a valid URI, TeX-escaped."""
+        encoded = quote(text, safe=self.URL_SAFE)
+        return encoded.replace("%", r"\%").replace("#", r"\#")

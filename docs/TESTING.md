@@ -87,6 +87,15 @@ from the page count and the paper's thickness, and no hardcover files for the po
   run, which holds one `<name>.json` per book) and commit the new file.
 - A machine without the tools skips the test.
 
+`tests/toolchain/test_hostile_book.py` is the second toolchain test. It builds a copy of the
+fixture book whose every text field carries a payload that would write a file if any of it reached
+TeX unescaped, and checks that no file appears and that the payload prints as text. It also feeds
+live TeX straight to LuaLaTeX and to tex4ebook to check that neither runs a shell command, with a
+control that shows the file-writing canary does detect live TeX. It needs no snapshot, so it
+cannot go stale with the TeX Live release. `tests/unit/publishing/typesetting/test_latex_injection.py`
+is its fast counterpart in the default suite: it fills every field with a tripwire and fails if a live
+macro reaches the generated TeX. See [THREAT_MODEL.md](THREAT_MODEL.md).
+
 ## Writing tests
 
 - Prefer a fake that implements the interface (or subclasses the class and overrides one method) over a mock or a patch.

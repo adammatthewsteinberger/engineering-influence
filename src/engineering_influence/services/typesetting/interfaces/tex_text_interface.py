@@ -16,3 +16,15 @@ class TexTextInterface(ABC):
     @abstractmethod
     def paragraphs(self, s: str) -> str:
         """Render blank-line separated paragraphs."""
+
+    @abstractmethod
+    def url(self, s: str) -> str:
+        """A URL or mail address safe inside \\url{} and \\href{}."""
+
+    @abstractmethod
+    def web_url(self, s: str) -> str:
+        """A web address safe inside \\url{}, refusing any scheme but http and https."""
+
+    @abstractmethod
+    def pdf_info(self, s: str) -> str:
+        """A string safe inside the PDF info dictionary after TeX has expanded it."""
