@@ -292,8 +292,8 @@ def test_a_tool_that_really_allocates_too_much_is_stopped() -> None:
 
 ALLOCATOR = """
 import os, sys, time
-data = b"x" * (400 * 1024 * 1024)
 open(sys.argv[1], "w").write(str(os.getpid()))
+data = b"x" * (400 * 1024 * 1024)
 time.sleep(60)
 """
 
