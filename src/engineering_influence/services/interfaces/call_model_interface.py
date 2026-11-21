@@ -29,3 +29,7 @@ class CallModelInterface(ABC):
         request: ModelRequest,
     ) -> ModelCallResult:
         """Replay the journaled answer, or reserve, call, journal and settle."""
+
+    @abstractmethod
+    def replay(self, run_id: str, stage: str, request: ModelRequest) -> ModelCallResult | None:
+        """The complete answer this run already has for the request, or None; costs nothing."""
