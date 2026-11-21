@@ -1,0 +1,11 @@
+{
+  "status": 529,
+  "body": {
+    "type": "error",
+    "error": {
+      "type": "overloaded_error",
+      "message": "Overloaded"
+    }
+  },
+  "note": "hand-written from the documented response shape; not recorded from a live call"
+}

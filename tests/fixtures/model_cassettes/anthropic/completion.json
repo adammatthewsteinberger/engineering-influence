@@ -1,0 +1,24 @@
+{
+  "status": 200,
+  "body": {
+    "id": "msg_test",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-test-20261101",
+    "content": [
+      {
+        "type": "text",
+        "text": "Chapter one opens in a harbour."
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 120,
+      "output_tokens": 9,
+      "cache_creation_input_tokens": 2000,
+      "cache_read_input_tokens": 0
+    }
+  },
+  "note": "hand-written from the documented response shape; not recorded from a live call"
+}

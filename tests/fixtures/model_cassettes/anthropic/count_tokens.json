@@ -1,0 +1,7 @@
+{
+  "status": 200,
+  "body": {
+    "input_tokens": 2120
+  },
+  "note": "hand-written from the documented response shape; not recorded from a live call"
+}

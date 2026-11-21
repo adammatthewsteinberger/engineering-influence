@@ -784,6 +784,7 @@ publishing = [
 runtime = [
     { name = "aio-pika" },
     { name = "alembic" },
+    { name = "httpx" },
     { name = "psycopg", extra = ["binary"] },
     { name = "sqlmodel" },
     { name = "vibey-engine" },
@@ -823,6 +824,7 @@ requires-dist = [
     { name = "engineering-influence-sdk", marker = "extra == 'test'", editable = "packages/engineering-influence-sdk" },
     { name = "fastapi", marker = "extra == 'api'", specifier = ">=0.115,<1" },
     { name = "fastapi", marker = "extra == 'test'", specifier = ">=0.115,<1" },
+    { name = "httpx", marker = "extra == 'runtime'", specifier = ">=0.27,<1" },
     { name = "httpx", marker = "extra == 'test'", specifier = ">=0.27,<1" },
     { name = "httpx", marker = "extra == 'webhooks'", specifier = ">=0.27,<1" },
     { name = "hypothesis", marker = "extra == 'test'", specifier = ">=6.120,<7" },

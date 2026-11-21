@@ -1,0 +1,17 @@
+{
+  "status": 200,
+  "body": {
+    "id": "msg_test",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-test-20261101",
+    "content": [],
+    "stop_reason": "refusal",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 10,
+      "output_tokens": 0
+    }
+  },
+  "note": "hand-written from the documented response shape; not recorded from a live call"
+}
