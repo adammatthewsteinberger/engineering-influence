@@ -5,6 +5,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.infrastructure.prompts.toml_prompt_library import TomlPromptLibrary
 from engineering_influence.interfaces.model_interface import ModelInterface
 from engineering_influence.models.assembled_context import AssembledContext
 from engineering_influence.models.context_plan import ContextPlan
@@ -13,6 +14,8 @@ from engineering_influence.models.model_request import ModelRequest
 from engineering_influence.models.model_response import ModelResponse
 from engineering_influence.models.provider_descriptor import ProviderDescriptor
 from engineering_influence.services.context_assembler import ContextAssembler
+
+TEMPLATE = TomlPromptLibrary().get("context_pack")
 
 
 class WordCounter(ModelInterface):
@@ -51,7 +54,7 @@ def plan(**changes: object) -> ContextPlan:
 
 
 def assembler(counter: WordCounter | None = None, tail: int = 4000) -> ContextAssembler:
-    return ContextAssembler(counter or WordCounter(), "v1", max_tail_characters=tail)
+    return ContextAssembler(counter or WordCounter(), TEMPLATE, max_tail_characters=tail)
 
 
 # system "Write plainly." + "Mara is a diver." = 6 words; the prompt's beats section is
@@ -131,8 +134,8 @@ class CharCounter(WordCounter):
 
 def test_a_tail_that_cannot_start_cleanly_is_left_out_even_with_room() -> None:
     counter = CharCounter()
-    fixed = ContextAssembler(counter, "v1").assemble(plan(), 10_000).input_tokens
-    result = ContextAssembler(counter, "v1").assemble(plan(previous_tail="x" * 400), fixed + 20)
+    fixed = ContextAssembler(counter, TEMPLATE).assemble(plan(), 10_000).input_tokens
+    result = ContextAssembler(counter, TEMPLATE).assemble(plan(previous_tail="x" * 400), fixed + 20)
     assert result.tail_characters == 0
     assert "End of the previous chapter" not in result.prompt
 
@@ -210,10 +213,8 @@ def test_the_inputs_are_validated() -> None:
             plan(**{field: " "})
     with pytest.raises(ValueError, match="summary"):
         plan(prior_summaries=("fine", " "))
-    with pytest.raises(ValueError, match="prompt version"):
-        ContextAssembler(WordCounter(), " ")
     with pytest.raises(ValueError, match="tail limit"):
-        ContextAssembler(WordCounter(), "v1", max_tail_characters=-1)
+        ContextAssembler(WordCounter(), TEMPLATE, max_tail_characters=-1)
     with pytest.raises(ValueError, match="system and a prompt"):
         AssembledContext(" ", "p", 1, 0, 0, 0)
     with pytest.raises(ValueError, match="negative"):
@@ -237,3 +238,28 @@ def test_more_budget_never_means_less_context(
     assert large.kept_summaries >= small.kept_summaries
     if large.kept_summaries == small.kept_summaries:
         assert large.tail_characters >= small.tail_characters
+
+
+def test_the_prompt_version_is_the_templates_identifier_and_reaches_every_count() -> None:
+    seen: list[str] = []
+
+    class Spy(WordCounter):
+        def count_tokens(self, request: ModelRequest) -> int:
+            seen.append(request.prompt_version)
+            return super().count_tokens(request)
+
+    ContextAssembler(Spy(), TEMPLATE).assemble(plan(), 10_000)
+    assert seen and set(seen) == {"context_pack@1"}
+
+
+def test_the_section_labels_are_the_templates_text() -> None:
+    result = assembler().assemble(
+        plan(prior_summaries=("a one", "a two", "a three"), previous_tail="the end of it"), 10_000
+    )
+    for label in (
+        "## Earlier chapters",
+        "## End of the previous chapter",
+        "## Beats for this chapter",
+    ):
+        assert label in result.prompt
+        assert label in TEMPLATE.parts.values()

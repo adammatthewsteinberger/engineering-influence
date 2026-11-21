@@ -83,6 +83,7 @@ def test_the_wheel_ships_the_typing_marker_the_assets_and_their_licenses(dist: P
     ):
         assert ASSETS + needed in names, needed
     assert any(name.endswith("dist-info/licenses/LICENSE") for name in names)
+    assert "engineering_influence/infrastructure/prompts/templates/context_pack.toml" in names
 
 
 def test_the_wheel_holds_only_the_package(dist: Path) -> None:
@@ -227,3 +228,20 @@ def test_the_type_marker_is_installed(dist: Path, clean_env: Path) -> None:
     )
 
     assert result.stdout.strip() == "True"
+
+
+def test_the_prompt_templates_are_installed_and_load_without_any_extra(
+    dist: Path, clean_env: Path
+) -> None:
+    install(clean_env, str(wheel(dist)))
+
+    result = run(
+        clean_env / "bin" / "python",
+        "-c",
+        "from engineering_influence.infrastructure.prompts.toml_prompt_library import "
+        "TomlPromptLibrary;"
+        "library = TomlPromptLibrary();"
+        "print(library.names(), library.get('context_pack').identifier())",
+    )
+
+    assert result.stdout.strip() == "['context_pack'] context_pack@1"

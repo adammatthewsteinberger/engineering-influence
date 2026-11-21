@@ -104,6 +104,9 @@ left running. A hang test's document writes a marker first, so the test shows th
 measurements behind them, with real child processes in the default suite: a grandchild in the group, one
 that left it, an interrupt, memory summed over a group, and a directory's size.
 
+`tests/unit/test_prompt_template_lock.py` refuses a prompt edit that has no version bump, because the version is
+part of the run journal's key ([PROMPTS.md](PROMPTS.md)).
+
 ## Writing tests
 
 - Prefer a fake that implements the interface (or subclasses the class and overrides one method) over a mock or a patch.
