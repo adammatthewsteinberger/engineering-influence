@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from engineering_influence.models.publishing.release_readiness_report import (
         ReleaseReadinessReport,
     )
+    from engineering_influence.models.typesetting.trim_size import TrimSize
 
 
 class FormatCheckInterface(ABC):
@@ -28,5 +29,6 @@ class FormatCheckInterface(ABC):
         ref: str,
         pdf_ref: str | None,
         hardcover_price: float | None,
+        trim: TrimSize,
     ) -> None:
         """Add findings and record the format decisions."""

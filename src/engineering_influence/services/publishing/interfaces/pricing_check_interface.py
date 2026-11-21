@@ -21,7 +21,12 @@ class PricingCheckInterface(ABC):
 
     @abstractmethod
     def validate(
-        self, report: ReleaseReadinessReport, release: dict[str, Any], severity: str, ref: str
+        self,
+        report: ReleaseReadinessReport,
+        release: dict[str, Any],
+        severity: str,
+        ref: str,
+        hardcover_required: bool = True,
     ) -> tuple[dict[str, Any], float | None, float | None, float | None]:
         """Return (pricing table, ebook, paperback, hardcover list prices)."""
 

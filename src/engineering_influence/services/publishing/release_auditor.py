@@ -9,6 +9,7 @@ from engineering_influence.interfaces.manuscript_source_interface import Manuscr
 from engineering_influence.interfaces.pdf_inspector_interface import PdfInspectorInterface
 from engineering_influence.models.publishing.path_relativizer import PathRelativizer
 from engineering_influence.models.publishing.release_readiness_report import ReleaseReadinessReport
+from engineering_influence.models.typesetting.trim_size import TrimSize
 from engineering_influence.services.publishing.format_check import FormatCheck
 from engineering_influence.services.publishing.interfaces.release_auditor_interface import (
     ReleaseAuditorInterface,
@@ -58,11 +59,12 @@ class ReleaseAuditor(ReleaseAuditorInterface):
             report, self._root / config["source"], release, severity, self._relativizer
         )
         pricing_check = PricingCheck(self._today)
+        trim = TrimSize.for_name(config.get("trim_size"))
         pricing, ebook, paperback, hardcover = pricing_check.validate(
-            report, release, severity, ref
+            report, release, severity, ref, hardcover_required=trim.hardcover
         )
         pdf_ref = self._relativizer.relative(pdf) if pdf is not None else None
-        FormatCheck().run(report, release, severity, ref, pdf_ref, hardcover)
+        FormatCheck().run(report, release, severity, ref, pdf_ref, hardcover, trim)
         pricing_check.estimate(report, pricing, (ebook, paperback, hardcover), pages)
         report.status = "fail" if report.errors else "warning" if report.warnings else "pass"
         return report

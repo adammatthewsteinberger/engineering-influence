@@ -4,6 +4,7 @@
 from typing import Any
 
 from engineering_influence.models.publishing.release_readiness_report import ReleaseReadinessReport
+from engineering_influence.models.typesetting.trim_size import TrimSize
 from engineering_influence.services.publishing.interfaces.format_check_interface import (
     FormatCheckInterface,
 )
@@ -20,6 +21,7 @@ class FormatCheck(FormatCheckInterface):
         ref: str,
         pdf_ref: str | None,
         hardcover_price: float | None,
+        trim: TrimSize,
     ) -> None:
         """Add findings and record the format decisions."""
         formats = release.get("formats", {})
@@ -29,6 +31,13 @@ class FormatCheck(FormatCheckInterface):
         limit = int(formats.get("kdp_hardcover_max_pages", 550))
         kdp_hardcover = bool(formats.get("kdp_hardcover", False))
         provider = str(formats.get("hardcover_provider", "")).strip()
+        if kdp_hardcover and not trim.hardcover:
+            report.add(
+                severity,
+                "hardcover-trim-unsupported",
+                f"KDP does not print a hardcover at the {trim.name} trim",
+                ref,
+            )
         pages = report.page_count
         if kdp_hardcover and pages is not None and pages > limit:
             report.add(

@@ -36,6 +36,8 @@ from engineering_influence.models.covers.kdp_cover_spec import KdpCoverSpec as K
 from engineering_influence.models.covers.layout_factory import LayoutFactory
 from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.models.typesetting.book_slug import BookSlug
+from engineering_influence.models.typesetting.paper_stock import PaperStock
+from engineering_influence.models.typesetting.trim_size import TrimSize
 
 
 class CoverBuilder(CoverBuilderInterface):
@@ -104,7 +106,11 @@ class CoverBuilder(CoverBuilderInterface):
         out.mkdir(parents=True, exist_ok=True)
         title, author = str(meta["title"]), str(meta["author"])
         render = CoverRenderer(self._registry, fonts).render
-        files, factory, border = CoverFiles(), LayoutFactory(), EbookBorder()
+        trim, paper = (
+            TrimSize.for_name(meta.get("trim_size")),
+            PaperStock.for_name(meta.get("paper")),
+        )
+        files, factory, border = CoverFiles(), LayoutFactory(trim, paper), EbookBorder()
 
         img = render(factory.ebook(), st, meta)
         if border.is_light_edge(img):
@@ -132,27 +138,28 @@ class CoverBuilder(CoverBuilderInterface):
             return round(v * Kdp.PPI)
 
         front = wrap.crop((px(pb.front.x0 - Kdp.BLEED), 0, wrap.size[0], wrap.size[1]))
-        back = wrap.crop((0, 0, px(Kdp.BLEED + Kdp.TRIM_W + Kdp.BLEED), wrap.size[1]))
+        back = wrap.crop((0, 0, px(Kdp.BLEED + trim.width_in + Kdp.BLEED), wrap.size[1]))
         files.save_tiff(front, out / f"{slug}-front.tif")
         files.save_tiff(back, out / f"{slug}-back.tif")
 
-        hc = factory.hardcover(hardcover_pages)
-        hwrap = render(hc, st, meta)
-        files.save_tiff(hwrap, out / f"{slug}-hardcover-wrap.tif")
-        files.write_pdf(
-            hwrap,
-            out / f"{slug}-hardcover-wrap.pdf",
-            hc.width,
-            hc.height,
-            f"{title}: hardcover cover",
-            author,
-        )
-        if preview:
-            hwrap.resize((hwrap.size[0] // 6, hwrap.size[1] // 6), Image.Resampling.LANCZOS).save(
-                out / f"{slug}-hardcover-preview.jpg", quality=88
+        hc = factory.hardcover(hardcover_pages) if trim.hardcover else None
+        if hc is not None:
+            hwrap = render(hc, st, meta)
+            files.save_tiff(hwrap, out / f"{slug}-hardcover-wrap.tif")
+            files.write_pdf(
+                hwrap,
+                out / f"{slug}-hardcover-wrap.pdf",
+                hc.width,
+                hc.height,
+                f"{title}: hardcover cover",
+                author,
             )
+            if preview:
+                hwrap.resize(
+                    (hwrap.size[0] // 6, hwrap.size[1] // 6), Image.Resampling.LANCZOS
+                ).save(out / f"{slug}-hardcover-preview.jpg", quality=88)
 
-        panel_w = Kdp.TRIM_W + 2 * Kdp.BLEED
+        panel_w = trim.width_in + 2 * Kdp.BLEED
         images, ebooks, pdfs = self._images, self._ebooks, self._pdfs
         problems = (
             ebooks.run(out / f"{slug}-ebook.jpg")
@@ -160,10 +167,11 @@ class CoverBuilder(CoverBuilderInterface):
             + images.run(out / f"{slug}-front.tif", panel_w, pb.height, Kdp.PPI)
             + images.run(out / f"{slug}-back.tif", panel_w, pb.height, Kdp.PPI)
             + images.run(out / f"{slug}-paperback-wrap.tif", pb.width, pb.height, Kdp.PPI)
-            + images.run(out / f"{slug}-hardcover-wrap.tif", hc.width, hc.height, Kdp.PPI)
             + pdfs.run(out / f"{slug}-paperback-wrap.pdf", pb.width, pb.height)
-            + pdfs.run(out / f"{slug}-hardcover-wrap.pdf", hc.width, hc.height)
         )
+        if hc is not None:
+            problems += images.run(out / f"{slug}-hardcover-wrap.tif", hc.width, hc.height, Kdp.PPI)
+            problems += pdfs.run(out / f"{slug}-hardcover-wrap.pdf", hc.width, hc.height)
         if problems:
             raise BookBuildError(f"[{slug}] cover check failed: " + "; ".join(problems))
         return out

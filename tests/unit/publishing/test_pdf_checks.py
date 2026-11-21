@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import pytest
 from pypdf import PdfWriter
 from pypdf.generic import ArrayObject, DictionaryObject, NameObject
 from reportlab.pdfgen import canvas
@@ -10,9 +11,12 @@ from engineering_influence.infrastructure.publishing.pypdf_pdf_inspector import 
 from engineering_influence.models.publishing.pdf_document import PdfDocument
 from engineering_influence.models.publishing.pdf_page import PdfPage
 from engineering_influence.models.publishing.pdf_word import PdfWord
+from engineering_influence.models.typesetting.trim_size import TrimSize
 from engineering_influence.services.publishing.folio_reader import FolioReader
 from engineering_influence.services.publishing.pdf_layout_check import PdfLayoutCheck
 from engineering_influence.services.publishing.pdf_structure_check import PdfStructureCheck
+
+SIX_BY_NINE = TrimSize.for_name(None)
 
 
 def page(
@@ -85,7 +89,7 @@ def font(base: str, embedded: bool) -> DictionaryObject:
 def test_structure_accepts_clean_trim_page(tmp_path: Path) -> None:
     writer = PdfWriter()
     writer.add_blank_page(432, 648)
-    assert PdfStructureCheck().run(inspected(writer, tmp_path)) == []
+    assert PdfStructureCheck().run(inspected(writer, tmp_path), SIX_BY_NINE) == []
 
 
 def test_structure_reports_size_bookmarks_annotations_and_groups(tmp_path: Path) -> None:
@@ -95,7 +99,7 @@ def test_structure_reports_size_bookmarks_annotations_and_groups(tmp_path: Path)
     second[NameObject("/Annots")] = ArrayObject()
     second[NameObject("/Group")] = DictionaryObject()
     writer.add_outline_item("Chapter", 0)
-    problems = PdfStructureCheck().run(inspected(writer, tmp_path))
+    problems = PdfStructureCheck().run(inspected(writer, tmp_path), SIX_BY_NINE)
     assert "PDF has bookmarks; KDP print interiors should not" in problems
     assert "page 1 is 400.0 x 600.0 pt, expected 432 x 648" in problems
     assert "page 2 has annotations or links" in problems
@@ -118,7 +122,7 @@ def test_structure_reports_only_unembedded_fonts(tmp_path: Path) -> None:
     second[NameObject("/Resources")] = DictionaryObject({NameObject("/Font"): fonts})
     third = writer.add_blank_page(432, 648)
     third[NameObject("/Resources")] = DictionaryObject()  # resources without fonts
-    assert PdfStructureCheck().run(inspected(writer, tmp_path)) == [
+    assert PdfStructureCheck().run(inspected(writer, tmp_path), SIX_BY_NINE) == [
         "font not embedded: /Bare",
         "font not embedded: /Wide",
     ]
@@ -151,3 +155,23 @@ def test_page_count_is_none_for_a_missing_file(tmp_path: Path) -> None:
     writer.add_blank_page(432, 648)
     writer.write(str(path))
     assert PypdfPdfInspector().page_count(path) == 2
+
+
+@pytest.mark.parametrize(
+    ("name", "width", "height"), [("5x8", 360, 576), ("5.5x8.5", 396, 612), ("6x9", 432, 648)]
+)
+def test_structure_accepts_a_page_of_the_books_own_trim_size(
+    tmp_path: Path, name: str, width: int, height: int
+) -> None:
+    writer = PdfWriter()
+    writer.add_blank_page(width, height)
+    assert PdfStructureCheck().run(inspected(writer, tmp_path), TrimSize.for_name(name)) == []
+
+
+def test_structure_refuses_a_page_of_another_trim_size_and_names_the_expected_one(
+    tmp_path: Path,
+) -> None:
+    writer = PdfWriter()
+    writer.add_blank_page(432, 648)  # 6 x 9 in a book that says 5.5 x 8.5
+    problems = PdfStructureCheck().run(inspected(writer, tmp_path), TrimSize.for_name("5.5x8.5"))
+    assert problems == ["page 1 is 432.0 x 648.0 pt, expected 396 x 612"]

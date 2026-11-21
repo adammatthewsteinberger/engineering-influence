@@ -75,6 +75,34 @@ closes cannot hide a stray `Draft` later in the text. Narration that legitimatel
 sentence with `Draft` still has to be reworded. `tests/fixtures/fixture_novel/` is a small novel
 that shows each rule and is built with the real toolchain in CI.
 
+### Trim size and paper
+
+A book's config sets the page size and the interior paper. Both default to what every book used
+before they existed, so a config that says nothing builds exactly the same files as before.
+
+| `trim_size` | Page (in) | Hardcover |
+|---|---|---|
+| `6x9` (default) | 6 x 9 | yes |
+| `5.5x8.5` | 5.5 x 8.5 | yes |
+| `5x8` | 5 x 8 | **no**: KDP does not print a hardcover at this size |
+
+| `paper` | Spine width per page |
+|---|---|
+| `white` (default) | 0.002252 in |
+| `cream` | 0.0025 in |
+
+The trim size sets the interior's page size (the PDF check refuses any other), the cover layouts
+and the ebook cover's proportions. The paper sets the spine width of the paperback and hardcover
+wraps, so a cream book's spine is wider than a white book's of the same length. An unknown value
+stops the build with a message listing the valid ones.
+
+A `5x8` book is paperback and ebook only. It gets no hardcover interior and no hardcover wrap, a
+`[formats] hardcover = true` or `release.formats.kdp_hardcover = true` is refused, and its
+`[release.pricing]` needs no hardcover price. If you add one anyway it is still checked, and
+selling a hardcover through another provider still needs `hardcover_provider` as before. The
+hardcover column follows KDP's published hardcover sizes as I understand them today; KDP changes
+what it offers, so confirm against its current list before relying on it.
+
 ## Where to go next
 
 [Getting started](GETTING_STARTED.md) · [Interfaces](INTERACTIONS.md) ·

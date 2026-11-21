@@ -2,7 +2,7 @@
 
 import tomllib
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal, get_args, get_origin
 
 import pytest
 from pydantic import ValidationError
@@ -12,6 +12,8 @@ from engineering_influence.contracts.book_config.v1.book_config_v1 import BookCo
 from engineering_influence.contracts.brief.v1.book_brief_v1 import BookBriefV1
 from engineering_influence.contracts.job_message import JobMessage
 from engineering_influence.models.book_kind import BookKind
+from engineering_influence.models.typesetting.paper_stock import PaperStock
+from engineering_influence.models.typesetting.trim_size import TrimSize
 from engineering_influence.services.publishing.config_entries import ConfigEntries
 
 FIXTURE = Path(__file__).parents[2] / "fixtures/fixture_book/books/fixture.toml"
@@ -182,3 +184,39 @@ def test_a_book_config_with_an_unknown_kind_is_refused() -> None:
 def test_the_kind_is_a_field_of_the_config_and_not_left_among_the_extras() -> None:
     config = BookConfigV1.model_validate({"source": "src", "kind": "novel", "title": "T"})
     assert config.model_extra == {"title": "T"}
+
+
+def test_a_book_config_defaults_to_six_by_nine_on_white_paper() -> None:
+    config = BookConfigV1.model_validate({"source": "src"})
+    assert (config.trim_size, config.paper) == ("6x9", "white")
+
+
+def test_a_book_config_takes_every_trim_size_and_paper_the_models_know() -> None:
+    for trim in TrimSize.names():
+        for paper in PaperStock.names():
+            config = BookConfigV1.model_validate(
+                {"source": "src", "trim_size": trim, "paper": paper}
+            )
+            assert (config.trim_size, config.paper) == (trim, paper)
+
+
+def test_the_contracts_name_exactly_the_trim_sizes_and_papers_the_models_have() -> None:
+    assert get_args(BookConfigV1.model_fields["trim_size"].annotation) == TrimSize.names()
+    assert get_args(BookConfigV1.model_fields["paper"].annotation) == PaperStock.names()
+    optional = get_args(BookBriefV1.model_fields["trim_size"].annotation)
+    literal = next(part for part in optional if get_origin(part) is Literal)
+    assert get_args(literal) == TrimSize.names()
+
+
+@pytest.mark.parametrize(
+    "extra", [{"trim_size": "A5"}, {"paper": "glossy"}, {"trim_size": ""}, {"paper": "Cream"}]
+)
+def test_a_book_config_with_an_unknown_trim_size_or_paper_is_refused(extra: dict[str, Any]) -> None:
+    with pytest.raises(ValidationError):
+        BookConfigV1.model_validate({"source": "src", **extra})
+
+
+def test_a_brief_takes_a_known_trim_size_and_refuses_an_unknown_one() -> None:
+    assert BookBriefV1.model_validate(brief(trim_size="5x8")).to_model().trim_size == "5x8"
+    with pytest.raises(ValidationError):
+        BookBriefV1.model_validate(brief(trim_size="7x10"))

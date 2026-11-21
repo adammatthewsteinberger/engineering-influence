@@ -29,6 +29,7 @@ from engineering_influence.interfaces.step_recorder_interface import StepRecorde
 from engineering_influence.interfaces.tool_versions_interface import ToolVersionsInterface
 from engineering_influence.models.publishing.path_relativizer import PathRelativizer
 from engineering_influence.models.publishing.project_layout import ProjectLayout
+from engineering_influence.models.typesetting.trim_size import TrimSize
 from engineering_influence.services.publishing.book_auditor import BookAuditor
 from engineering_influence.services.publishing.release_auditor import ReleaseAuditor
 from engineering_influence.services.release.format_policy import FormatPolicy
@@ -88,6 +89,7 @@ class PublishPipeline(PublishPipelineInterface):
         data = tomllib.loads(self._files.read_text(config))
         formats = FormatPolicy().of(data)
         hardcover = bool(formats["hardcover"])
+        hardcover_wrap = TrimSize.for_name(data.get("trim_size")).hardcover
         report_dir = self._layout.build / slug / "release"
         self._workspace.ensure_tree(report_dir)
         release = data.get("release")
@@ -111,14 +113,18 @@ class PublishPipeline(PublishPipelineInterface):
         result_path = report_path or report_dir / "publication-report.json"
         preflight_ok = not audit_report.issues and not release_report.errors
         if not preflight_ok or audit_only:
-            result["artifacts"] = self._inventory.artifacts(slug, hardcover=hardcover)
+            result["artifacts"] = self._inventory.artifacts(
+                slug, hardcover=hardcover, hardcover_wrap=hardcover_wrap
+            )
             result["finished_at"] = self._clock.now().isoformat()
             self._json.write(result_path, result)
             return result, preflight_ok
 
         hardcover_pdf = self._layout.output / f"{slug}-hardcover.pdf"
         self._run_steps(slug, hardcover, report_dir, result, strict)
-        result["artifacts"] = self._inventory.artifacts(slug, hardcover=hardcover)
+        result["artifacts"] = self._inventory.artifacts(
+            slug, hardcover=hardcover, hardcover_wrap=hardcover_wrap
+        )
         self._check_artifacts(
             result, hardcover, hardcover_pdf, formats["hardcover_max_pages"], slug
         )

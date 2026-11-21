@@ -10,7 +10,9 @@ from engineering_influence.interfaces.book_loader_interface import BookLoaderInt
 from engineering_influence.models.publishing.path_relativizer import PathRelativizer
 from engineering_influence.models.typesetting.book import Book
 from engineering_influence.models.typesetting.chapter import Chapter
+from engineering_influence.models.typesetting.paper_stock import PaperStock
 from engineering_influence.models.typesetting.text_policy import TextPolicy
+from engineering_influence.models.typesetting.trim_size import TrimSize
 from engineering_influence.repositories.typesetting.chapter_loader import ChapterLoader
 
 
@@ -26,6 +28,8 @@ class BookLoader(BookLoaderInterface):
         """Return the book described by the config."""
         config = tomllib.loads(config_path.read_text(encoding="utf-8"))
         policy = TextPolicy.for_name(config.get("kind"))  # an unknown kind stops the build here
+        TrimSize.for_name(config.get("trim_size"))  # and so do an unknown trim size or paper
+        PaperStock.for_name(config.get("paper"))
         loader = ChapterLoader(self._relativizer, self._strict, policy)
         source = self._root / config["source"]
         book = Book(slug=config_path.stem, meta=config)

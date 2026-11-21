@@ -31,7 +31,7 @@ class BookBriefV1(BookBriefV1Interface, BaseModel):
     title_hint: NonBlank | None = None
     audience: NonBlank | None = None
     target_words: int | None = Field(default=None, gt=0)
-    trim_size: NonBlank | None = None
+    trim_size: Literal["5x8", "5.5x8.5", "6x9"] | None = None
     language: NonBlank = "en"
 
     def to_model(self) -> BookBrief:

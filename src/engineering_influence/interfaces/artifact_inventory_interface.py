@@ -11,7 +11,9 @@ class ArtifactInventoryInterface(ABC):
     __slots__ = ()
 
     @abstractmethod
-    def artifacts(self, slug: str, *, hardcover: bool = False) -> list[dict[str, Any]]:
+    def artifacts(
+        self, slug: str, *, hardcover: bool = False, hardcover_wrap: bool = True
+    ) -> list[dict[str, Any]]:
         """The required artifacts, each with existence, size and hash."""
 
     @abstractmethod

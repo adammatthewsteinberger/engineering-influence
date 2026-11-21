@@ -65,14 +65,16 @@ patch of anything else fails the build.
 
 ## The toolchain test
 
-`tests/fixtures/fixture_book/` is a small synthetic non-fiction book and `tests/fixtures/fixture_novel/` a
-small synthetic novel (original text, a strict release contract, a KDP hardcover each). The novel has
-scene breaks, em-dash dialogue and a character who says "Draft", so it exercises the rules that differ
-by kind. The `toolchain` CI job installs LuaLaTeX, tex4ebook and epubcheck on a pinned
+`tests/fixtures/fixture_book/` is a small synthetic non-fiction book at the default 6x9 trim,
+`tests/fixtures/fixture_novel/` a small synthetic novel at 5.5x8.5 on cream paper, and
+`tests/fixtures/fixture_pocket/` a small 5x8 book with no hardcover (original text and a strict
+release contract each; the first two have a KDP hardcover). The novel has scene breaks, em-dash
+dialogue and a character who says "Draft", so it exercises the rules that differ by kind. The `toolchain` CI job installs LuaLaTeX, tex4ebook and epubcheck on a pinned
 `ubuntu-24.04` runner, builds each with `ei book publish <slug> --strict-release`, and compares each
 result with the `expected/snapshot.json` beside its fixture. Beyond the snapshot, a test states what
-the novel must show: three scene breaks in the PDF and in the EPUB, the em dashes, and no stray
-`Draft` complaint.
+the novel must show (three scene breaks in the PDF and in the EPUB, the em dashes, and no stray
+`Draft` complaint) and what the sizes must produce: the interior's page size, the wrap's width
+from the page count and the paper's thickness, and no hardcover files for the pocket book.
 
 - The snapshot is structural, so no PDFs live in git: page count, page size and a hash of each
   page's text for both interiors, the sha256 of every EPUB member (the repacker is deterministic),

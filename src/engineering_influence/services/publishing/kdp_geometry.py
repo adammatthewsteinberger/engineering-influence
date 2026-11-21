@@ -7,10 +7,9 @@ from engineering_influence.services.publishing.interfaces.kdp_geometry_interface
 
 
 class KdpGeometry(KdpGeometryInterface):
-    """Trim size, margins, and page-count-dependent gutter for a 6 x 9 in interior."""
+    """Margins and the page-count-dependent gutter, which KDP sets the same for every trim size."""
 
     POINTS_PER_INCH = 72.0
-    TRIM = (6 * POINTS_PER_INCH, 9 * POINTS_PER_INCH)
     GUTTER_TABLE = ((150, 0.375), (300, 0.5), (500, 0.625), (700, 0.75), (828, 0.875))
     OUTER_MIN = 0.25 * POINTS_PER_INCH
     TOLERANCE = 0.5
