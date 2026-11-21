@@ -14,6 +14,7 @@ uv sync --extra test --extra runtime --extra dev --extra publishing
 | Dependencies | `uv run pip-audit` | known vulnerabilities (the two local packages are reported as unauditable; that is expected) |
 | Types | `uv run mypy --strict src packages` | strict typing |
 | Tests | `uv run pytest --cov --cov-branch --cov-fail-under=100` | all tests and **100% branch coverage** |
+| Integration | `eval "$(sh tests/integration/stack.sh up)"`, then `uv run pytest -m integration` | the migrations on PostgreSQL, the stores under concurrent writers, jobs through RabbitMQ, and a book run that finishes through the stack however its workers die |
 | Compose smoke | `sh examples/compose_smoke.sh` | the real stack: credentials refused, a two-stage pipeline completes, a malformed message is dead-lettered, the curl example works |
 | Provenance | `vibey-gh check --ci`; on pull requests `vibey-gh provenance-check` and `conventional-check` | file headers, `Made-With:` trailers, Conventional Commit subjects |
 | Leak scan | gitleaks plus a path check | no secrets and no private-content paths in history |
@@ -27,6 +28,7 @@ uv sync --extra test --extra runtime --extra dev --extra publishing
 | `tests/unit` | one module at a time, with in-memory adapters |
 | `tests/architecture` | the structural rules: one class per file, interfaces folders, no loose functions |
 | `tests/parity` | every interface (API, MCP, CLI, SDK) gives the same result for the same input |
+| `tests/integration` | a real PostgreSQL and RabbitMQ, started by `stack.sh`; each test gets its own schema and queues |
 | `tests/e2e` | real processes: the CLI, the examples against a live uvicorn server, wheel installation |
 
 ## The examples are tests
@@ -40,7 +42,7 @@ runs the curl example against the full stack. If you change an interface, the ex
 
 - The 100% gate includes branches. Code that only runs in a fresh interpreter (missing optional
   extras) is measured through `patch = ["subprocess"]` in `[tool.coverage.run]`; do not remove it.
-- The `distribution` and `toolchain` markers are deselected by default. The default suite builds no
+- The `distribution`, `toolchain` and `integration` markers are deselected by default. The default suite builds no
   real PDF or EPUB; the `toolchain` job (below) does.
 
 ## Architecture rules
@@ -83,4 +85,29 @@ result with `tests/fixtures/fixture_book/expected/snapshot.json`.
 
 - Prefer a fake that implements the interface (or subclasses the class and overrides one method) over a mock or a patch.
 - Anything that crosses a process boundary needs a failure and recovery test, not only the happy path.
-- `hypothesis` is a declared test dependency, but no property tests exist yet; keep strategies small when adding them.
+- Property tests use `hypothesis`: the budget invariant in `test_run_control_models.py`, and a state machine over a run's whole life in `test_run_lifecycle_machine.py`. Keep strategies small, and prove a new one can fail by breaking the code it guards.
+
+## The integration tests
+
+They need a real PostgreSQL and RabbitMQ. `tests/integration/stack.sh` starts both in Docker with
+random credentials on random `127.0.0.1` ports and prints the two settings the tests read:
+
+```bash
+eval "$(sh tests/integration/stack.sh up)"     # start, then export EI_TEST_DATABASE_URL and EI_TEST_RABBITMQ_URL
+uv run pytest -m integration
+sh tests/integration/stack.sh down             # remove both containers
+```
+
+`stack.sh env` prints the exports again for a stack that is already running. Without the settings
+the tests skip; with `EI_REQUIRE_INTEGRATION=1`, which the `integration` CI job sets, a missing stack
+fails them instead, so the job cannot pass with nothing tested. Each test gets its own PostgreSQL
+schema (dropped afterwards) and its own queue names, so they can run against one stack.
+
+What they cover that the unit tests cannot: the migrations build exactly what the models describe on
+PostgreSQL (a timezone mistake that SQLite hid was found this way), several threads racing to change
+one run, record one journal entry or store one artifact, large binary artifacts, jobs through the
+broker including dead-lettering and redelivery of a message a dead worker never acknowledged, and a
+book run driven through both services while workers die before storing a change, before queueing the
+next stage and before acknowledging. A death closes the broker connection with the message
+unacknowledged, as a killed process does. The run must finish with every artifact byte-identical, the
+spend exactly the journal's total, and nothing in the dead-letter queue.
