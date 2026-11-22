@@ -71,3 +71,24 @@ To change a prompt:
 3. Add a changelog fragment: the text changed what the model is asked, so say so.
 
 A new template needs a file, a lock entry and tests that render it.
+
+## The outline is a format, not just prose
+
+`stage_outline` (version 3) is read by a program: the stage that drafts chapters walks the outline, so the
+template tells the model to write each chapter as
+
+```
+## Chapter 1: The Hive
+Purpose: one sentence
+Beats:
+- three to six bullet points
+Claims to source:
+- each claim that will need a reference
+Leads to: one line connecting it to the next chapter
+```
+
+`OutlineParser` reads that strictly, and a check run when the outline stage finishes refuses an answer it cannot
+read before it is stored (`OUTLINE_INVALID`), so a malformed outline stops the run at the outline rather than after
+drafting has been paid for. Chapters are numbered 1, 2, 3 with no gaps (at most 50). A preamble before the first
+heading and a closing paragraph after a blank line are ignored. Because it is a contract, changing the template's
+format means changing the parser too ([ADR 0010](adr/0010-chapters-are-drafted-in-order-in-one-stage.md)).

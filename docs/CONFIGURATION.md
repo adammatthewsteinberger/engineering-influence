@@ -183,7 +183,8 @@ and republish it by hand. Stopping the worker finishes the job in flight first.
   (the files `ei doctor --models` checks, see [MODEL_PROFILES.md](MODEL_PROFILES.md)) are set,
   the profile exists, a price is in force today, and its key is available. A profile file being
   present never switches it on, because this spends money. Only non-fiction runs have stages so
-  far: brief, positioning, research and outline. An answer that is refused, cut off or empty stops the run.
+  far: brief, positioning, research and outline. An answer that is refused, cut off or empty stops the run, and so does an
+  outline that cannot be read as numbered chapters (`OUTLINE_INVALID`; see [PROMPTS.md](PROMPTS.md#the-outline-is-a-format-not-just-prose)).
   Nothing has been run against a live provider.
 - **Web search for the research stage.** The research stage gives the model two tools, `web_search`
   and `fetch_url`, so a model-backed run needs a search. Set `EI_SEARXNG_URL` to a

@@ -40,6 +40,7 @@ from engineering_influence.services.failure_classifier import FailureClassifier
 from engineering_influence.services.fetch_url_tool import FetchUrlTool
 from engineering_influence.services.lock_tool_grants import LockToolGrants
 from engineering_influence.services.model_stage_executor import ModelStageExecutor
+from engineering_influence.services.no_output_checks import NoOutputChecks
 from engineering_influence.services.no_stage_guidance import NoStageGuidance
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 from engineering_influence.services.run_tool_loop import RunToolLoop
@@ -128,6 +129,7 @@ class World:
             registry,
             LockToolGrants(ToolLock()),
             NoStageGuidance(),
+            NoOutputChecks(),
             SpendGuard,
         )
         self.service = AdvanceRun(
@@ -190,7 +192,7 @@ def test_each_stage_is_asked_with_what_the_stages_before_it_wrote() -> None:
         "stage_research@1",
         "stage_research@1",
         "stage_research@1",
-        "stage_outline@2",
+        "stage_outline@3",
     ]
     assert [len(r.transcript) for r in (searching, reading, research)] == [0, 1, 2]
     assert [t.name for t in searching.tools] == ["web_search", "fetch_url"]
