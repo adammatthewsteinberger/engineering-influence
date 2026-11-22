@@ -126,6 +126,7 @@ ei db upgrade
 ei run status|resume|cancel RUN_ID
 ei book [--root DIR] audit|build|epub|covers|qa|publish …
 ei tools add [--lock PATH] [--env VAR …] [--replace] NAME -- COMMAND [ARG …]
+ei tools add [--lock PATH] [--bearer-env VAR] [--replace] --url URL NAME
 ei tools list [--lock PATH]
 ei tools verify [--lock PATH] [NAME …]
 ei tools grant [--lock PATH] NAME STAGE TOOL …
@@ -142,6 +143,7 @@ ei tools revoke [--lock PATH] NAME STAGE [TOOL …]
 | `ei run cancel RUN_ID` | Stops a run for good; cancelling twice is fine, and a completed or failed run is refused. Needs only `EI_DATABASE_URL`. | same |
 | `ei book …` | Audit, build and publish books (needs the `publishing` extra and, for PDFs, a TeX toolchain). Reads `engineering-influence.toml` in `--root`. | `0` ok; `1` a build or audit failure; `2` bad arguments |
 | `ei tools add NAME -- COMMAND …` | **Runs** an MCP server once, under limits and with a bare environment, and records what it is in the tool lock: its files' hashes, the name and version it reported and a hash of its tools. Options go before `NAME`. Refuses a launcher (`npx`, `uvx`, `docker`, …) and a relative script path before anything is run. See [TOOL_LOCK.md](TOOL_LOCK.md). | `0`; `2` on a refusal or an unusable lock |
+| `ei tools add --url URL NAME` | **Contacts** a remote MCP server once and records its address, the name and version it reported and a hash of its tools. Only https to a public address is allowed; the token, if any, is the variable named by `--bearer-env`. The server's code is not locked, only what it advertises. See [TOOL_LOCK.md](TOOL_LOCK.md#remote-servers-http). | `0`; `2` on a refusal or an unusable lock |
 | `ei tools list` | Shows the locked servers. Starts nothing. | `0`; `2` an unusable lock |
 | `ei tools verify [NAME …]` | **Runs** each locked server (a server whose files changed is not started) and compares it with the lock. | `0` all match; `1` one does not; `2` setup trouble or an unknown name |
 | `ei tools grant NAME STAGE TOOL …` | Lets a stage call some of a locked server's tools: edits the lock, runs nothing. The tools must be ones the lock lists; no wildcards. A stage with no grant gets none. | `0`; `2` on a refusal or an unusable lock |

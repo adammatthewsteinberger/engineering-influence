@@ -10,6 +10,9 @@ import pytest
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.errors.transient_stage_error import TransientStageError
 from engineering_influence.interfaces.file_hasher_interface import FileHasherInterface
+from engineering_influence.interfaces.mcp_remote_transport_factory_interface import (
+    McpRemoteTransportFactoryInterface,
+)
 from engineering_influence.interfaces.mcp_transport_factory_interface import (
     McpTransportFactoryInterface,
 )
@@ -73,6 +76,18 @@ class Transports(McpTransportFactoryInterface):
         return Transport()
 
 
+class Remotes(McpRemoteTransportFactoryInterface):
+    def __init__(self, fail: BaseException | None = None) -> None:
+        self.opened: list[tuple[str, str]] = []
+        self.fail = fail
+
+    def open(self, url: str, bearer_env: str) -> McpTransportInterface:
+        self.opened.append((url, bearer_env))
+        if self.fail:
+            raise self.fail
+        return Transport()
+
+
 class Client(McpClientInterface):
     def __init__(
         self,
@@ -109,11 +124,23 @@ class Clients(McpClientFactoryInterface):
 
 
 def probe(
-    client: Client | None = None, hasher: Hasher | None = None, transports: Transports | None = None
+    client: Client | None = None,
+    hasher: Hasher | None = None,
+    transports: Transports | None = None,
+    remotes: Remotes | None = None,
 ):
     made = Transports() if transports is None else transports
     clients = Clients(client or Client())
-    return McpServerProbe(made, clients, ToolLockVerifier(hasher or Hasher())), made, clients
+    return (
+        McpServerProbe(
+            made,
+            Remotes() if remotes is None else remotes,
+            clients,
+            ToolLockVerifier(hasher or Hasher()),
+        ),
+        made,
+        clients,
+    )
 
 
 def test_it_is_a_probe() -> None:
@@ -168,3 +195,62 @@ def test_a_server_that_does_not_answer_is_a_problem_not_a_crash() -> None:
         "the server could not be checked: did not answer within 30 seconds",
     )
     assert clients.client.closed == 1
+
+
+# ------------------------------------------------------------------------------ remote servers
+REMOTE = McpServerLock(
+    name="docs",
+    command=(),
+    files=(),
+    env=(),
+    server_name="test-server",
+    server_version="1.0.0",
+    tool_names=("echo",),
+    tools_hash=TOOLS.digest(),
+    url="https://mcp.example.com/mcp",
+    bearer_env="DOCS_TOKEN",
+)
+
+
+def test_inspect_remote_contacts_the_address_with_the_named_variable_and_stops_when_done() -> None:
+    remotes = Remotes()
+    mcp, transports, clients = probe(remotes=remotes)
+    inspection = mcp.inspect_remote("https://mcp.example.com/mcp", "DOCS_TOKEN")
+    assert remotes.opened == [("https://mcp.example.com/mcp", "DOCS_TOKEN")]
+    assert transports.opened == []
+    assert (inspection.info, inspection.tools) == (INFO, TOOLS)
+    assert clients.client.closed == 1
+
+
+def test_inspect_remote_stops_the_session_even_when_asking_fails() -> None:
+    client = Client(fail=ApplicationError(code="MCP_REPLY_INVALID", message="bad", http_status=502))
+    mcp, _, _ = probe(client)
+    with pytest.raises(ApplicationError, match="bad"):
+        mcp.inspect_remote("https://mcp.example.com/mcp", "")
+    assert client.closed == 1
+
+
+def test_a_remote_server_has_no_files_so_it_is_checked_by_what_it_says_alone() -> None:
+    remotes = Remotes()
+    mcp, transports, _ = probe(hasher=Hasher(None), remotes=remotes)
+    assert mcp.check(REMOTE) == ()
+    assert remotes.opened == [("https://mcp.example.com/mcp", "DOCS_TOKEN")]
+    assert transports.opened == []
+
+
+def test_a_remote_server_that_advertises_other_tools_is_a_problem() -> None:
+    other = Client(tools=McpToolSet((McpToolDescriptor("echo", "Reworded.", {"type": "object"}),)))
+    [problem] = probe(other)[0].check(REMOTE)
+    assert problem.startswith("the tools the server advertises have changed")
+
+
+def test_a_remote_server_that_cannot_be_reached_is_a_problem_not_a_crash() -> None:
+    refused = ApplicationError(
+        code="MCP_URL_REFUSED",
+        message="mcp.example.com refused: non_public_address",
+        http_status=503,
+    )
+    mcp, _, _ = probe(remotes=Remotes(fail=refused))
+    assert mcp.check(REMOTE) == (
+        "the server could not be checked: mcp.example.com refused: non_public_address",
+    )

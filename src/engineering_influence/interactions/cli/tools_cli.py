@@ -50,13 +50,25 @@ class ToolsCli(ToolsCliInterface):
         commands = tools.add_subparsers(dest="tools_command", required=True)
         add = commands.add_parser(
             "add",
-            usage="ei tools add [--lock PATH] [--env VAR] [--replace] NAME -- COMMAND [ARG...]",
-            help="run an MCP server once and lock what it is (options go before NAME)",
+            usage=(
+                "ei tools add [--lock PATH] [--env VAR] [--replace] NAME -- COMMAND [ARG...]\n"
+                "       ei tools add [--lock PATH] [--bearer-env VAR] [--replace] --url URL NAME"
+            ),
+            help="run or contact an MCP server once and lock what it is (options go before NAME)",
         )
         add.add_argument("name", help="the server's name in the lock")
         add.add_argument("--lock", type=Path, help="default: EI_TOOL_LOCK or ei-tools.lock.toml")
         add.add_argument(
             "--env", action="append", default=[], metavar="VAR", help="pass this variable on"
+        )
+        add.add_argument(
+            "--url", help="a remote server's https address, instead of a command to run"
+        )
+        add.add_argument(
+            "--bearer-env",
+            metavar="VAR",
+            default="",
+            help="with --url: the variable that holds the server's bearer token",
         )
         add.add_argument(
             "--replace", action="store_true", help="lock a server that is already locked again"
@@ -123,13 +135,32 @@ class ToolsCli(ToolsCliInterface):
             )
             return 2
         command = tuple(given[1:] if given[:1] == ["--"] else given)
-        if not command:
-            print("error: say the command to run, after --", file=sys.stderr)
-            return 2
-        lock = self._store.load(path) or ToolLock()
-        added = self._editor.add(
-            lock, arguments.name, command, tuple(arguments.env), arguments.replace
-        )
+        if arguments.url:
+            if command or arguments.env:
+                print(
+                    "error: a remote server is given --url and, if it needs a token, --bearer-env; "
+                    "it takes no command and no --env",
+                    file=sys.stderr,
+                )
+                return 2
+            lock = self._store.load(path) or ToolLock()
+            added = self._editor.add_remote(
+                lock, arguments.name, arguments.url, arguments.bearer_env, arguments.replace
+            )
+        else:
+            if arguments.bearer_env:
+                print("error: --bearer-env goes with --url", file=sys.stderr)
+                return 2
+            if not command:
+                print(
+                    "error: say the command to run, after --, or an address with --url",
+                    file=sys.stderr,
+                )
+                return 2
+            lock = self._store.load(path) or ToolLock()
+            added = self._editor.add(
+                lock, arguments.name, command, tuple(arguments.env), arguments.replace
+            )
         self._store.save(path, added.lock)
         self._show(path, added)
         return 0
@@ -142,7 +173,13 @@ class ToolsCli(ToolsCliInterface):
             f"locked {server.name}: {self._safe(server.server_name)} {self._safe(server.server_version)}, "
             f"{len(inspection.tools.tools)} tools{extra}"
         )
-        print("files locked: " + ", ".join(file for file, _ in server.files))
+        if server.remote():
+            print(
+                f"address locked: {self._safe(server.url, 300)} "
+                "(its code is not locked: only the address and what it advertises are)"
+            )
+        else:
+            print("files locked: " + ", ".join(file for file, _ in server.files))
         print(
             "tools (their descriptions are written by the server: read them before you commit this lock):"
         )
@@ -182,9 +219,14 @@ class ToolsCli(ToolsCliInterface):
                 f"{server.name}  {self._safe(server.server_name)} {self._safe(server.server_version)}  "
                 f"{len(server.tool_names)} tools"
             )
-            print("    " + self._safe(" ".join(server.command), 300))
-            if server.env:
-                print("    env: " + " ".join(server.env))
+            if server.remote():
+                print("    url: " + self._safe(server.url, 300))
+                if server.bearer_env:
+                    print("    bearer: " + server.bearer_env)
+            else:
+                print("    " + self._safe(" ".join(server.command), 300))
+                if server.env:
+                    print("    env: " + " ".join(server.env))
             for stage, tools in server.grants:
                 print(f"    {stage} may call: " + " ".join(self._safe(tool, 60) for tool in tools))
         return 0

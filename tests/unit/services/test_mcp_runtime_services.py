@@ -12,6 +12,9 @@ import pytest
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.errors.transient_stage_error import TransientStageError
 from engineering_influence.interfaces.file_hasher_interface import FileHasherInterface
+from engineering_influence.interfaces.mcp_remote_transport_factory_interface import (
+    McpRemoteTransportFactoryInterface,
+)
 from engineering_influence.interfaces.mcp_transport_factory_interface import (
     McpTransportFactoryInterface,
 )
@@ -121,6 +124,18 @@ class Transports(McpTransportFactoryInterface):
         return Transport()
 
 
+class Remotes(McpRemoteTransportFactoryInterface):
+    def __init__(self, fail: BaseException | None = None) -> None:
+        self.opened: list[tuple[str, str]] = []
+        self.fail = fail
+
+    def open(self, url: str, bearer_env: str) -> McpTransportInterface:
+        self.opened.append((url, bearer_env))
+        if self.fail:
+            raise self.fail
+        return Transport()
+
+
 class Clients(McpClientFactoryInterface):
     def __init__(self, client: Client) -> None:
         self.client = client
@@ -138,11 +153,23 @@ class Hasher(FileHasherInterface):
 
 
 def launcher(
-    client: Client | None = None, transports: Transports | None = None, hasher: Hasher | None = None
+    client: Client | None = None,
+    transports: Transports | None = None,
+    hasher: Hasher | None = None,
+    remotes: Remotes | None = None,
 ):
     used = client or Client()
     made = transports or Transports()
-    return McpServerLauncher(made, Clients(used), ToolLockVerifier(hasher or Hasher())), made, used
+    return (
+        McpServerLauncher(
+            made,
+            Remotes() if remotes is None else remotes,
+            Clients(used),
+            ToolLockVerifier(hasher or Hasher()),
+        ),
+        made,
+        used,
+    )
 
 
 # ------------------------------------------------------------------------------ connection
@@ -438,3 +465,58 @@ def test_the_grants_are_what_the_lock_says_and_nothing_else() -> None:
     assert grants.for_stage("research") == ("files__read", "files__write")
     assert grants.for_stage("outline") == ()
     assert LockToolGrants(ToolLock()).for_stage("research") == ()
+
+
+# ----------------------------------------------------------------- a remote server
+def remote_entry(tools: McpToolSet = TOOLS, grants: Any = ()) -> McpServerLock:
+    return McpServerLock(
+        name="docs",
+        command=(),
+        files=(),
+        env=(),
+        server_name="test-server",
+        server_version="1.0.0",
+        tool_names=tools.names(),
+        tools_hash=tools.digest(),
+        grants=grants,
+        url="https://mcp.example.com/mcp",
+        bearer_env="DOCS_TOKEN",
+    )
+
+
+def test_a_remote_server_is_contacted_at_its_address_and_never_started_as_a_command() -> None:
+    remotes = Remotes()
+    mcp, transports, client = launcher(remotes=remotes, hasher=Hasher(None))
+    connection = mcp.start(remote_entry())
+    assert remotes.opened == [("https://mcp.example.com/mcp", "DOCS_TOKEN")]
+    assert transports.opened == []
+    assert connection.server() == "docs" and connection.tools() is TOOLS and client.closed == 0
+
+
+def test_a_local_server_is_never_contacted_over_the_network() -> None:
+    remotes = Remotes()
+    launcher(remotes=remotes)[0].start(lock_entry())
+    assert remotes.opened == []
+
+
+def test_a_remote_server_that_advertises_other_tools_is_closed_and_refused() -> None:
+    changed = Client(tools=McpToolSet((READ,)))
+    mcp, _, _ = launcher(changed)
+    with pytest.raises(ApplicationError, match="tools the server advertises have changed"):
+        mcp.start(remote_entry())
+    assert changed.closed == 1
+
+
+def test_a_remote_address_the_policy_refuses_is_unavailable_with_its_own_code() -> None:
+    refused = ApplicationError(
+        code="MCP_URL_REFUSED",
+        message="mcp.example.com refused: non_public_address",
+        http_status=503,
+    )
+    mcp, _, _ = launcher(remotes=Remotes(fail=refused))
+    with pytest.raises(ApplicationError) as error:
+        mcp.start(remote_entry())
+    assert (error.value.code, error.value.http_status) == ("MCP_URL_REFUSED", 503)
+    assert error.value.message == (
+        "locked server 'docs' could not be started: mcp.example.com refused: non_public_address"
+    )

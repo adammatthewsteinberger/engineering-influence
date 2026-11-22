@@ -45,6 +45,23 @@ def server(
     )
 
 
+def remote_server(
+    name: str = "docs", url: str = "https://mcp.example.com/mcp", bearer_env: str = ""
+) -> McpServerLock:
+    return McpServerLock(
+        name=name,
+        command=(),
+        files=(),
+        env=(),
+        server_name="docs-server",
+        server_version="2.0.0",
+        tool_names=("read",),
+        tools_hash=A,
+        url=url,
+        bearer_env=bearer_env,
+    )
+
+
 class Store(ToolLockStoreInterface):
     def __init__(self, lock: ToolLock | None = None, fail: BaseException | None = None) -> None:
         self.lock, self.fail = lock, fail
@@ -68,6 +85,7 @@ class Editor(ToolLockEditorInterface):
         self.tools = tools or (McpToolDescriptor("read", "Reads a file.", {"type": "object"}),)
         self.fail = fail
         self.calls: list[tuple[ToolLock, str, tuple[str, ...], tuple[str, ...], bool]] = []
+        self.remote_calls: list[tuple[ToolLock, str, str, str, bool]] = []
         self.edits: list[tuple[str, str, str, tuple[str, ...]]] = []
 
     def add(
@@ -84,6 +102,18 @@ class Editor(ToolLockEditorInterface):
         entry = server(name)
         inspection = McpServerInspection(
             McpServerInfo("files-server", "1.2.0", "p"), McpToolSet(self.tools)
+        )
+        return ToolLockAddition(lock.with_server(entry, replace), entry, inspection)
+
+    def add_remote(
+        self, lock: ToolLock, name: str, url: str, bearer_env: str, replace: bool
+    ) -> ToolLockAddition:
+        self.remote_calls.append((lock, name, url, bearer_env, replace))
+        if self.fail:
+            raise self.fail
+        entry = remote_server(name, url, bearer_env)
+        inspection = McpServerInspection(
+            McpServerInfo("docs-server", "2.0.0", "p"), McpToolSet(self.tools)
         )
         return ToolLockAddition(lock.with_server(entry, replace), entry, inspection)
 
@@ -391,6 +421,8 @@ def namespace(*server_command: str) -> argparse.Namespace:
         lock=Path("/x/l.toml"),
         name="files",
         env=[],
+        url=None,
+        bearer_env="",
         replace=False,
         server_command=list(server_command),
     )
@@ -500,3 +532,98 @@ def test_list_shows_what_each_stage_may_call(capsys: pytest.CaptureFixture[str])
     lines = capsys.readouterr().out.splitlines()
     assert "    outline may call: read" in lines and "    research may call: read" in lines
     assert lines.index("    outline may call: read") < lines.index("    research may call: read")
+
+
+# ------------------------------------------------------------------------------ a remote server
+def test_add_with_an_address_contacts_it_and_shows_that_only_the_address_is_locked(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    tools, store, editor, _ = cli()
+    status = run(
+        tools,
+        "add",
+        "--lock",
+        "/tmp/l.toml",
+        "--bearer-env",
+        "DOCS_TOKEN",
+        "--url",
+        "https://mcp.example.com/mcp",
+        "docs",
+    )
+    out = capsys.readouterr().out
+    assert status == 0 and editor.calls == []
+    assert editor.remote_calls == [
+        (ToolLock(), "docs", "https://mcp.example.com/mcp", "DOCS_TOKEN", False)
+    ]
+    assert store.saved[0][1].names() == ("docs",)
+    assert "locked docs: docs-server 2.0.0, 1 tools" in out
+    assert (
+        "address locked: https://mcp.example.com/mcp "
+        "(its code is not locked: only the address and what it advertises are)"
+    ) in out
+    assert "files locked" not in out
+
+
+def test_add_with_an_address_works_on_the_lock_that_is_there_and_passes_replace_on() -> None:
+    existing = ToolLock((server("other"),))
+    tools, store, editor, _ = cli(Store(existing))
+    assert run(tools, "add", "--replace", "--url", "https://mcp.example.com/mcp", "docs") == 0
+    assert editor.remote_calls[0][0] is existing and editor.remote_calls[0][4] is True
+    assert editor.remote_calls[0][3] == ""
+    assert store.saved[0][1].names() == ("docs", "other")
+
+
+def test_an_address_and_a_command_together_are_a_setup_error(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    tools, store, editor, _ = cli()
+    assert run(tools, "add", "--url", "https://mcp.example.com/mcp", "docs", "--", "node") == 2
+    assert "takes no command and no --env" in capsys.readouterr().err
+    assert editor.remote_calls == [] and store.saved == []
+
+
+def test_an_address_and_env_variables_together_are_a_setup_error(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    tools, store, editor, _ = cli()
+    assert run(tools, "add", "--url", "https://mcp.example.com/mcp", "--env", "X", "docs") == 2
+    assert "takes no command and no --env" in capsys.readouterr().err
+    assert editor.remote_calls == [] and store.saved == []
+
+
+def test_a_bearer_variable_without_an_address_is_a_setup_error(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    tools, store, editor, _ = cli()
+    assert run(tools, "add", "--bearer-env", "TOKEN", "files", "--", "node") == 2
+    assert "--bearer-env goes with --url" in capsys.readouterr().err
+    assert editor.calls == [] and store.saved == []
+
+
+def test_a_remote_refusal_is_a_setup_error_and_nothing_is_saved(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    refusal = ApplicationError(code="TOOL_URL_REFUSED", message="plain http", http_status=422)
+    tools, store, _, _ = cli(editor=Editor(fail=refusal))
+    assert run(tools, "add", "--url", "http://x.example/mcp", "docs") == 2
+    assert "error: plain http" in capsys.readouterr().err and store.saved == []
+
+
+def test_list_shows_a_remote_server_by_its_address_and_bearer_variable(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    lock = ToolLock((remote_server(bearer_env="DOCS_TOKEN"), server("files", env=("ROOT",))))
+    tools, _, _, _ = cli(Store(lock))
+    assert run(tools, "list") == 0
+    lines = capsys.readouterr().out.splitlines()
+    assert lines[0].startswith("docs  docs-server 2.0.0  1 tools")
+    assert lines[1:3] == ["    url: https://mcp.example.com/mcp", "    bearer: DOCS_TOKEN"]
+    assert "    /usr/bin/node /opt/x.js" in lines and "    env: ROOT" in lines
+
+
+def test_list_shows_a_remote_server_that_needs_no_token_without_a_bearer_line(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    tools, _, _, _ = cli(Store(ToolLock((remote_server(),))))
+    assert run(tools, "list") == 0
+    assert "bearer" not in capsys.readouterr().out

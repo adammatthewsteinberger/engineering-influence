@@ -28,6 +28,12 @@ class ToolLockEditorInterface(ABC):
         """Run the server once, record what it is, and return the lock with it added."""
 
     @abstractmethod
+    def add_remote(
+        self, lock: ToolLock, name: str, url: str, bearer_env: str, replace: bool
+    ) -> ToolLockAddition:
+        """Contact the server at the address once, record what it is, and return the lock with it added."""
+
+    @abstractmethod
     def grant(self, lock: ToolLock, name: str, stage: str, tools: tuple[str, ...]) -> ToolLock:
         """The lock with these tools of the server added to what the stage may call."""
 

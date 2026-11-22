@@ -38,9 +38,16 @@ class Probe(McpServerProbeInterface):
     def __init__(self, fail: BaseException | None = None) -> None:
         self.fail = fail
         self.inspected: list[tuple[tuple[str, ...], tuple[str, ...]]] = []
+        self.contacted: list[tuple[str, str]] = []
 
     def inspect(self, command: tuple[str, ...], env_names: tuple[str, ...]) -> McpServerInspection:
         self.inspected.append((command, env_names))
+        if self.fail:
+            raise self.fail
+        return INSPECTION
+
+    def inspect_remote(self, url: str, bearer_env: str) -> McpServerInspection:
+        self.contacted.append((url, bearer_env))
         if self.fail:
             raise self.fail
         return INSPECTION
@@ -199,3 +206,103 @@ def test_a_server_that_fails_is_the_probes_error_untouched() -> None:
 def test_an_entry_the_model_refuses_is_reported_as_an_invalid_lock() -> None:
     error, _ = refused("TOOL_LOCK_INVALID", hasher=Hasher({NODE: "NOT-HEX", SCRIPT: "b" * 64}))
     assert "SHA-256" in error.message
+
+
+# ------------------------------------------------------------------------------ a remote server
+URL = "https://mcp.example.com/mcp"
+
+
+def add_remote(
+    url: str = URL,
+    *,
+    lock: ToolLock | None = None,
+    name: str = "docs",
+    bearer_env: str = "DOCS_TOKEN",
+    replace: bool = False,
+    probe: Probe | None = None,
+):
+    tool_editor, made = editor(probe)
+    return tool_editor.add_remote(lock or ToolLock(), name, url, bearer_env, replace), made
+
+
+def refused_remote(code: str, **kwargs: Any) -> tuple[ApplicationError, Probe]:
+    probe = kwargs.pop("probe", None) or Probe()
+    with pytest.raises(ApplicationError) as error:
+        add_remote(probe=probe, **kwargs)
+    assert (error.value.code, error.value.http_status) == (
+        code,
+        502 if "UNRESPONSIVE" in code else 422,
+    )
+    return error.value, probe
+
+
+def test_a_remote_server_is_contacted_once_and_recorded_by_its_address_and_what_it_said() -> None:
+    result, probe = add_remote()
+    server = result.server
+    assert probe.contacted == [(URL, "DOCS_TOKEN")] and probe.inspected == []
+    assert server.remote() and server.url == URL and server.bearer_env == "DOCS_TOKEN"
+    assert server.command == () and server.files == () and server.env == ()
+    assert (server.server_name, server.server_version) == ("files-server", "1.2.0")
+    assert server.tool_names == ("read", "write") and server.tools_hash == TOOLS.digest()
+    assert result.lock.servers == (server,) and result.inspection is INSPECTION
+
+
+def test_a_remote_server_needs_no_bearer_variable() -> None:
+    result, probe = add_remote(bearer_env="")
+    assert probe.contacted == [(URL, "")] and result.server.bearer_env == ""
+
+
+def test_a_remote_server_can_be_added_to_a_lock_with_local_ones_and_replaced() -> None:
+    local, _ = add()
+    result, _ = add_remote(lock=local.lock)
+    assert result.lock.names() == ("docs", "files")
+    error, probe = refused_remote("TOOL_LOCK_EXISTS", lock=result.lock)
+    assert "--replace" in error.message and probe.contacted == []
+    assert len(add_remote(lock=result.lock, replace=True)[0].lock.servers) == 2
+
+
+@pytest.mark.parametrize("name", ["", "Docs", "1x", "a_b", "a" * 33])
+def test_a_bad_remote_name_is_refused_before_anything_is_contacted(name: str) -> None:
+    _, probe = refused_remote("TOOL_NAME_INVALID", name=name)
+    assert probe.contacted == []
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://mcp.example.com/mcp",
+        "https://user:pw@mcp.example.com/mcp",
+        "https://mcp.example.com/mcp?token=abc",
+        "https://mcp.example.com/mcp#frag",
+        "https:///mcp",
+        "https://mcp.example.com/a b",
+        "",
+    ],
+)
+def test_an_address_that_is_not_plain_https_is_refused_before_anything_is_contacted(
+    url: str,
+) -> None:
+    _, probe = refused_remote("TOOL_URL_REFUSED", url=url)
+    assert probe.contacted == []
+
+
+@pytest.mark.parametrize("bearer_env", ["lower", "1A", "A B"])
+def test_a_bad_bearer_variable_is_refused_before_anything_is_contacted(bearer_env: str) -> None:
+    _, probe = refused_remote("TOOL_ENV_INVALID", bearer_env=bearer_env)
+    assert probe.contacted == []
+
+
+def test_a_remote_server_that_does_not_answer_in_time_is_a_502() -> None:
+    error, _ = refused_remote(
+        "TOOL_SERVER_UNRESPONSIVE",
+        probe=Probe(TransientStageError("mcp.example.com did not finish answering")),
+    )
+    assert error.message == "mcp.example.com did not finish answering"
+
+
+def test_a_remote_server_that_fails_is_the_probes_error_untouched() -> None:
+    failure = ApplicationError(code="MCP_AUTH_REFUSED", message="refused", http_status=502)
+    tool_editor, _ = editor(Probe(failure))
+    with pytest.raises(ApplicationError) as error:
+        tool_editor.add_remote(ToolLock(), "docs", URL, "", False)
+    assert error.value is failure

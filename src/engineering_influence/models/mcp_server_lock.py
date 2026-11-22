@@ -9,13 +9,21 @@ from engineering_influence.models.interfaces.mcp_server_lock_interface import (
     McpServerLockInterface,
 )
 from engineering_influence.models.mcp_command import McpCommand
+from engineering_influence.models.mcp_endpoint_url import McpEndpointUrl
 from engineering_influence.models.mcp_tool_descriptor import McpToolDescriptor
 from engineering_influence.models.tool_definition import ToolDefinition
 
 
 @dataclass(frozen=True, slots=True)
 class McpServerLock(McpServerLockInterface):
-    """What a person approved: the command, the files it runs, who the server said it was, and its tools.
+    """What a person approved: where the server is, who it said it was, and its tools.
+
+    A server is **local** (a command that is started) or **remote** (an address that is contacted),
+    never both. A remote entry has a ``url``, no command, no files and no ``env``; it may name one
+    environment variable, ``bearer_env``, whose value is sent as a bearer token to that address and
+    nowhere else. What the lock can pin for a remote server is its address and what it advertises. Its
+    code is somebody else's and can change on any day, so a remote entry is a weaker pin than a local
+    one, and the start-up check is the only check there is.
 
     - ``command`` starts with an absolute path to the executable. ``files`` is the SHA-256 of that
       executable and of every file named in its arguments (the script it runs), so changed code is
@@ -49,20 +57,30 @@ class McpServerLock(McpServerLockInterface):
     tool_names: tuple[str, ...]
     tools_hash: str
     grants: tuple[tuple[str, tuple[str, ...]], ...] = ()
+    url: str = ""
+    bearer_env: str = ""
 
     def __post_init__(self) -> None:
         if not self.NAME.fullmatch(self.name):
             raise ValueError(
                 "a server's lock name is lowercase letters, digits and -, from a letter"
             )
-        self._check_command()
-        self._check_files()
+        if not isinstance(self.url, str) or not isinstance(self.bearer_env, str):
+            raise TypeError("a server's address and bearer variable are text")
+        if self.url:
+            self._check_remote()
+        else:
+            self._check_local()
         self._check_names()
         self._check_grants()
         if not self.HASH.fullmatch(self.tools_hash):
             raise ValueError("the tools hash is a SHA-256 in lowercase hex")
         if not self.server_name.strip() or not self.server_version.strip():
             raise ValueError("a lock records the name and version the server reported")
+
+    def remote(self) -> bool:
+        """True for a server that is contacted at an address, false for one that is started."""
+        return bool(self.url)
 
     def file_hashes(self) -> dict[str, str]:
         """The locked files and their SHA-256, by path."""
@@ -94,8 +112,18 @@ class McpServerLock(McpServerLockInterface):
             merged.pop(stage, None)
         return replace(self, grants=tuple(sorted(merged.items())))
 
-    def _check_command(self) -> None:
+    def _check_local(self) -> None:
+        if self.bearer_env:
+            raise ValueError("only a remote server has a bearer variable")
         McpCommand(self.command)
+        self._check_files()
+
+    def _check_remote(self) -> None:
+        McpEndpointUrl(self.url)
+        if self.command or self.files or self.env:
+            raise ValueError("a remote server locks an address, not a command, files or variables")
+        if self.bearer_env and not self.ENV.fullmatch(self.bearer_env):
+            raise ValueError("a bearer variable name is capital letters, digits and _")
 
     def _check_files(self) -> None:
         if not isinstance(self.files, tuple):

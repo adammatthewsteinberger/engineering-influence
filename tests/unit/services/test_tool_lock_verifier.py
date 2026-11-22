@@ -185,3 +185,33 @@ def test_check_is_the_files_then_the_server() -> None:
         "the server now calls itself 'evil', not 'files-server'",
     )
     assert verifier().check(LOCKED, INFO, LOCKED_TOOLS) == ()
+
+
+# ------------------------------------------------------------------------------ a remote server
+REMOTE = McpServerLock(
+    name="docs",
+    command=(),
+    files=(),
+    env=(),
+    server_name="files-server",
+    server_version="1.2.0",
+    tool_names=LOCKED_TOOLS.names(),
+    tools_hash=LOCKED_TOOLS.digest(),
+    url="https://mcp.example.com/mcp",
+)
+
+
+def test_a_remote_server_has_no_files_to_check_and_the_hasher_is_never_asked() -> None:
+    class Untouchable(FileHasherInterface):
+        def digest(self, path: str) -> str | None:
+            raise AssertionError("a remote server has nothing to hash")
+
+    assert ToolLockVerifier(Untouchable()).check_files(REMOTE) == ()
+
+
+def test_a_remote_server_is_still_held_to_its_name_version_and_tools() -> None:
+    verifier = ToolLockVerifier(Hasher({}))
+    info = McpServerInfo("files-server", "1.2.0", "2025-06-18")
+    assert verifier.check(REMOTE, info, LOCKED_TOOLS) == ()
+    problems = verifier.check(REMOTE, McpServerInfo("other", "9", "p"), tools("read"))
+    assert len(problems) == 3 and "now calls itself 'other'" in problems[0]

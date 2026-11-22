@@ -8,8 +8,9 @@ commit. This is slice 4 of [ADR 0008](adr/0008-tools-for-the-model.md), built in
 client, the verifier, a **stdio transport that runs a server as a child process under limits**, and the
 `ei tools add`, `list`, `verify`, `grant` and `revoke` commands, and (slice 4c) **the wiring into a run**:
 a run that is given a lock starts and verifies each server, registers its tools, and offers a stage only
-the tools the lock grants it. **Not built yet:** HTTP servers (4d). No third-party server has been run
-by a live model, and none other than a small server written for the tests has been run at all.
+the tools the lock grants it, and (slice 4d) **remote servers over HTTP**. No third-party server has been
+run by a live model, and no server other than small ones written for the tests has been run at all; the
+HTTP transport has only been run against a scripted server, never over a real network.
 
 ## In a run
 
@@ -40,6 +41,9 @@ and locked again is asked again; a resumed run does not replay the old server's 
 Servers stay running for the life of the process, one call at a time per server, and are stopped when the
 runtime is closed. A server's session is limited to **four hours, 2 GiB of memory and 1 GiB of disk**
 (fixed, not settings). A server that is stopped for passing a limit fails its later calls; it is not restarted.
+A remote server has the four hours and the 30-second request limit; memory and disk are the other
+machine's, not ours. For a remote server step 1 has nothing to compare, and step 2 is a connection to its
+address instead of a process.
 
 ## Grants
 
@@ -62,6 +66,7 @@ ei tools revoke [--lock PATH] NAME STAGE [TOOL …]
 
 ```text
 ei tools add [--lock PATH] [--env VAR …] [--replace] NAME -- COMMAND [ARG …]
+ei tools add [--lock PATH] [--bearer-env VAR] [--replace] --url URL NAME
 ei tools list [--lock PATH]
 ei tools verify [--lock PATH] [NAME …]
 ```
@@ -73,7 +78,12 @@ ei tools verify [--lock PATH] [NAME …]
   stopped, and the entry is written. It prints every tool and its description, cut and with control
   characters removed, because **the descriptions are written by the server: read them before you commit
   the lock.** Options go before `NAME`; an option after it gets a clear error.
-- **`list`** shows what is locked and starts nothing.
+- **`add --url`** contacts a remote server once instead of running a command. The address, the name and the
+  variable's name are checked first, then the server is asked who it is and what it offers and the entry is
+  written. It takes no command and no `--env`, and `--bearer-env` goes only with `--url`. The output says
+  plainly that **only the address and what the server advertises are locked, not its code**.
+- **`list`** shows what is locked and starts nothing. A remote server shows its `url:` and, if it has one,
+  its `bearer:` variable.
 - **`verify` runs each locked server**, but a server whose files changed is **never started**. It then
   compares the name, version and tools. A server that cannot be started or does not answer is a failed
   check, not a crash, so every server is reported. Exit `1` if any no longer matches, `2` for setup
@@ -94,6 +104,46 @@ ei tools verify [--lock PATH] [NAME …]
   A line that is not a JSON object is refused. Its last 2,000 bytes of error output are quoted if it dies.
 - **This is not a sandbox.** A server can still read any file the user can read, by absolute path, and use
   the network. Linux and macOS only (it needs process groups).
+
+## Remote servers (HTTP)
+
+A server can also be reached at an address, over the *Streamable HTTP* transport of MCP: one POST per
+message, the answer coming back as JSON or as server-sent events. A remote entry has a `url` and no command,
+files or `env`; it may name one variable, `bearer_env`, whose value is sent as `Authorization: Bearer …`.
+
+**What is pinned is weaker than for a local server, and this is stated rather than hidden.** A local
+server's files are hashed, so changed code is not started. A remote server's code is somebody else's and can
+change on any day, so what the lock pins is the **address** and what the server **advertises** (its name,
+version and a hash of its tools). The start-up check is the only check there is. A server that behaved when it
+was locked and changes later is caught only if it changes what it advertises, and one that was hostile when it
+was locked is trusted as locked. Prefer a local server whenever there is one.
+
+The rules a remote server is held to:
+
+- **https only, and only to a public address.** The address is checked by the same URL policy as `fetch_url`
+  (`PublicHttpsUrlPolicy`), **before every request**, so a name that has come to resolve to the machine's own
+  network, a private range or a cloud metadata address is refused. **A server on this machine or this network
+  cannot be reached this way**; run it over stdio instead.
+- **No redirects, ever.** A 3xx is an error. A server cannot send the client, or its token, anywhere else.
+- **Nothing that could hold a secret is in the address.** The lock refuses a user and password, a query string
+  and a fragment, because the lock is committed. The credential is a named environment variable, read when the
+  connection is made; a variable that is unset, or whose value is not a printable token with no spaces, refuses
+  the server rather than sending a blank or broken header. It is never written into an error message, which
+  names the host alone.
+- **No cookies**, no compression, a generic user agent.
+- **Every reply is bounded:** at most 4 MiB, at most 128 messages per request, and 30 seconds from the first
+  byte sent; a stream is read until the answer to the request has come, and the rest is not read.
+- **The session** is the server's `Mcp-Session-Id`, kept from the first reply, and the protocol version it
+  agreed, sent on later requests. Closing the session sends a DELETE whose failure is ignored.
+- **The client opens no stream of its own**, so messages a server starts (sampling, roots, notifications) have
+  nowhere to arrive; as for a local server, the client offers nothing, and a request that comes inside a reply
+  is refused (or answered, for `ping`).
+
+Failures keep a stable code: `MCP_URL_REFUSED` (the policy), `MCP_REDIRECT_REFUSED`, `MCP_AUTH_REFUSED` (401 or
+403), `MCP_SESSION_ENDED` (the server forgot the session), `MCP_SESSION_EXPIRED` (our four hours),
+`MCP_REPLY_INVALID` (too long, not JSON, compressed, the wrong type), `MCP_HTTP_ERROR` (any other status).
+A timeout, a dropped connection, 408, 425, 429 and 5xx are transient. At run start they all arrive as
+`TOOL_SERVER_UNAVAILABLE`, or keep their own code where the failure has one.
 
 ## The file
 
@@ -119,12 +169,31 @@ tools_hash = "<SHA-256 of every tool the server advertised>"
 research = ["read_file"]
 ```
 
+A remote server's entry has an address in place of the command and no files table:
+
+```toml
+[[server]]
+name = "docs"
+url = "https://mcp.example.com/v1/mcp"
+bearer_env = "DOCS_TOKEN"
+server_name = "docs-server"
+server_version = "2.0.0"
+tool_names = ["search"]
+tools_hash = "<SHA-256 of every tool the server advertised>"
+
+[server.grants]
+research = ["search"]
+```
+
 - **`name`** is lowercase letters, digits and `-`, from a letter, up to 32 characters. A tool is offered
   to the model as `<name>__<tool>`, so `files__read_file`; the double underscore is why the server name
   has none. A tool whose name does not fit what the model providers accept (letters, digits, `-` and `_`,
   64 in all), or that does not take an object, is not offered.
 - **`command`** starts with the absolute path of the executable. **`[server.files]`** holds the SHA-256 of
   that executable and of every file named in the arguments (the script it runs).
+- **`url`** (instead of `command`, `env` and `[server.files]`) is an `https` address with a host and a path,
+  at most 2048 printable characters, **no user, password, query or fragment**. **`bearer_env`** is the name of
+  the variable that holds its token, optional, and only with `url`. Exactly one of `command` and `url`.
 - **`env`** is the *names* of the variables the server is given, never their values. Values come from
   the environment when the server starts. Everything else is dropped by the allow-list environment.
 - **`server_name`, `server_version`, `tools_hash`** are what the server reported when it was added.
@@ -152,6 +221,11 @@ temporary name and renamed, with servers in name order, so two saves of one lock
 - **Installed dependencies** (`node_modules`, `site-packages`) are not hashed, and neither is anything
   the server downloads or reads while it runs. A locked script is trusted code.
 - **The check and the start are separate moments.** A file could change between them.
+- **A remote server is pinned by its address and what it advertises, and nothing else.** See above.
+- **DNS is asked twice.** The URL policy resolves the name when it is asked and the connection resolves it
+  again, so a hostile DNS server could answer differently the second time and send a request inward. The
+  attacker would have to control the DNS of a server a person pinned, and the request is a JSON-RPC POST, but
+  the gap is the same as `fetch_url`'s and is listed in [THREAT_MODEL.md](THREAT_MODEL.md).
 - **Launchers are refused**: `npx`, `pnpx`, `bunx`, `uvx`, `pipx`, `npm`, `pnpm`, `yarn`, `docker`,
   `podman` and `env` fetch or choose code that cannot be hashed here. Install the server, then lock the
   executable or script it really runs.

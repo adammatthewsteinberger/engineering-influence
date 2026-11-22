@@ -144,3 +144,12 @@ Recorded on 2026-11-22 while building slice 4 ([TOOL_LOCK.md](../TOOL_LOCK.md)).
 - **A run reads a lock only when `EI_TOOL_LOCK` names it**, so a stray file in the working directory starts no
   server, and a tool's journal key includes the tool's revision (for a locked tool, the hash of the server's
   tools) so a replaced server's old answers are not replayed.
+- **Remote servers (4d).** HTTP follows decision 7 and the slices above, with these choices. The transport is
+  Streamable HTTP, one POST per message, the answer as JSON or as events read within the same request, and no
+  stream of the client's own. A remote entry locks the **address** and what the server advertises; its code
+  cannot be hashed, and the weaker pin is stated in the docs and the `ei tools add` output rather than
+  hidden. The address goes through the existing public-https URL policy before every request, with no
+  redirects, so **a server on this machine or network is reached over stdio, not HTTP**; a loosening for
+  local development is a separate decision. Credentials are a named variable (`bearer_env`), never part of
+  the address, and the lock refuses a user, query or fragment so a secret cannot be committed in a URL.
+  Other auth schemes (OAuth, custom headers) are not built.

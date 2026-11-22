@@ -21,11 +21,13 @@ import pytest
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.infrastructure.in_memory_artifact_store import InMemoryArtifactStore
 from engineering_influence.infrastructure.in_memory_journal import InMemoryJournal
+from engineering_influence.infrastructure.tools.toml_tool_lock_store import TomlToolLockStore
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
 from engineering_influence.models.book_brief import BookBrief
 from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget import Budget
+from engineering_influence.models.mcp_server_lock import McpServerLock
 from engineering_influence.runtime.cli_runtime import CliRuntime
 from engineering_influence.runtime.stage_executor_runtime import StageExecutorRuntime
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
@@ -377,3 +379,64 @@ def test_closing_the_runtime_stops_the_servers(world: World) -> None:
     rt.close()
     assert world.gone()
     rt.close()  # twice is harmless
+
+
+# ----------------------------------------------------------------------- a remote server in the lock
+def lock_a_remote_server(world: World, **changes: Any) -> None:
+    """A remote entry named so it starts after the local one, so the local one has been started when it fails."""
+    world.lock_server()
+    fields: dict[str, Any] = {
+        "name": "zdocs",
+        "command": (),
+        "files": (),
+        "env": (),
+        "server_name": "docs-server",
+        "server_version": "1",
+        "tool_names": ("read",),
+        "tools_hash": "a" * 64,
+        "url": "https://localhost/mcp",
+    }
+    store = TomlToolLockStore()
+    lock = store.load(world.lock)
+    assert lock is not None
+    store.save(world.lock, lock.with_server(McpServerLock(**{**fields, **changes}), False))
+
+
+def test_a_remote_address_the_policy_refuses_stops_the_start_and_the_servers_already_started(
+    world: World,
+) -> None:
+    lock_a_remote_server(world)
+    rt = world.runtime()
+    with pytest.raises(ApplicationError) as error:
+        rt.build(world.store, world.journal)
+    rt.close()
+    assert (error.value.code, error.value.http_status) == ("MCP_URL_REFUSED", 503)
+    assert error.value.message == (
+        "locked server 'zdocs' could not be started: localhost refused: non_public_address"
+    )
+    assert world.gone()
+
+
+def test_a_remote_servers_token_is_read_from_the_runtimes_own_environment(world: World) -> None:
+    lock_a_remote_server(world, bearer_env="NO_SUCH_TOKEN")
+    rt = world.runtime()
+    with pytest.raises(ApplicationError) as error:
+        rt.build(world.store, world.journal)
+    rt.close()
+    assert (error.value.code, error.value.http_status) == ("TOOL_ENV_MISSING", 503)
+    assert error.value.message == (
+        "locked server 'zdocs' could not be started: the environment variable NO_SUCH_TOKEN is not set"
+    )
+    assert world.gone()
+
+
+def test_a_remote_server_whose_token_is_set_in_the_runtimes_environment_reaches_the_policy(
+    world: World,
+) -> None:
+    lock_a_remote_server(world, bearer_env="DOCS_TOKEN")
+    rt = StageExecutorRuntime({**world.environment(), "DOCS_TOKEN": "a-token"}, NoSecrets(), TODAY)
+    with pytest.raises(ApplicationError) as error:
+        rt.build(world.store, world.journal)
+    rt.close()
+    assert error.value.code == "MCP_URL_REFUSED"
+    assert "a-token" not in error.value.message

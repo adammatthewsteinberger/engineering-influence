@@ -32,7 +32,12 @@ class ToolLockVerifier(ToolLockVerifierInterface):
         self._hasher = hasher
 
     def check_files(self, entry: McpServerLock) -> tuple[str, ...]:
-        """What is wrong with the files the command would run; empty when they are as locked."""
+        """What is wrong with the files the command would run; empty when they are as locked.
+
+        A remote server has no files to hash, so there is nothing to find wrong before it is contacted.
+        """
+        if entry.remote():
+            return ()
         problems: list[str] = []
         locked = entry.file_hashes()
         for path, expected in locked.items():

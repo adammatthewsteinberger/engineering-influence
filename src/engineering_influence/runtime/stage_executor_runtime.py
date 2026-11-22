@@ -36,6 +36,9 @@ from engineering_influence.infrastructure.research.searxng_search_provider impor
 from engineering_influence.infrastructure.security.public_https_url_policy import (
     PublicHttpsUrlPolicy,
 )
+from engineering_influence.infrastructure.tools.http_mcp_transport_factory import (
+    HttpMcpTransportFactory,
+)
 from engineering_influence.infrastructure.tools.sha256_file_hasher import Sha256FileHasher
 from engineering_influence.infrastructure.tools.stdio_mcp_transport_factory import (
     StdioMcpTransportFactory,
@@ -181,6 +184,13 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         )
         launcher = McpServerLauncher(
             StdioMcpTransportFactory(limits, self._environment),
+            HttpMcpTransportFactory(
+                self._server_client,
+                PublicHttpsUrlPolicy(),
+                self._environment,
+                self.SERVER_REQUEST_SECONDS,
+                self.SERVER_SESSION_SECONDS,
+            ),
             McpClientFactory("engineering-influence", __version__, self.SERVER_REQUEST_SECONDS),
             ToolLockVerifier(Sha256FileHasher()),
         )
@@ -188,6 +198,12 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         fleet.start(lock)
         self._fleet = fleet
         return lock, fleet.tools()
+
+    def _server_client(self) -> httpx.Client:
+        """A client for one remote tool server: it owns its connection pool and is closed with the session."""
+        return httpx.Client(
+            timeout=httpx.Timeout(self.SERVER_REQUEST_SECONDS, connect=self.CONNECT_TIMEOUT_SECONDS)
+        )
 
     def _tools(self) -> tuple[ToolInterface, ...]:
         """Search and page reading, which the research stage names."""
