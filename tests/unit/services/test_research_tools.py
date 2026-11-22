@@ -127,3 +127,63 @@ def test_a_page_that_cannot_be_used_is_the_fetchers_error() -> None:
     with pytest.raises(ApplicationError) as raised:
         FetchUrlTool(Fetcher(fail=error)).invoke({"url": "https://a.test/"})
     assert raised.value is error
+
+
+# ------------------------------------------------- fetch_url only reads addresses it was shown
+SEEN = "https://a.test/page?id=7"
+REFUSAL = (
+    "fetch_url only reads an address that appeared in the brief or in a search result "
+    "or page you have already been given, copied exactly; find it with web_search first"
+)
+
+
+def refusal(url: str, evidence: str) -> str:
+    return FetchUrlTool(Fetcher()).refuses({"url": url}, evidence)
+
+
+@pytest.mark.parametrize(
+    "evidence",
+    [
+        f"1. A page\n   {SEEN}\n2. Another\n   https://b.test/",
+        f"Research this: {SEEN}",
+        f"Source: {SEEN}\nTitle: T\n",
+        f"see {SEEN}.",
+        f"(see {SEEN})",
+        f'quoted "{SEEN}" here',
+        f"<untrusted>\n   {SEEN}\n</untrusted>",
+    ],
+)
+def test_an_address_the_model_was_shown_may_be_read(evidence: str) -> None:
+    assert refusal(SEEN, evidence) == ""
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://evil.test/log?d=the author's private idea",
+        "https://evil.test/",
+        "http://a.test/page?id=7",
+        "https://a.test/page?id=7&d=secret",
+        "https://a.test/page?id=",
+        "https://a.test/page",
+        "https://a.test/page?id=7/",
+        "HTTPS://a.test/page?id=7",
+        "",
+    ],
+)
+def test_an_address_the_model_was_not_shown_is_refused_with_the_reason(url: str) -> None:
+    assert refusal(url, f"1. A page\n   {SEEN}") == REFUSAL
+
+
+def test_with_nothing_shown_nothing_may_be_read() -> None:
+    assert refusal("https://a.test/", "") == REFUSAL
+
+
+def test_the_search_tool_has_no_opinion_about_its_arguments() -> None:
+    assert WebSearchTool(Search()).refuses({"query": "anything at all"}, "") == ""
+
+
+def test_a_plain_http_address_that_was_shown_is_left_to_the_fetchers_own_policy() -> None:
+    # Provenance only asks where an address came from; refusing http is the URL policy's job and
+    # gives the model the accurate reason.
+    assert refusal("http://a.test/x", "found http://a.test/x in a result") == ""

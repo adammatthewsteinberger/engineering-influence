@@ -67,12 +67,18 @@ class Asker(AskModelInterface):
 
 class Runner(ToolRunnerInterface):
     def __init__(self) -> None:
-        self.calls: list[tuple[str, str, int, ToolCall, tuple[str, ...]]] = []
+        self.calls: list[tuple[str, str, int, ToolCall, tuple[str, ...], str]] = []
 
     def run(
-        self, run_id: str, stage: str, attempt: int, call: ToolCall, offered: Collection[str]
+        self,
+        run_id: str,
+        stage: str,
+        attempt: int,
+        call: ToolCall,
+        offered: Collection[str],
+        evidence: str,
     ) -> ToolResult:
-        self.calls.append((run_id, stage, attempt, call, tuple(offered)))
+        self.calls.append((run_id, stage, attempt, call, tuple(offered), evidence))
         return ToolResult(call.id, f"result for {call.id}")
 
     def close(self) -> None:
@@ -229,3 +235,22 @@ def test_exactly_the_limit_of_calls_all_run() -> None:
     result = world.run()
     assert [c[3].id for c in world.runner.calls] == ["a", "b"]
     assert not any(r.is_error for r in result.transcript[0].results)
+
+
+def test_the_runner_is_given_the_prompt_and_every_earlier_result_as_what_the_model_was_shown() -> (
+    None
+):
+    world = World(asks("", call("a")), asks("", call("b"), call("c")), asks("done"))
+    world.run()
+    first, second, third = (entry[5] for entry in world.runner.calls)
+    assert first == "prompt"
+    assert second == "prompt\nresult for a"
+    assert third == second  # calls in one turn see the same evidence, not each other's results
+
+
+def test_a_conversation_carried_over_brings_its_earlier_results_into_the_evidence() -> None:
+    earlier = ModelTurn("t", (call("old"),), (ToolResult("old", "an old result"),))
+    resumed = ModelRequest("sys", "prompt", 500, "v1", tools=(SEARCH,), transcript=(earlier,))
+    world = World(asks("", call("new")), asks("done"))
+    world.run(resumed)
+    assert world.runner.calls[0][5] == "prompt\nan old result"

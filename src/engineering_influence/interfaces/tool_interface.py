@@ -20,6 +20,17 @@ class ToolInterface(ABC):
     def definition(self) -> ToolDefinition:
         """What the model is told about this tool."""
 
+    def refuses(self, arguments: Mapping[str, Any], evidence: str) -> str:
+        """Why this call may not run, or an empty string when it may.
+
+        ``evidence`` is everything the model has legitimately been shown in this conversation: the
+        stage's own prompt and every earlier tool result. A tool whose arguments could carry data
+        out (an address the model chose) can insist that they came from there. A refusal is
+        answered to the model as an error and is not journaled, so it cannot stick to a later,
+        permitted call. The default allows everything.
+        """
+        return ""
+
     @abstractmethod
     def invoke(self, arguments: Mapping[str, Any]) -> str:
         """Run the tool and return its text.

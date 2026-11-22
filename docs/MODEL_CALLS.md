@@ -98,7 +98,10 @@ names them.
   nothing is quoted until it has been read. The provider is SearXNG, with Brave behind it when both are
   configured (see [CONFIGURATION.md](CONFIGURATION.md)).
 - **`fetch_url`** reads one page through the source fetcher, which only reads public https, checks every
-  redirect, limits size and encoding, and drops hidden text. It returns the final address, the title, a
+  redirect, limits size and encoding, and drops hidden text. It only reads an address the model was shown:
+  one in the stage's prompt or in an earlier tool result, copied exactly (a tool can refuse a call by what
+  the model has seen, `ToolInterface.refuses`; the runner checks it before the journal, so a refusal is
+  never stored). This stops a hostile page steering the model to an address with the brief in it. It returns the final address, the title, a
   SHA-256 of the text and the text. That header is the pin a later claim check will use; the journal keeps
   it, but it is not yet stored as a separate source record.
 

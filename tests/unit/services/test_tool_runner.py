@@ -48,9 +48,18 @@ class Echo(ToolInterface):
         return f"echo: {arguments['text']}"
 
 
+class Picky(Echo):
+    """Refuses unless the evidence says 'ok'."""
+
+    def refuses(self, arguments: Mapping[str, Any], evidence: str) -> str:
+        return "" if "ok" in evidence else "not shown to you"
+
+
 class World:
-    def __init__(self, limits: ToolLoopLimits | None = None, workers: int = 4) -> None:
-        self.tool = Echo()
+    def __init__(
+        self, limits: ToolLoopLimits | None = None, workers: int = 4, tool: Echo | None = None
+    ) -> None:
+        self.tool = tool or Echo()
         self.journal = InMemoryJournal()
         self.runner = ToolRunner(
             ToolRegistry((self.tool,)), self.journal, limits or ToolLoopLimits(), workers
@@ -62,13 +71,14 @@ class World:
         offered: tuple[str, ...] = ("echo",),
         run_id: str = "run-1",
         stage: str = "research",
+        evidence: str = "",
     ) -> ToolResult:
-        return self.runner.run(run_id, stage, 1, call, offered)
+        return self.runner.run(run_id, stage, 1, call, offered, evidence)
 
 
 @contextmanager
-def made(limits: ToolLoopLimits | None = None) -> Iterator[World]:
-    world = World(limits)
+def made(limits: ToolLoopLimits | None = None, tool: Echo | None = None) -> Iterator[World]:
+    world = World(limits, tool=tool)
     try:
         yield world
     finally:
@@ -246,3 +256,32 @@ def test_what_a_tool_says_in_its_error_is_untrusted_too_but_our_own_refusals_are
         assert ours.content == "no tool named 'ghost' is available here"
         bad = world.run(ToolCall("c9", "echo", {}))
         assert bad.content.startswith("invalid arguments:")
+
+
+def test_a_tool_with_no_opinion_about_its_arguments_runs_whatever_the_evidence() -> None:
+    with made() as world:
+        assert world.run(say(), evidence="").content.endswith("echo: hi\n</untrusted>")
+
+
+def test_a_call_a_tool_refuses_is_answered_with_its_reason_and_nothing_runs() -> None:
+    with made(tool=Picky()) as world:
+        result = world.run(say(), evidence="nothing to see")
+        assert result == ToolResult("c1", "not shown to you", True)  # ours: not wrapped
+        assert world.tool.calls == []
+
+
+def test_a_refusal_is_not_journaled_so_it_cannot_stick_to_a_later_permitted_call() -> None:
+    with made(tool=Picky()) as world:
+        world.run(say(), evidence="nothing")
+        assert world.journal.entries("run-1") == []
+        allowed = world.run(say("hi", "c2"), evidence="this is ok")
+        assert allowed.content.endswith("echo: hi\n</untrusted>") and not allowed.is_error
+        assert len(world.tool.calls) == 1
+        assert len(world.journal.entries("run-1")) == 1
+
+
+def test_a_call_made_while_permitted_replays_even_if_the_evidence_is_later_missing() -> None:
+    with made(tool=Picky()) as world:
+        world.run(say(), evidence="ok")
+        again = world.run(say("hi", "c2"), evidence="ok")
+        assert not again.is_error and len(world.tool.calls) == 1

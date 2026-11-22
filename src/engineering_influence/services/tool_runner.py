@@ -25,7 +25,10 @@ class ToolRunner(ToolRunnerInterface):
     - **Only offered tools exist.** A call to a name the stage was not given, or one nobody
       registered, gets an error result the model can read; nothing runs.
     - **Arguments are checked first** against the tool's schema, and a bad call gets an error
-      result saying what is wrong.
+      result saying what is wrong. A tool can then refuse a call by what the model has been shown
+      (``ToolInterface.refuses``), which is how ``fetch_url`` keeps a hostile page from steering
+      the model to an address that carries data out. Refusals are ours: they are not journaled and
+      not wrapped.
     - **A call is made once.** Its result is journaled by tool and arguments, so a resumed or
       retried run, or a model that asks the same thing twice, gets the stored result and the web
       is not asked again. A tool failure the model can work around (``ApplicationError``) is stored
@@ -56,7 +59,13 @@ class ToolRunner(ToolRunnerInterface):
         self._pool = ThreadPoolExecutor(max_workers=workers, thread_name_prefix="tool")
 
     def run(
-        self, run_id: str, stage: str, attempt: int, call: ToolCall, offered: Collection[str]
+        self,
+        run_id: str,
+        stage: str,
+        attempt: int,
+        call: ToolCall,
+        offered: Collection[str],
+        evidence: str,
     ) -> ToolResult:
         """The result of the call, replayed from the journal if this run already made it."""
         tool = self._registry.lookup(call.name) if call.name in offered else None
@@ -65,6 +74,9 @@ class ToolRunner(ToolRunnerInterface):
         problem = tool.definition().check(call.arguments)
         if problem:
             return ToolResult(call.id, f"invalid arguments: {problem}", True)
+        reason = tool.refuses(call.arguments, evidence)
+        if reason:
+            return ToolResult(call.id, reason, True)
         key = self._key(call)
         recorded = self._journal.find(run_id, stage, key.digest())
         if recorded is None:

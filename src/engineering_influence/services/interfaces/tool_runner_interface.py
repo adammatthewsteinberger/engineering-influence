@@ -19,9 +19,19 @@ class ToolRunnerInterface(ABC):
 
     @abstractmethod
     def run(
-        self, run_id: str, stage: str, attempt: int, call: ToolCall, offered: Collection[str]
+        self,
+        run_id: str,
+        stage: str,
+        attempt: int,
+        call: ToolCall,
+        offered: Collection[str],
+        evidence: str,
     ) -> ToolResult:
-        """The result of the call, replayed from the journal if this run already made it."""
+        """The result of the call, replayed from the journal if this run already made it.
+
+        ``evidence`` is the text the model has been legitimately shown so far (the stage's prompt
+        and the earlier tool results), against which a tool can check where its arguments came from.
+        """
 
     @abstractmethod
     def close(self) -> None:
