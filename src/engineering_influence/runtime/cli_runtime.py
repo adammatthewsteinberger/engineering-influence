@@ -6,12 +6,19 @@ from datetime import date
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from engineering_influence import __version__
 from engineering_influence.controllers.interfaces.run_controller_interface import (
     RunControllerInterface,
 )
 from engineering_influence.controllers.project_controller import ProjectController
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
+from engineering_influence.infrastructure.tools.path_executable_finder import PathExecutableFinder
+from engineering_influence.infrastructure.tools.sha256_file_hasher import Sha256FileHasher
+from engineering_influence.infrastructure.tools.stdio_mcp_transport_factory import (
+    StdioMcpTransportFactory,
+)
+from engineering_influence.infrastructure.tools.toml_tool_lock_store import TomlToolLockStore
 from engineering_influence.interactions.cli.book_cli import BookCli
 from engineering_influence.interactions.cli.cli_application import CliApplication
 from engineering_influence.interactions.cli.db_cli import DbCli
@@ -21,11 +28,13 @@ from engineering_influence.interactions.cli.interfaces.cli_application_interface
 )
 from engineering_influence.interactions.cli.run_cli import RunCli
 from engineering_influence.interactions.cli.serve_cli import ServeCli
+from engineering_influence.interactions.cli.tools_cli import ToolsCli
 from engineering_influence.interfaces.model_probe_interface import ModelProbeInterface
 from engineering_influence.interfaces.queue_interface import QueueInterface
 from engineering_influence.interfaces.run_repository_interface import RunRepositoryInterface
 from engineering_influence.interfaces.schema_migrator_interface import SchemaMigratorInterface
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
+from engineering_influence.models.tool_limits import ToolLimits
 from engineering_influence.runtime.interfaces.cli_runtime_interface import CliRuntimeInterface
 from engineering_influence.runtime.interfaces.publishing_controller_factory_interface import (
     PublishingControllerFactoryInterface,
@@ -37,9 +46,14 @@ from engineering_influence.services.interfaces.model_doctor_interface import (
     ModelDoctorInterface,
 )
 from engineering_influence.services.interfaces.resume_run_interface import ResumeRunInterface
+from engineering_influence.services.mcp_client_factory import McpClientFactory
+from engineering_influence.services.mcp_server_probe import McpServerProbe
 from engineering_influence.services.model_doctor import ModelDoctor
 from engineering_influence.services.resume_run import ResumeRun
 from engineering_influence.services.start_pipeline import StartPipeline
+from engineering_influence.services.tool_lock_auditor import ToolLockAuditor
+from engineering_influence.services.tool_lock_editor import ToolLockEditor
+from engineering_influence.services.tool_lock_verifier import ToolLockVerifier
 
 if TYPE_CHECKING:
     from engineering_influence.controllers.publishing_controller import PublishingController
@@ -51,6 +65,11 @@ class CliRuntime(CliRuntimeInterface):
     ``probe_timeout_seconds`` bounds each request of ``doctor --probe``. ``publishing`` replaces the factory that wires the book commands to the real file system and
     toolchain, so a test can drive the whole command line over fakes.
     """
+
+    TOOL_SESSION_SECONDS = 120.0
+    TOOL_REQUEST_SECONDS = 30.0
+    TOOL_MEMORY_BYTES = 2 * 1024**3
+    TOOL_DISK_BYTES = 1024**3
 
     def __init__(
         self,
@@ -72,6 +91,30 @@ class CliRuntime(CliRuntimeInterface):
             DbCli(self._schema_migrator, self._secret_provider),
             RunCli(self._resume_run, self._cancel_run, self._run_status),
             DoctorCli(self._model_doctor, os.environ),
+            self._tools_cli(),
+        )
+
+    def _tools_cli(self) -> ToolsCli:
+        """Wire ``tools``: a server is started only by ``add`` and ``verify``, under these limits.
+
+        The limits are for one look at a server: two minutes, 2 GiB of memory and 1 GiB of disk.
+        """
+        limits = ToolLimits(
+            timeout_seconds=self.TOOL_SESSION_SECONDS,
+            max_memory_bytes=self.TOOL_MEMORY_BYTES,
+            max_disk_bytes=self.TOOL_DISK_BYTES,
+        )
+        hasher = Sha256FileHasher()
+        probe = McpServerProbe(
+            StdioMcpTransportFactory(limits, os.environ),
+            McpClientFactory("engineering-influence", __version__, self.TOOL_REQUEST_SECONDS),
+            ToolLockVerifier(hasher),
+        )
+        return ToolsCli(
+            ToolLockEditor(probe, hasher, PathExecutableFinder()),
+            ToolLockAuditor(probe),
+            TomlToolLockStore(),
+            os.environ,
         )
 
     def _model_doctor(self, probe: bool) -> ModelDoctorInterface:

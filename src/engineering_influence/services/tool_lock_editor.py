@@ -1,0 +1,117 @@
+# Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
+"""Adds a server to the tool lock by running it once and recording what it says."""
+
+from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.errors.transient_stage_error import TransientStageError
+from engineering_influence.interfaces.executable_finder_interface import ExecutableFinderInterface
+from engineering_influence.interfaces.file_hasher_interface import FileHasherInterface
+from engineering_influence.models.mcp_command import McpCommand
+from engineering_influence.models.mcp_server_lock import McpServerLock
+from engineering_influence.models.tool_lock import ToolLock
+from engineering_influence.models.tool_lock_addition import ToolLockAddition
+from engineering_influence.services.interfaces.mcp_server_probe_interface import (
+    McpServerProbeInterface,
+)
+from engineering_influence.services.interfaces.tool_lock_editor_interface import (
+    ToolLockEditorInterface,
+)
+
+
+class ToolLockEditor(ToolLockEditorInterface):
+    """Everything that can be refused is refused before the command is run.
+
+    The name, the environment names, the command (an executable that exists, not a launcher), the
+    files it names (each one readable, scripts given by absolute path) and a name already taken are
+    all checked first, because adding a server **runs it**. Only then is it started once, under the
+    probe's limits, and what it reports becomes the entry: the hashes of the executable and of every
+    script among its arguments, its name and version, and a hash of its tools. A file named only
+    inside an option (``--config=/x/y``) is not seen and not locked.
+    """
+
+    def __init__(
+        self,
+        probe: McpServerProbeInterface,
+        hasher: FileHasherInterface,
+        finder: ExecutableFinderInterface,
+    ) -> None:
+        self._probe = probe
+        self._hasher = hasher
+        self._finder = finder
+
+    def add(
+        self,
+        lock: ToolLock,
+        name: str,
+        argv: tuple[str, ...],
+        env_names: tuple[str, ...],
+        replace: bool,
+    ) -> ToolLockAddition:
+        """Run the server once, record what it is, and return the lock with it added."""
+        if not McpServerLock.NAME.fullmatch(name):
+            raise self._refused(
+                "TOOL_NAME_INVALID",
+                "a server's name is lowercase letters, digits and -, from a letter, up to 32 characters",
+            )
+        if lock.server(name) is not None and not replace:
+            raise self._refused(
+                "TOOL_LOCK_EXISTS",
+                f"a server named {name!r} is already locked; use --replace to lock it again",
+            )
+        bad = [env for env in env_names if not McpServerLock.ENV.fullmatch(env)]
+        if bad or len(set(env_names)) != len(env_names):
+            raise self._refused(
+                "TOOL_ENV_INVALID", "environment names are capital letters, digits and _, each once"
+            )
+        command = self._command(argv)
+        files = self._files(command)
+        try:
+            inspection = self._probe.inspect(command.argv, env_names)
+        except TransientStageError as error:
+            raise ApplicationError(
+                code="TOOL_SERVER_UNRESPONSIVE", message=str(error), http_status=502
+            ) from error
+        try:
+            server = McpServerLock(
+                name=name,
+                command=command.argv,
+                files=files,
+                env=env_names,
+                server_name=inspection.info.name,
+                server_version=inspection.info.version,
+                tool_names=inspection.tools.names(),
+                tools_hash=inspection.tools.digest(),
+            )
+            return ToolLockAddition(lock.with_server(server, replace), server, inspection)
+        except ValueError as error:
+            raise self._refused("TOOL_LOCK_INVALID", str(error)) from error
+
+    def _command(self, argv: tuple[str, ...]) -> McpCommand:
+        executable = self._finder.find(argv[0])
+        if executable is None:
+            raise self._refused(
+                "TOOL_COMMAND_NOT_FOUND", f"{argv[0]!r} is not an executable file or on PATH"
+            )
+        try:
+            return McpCommand((executable, *argv[1:]))
+        except ValueError as error:
+            raise self._refused("TOOL_COMMAND_REFUSED", str(error)) from error
+
+    def _files(self, command: McpCommand) -> tuple[tuple[str, str], ...]:
+        digests: dict[str, str] = {}
+        for index, part in enumerate(command.argv):
+            digest = self._hasher.digest(part)
+            if digest is None:
+                if index == 0:
+                    raise self._refused("TOOL_FILE_UNREADABLE", f"{part} cannot be read as a file")
+                continue
+            if not part.startswith("/"):
+                raise self._refused(
+                    "TOOL_RELATIVE_SCRIPT",
+                    f"give {part!r} as an absolute path, so it is the file that is locked",
+                )
+            digests[part] = digest
+        return tuple(sorted(digests.items()))
+
+    @staticmethod
+    def _refused(code: str, message: str) -> ApplicationError:
+        return ApplicationError(code=code, message=message, http_status=422)
