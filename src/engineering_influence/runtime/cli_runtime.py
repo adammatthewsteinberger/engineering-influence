@@ -128,6 +128,9 @@ class CliRuntime(CliRuntimeInterface):
 
     def _remote_transports(self) -> McpRemoteTransportFactoryInterface:
         """The transport for remote servers; it needs ``httpx``, so it is built on first use only."""
+        from engineering_influence.infrastructure.security.public_https_url_pinner import (
+            PublicHttpsUrlPinner,
+        )
         from engineering_influence.infrastructure.security.public_https_url_policy import (
             PublicHttpsUrlPolicy,
         )
@@ -137,7 +140,7 @@ class CliRuntime(CliRuntimeInterface):
 
         return HttpMcpTransportFactory(
             self._tool_client,
-            PublicHttpsUrlPolicy(),
+            PublicHttpsUrlPinner(PublicHttpsUrlPolicy()),
             os.environ,
             self.TOOL_REQUEST_SECONDS,
             self.TOOL_SESSION_SECONDS,

@@ -3,7 +3,7 @@
 """A remote server, end to end and without a network: locked, saved, granted, started, called and ended.
 
 Everything between the lock file and the wire is the real code: the editor, the probe, the MCP client,
-the HTTP transport and its factory, the launcher, the fleet, the URL policy and the TOML store. Only the
+the HTTP transport and its factory, the launcher, the fleet, the URL pinner and policy and the TOML store. Only the
 server is scripted, behind ``httpx.MockTransport``, and DNS is a function that says what a name resolves to.
 """
 
@@ -16,6 +16,9 @@ import pytest
 
 from engineering_influence import __version__
 from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.infrastructure.security.public_https_url_pinner import (
+    PublicHttpsUrlPinner,
+)
 from engineering_influence.infrastructure.security.public_https_url_policy import (
     PublicHttpsUrlPolicy,
 )
@@ -126,7 +129,7 @@ class Stack:
         self.stdio = NoStdio()
         remote = HttpMcpTransportFactory(
             lambda: httpx.Client(transport=httpx.MockTransport(server)),
-            PublicHttpsUrlPolicy(lambda host: resolves),
+            PublicHttpsUrlPinner(PublicHttpsUrlPolicy(), lambda host: resolves),
             {"DOCS_TOKEN": TOKEN},
         )
         clients = McpClientFactory("engineering-influence", __version__, 30.0)
@@ -172,7 +175,8 @@ def test_a_remote_server_is_locked_granted_started_called_and_ended(
 
     assert running.deleted is True and stack.stdio.used == 0
     assert {request.headers["authorization"] for request in running.requests} == {f"Bearer {TOKEN}"}
-    assert {str(request.url) for request in running.requests} == {URL}
+    assert {str(request.url) for request in running.requests} == {"https://93.184.216.34/v1/mcp"}
+    assert {r.headers["host"] for r in running.requests} == {"mcp.example.com"}
     posts = [json.loads(request.content) for request in running.sent("POST")]
     assert [m.get("method") for m in posts] == [
         "initialize",

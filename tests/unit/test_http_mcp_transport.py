@@ -1,6 +1,6 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 
-"""HttpMcpTransport: one POST per message, never a redirect, never past the policy, and every reply bounded."""
+"""HttpMcpTransport: one POST per message, never a redirect, never past the pinner, and every reply bounded."""
 
 import itertools
 import json
@@ -10,30 +10,36 @@ from typing import Any
 import httpx
 import pytest
 
-from engineering_influence.contracts.security_verdict import SecurityVerdict
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.errors.transient_stage_error import TransientStageError
 from engineering_influence.infrastructure.tools.http_mcp_transport import HttpMcpTransport
 from engineering_influence.interfaces.mcp_transport_interface import McpTransportInterface
-from engineering_influence.interfaces.outbound_url_policy_interface import (
-    OutboundUrlPolicyInterface,
+from engineering_influence.interfaces.outbound_url_pinner_interface import (
+    OutboundUrlPinnerInterface,
 )
+from engineering_influence.models.pin_decision import PinDecision
+from engineering_influence.models.pinned_target import PinnedTarget
 
 URL = "https://mcp.example.com/v1/mcp"
+PINNED = "https://93.184.216.34/v1/mcp"
 TOKEN = "s3cr3t-token"
 INIT = {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}
 LIST = {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}
 NOTE = {"jsonrpc": "2.0", "method": "notifications/initialized"}
 
 
-class Policy(OutboundUrlPolicyInterface):
+class Pinner(OutboundUrlPinnerInterface):
+    """Pins every address to one vetted IP, and remembers each URL it was asked about."""
+
     def __init__(self, refuse: str | None = None) -> None:
         self.refuse = refuse
         self.checked: list[str] = []
 
-    def check(self, url: str) -> SecurityVerdict:
+    def pin(self, url: str) -> PinDecision:
         self.checked.append(url)
-        return SecurityVerdict.reject(self.refuse) if self.refuse else SecurityVerdict.accept()
+        if self.refuse:
+            return PinDecision.refused(self.refuse)
+        return PinDecision.pinned(PinnedTarget(PINNED, "mcp.example.com", "mcp.example.com"))
 
 
 class Clock:
@@ -52,7 +58,7 @@ class Rig:
 
     def __init__(self, handler: Handler, **options: Any) -> None:
         self.requests: list[httpx.Request] = []
-        self.policy = options.pop("policy", None) or Policy()
+        self.pinner = options.pop("pinner", None) or Pinner()
         self.clock = options.pop("clock", None) or Clock()
 
         def seen(request: httpx.Request) -> httpx.Response:
@@ -61,7 +67,7 @@ class Rig:
 
         self.client = httpx.Client(transport=httpx.MockTransport(seen))
         self.transport = HttpMcpTransport(
-            self.client, URL, self.policy, options.pop("bearer", None), clock=self.clock, **options
+            self.client, URL, self.pinner, options.pop("bearer", None), clock=self.clock, **options
         )
 
     def body(self, index: int = -1) -> Any:
@@ -105,7 +111,7 @@ def test_a_message_is_one_post_of_its_json_with_the_headers_a_streamable_server_
     rig = Rig(lambda r: reply(answer(r)))
     rig.transport.send(INIT)
     [request] = rig.requests
-    assert (request.method, str(request.url)) == ("POST", URL)
+    assert (request.method, str(request.url)) == ("POST", PINNED)
     assert json.loads(request.content) == INIT
     assert request.headers["content-type"] == "application/json"
     assert request.headers["accept"] == "application/json, text/event-stream"
@@ -120,18 +126,18 @@ def test_the_bearer_token_goes_with_every_request_to_the_locked_address() -> Non
     rig.transport.send(INIT)
     rig.transport.send(LIST)
     assert [r.headers["authorization"] for r in rig.requests] == [f"Bearer {TOKEN}"] * 2
-    assert {str(r.url) for r in rig.requests} == {URL}
+    assert {str(r.url) for r in rig.requests} == {PINNED}
 
 
-def test_the_policy_is_asked_about_the_address_before_every_request() -> None:
+def test_the_pinner_is_asked_about_the_address_before_every_request() -> None:
     rig = Rig(lambda r: reply(answer(r)))
     rig.transport.send(INIT)
     rig.transport.send(LIST)
-    assert rig.policy.checked == [URL, URL]
+    assert rig.pinner.checked == [URL, URL]
 
 
-def test_an_address_the_policy_refuses_is_never_contacted_and_the_reason_is_named() -> None:
-    rig = Rig(lambda r: reply(answer(r)), policy=Policy("non_public_address"), bearer=TOKEN)
+def test_an_address_the_pinner_refuses_is_never_contacted_and_the_reason_is_named() -> None:
+    rig = Rig(lambda r: reply(answer(r)), pinner=Pinner("non_public_address"), bearer=TOKEN)
     error = refused_with("MCP_URL_REFUSED", lambda: rig.transport.send(INIT), 503)
     assert error.message == "mcp.example.com refused: non_public_address"
     assert rig.requests == [] and TOKEN not in error.message
@@ -140,7 +146,7 @@ def test_an_address_the_policy_refuses_is_never_contacted_and_the_reason_is_name
 def test_an_address_that_turns_inward_mid_session_is_refused_from_then_on() -> None:
     rig = Rig(lambda r: reply(answer(r)))
     rig.transport.send(INIT)
-    rig.policy.refuse = "non_public_address"
+    rig.pinner.refuse = "non_public_address"
     refused_with("MCP_URL_REFUSED", lambda: rig.transport.send(LIST), 503)
     assert len(rig.requests) == 1
 
@@ -332,7 +338,7 @@ def test_a_redirect_is_never_followed_and_the_token_goes_nowhere_else(status: in
     )
     error = refused_with("MCP_REDIRECT_REFUSED", lambda: rig.transport.send(INIT))
     assert error.message == "mcp.example.com answered with a redirect, which is not followed"
-    assert [str(r.url) for r in rig.requests] == [URL]
+    assert [str(r.url) for r in rig.requests] == [PINNED]
 
 
 @pytest.mark.parametrize("status", [401, 403])
@@ -611,7 +617,7 @@ def test_closing_ends_the_session_with_a_delete_and_closes_the_client() -> None:
     rig.transport.send(INIT)
     rig.transport.close()
     delete = rig.requests[-1]
-    assert (delete.method, str(delete.url)) == ("DELETE", URL)
+    assert (delete.method, str(delete.url)) == ("DELETE", PINNED)
     assert (
         delete.headers["mcp-session-id"] == "s1"
         and delete.headers["authorization"] == f"Bearer {TOKEN}"
@@ -667,10 +673,10 @@ def test_a_delete_that_cannot_be_sent_is_ignored_and_the_client_is_still_closed(
     assert rig.client.is_closed
 
 
-def test_a_delete_the_policy_now_refuses_is_ignored_and_the_client_is_still_closed() -> None:
+def test_a_delete_the_pinner_now_refuses_is_ignored_and_the_client_is_still_closed() -> None:
     rig = Rig(lambda r: reply(answer(r), **{"mcp-session-id": "s1"}))
     rig.transport.send(INIT)
-    rig.policy.refuse = "non_public_address"
+    rig.pinner.refuse = "non_public_address"
     rig.transport.close()
     assert [r.method for r in rig.requests] == ["POST"] and rig.client.is_closed
 
@@ -777,3 +783,35 @@ def test_the_request_limit_given_to_the_transport_is_the_one_it_enforces() -> No
     rig = Rig(slow, clock=clock, request_seconds=2.0)
     with pytest.raises(TransientStageError, match="in 2 seconds"):
         rig.transport.send(LIST)
+
+
+# ------------------------------------------------------------------------ the pinned address
+def test_the_request_goes_to_the_vetted_address_but_asks_for_the_name_and_verifies_it() -> None:
+    rig = Rig(lambda r: reply(answer(r)))
+    rig.transport.send(INIT)
+    [request] = rig.requests
+    assert request.url.host == "93.184.216.34" and str(request.url) == PINNED
+    assert request.headers["host"] == "mcp.example.com"
+    assert request.extensions["sni_hostname"] == "mcp.example.com"
+
+
+def test_every_request_of_a_session_is_pinned_again_including_the_delete() -> None:
+    rig = Rig(
+        lambda r: (
+            reply(answer(r), **{"mcp-session-id": "s1"})
+            if r.method == "POST"
+            else httpx.Response(200)
+        )
+    )
+    rig.transport.send(INIT)
+    rig.transport.send(LIST)
+    rig.transport.close()
+    assert rig.pinner.checked == [URL, URL, URL]
+    assert [r.url.host for r in rig.requests] == ["93.184.216.34"] * 3
+    assert all(r.headers["host"] == "mcp.example.com" for r in rig.requests)
+
+
+def test_the_original_name_never_reaches_the_client_as_the_place_to_connect() -> None:
+    rig = Rig(lambda r: reply(answer(r)))
+    rig.transport.send(INIT)
+    assert "mcp.example.com" not in str(rig.requests[0].url)

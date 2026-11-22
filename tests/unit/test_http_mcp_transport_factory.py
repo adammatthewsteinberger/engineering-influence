@@ -8,7 +8,6 @@ from typing import Any
 import httpx
 import pytest
 
-from engineering_influence.contracts.security_verdict import SecurityVerdict
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.errors.transient_stage_error import TransientStageError
 from engineering_influence.infrastructure.tools.http_mcp_transport_factory import (
@@ -18,21 +17,25 @@ from engineering_influence.interfaces.mcp_remote_transport_factory_interface imp
     McpRemoteTransportFactoryInterface,
 )
 from engineering_influence.interfaces.mcp_transport_interface import McpTransportInterface
-from engineering_influence.interfaces.outbound_url_policy_interface import (
-    OutboundUrlPolicyInterface,
+from engineering_influence.interfaces.outbound_url_pinner_interface import (
+    OutboundUrlPinnerInterface,
 )
+from engineering_influence.models.pin_decision import PinDecision
+from engineering_influence.models.pinned_target import PinnedTarget
 
 URL = "https://mcp.example.com/mcp"
 TOKEN = "s3cr3t-token"
 INIT = {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}
 
 
-class Policy(OutboundUrlPolicyInterface):
+class Pinner(OutboundUrlPinnerInterface):
     def __init__(self, refuse: str | None = None) -> None:
         self.refuse = refuse
 
-    def check(self, url: str) -> SecurityVerdict:
-        return SecurityVerdict.reject(self.refuse) if self.refuse else SecurityVerdict.accept()
+    def pin(self, url: str) -> PinDecision:
+        if self.refuse:
+            return PinDecision.refused(self.refuse)
+        return PinDecision.pinned(PinnedTarget("https://93.184.216.34/mcp", "mcp.example.com"))
 
 
 class Clock:
@@ -62,13 +65,13 @@ class Clients:
 def factory(
     clients: Clients | None = None,
     environ: dict[str, str] | None = None,
-    policy: Policy | None = None,
+    pinner: Pinner | None = None,
     **options: Any,
 ) -> tuple[HttpMcpTransportFactory, Clients]:
     made = clients or Clients()
     return (
         HttpMcpTransportFactory(
-            made, policy or Policy(), {} if environ is None else environ, **options
+            made, pinner or Pinner(), {} if environ is None else environ, **options
         ),
         made,
     )
@@ -146,8 +149,8 @@ def test_an_address_that_is_not_allowed_is_refused_before_a_client_is_built_or_a
     assert clients.made == []
 
 
-def test_the_policy_given_to_the_factory_governs_every_transport_it_makes() -> None:
-    opener, clients = factory(policy=Policy("non_public_address"))
+def test_the_pinner_given_to_the_factory_governs_every_transport_it_makes() -> None:
+    opener, clients = factory(pinner=Pinner("non_public_address"))
     transport = opener.open(URL, "")
     with pytest.raises(ApplicationError) as error:
         transport.send(INIT)
@@ -176,7 +179,7 @@ def test_the_request_limit_given_to_the_factory_reaches_the_transport() -> None:
 
     opener = HttpMcpTransportFactory(
         lambda: httpx.Client(transport=httpx.MockTransport(slow)),
-        Policy(),
+        Pinner(),
         {},
         request_seconds=2.0,
         clock=clock,

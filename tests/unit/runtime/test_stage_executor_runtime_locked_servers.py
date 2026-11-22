@@ -440,3 +440,20 @@ def test_a_remote_server_whose_token_is_set_in_the_runtimes_environment_reaches_
     rt.close()
     assert error.value.code == "MCP_URL_REFUSED"
     assert "a-token" not in error.value.message
+
+
+def test_fetch_url_through_the_runtime_refuses_an_address_on_this_machine(world: World) -> None:
+    page = "https://localhost/page"
+    world.store = InMemoryArtifactStore()  # these stores never overwrite, so start a fresh one
+    world.store.put("run-1", "brief.md", b"stored text")
+    world.store.put("run-1", "positioning.md", f"Sources: {page}".encode())
+    with model(asks("fetch_url", {"url": page}), says("RESEARCH notes")) as (url, provider):
+        rt = world.runtime(url, lock=False)
+        try:
+            world.execute(rt, "research")
+        finally:
+            rt.close()
+    answer = next(
+        message for message in provider.bodies[1]["messages"] if message["role"] == "tool"
+    )
+    assert "localhost refused: non_public_address" in answer["content"]
