@@ -153,3 +153,14 @@ def test_a_lock_the_model_refuses_as_a_whole_is_an_error(tmp_path: Path) -> None
 def test_a_name_with_odd_characters_is_written_safely(tmp_path: Path) -> None:
     quoted = TomlSkillLockStore._quote('a"b\\c\n\x7f')
     assert quoted == '"a\\"b\\\\c\\u000a\\u007f"'
+
+
+def test_a_stale_temporary_link_is_never_written_through(tmp_path: Path) -> None:
+    elsewhere = tmp_path / "elsewhere.txt"
+    elsewhere.write_text("untouched", encoding="utf-8")
+    (tmp_path / ".lock.toml.tmp").symlink_to(elsewhere)
+    store().save(tmp_path / "lock.toml", SkillLock((entry("a"),)))
+    assert elsewhere.read_text(encoding="utf-8") == "untouched"
+    loaded = store().load(tmp_path / "lock.toml")
+    assert loaded is not None and loaded.names() == ("a",)
+    assert sorted(item.name for item in tmp_path.iterdir()) == ["elsewhere.txt", "lock.toml"]

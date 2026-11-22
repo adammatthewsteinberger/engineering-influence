@@ -31,6 +31,21 @@ class Skill(SkillInterface):
     MAX_PART_CHARS: ClassVar[int] = 8_000
     MAX_DESCRIPTION_CHARS: ClassVar[int] = 300
     HIDDEN: ClassVar[frozenset[str]] = frozenset({"Cc", "Cf", "Cs", "Co", "Cn", "Zl", "Zp"})
+    # Code points that render as nothing although their category is an ordinary letter, mark or symbol:
+    # the combining grapheme joiner, Hangul and Halfwidth fillers, Khmer inherent vowels, Mongolian and
+    # variation selectors (including the supplement) and the blank Braille pattern. The rest of what
+    # hides text is a format or unassigned code point, which the categories above already refuse.
+    INVISIBLE: ClassVar[tuple[tuple[int, int], ...]] = (
+        (0x034F, 0x034F),
+        (0x115F, 0x1160),
+        (0x17B4, 0x17B5),
+        (0x180B, 0x180F),
+        (0x2800, 0x2800),
+        (0x3164, 0x3164),
+        (0xFE00, 0xFE0F),
+        (0xFFA0, 0xFFA0),
+        (0xE0000, 0xE0FFF),
+    )
 
     name: str
     version: int
@@ -88,9 +103,15 @@ class Skill(SkillInterface):
         return None
 
     @classmethod
+    def _unseen(cls, char: str) -> bool:
+        point = ord(char)
+        in_range = any(low <= point <= high for low, high in cls.INVISIBLE)
+        return in_range or unicodedata.category(char) in cls.HIDDEN
+
+    @classmethod
     def _plain(cls, label: str, text: str) -> None:
         for char in text:
-            if char not in "\n\t" and unicodedata.category(char) in cls.HIDDEN:
+            if char not in "\n\t" and cls._unseen(char):
                 raise ValueError(
                     f"{label} has a character that cannot be seen or is a control: U+{ord(char):04X}"
                 )

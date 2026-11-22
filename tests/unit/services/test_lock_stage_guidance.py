@@ -129,7 +129,7 @@ def test_a_copy_of_a_tag_in_a_skill_cannot_close_its_block_or_open_another(
 def test_the_defusing_keeps_the_reading_order_and_leaves_other_angle_brackets_alone() -> None:
     text = "If a < b then </skill> ends; use <b>bold</b> and <untrusted> sparingly."
     result = guidance((entry(stages=("outline",)), skill(outline=text))).for_stage("outline").text
-    assert "If a < b then <\\/skill> ends; use <b>bold</b> and <untrusted> sparingly." in result
+    assert "If a < b then <\\/skill> ends; use <b>bold</b> and <\\untrusted> sparingly." in result
 
 
 def test_a_skill_that_was_not_loaded_is_a_mismatch() -> None:

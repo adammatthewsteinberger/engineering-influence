@@ -128,6 +128,21 @@ HIDDEN_CODE_POINTS = (
     0x0378,  # unassigned
     0xFEFF,  # byte order mark
     0xD800,  # a lone surrogate
+    0x034F,  # combining grapheme joiner
+    0x115F,  # Hangul choseong filler
+    0x1160,  # Hangul jungseong filler
+    0x17B4,  # Khmer inherent vowel
+    0x180B,  # Mongolian free variation selector
+    0x2800,  # blank Braille pattern
+    0x3164,  # Hangul filler
+    0xFE00,  # variation selector 1
+    0xFE0F,  # variation selector 16
+    0xFFA0,  # halfwidth Hangul filler
+    0xFFF0,  # unassigned, in the specials block
+    0x1BCA0,  # shorthand format control
+    0x1D173,  # musical symbol begin beam
+    0xE0100,  # variation selector supplement
+    0xE0020,  # a tag character
 )
 
 
@@ -301,3 +316,11 @@ def test_an_addition_is_the_new_lock_and_the_skill_that_was_added() -> None:
     made = SkillLockAddition(SkillLock((entry(),)), skill())
     assert isinstance(made, SkillLockAdditionInterface)
     assert made.lock.names() == ("plain_style",) and made.skill.name == "plain_style"
+
+
+@pytest.mark.parametrize(
+    "code_point", [0x0350, 0x1161, 0x17B6, 0x2801, 0x3165, 0xFE10, 0xFFA1, 0x1D17B, 0xDF2]
+)
+def test_the_characters_next_to_an_invisible_range_are_ordinary_text(code_point: int) -> None:
+    text = f"Be plain {chr(code_point)} please."
+    assert skill(parts=(("outline", text),)).part("outline") == text

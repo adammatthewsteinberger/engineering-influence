@@ -2,8 +2,6 @@
 """The text of the skills a lock enables for a stage, framed for a prompt."""
 
 import hashlib
-import re
-from typing import ClassVar
 
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interfaces.stage_guidance_interface import StageGuidanceInterface
@@ -26,10 +24,6 @@ class LockStageGuidance(StageGuidanceInterface):
     ``identity`` names the frame (its template and version) and the exact skills (name, version
     and hash) that made the text, which is what a journal key needs to tell one prompt from another.
     """
-
-    TAG: ClassVar[re.Pattern[str]] = re.compile(
-        r"<\s*(/?)\s*(skill|installed_guidance)", re.IGNORECASE
-    )
 
     def __init__(
         self, lock: SkillLock, skills: tuple[Skill, ...], template: PromptTemplate
@@ -63,4 +57,6 @@ class LockStageGuidance(StageGuidanceInterface):
         return Guidance(framed, f"{self._template.identifier()}:{digest}")
 
     def _defused(self, text: str) -> str:
-        return self.TAG.sub(lambda match: f"<\\{match.group(1)}{match.group(2)}", text)
+        return PromptTemplate.UNTRUSTED_TAG.sub(
+            lambda match: f"<\\{match.group(1)}{match.group(2)}", text
+        )
