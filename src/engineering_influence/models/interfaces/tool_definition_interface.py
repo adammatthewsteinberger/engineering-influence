@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from typing import Any
 
 
@@ -11,6 +12,10 @@ class ToolDefinitionInterface(ABC):
     """A tool the model may call."""
 
     __slots__ = ()
+
+    @abstractmethod
+    def check(self, arguments: Mapping[str, Any]) -> str:
+        """An empty string if the arguments fit the schema, otherwise a sentence saying how not."""
 
     @abstractmethod
     def json_schema(self) -> dict[str, Any]:

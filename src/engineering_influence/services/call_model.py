@@ -3,6 +3,7 @@
 
 import hashlib
 import json
+from typing import Any
 
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interfaces.journal_interface import JournalInterface
@@ -11,6 +12,8 @@ from engineering_influence.models.journal_entry import JournalEntry
 from engineering_influence.models.journal_key import JournalKey
 from engineering_influence.models.model_call_result import ModelCallResult
 from engineering_influence.models.model_request import ModelRequest
+from engineering_influence.models.model_response import ModelResponse
+from engineering_influence.models.tool_call import ToolCall
 from engineering_influence.services.interfaces.call_model_interface import CallModelInterface
 from engineering_influence.services.interfaces.spend_guard_interface import SpendGuardInterface
 
@@ -31,6 +34,14 @@ class CallModel(CallModelInterface):
     answer is journaled too, under a key that includes the outcome and the attempt: its cost
     counts, but a later lookup for a good answer to the same request never finds it, so a replay
     is always a complete answer and a retry is made, and paid for, afresh.
+
+    **Tool turns are journaled whole.** A request that offers tools is keyed by the tools and the
+    whole transcript so far, so each turn of a conversation has a key of its own and a replay is
+    only ever of the same conversation. Its answer is stored as the text and the tool calls
+    together. An ``end_turn`` and a ``tool_use`` are both complete answers and both replay. A
+    request with no tools is keyed and stored exactly as before. A model that calls a tool when
+    none was offered is billed and journaled like a cut-off answer (never replayed), and the call
+    raises ``MODEL_RESPONSE_UNEXPECTED``: the adapters refuse this too, and this does not rely on it.
     """
 
     def __init__(self, model: ModelInterface, journal: JournalInterface) -> None:
@@ -46,7 +57,7 @@ class CallModel(CallModelInterface):
         request: ModelRequest,
     ) -> ModelCallResult:
         """Replay the journaled answer, or reserve, call, journal and settle."""
-        replayed = self.replay(run_id, stage, request)  # refuses a request with tools
+        replayed = self.replay(run_id, stage, request)
         if replayed is not None:
             return replayed
         descriptor = self._model.describe()
@@ -60,41 +71,72 @@ class CallModel(CallModelInterface):
             guard.release(reserved)
             raise
         actual = descriptor.cost_micro_usd(response.usage)
-        outcome = (
-            ""
-            if response.stop_reason == "end_turn"
-            else f"|stop={response.stop_reason}|attempt={attempt}"
-        )
+        unoffered = bool(response.calls) and not request.tools
+        replayable = response.stop_reason in ("end_turn", "tool_use") and not unoffered
+        outcome = "" if replayable else f"|stop={response.stop_reason}|attempt={attempt}"
         key = self._key(descriptor.model, request, outcome)
-        entry = JournalEntry(run_id, stage, attempt, key, response.text, actual)
+        entry = JournalEntry(run_id, stage, attempt, key, self._encoded(request, response), actual)
         stored = self._journal.record(entry)
         guard.settle(reserved, actual)
-        return ModelCallResult(stored.response, response.stop_reason, actual, False)
+        if unoffered:
+            raise ApplicationError(
+                code="MODEL_RESPONSE_UNEXPECTED",
+                message="the model asked for tools that were not offered",
+                http_status=502,
+            )
+        text, calls = self._decoded(request, stored.response)
+        reason = ("tool_use" if calls else "end_turn") if replayable else response.stop_reason
+        return ModelCallResult(text, reason, actual, False, calls)
 
     def replay(self, run_id: str, stage: str, request: ModelRequest) -> ModelCallResult | None:
         """The complete answer this run already has for the request, or None; costs nothing."""
-        self._refuse_tools(request)
         key = self._key(self._model.describe().model, request, "")
         recorded = self._journal.find(run_id, stage, key.digest())
         if recorded is None:
             return None
-        return ModelCallResult(recorded.response, "end_turn", 0, True)
+        text, calls = self._decoded(request, recorded.response)
+        return ModelCallResult(text, "tool_use" if calls else "end_turn", 0, True, calls)
 
     @staticmethod
-    def _refuse_tools(request: ModelRequest) -> None:
-        """Tool turns are journaled by the tool loop; this call only knows text, so it refuses them."""
-        if request.tools or request.transcript:
-            raise ApplicationError(
-                code="MODEL_TOOLS_NEED_THE_TOOL_LOOP",
-                message="a request with tools cannot be journaled as plain text",
-                http_status=500,
-            )
+    def _encoded(request: ModelRequest, response: ModelResponse) -> str:
+        if not request.tools:
+            return response.text
+        calls = [
+            {"id": call.id, "name": call.name, "arguments": dict(call.arguments)}
+            for call in response.calls
+        ]
+        return json.dumps(
+            {"text": response.text, "calls": calls}, sort_keys=True, ensure_ascii=False
+        )
+
+    @staticmethod
+    def _decoded(request: ModelRequest, stored: str) -> tuple[str, tuple[ToolCall, ...]]:
+        if not request.tools:
+            return stored, ()
+        data = json.loads(stored)
+        calls = tuple(ToolCall(c["id"], c["name"], c["arguments"]) for c in data["calls"])
+        return str(data["text"]), calls
 
     @staticmethod
     def _key(model: str, request: ModelRequest, outcome: str) -> JournalKey:
         params = f"max_output_tokens={request.max_output_tokens}{outcome}"
-        # JSON quotes and escapes both texts, so no system/prompt split can read as another.
-        context = json.dumps([request.system, request.prompt])
+        # JSON quotes and escapes every part, so no split of the texts can read as another.
+        parts: list[Any] = [request.system, request.prompt]
+        if request.tools:
+            tools = [[t.name, t.description, t.json_schema()] for t in request.tools]
+            turns = [
+                [
+                    turn.text,
+                    [[c.name, c.arguments_json()] for c in turn.calls],
+                    [
+                        [r.call_id, r.content, r.is_error]
+                        for r in (turn.result_for(c.id) for c in turn.calls)
+                    ],
+                ]
+                for turn in request.transcript
+            ]
+            parts += [tools, turns]
+        context = json.dumps(parts, sort_keys=True)
         return JournalKey(
             model=model,
             params_hash=hashlib.sha256(params.encode("utf-8")).hexdigest(),

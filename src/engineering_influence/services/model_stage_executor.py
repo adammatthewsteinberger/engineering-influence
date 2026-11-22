@@ -9,14 +9,18 @@ from engineering_influence.interfaces.artifact_store_interface import ArtifactSt
 from engineering_influence.interfaces.prompt_library_interface import PromptLibraryInterface
 from engineering_influence.interfaces.stage_executor_interface import StageExecutorInterface
 from engineering_influence.interfaces.stage_recipes_interface import StageRecipesInterface
+from engineering_influence.interfaces.tool_registry_interface import ToolRegistryInterface
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget import Budget
-from engineering_influence.models.model_answer import ModelAnswer
 from engineering_influence.models.model_request import ModelRequest
 from engineering_influence.models.prompt_template import PromptTemplate
 from engineering_influence.models.stage_recipe import StageRecipe
 from engineering_influence.models.stage_report import StageReport
-from engineering_influence.services.interfaces.ask_model_interface import AskModelInterface
+from engineering_influence.models.tool_definition import ToolDefinition
+from engineering_influence.models.tool_loop_result import ToolLoopResult
+from engineering_influence.services.interfaces.run_tool_loop_interface import (
+    RunToolLoopInterface,
+)
 from engineering_influence.services.interfaces.spend_guard_interface import SpendGuardInterface
 
 
@@ -26,6 +30,11 @@ class ModelStageExecutor(StageExecutorInterface):
     The run's brief and every earlier answer go into the prompt as blanks that the template
     declares untrusted, so each arrives inside an ``<untrusted>`` block: what a model wrote one
     stage ago is text from outside again, and a request that made it into the brief is data.
+
+    **A stage gets only the tools its recipe names**, and none if it names none. The request offers
+    those tools and the loop runs nothing else. A recipe that names a tool nobody registered stops
+    the stage before anything is asked. Every stage goes through the tool loop, which for a stage
+    with no tools is a single call.
 
     An answer that is not complete (cut off at the model's limit, or declined) or that has no
     text **stops the run**: nothing is stored, and the error carries the reason. Building the next
@@ -44,13 +53,15 @@ class ModelStageExecutor(StageExecutorInterface):
         recipes: StageRecipesInterface,
         prompts: PromptLibraryInterface,
         artifacts: ArtifactStoreInterface,
-        ask: AskModelInterface,
+        loop: RunToolLoopInterface,
+        tools: ToolRegistryInterface,
         guards: Callable[[Budget], SpendGuardInterface],
     ) -> None:
         self._recipes = recipes
         self._prompts = prompts
         self._artifacts = artifacts
-        self._ask = ask
+        self._loop = loop
+        self._tools = tools
         self._guards = guards
 
     async def execute(self, run: BookRun, attempt: int) -> StageReport:
@@ -74,16 +85,17 @@ class ModelStageExecutor(StageExecutorInterface):
             prompt=self._render(template, "user", values),
             max_output_tokens=recipe.max_output_tokens,
             prompt_version=template.identifier(),
+            tools=self._definitions(recipe),
         )
-        answer = await asyncio.to_thread(
-            self._ask.ask, self._guards(run.budget), run.run_id, run.stage, attempt, request
+        outcome = await asyncio.to_thread(
+            self._loop.run, self._guards(run.budget), run.run_id, run.stage, attempt, request
         )
-        if not answer.complete or not answer.text.strip():
+        if not outcome.complete or not outcome.text.strip():
             raise ApplicationError(
-                code="STAGE_ANSWER_UNUSABLE", message=self._why(answer, run.stage), http_status=502
+                code="STAGE_ANSWER_UNUSABLE", message=self._why(outcome, run.stage), http_status=502
             )
         await asyncio.to_thread(
-            self._artifacts.put, run.run_id, recipe.output_name(), answer.text.encode("utf-8")
+            self._artifacts.put, run.run_id, recipe.output_name(), outcome.text.encode("utf-8")
         )
         return StageReport()
 
@@ -93,6 +105,14 @@ class ModelStageExecutor(StageExecutorInterface):
         except ValueError as error:
             raise ApplicationError(
                 code="STAGE_HAS_NO_RECIPE", message=str(error), http_status=422
+            ) from error
+
+    def _definitions(self, recipe: StageRecipe) -> tuple[ToolDefinition, ...]:
+        try:
+            return self._tools.definitions(recipe.tools)
+        except ValueError as error:
+            raise ApplicationError(
+                code="STAGE_TOOL_UNKNOWN", message=str(error), http_status=500
             ) from error
 
     def _brief_values(self, run: BookRun) -> dict[str, str]:
@@ -125,7 +145,7 @@ class ModelStageExecutor(StageExecutorInterface):
         return template.render(part, {name: values[name] for name in needed})
 
     @staticmethod
-    def _why(answer: ModelAnswer, stage: str) -> str:
-        if answer.issues:
-            return f"{stage}: " + "; ".join(f"{i.code}: {i.detail}" for i in answer.issues)
+    def _why(outcome: ToolLoopResult, stage: str) -> str:
+        if outcome.issues:
+            return f"{stage}: " + "; ".join(f"{i.code}: {i.detail}" for i in outcome.issues)
         return f"{stage}: the model returned no text"

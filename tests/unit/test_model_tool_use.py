@@ -1,6 +1,6 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 
-"""Both adapters speak tool use in their provider's format, and nothing else can run a tool turn yet."""
+"""Both adapters speak tool use in their provider's format, and record and replay a tool conversation."""
 
 import json
 from collections.abc import Callable
@@ -20,14 +20,10 @@ from engineering_influence.infrastructure.cassettes.cassette_replay_transport im
     CassetteReplayTransport,
 )
 from engineering_influence.infrastructure.cassettes.json_cassette_store import JsonCassetteStore
-from engineering_influence.infrastructure.in_memory_journal import InMemoryJournal
 from engineering_influence.infrastructure.models.anthropic_model import AnthropicModel
 from engineering_influence.infrastructure.models.openai_compatible_model import (
     OpenAICompatibleModel,
 )
-from engineering_influence.interfaces.model_interface import ModelInterface
-from engineering_influence.models.budget import Budget
-from engineering_influence.models.model_availability import ModelAvailability
 from engineering_influence.models.model_request import ModelRequest
 from engineering_influence.models.model_response import ModelResponse
 from engineering_influence.models.model_turn import ModelTurn
@@ -35,8 +31,6 @@ from engineering_influence.models.provider_descriptor import ProviderDescriptor
 from engineering_influence.models.tool_call import ToolCall
 from engineering_influence.models.tool_definition import ToolDefinition
 from engineering_influence.models.tool_result import ToolResult
-from engineering_influence.services.call_model import CallModel
-from engineering_influence.services.spend_guard import SpendGuard
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "model_cassettes"
 KEY = "sk-test-SECRETSECRET"
@@ -433,50 +427,6 @@ def test_openai_refuses_a_call_with_no_id() -> None:
             Seen(openai_reply({"content": "", "tool_calls": [call]}, "tool_calls"))
         ).complete(TOOLS)
     )
-
-
-# --------------------------------------------------------------- nothing journals tool turns yet
-class Model(ModelInterface):
-    """A model that must not be reached."""
-
-    def __init__(self) -> None:
-        self.reached = 0
-
-    def describe(self) -> ProviderDescriptor:
-        return DESCRIPTOR
-
-    def availability(self) -> ModelAvailability:
-        return ModelAvailability.AVAILABLE
-
-    def count_tokens(self, request: ModelRequest) -> int:
-        self.reached += 1
-        return 10
-
-    def complete(self, request: ModelRequest) -> ModelResponse:
-        self.reached += 1
-        raise AssertionError("a request with tools must not reach the model through CallModel")
-
-
-def test_call_model_refuses_a_request_with_tools_before_anything_is_reserved_or_sent() -> None:
-    model, journal = Model(), InMemoryJournal()
-    guard = SpendGuard(Budget(cap=1_000_000))
-    with pytest.raises(ApplicationError) as error:
-        CallModel(model, journal).call(guard, "run-1", "stage", 1, TOOLS)
-    assert (error.value.code, error.value.http_status) == ("MODEL_TOOLS_NEED_THE_TOOL_LOOP", 500)
-    assert model.reached == 0
-    assert guard.budget().reserved == 0
-    assert journal.entries("run-1") == []
-
-
-def test_call_model_will_not_replay_a_request_with_tools_either() -> None:
-    turn = ModelTurn("t", (asked(),), (ToolResult("c1", "r"),))
-    for request in (TOOLS, after(turn)):
-        with pytest.raises(ApplicationError, match="cannot be journaled as plain text"):
-            CallModel(Model(), InMemoryJournal()).replay("run-1", "stage", request)
-
-
-def test_call_model_still_handles_a_plain_request() -> None:
-    assert CallModel(Model(), InMemoryJournal()).replay("run-1", "stage", PLAIN) is None
 
 
 # ----------------------------------------------------- record and replay a tool conversation

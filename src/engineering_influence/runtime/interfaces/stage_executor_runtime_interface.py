@@ -25,4 +25,4 @@ class StageExecutorRuntimeInterface(ABC):
 
     @abstractmethod
     def close(self) -> None:
-        """Close the HTTP client behind a model-backed executor, if one was built."""
+        """Close the HTTP client and the tool threads behind a model-backed executor, if built."""
