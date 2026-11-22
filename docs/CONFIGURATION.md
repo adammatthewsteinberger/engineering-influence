@@ -35,8 +35,10 @@ timestamp window and replays, in that order: `SignedRequestVerifier` does.
 `WebhookDelivery` requires an `OutboundUrlPolicyInterface`. `PublicHttpsUrlPolicy`
 allows only `https` URLs without embedded credentials whose every resolved
 address is publicly routable, which blocks loopback, private ranges and cloud
-metadata addresses. It resolves the name when called, so DNS rebinding is still
-possible; route deliveries to untrusted URLs through an egress proxy as well.
+metadata addresses. It resolves the name when called, so **webhook delivery is still open to DNS
+rebinding**; route deliveries to untrusted URLs through an egress proxy as well. `fetch_url` and remote
+MCP servers do not have this gap: they go through `PublicHttpsUrlPinner`, which resolves once and connects to
+the address it checked.
 
 ## Not covered yet
 

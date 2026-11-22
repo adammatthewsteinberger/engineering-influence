@@ -12,8 +12,8 @@ from engineering_influence.interfaces.mcp_remote_transport_factory_interface imp
     McpRemoteTransportFactoryInterface,
 )
 from engineering_influence.interfaces.mcp_transport_interface import McpTransportInterface
-from engineering_influence.interfaces.outbound_url_policy_interface import (
-    OutboundUrlPolicyInterface,
+from engineering_influence.interfaces.outbound_url_pinner_interface import (
+    OutboundUrlPinnerInterface,
 )
 from engineering_influence.models.mcp_endpoint_url import McpEndpointUrl
 
@@ -32,14 +32,14 @@ class HttpMcpTransportFactory(McpRemoteTransportFactoryInterface):
     def __init__(
         self,
         clients: Callable[[], httpx.Client],
-        policy: OutboundUrlPolicyInterface,
+        pinner: OutboundUrlPinnerInterface,
         environ: Mapping[str, str],
         request_seconds: float = 30.0,
         session_seconds: float = 4 * 3600.0,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self._clients = clients
-        self._policy = policy
+        self._pinner = pinner
         self._environ = environ
         self._request_seconds = request_seconds
         self._session_seconds = session_seconds
@@ -57,7 +57,7 @@ class HttpMcpTransportFactory(McpRemoteTransportFactoryInterface):
         return HttpMcpTransport(
             self._clients(),
             url,
-            self._policy,
+            self._pinner,
             token,
             request_seconds=self._request_seconds,
             session_seconds=self._session_seconds,

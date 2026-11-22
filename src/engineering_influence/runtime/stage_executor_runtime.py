@@ -33,6 +33,9 @@ from engineering_influence.infrastructure.research.http_source_fetcher import Ht
 from engineering_influence.infrastructure.research.searxng_search_provider import (
     SearxngSearchProvider,
 )
+from engineering_influence.infrastructure.security.public_https_url_pinner import (
+    PublicHttpsUrlPinner,
+)
 from engineering_influence.infrastructure.security.public_https_url_policy import (
     PublicHttpsUrlPolicy,
 )
@@ -186,7 +189,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             StdioMcpTransportFactory(limits, self._environment),
             HttpMcpTransportFactory(
                 self._server_client,
-                PublicHttpsUrlPolicy(),
+                PublicHttpsUrlPinner(PublicHttpsUrlPolicy()),
                 self._environment,
                 self.SERVER_REQUEST_SECONDS,
                 self.SERVER_SESSION_SECONDS,
@@ -213,7 +216,9 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             )
         )
         self._research_client = client
-        fetcher = HttpSourceFetcher(client, PublicHttpsUrlPolicy(), HtmlTextExtractor())
+        fetcher = HttpSourceFetcher(
+            client, PublicHttpsUrlPinner(PublicHttpsUrlPolicy()), HtmlTextExtractor()
+        )
         return (WebSearchTool(self._search(client)), FetchUrlTool(fetcher))
 
     def _search(self, client: httpx.Client) -> SearchProviderInterface:

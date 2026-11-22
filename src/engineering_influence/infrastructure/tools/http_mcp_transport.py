@@ -16,17 +16,20 @@ from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.errors.transient_stage_error import TransientStageError
 from engineering_influence.infrastructure.tools.sse_event_reader import SseEventReader
 from engineering_influence.interfaces.mcp_transport_interface import McpTransportInterface
-from engineering_influence.interfaces.outbound_url_policy_interface import (
-    OutboundUrlPolicyInterface,
+from engineering_influence.interfaces.outbound_url_pinner_interface import (
+    OutboundUrlPinnerInterface,
 )
 
 
 class HttpMcpTransport(McpTransportInterface):
     """The Streamable HTTP transport of MCP, with the rules a pinned server is held to.
 
-    - **Where it goes** is the injected URL policy's decision, asked before every request (so a
-      name that now resolves somewhere inward is refused), and **a redirect is never followed**: a
-      3xx is an error. A server cannot send this client, or its credential, anywhere else.
+    - **Where it goes** is the injected pinner's decision, asked before every request (so a name that
+      now resolves somewhere inward is refused), and the request is sent to **the address that was
+      checked**, with the name in the ``Host`` header and in TLS, so the certificate is still checked
+      against the name and a name that resolves differently a moment later cannot send it inward (DNS
+      rebinding). **A redirect is never followed**: a 3xx is an error. A server cannot send this
+      client, or its credential, anywhere else.
     - **What it sends** is the JSON-RPC message, a generic user agent, no cookies (any a server sets
       are dropped after each exchange) and, when the lock names a variable for it, one
       ``Authorization: Bearer`` header. The credential goes to the locked address and nowhere else,
@@ -45,8 +48,7 @@ class HttpMcpTransport(McpTransportInterface):
       later request. Closing the transport ends the session politely (a DELETE, whose failure is
       ignored) and closes the client.
 
-    The name is resolved when the policy is asked and again when the connection is made, so a
-    hostile DNS server could answer differently the second time; see ``docs/THREAT_MODEL.md``.
+    A proxy named in the environment, if any, receives the address and not the name.
     """
 
     USER_AGENT = "engineering-influence-mcp-client"
@@ -59,7 +61,7 @@ class HttpMcpTransport(McpTransportInterface):
         self,
         client: httpx.Client,
         url: str,
-        policy: OutboundUrlPolicyInterface,
+        pinner: OutboundUrlPinnerInterface,
         bearer: str | None = None,
         max_reply_bytes: int = 4 * 1024 * 1024,
         request_seconds: float = 30.0,
@@ -71,7 +73,7 @@ class HttpMcpTransport(McpTransportInterface):
         self._client = client
         self._url = url
         self._host = urlsplit(url).hostname or "the host"
-        self._policy = policy
+        self._pinner = pinner
         self._bearer = bearer
         self._max_bytes = max_reply_bytes
         self._request_seconds = request_seconds
@@ -127,14 +129,16 @@ class HttpMcpTransport(McpTransportInterface):
 
     @contextlib.contextmanager
     def _exchange(self, method: str, body: bytes | None) -> Iterator[httpx.Response]:
-        verdict = self._policy.check(self._url)
-        if not verdict.accepted:
-            raise self._error("MCP_URL_REFUSED", f"{self._host} refused: {verdict.reason}", 503)
+        decision = self._pinner.pin(self._url)
+        if decision.target is None:
+            raise self._error("MCP_URL_REFUSED", f"{self._host} refused: {decision.reason}", 503)
+        target = decision.target
         try:
             with self._client.stream(
                 method,
-                self._url,
-                headers=self._headers(body is not None),
+                target.url,
+                headers={**self._headers(body is not None), **target.request_headers()},
+                extensions=target.request_extensions(),
                 content=body,
                 follow_redirects=False,
             ) as response:

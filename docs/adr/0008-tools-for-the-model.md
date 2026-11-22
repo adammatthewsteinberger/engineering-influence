@@ -153,3 +153,10 @@ Recorded on 2026-11-22 while building slice 4 ([TOOL_LOCK.md](../TOOL_LOCK.md)).
   local development is a separate decision. Credentials are a named variable (`bearer_env`), never part of
   the address, and the lock refuses a user, query or fragment so a secret cannot be committed in a URL.
   Other auth schemes (OAuth, custom headers) are not built.
+- **Outbound connections are pinned to the checked address (after 4d).** A security review of the remote
+  transport found what the docs had listed as a gap: the policy resolved a name when asked and the client
+  resolved it again when it connected. `PublicHttpsUrlPinner` now resolves once, has the policy judge every
+  address, and hands the caller the vetted address with the name for the `Host` header and for TLS, so the
+  certificate is still checked against the name. `fetch_url` and the remote transport use it; only one
+  address is tried, and `fetch_url` sends `Connection: close` so a connection verified for one name is not
+  reused for another that shares its address. Signed webhook delivery was not changed.

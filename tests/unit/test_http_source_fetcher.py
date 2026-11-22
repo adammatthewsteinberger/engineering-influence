@@ -1,6 +1,6 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 
-"""HttpSourceFetcher: it goes only where the policy allows, at every hop, and reads only text."""
+"""HttpSourceFetcher: it goes only where the pinner allows, at every hop, and reads only text."""
 
 import gzip
 from collections.abc import Callable
@@ -10,35 +10,39 @@ import httpx
 import pytest
 from local_server import LocalServer, Reply, Seen
 
-from engineering_influence.contracts.security_verdict import SecurityVerdict
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.errors.transient_stage_error import TransientStageError
 from engineering_influence.infrastructure.research.html_text_extractor import HtmlTextExtractor
 from engineering_influence.infrastructure.research.http_source_fetcher import HttpSourceFetcher
+from engineering_influence.infrastructure.security.public_https_url_pinner import (
+    PublicHttpsUrlPinner,
+)
 from engineering_influence.infrastructure.security.public_https_url_policy import (
     PublicHttpsUrlPolicy,
 )
-from engineering_influence.interfaces.outbound_url_policy_interface import (
-    OutboundUrlPolicyInterface,
+from engineering_influence.interfaces.outbound_url_pinner_interface import (
+    OutboundUrlPinnerInterface,
 )
 from engineering_influence.interfaces.source_fetcher_interface import SourceFetcherInterface
+from engineering_influence.models.pin_decision import PinDecision
+from engineering_influence.models.pinned_target import PinnedTarget
 
 HTML = "text/html; charset=utf-8"
 
 
-class Policy(OutboundUrlPolicyInterface):
-    """Accepts everything except the paths and hosts it was told to refuse; remembers each ask."""
+class Pinner(OutboundUrlPinnerInterface):
+    """Pins every URL to itself except the paths and hosts it was told to refuse; remembers each ask."""
 
     def __init__(self, paths: tuple[str, ...] = (), hosts: tuple[str, ...] = ()) -> None:
         self.paths, self.hosts = paths, hosts
         self.checked: list[str] = []
 
-    def check(self, url: str) -> SecurityVerdict:
+    def pin(self, url: str) -> PinDecision:
         self.checked.append(url)
         parts = urlsplit(url)
         if parts.path in self.paths or parts.hostname in self.hosts:
-            return SecurityVerdict.reject("blocked_here")
-        return SecurityVerdict.accept()
+            return PinDecision.refused("blocked_here")
+        return PinDecision.pinned(PinnedTarget(url, parts.netloc))
 
 
 def page(body: str | bytes, kind: str = HTML, status: int = 200, **headers: str) -> Reply:
@@ -47,12 +51,12 @@ def page(body: str | bytes, kind: str = HTML, status: int = 200, **headers: str)
 
 
 def fetcher(
-    policy: OutboundUrlPolicyInterface | None = None, timeout: float = 2.0, **limits: int
-) -> tuple[HttpSourceFetcher, Policy]:
-    checked = policy if isinstance(policy, Policy) else Policy()
+    pinner: OutboundUrlPinnerInterface | None = None, timeout: float = 2.0, **limits: int
+) -> tuple[HttpSourceFetcher, Pinner]:
+    checked = pinner if isinstance(pinner, Pinner) else Pinner()
     return (
         HttpSourceFetcher(
-            httpx.Client(timeout=timeout), policy or checked, HtmlTextExtractor(), **limits
+            httpx.Client(timeout=timeout), pinner or checked, HtmlTextExtractor(), **limits
         ),
         checked,
     )
@@ -113,28 +117,28 @@ def test_a_charset_nobody_knows_falls_back_to_utf8_instead_of_failing() -> None:
         assert fetcher()[0].fetch(server.url).text == "caf\u00e9"
 
 
-def test_the_policy_is_asked_before_the_request_and_a_refusal_sends_nothing() -> None:
+def test_the_pinner_is_asked_before_the_request_and_a_refusal_sends_nothing() -> None:
     with LocalServer(lambda r: page("<p>x</p>")) as server:
-        fetch, policy = fetcher(Policy(paths=("/private",)))
+        fetch, pinner = fetcher(Pinner(paths=("/private",)))
         message = refused(
             lambda: fetch.fetch(f"{server.url}/private?token=SECRET"), "SOURCE_URL_REFUSED"
         )
     assert server.seen == []
     assert message == "127.0.0.1 refused: blocked_here"
     assert "SECRET" not in message
-    assert policy.checked == [f"{server.url}/private?token=SECRET"]
+    assert pinner.checked == [f"{server.url}/private?token=SECRET"]
 
 
 @pytest.mark.parametrize(
     "url", ["file:///etc/passwd", "ftp://a.test/x", "javascript:alert(1)", "/relative"]
 )
-def test_a_scheme_other_than_http_is_refused_before_the_policy_or_the_client(url: str) -> None:
-    fetch, policy = fetcher()
+def test_a_scheme_other_than_http_is_refused_before_the_pinner_or_the_client(url: str) -> None:
+    fetch, pinner = fetcher()
     assert (
         refused(lambda: fetch.fetch(url), "SOURCE_URL_REFUSED")
         == "a source address must be http or https"
     )
-    assert policy.checked == []
+    assert pinner.checked == []
 
 
 def test_a_redirect_is_followed_and_the_final_address_is_kept() -> None:
@@ -144,10 +148,10 @@ def test_a_redirect_is_followed_and_the_final_address_is_kept() -> None:
         return page("<p>arrived</p>")
 
     with LocalServer(route) as server:
-        fetch, policy = fetcher()
+        fetch, pinner = fetcher()
         found = fetch.fetch(f"{server.url}/a")
     assert (found.url, found.text) == (f"{server.url}/b", "arrived")
-    assert policy.checked == [f"{server.url}/a", f"{server.url}/b"]
+    assert pinner.checked == [f"{server.url}/a", f"{server.url}/b"]
 
 
 @pytest.mark.parametrize("status", [301, 302, 303, 307, 308])
@@ -164,25 +168,25 @@ def test_a_redirect_to_a_refused_place_is_stopped_before_anything_is_sent_there(
         return 302, {"location": "/forbidden"}, b""
 
     with LocalServer(route) as server:
-        fetch, _ = fetcher(Policy(paths=("/forbidden",)))
+        fetch, _ = fetcher(Pinner(paths=("/forbidden",)))
         refused(lambda: fetch.fetch(f"{server.url}/a"), "SOURCE_URL_REFUSED")
     assert [r.path() for r in server.seen] == ["/a"]
 
 
 def test_a_redirect_to_another_host_is_checked_against_that_host() -> None:
     with LocalServer(lambda r: (302, {"location": "//internal.test/secret"}, b"")) as server:
-        fetch, policy = fetcher(Policy(hosts=("internal.test",)))
+        fetch, pinner = fetcher(Pinner(hosts=("internal.test",)))
         message = refused(lambda: fetch.fetch(f"{server.url}/a"), "SOURCE_URL_REFUSED")
     assert message == "internal.test refused: blocked_here"
-    assert policy.checked[-1] == "http://internal.test/secret"
+    assert pinner.checked[-1] == "http://internal.test/secret"
     assert len(server.seen) == 1
 
 
 def test_a_redirect_to_a_scheme_that_is_not_http_is_refused() -> None:
     with LocalServer(lambda r: (302, {"location": "ftp://a.test/x"}, b"")) as server:
-        fetch, policy = fetcher()
+        fetch, pinner = fetcher()
         refused(lambda: fetch.fetch(server.url), "SOURCE_URL_REFUSED")
-    assert policy.checked == [server.url]
+    assert pinner.checked == [server.url]
 
 
 def test_a_redirect_that_does_not_say_where_is_refused() -> None:
@@ -277,7 +281,9 @@ def test_a_server_that_is_too_slow_is_transient() -> None:
 def test_the_real_policy_refuses_plain_http_so_nothing_reaches_a_local_server() -> None:
     with LocalServer(lambda r: page("<p>x</p>")) as server:
         message = refused(
-            lambda: fetcher(PublicHttpsUrlPolicy())[0].fetch(f"{server.url}/x"),
+            lambda: fetcher(PublicHttpsUrlPinner(PublicHttpsUrlPolicy()))[0].fetch(
+                f"{server.url}/x"
+            ),
             "SOURCE_URL_REFUSED",
         )
     assert message == "127.0.0.1 refused: scheme_not_https"
@@ -288,9 +294,9 @@ def test_the_real_policy_refuses_a_name_that_resolves_to_a_private_address() -> 
     def never(request: httpx.Request) -> httpx.Response:
         raise AssertionError("nothing may be sent to a refused address")
 
-    policy = PublicHttpsUrlPolicy(resolver=lambda host: ["10.0.0.5"])
+    pinner = PublicHttpsUrlPinner(PublicHttpsUrlPolicy(), lambda host: ["10.0.0.5"])
     fetch = HttpSourceFetcher(
-        httpx.Client(transport=httpx.MockTransport(never)), policy, HtmlTextExtractor()
+        httpx.Client(transport=httpx.MockTransport(never)), pinner, HtmlTextExtractor()
     )
     message = refused(
         lambda: fetch.fetch("https://looks-public.example.test/x"), "SOURCE_URL_REFUSED"
@@ -368,3 +374,94 @@ def test_a_body_with_no_declared_length_is_capped_as_it_streams() -> None:
 def test_a_body_with_no_declared_length_under_the_cap_is_read() -> None:
     with LocalServer(lambda r: page("a" * 500, "text/plain", **{"x-omit-length": "1"})) as server:
         assert len(fetcher(max_bytes=1000)[0].fetch(server.url).text) == 500
+
+
+# ------------------------------------------------------------------------ the pinned address
+def test_the_request_goes_to_the_vetted_address_and_asks_for_the_name_that_was_written() -> None:
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(200, html="<p>hello</p>")
+
+    class Pins(OutboundUrlPinnerInterface):
+        def pin(self, url: str) -> PinDecision:
+            return PinDecision.pinned(
+                PinnedTarget(
+                    "https://93.184.216.34:8443/a?x=1", "bees.example:8443", "bees.example"
+                )
+            )
+
+    fetch = HttpSourceFetcher(
+        httpx.Client(transport=httpx.MockTransport(handler)), Pins(), HtmlTextExtractor()
+    )
+    found = fetch.fetch("https://bees.example:8443/a?x=1")
+    [request] = seen
+    assert str(request.url) == "https://93.184.216.34:8443/a?x=1"
+    assert request.headers["host"] == "bees.example:8443"
+    assert request.extensions["sni_hostname"] == "bees.example"
+    assert found.url == "https://bees.example:8443/a?x=1" and found.text == "hello"
+
+
+def test_every_request_closes_its_connection_so_one_verified_for_a_name_is_not_reused_for_another() -> (
+    None
+):
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(200, html="<p>x</p>")
+
+    fetch = HttpSourceFetcher(
+        httpx.Client(transport=httpx.MockTransport(handler)), Pinner(), HtmlTextExtractor()
+    )
+    fetch.fetch("https://a.example/x")
+    assert seen[0].headers["connection"] == "close"
+
+
+def test_a_redirect_is_pinned_again_for_the_name_it_names_and_the_original_name_is_the_base() -> (
+    None
+):
+    seen: list[httpx.Request] = []
+
+    class Pins(OutboundUrlPinnerInterface):
+        def __init__(self) -> None:
+            self.asked: list[str] = []
+
+        def pin(self, url: str) -> PinDecision:
+            self.asked.append(url)
+            host = urlsplit(url).hostname or ""
+            address = {"a.example": "93.184.216.1", "b.example": "93.184.216.2"}[host]
+            return PinDecision.pinned(PinnedTarget(f"https://{address}/p", host, host))
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        if request.url.host == "93.184.216.1":
+            return httpx.Response(302, headers={"location": "https://b.example/p"})
+        return httpx.Response(200, html="<p>arrived</p>")
+
+    pins = Pins()
+    fetch = HttpSourceFetcher(
+        httpx.Client(transport=httpx.MockTransport(handler)), pins, HtmlTextExtractor()
+    )
+    found = fetch.fetch("https://a.example/p")
+    assert pins.asked == ["https://a.example/p", "https://b.example/p"]
+    assert [r.url.host for r in seen] == ["93.184.216.1", "93.184.216.2"]
+    assert [r.headers["host"] for r in seen] == ["a.example", "b.example"]
+    assert found.url == "https://b.example/p"
+
+
+def test_a_name_that_resolves_public_and_then_inward_is_sent_to_the_public_address_only() -> None:
+    answers = iter([["93.184.216.34"], ["10.0.0.5"]])
+    sent: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        sent.append(request.url.host)
+        return httpx.Response(200, html="<p>ok</p>")
+
+    pinner = PublicHttpsUrlPinner(PublicHttpsUrlPolicy(), lambda host: next(answers))
+    fetch = HttpSourceFetcher(
+        httpx.Client(transport=httpx.MockTransport(handler)), pinner, HtmlTextExtractor()
+    )
+    assert fetch.fetch("https://rebind.example/x").text == "ok"
+    assert sent == ["93.184.216.34"]

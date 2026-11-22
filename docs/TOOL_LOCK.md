@@ -222,10 +222,12 @@ temporary name and renamed, with servers in name order, so two saves of one lock
   the server downloads or reads while it runs. A locked script is trusted code.
 - **The check and the start are separate moments.** A file could change between them.
 - **A remote server is pinned by its address and what it advertises, and nothing else.** See above.
-- **DNS is asked twice.** The URL policy resolves the name when it is asked and the connection resolves it
-  again, so a hostile DNS server could answer differently the second time and send a request inward. The
-  attacker would have to control the DNS of a server a person pinned, and the request is a JSON-RPC POST, but
-  the gap is the same as `fetch_url`'s and is listed in [THREAT_MODEL.md](THREAT_MODEL.md).
+- **The connection is pinned to the address that was checked.** The name is resolved once, every address is
+  judged by the URL policy, and the request goes to the first one with the name in the `Host` header and in
+  TLS, so the certificate is still checked against the name. A name that resolves differently a moment later
+  cannot send a request inward (DNS rebinding). Only one address is tried: if it is down the request fails
+  and is transient, rather than falling back to another. A proxy named in the environment receives the
+  address, not the name.
 - **Launchers are refused**: `npx`, `pnpx`, `bunx`, `uvx`, `pipx`, `npm`, `pnpm`, `yarn`, `docker`,
   `podman` and `env` fetch or choose code that cannot be hashed here. Install the server, then lock the
   executable or script it really runs.

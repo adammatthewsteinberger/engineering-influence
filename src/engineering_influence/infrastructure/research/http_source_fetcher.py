@@ -7,23 +7,30 @@ import httpx
 
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.errors.transient_stage_error import TransientStageError
-from engineering_influence.interfaces.outbound_url_policy_interface import (
-    OutboundUrlPolicyInterface,
+from engineering_influence.interfaces.outbound_url_pinner_interface import (
+    OutboundUrlPinnerInterface,
 )
 from engineering_influence.interfaces.page_text_extractor_interface import (
     PageTextExtractorInterface,
 )
 from engineering_influence.interfaces.source_fetcher_interface import SourceFetcherInterface
 from engineering_influence.models.fetched_page import FetchedPage
+from engineering_influence.models.pinned_target import PinnedTarget
 
 
 class HttpSourceFetcher(SourceFetcherInterface):
     """One GET per hop, with no cookies and no credentials, and a limit on every dimension.
 
-    - **Where it may go** is the injected policy's decision, asked before the first request and
+    - **Where it may go** is the injected pinner's decision, asked before the first request and
       again before each redirect, so a page cannot send the fetcher inward by redirecting. A
       scheme other than http or https is refused here before the client sees it. Redirects are
       followed by hand, up to ``max_redirects``.
+    - **It connects to the address that was checked.** The pinner resolves the name once and hands
+      back the vetted address; the request goes to that address with the name in the ``Host`` header
+      and in TLS, so the certificate is still checked against the name. A name that resolves
+      differently a moment later cannot send the request inward (DNS rebinding). Each request also
+      says ``Connection: close``, so a connection verified for one name is never reused for another
+      that happens to share the address.
     - **How much it reads** is capped: a declared length over the cap is refused before any of
       the body is read, and reading stops at the cap. Compression is not accepted at all (the
       request asks for ``identity`` and any other ``content-encoding`` is refused), because a
@@ -36,9 +43,7 @@ class HttpSourceFetcher(SourceFetcherInterface):
       a TransientStageError (a timeout, a dropped connection, 429, 5xx) when trying again could
       work. Messages name the host, never the full address, which may carry a token.
 
-    The DNS check inside ``PublicHttpsUrlPolicy`` is made when asked, not when the connection is
-    opened, so a hostile DNS server could still answer differently the second time. See
-    ``docs/THREAT_MODEL.md``.
+    A proxy named in the environment, if any, receives the address and not the name.
     """
 
     USER_AGENT = "engineering-influence-source-fetcher"
@@ -51,7 +56,7 @@ class HttpSourceFetcher(SourceFetcherInterface):
     def __init__(
         self,
         client: httpx.Client,
-        policy: OutboundUrlPolicyInterface,
+        pinner: OutboundUrlPinnerInterface,
         extractor: PageTextExtractorInterface,
         max_bytes: int = 2_000_000,
         max_redirects: int = 3,
@@ -59,7 +64,7 @@ class HttpSourceFetcher(SourceFetcherInterface):
         if max_bytes < 1 or max_redirects < 0:
             raise ValueError("limits must allow at least one byte and no negative redirects")
         self._client = client
-        self._policy = policy
+        self._pinner = pinner
         self._extractor = extractor
         self._max_bytes = max_bytes
         self._max_redirects = max_redirects
@@ -68,17 +73,20 @@ class HttpSourceFetcher(SourceFetcherInterface):
         """The page, or an ApplicationError (a SOURCE_* code) when it cannot be used."""
         current = url
         for _ in range(self._max_redirects + 1):
-            self._allow(current)
+            target = self._allow(current)
             host = urlsplit(current).hostname or "the host"
             try:
                 with self._client.stream(
                     "GET",
-                    current,
+                    target.url,
                     headers={
                         "user-agent": self.USER_AGENT,
                         "accept": "text/html,text/plain",
                         "accept-encoding": "identity",
+                        "connection": "close",
+                        **target.request_headers(),
                     },
+                    extensions=target.request_extensions(),
                     follow_redirects=False,
                 ) as response:
                     if response.status_code not in self.REDIRECTS:
@@ -92,13 +100,14 @@ class HttpSourceFetcher(SourceFetcherInterface):
             "SOURCE_TOO_MANY_REDIRECTS", f"{host} redirected more than {self._max_redirects} times"
         )
 
-    def _allow(self, url: str) -> None:
+    def _allow(self, url: str) -> PinnedTarget:
         if urlsplit(url).scheme not in ("http", "https"):
             raise self._error("SOURCE_URL_REFUSED", "a source address must be http or https")
-        verdict = self._policy.check(url)
-        if not verdict.accepted:
+        decision = self._pinner.pin(url)
+        if decision.target is None:
             host = urlsplit(url).hostname or "the host"
-            raise self._error("SOURCE_URL_REFUSED", f"{host} refused: {verdict.reason}")
+            raise self._error("SOURCE_URL_REFUSED", f"{host} refused: {decision.reason}")
+        return decision.target
 
     def _next(self, current: str, host: str, response: httpx.Response) -> str:
         location = response.headers.get("location")

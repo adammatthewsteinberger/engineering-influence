@@ -133,10 +133,14 @@ live internet, a live search service or a live model.
    could fill memory. A page nested more than 512 elements deep is refused, so a hostile page
    cannot make the parser slow. `HtmlTextExtractor` drops scripts, comments, hidden elements and invisible
    characters, so a page cannot hide instructions from the reader; visible text stays and is
-   treated as data. **The gap:** the policy resolves DNS when asked, not when the connection is
-   opened, so a hostile DNS server could answer differently the second time (rebinding). Egress
-   through a filtering proxy closes it; pinning the connection to the checked address would too,
-   and is not built. The search and fetch adapters have not been run against the live internet.
+   treated as data. **The connection is pinned to the address that was checked:** `PublicHttpsUrlPinner`
+   resolves the name once, has the policy judge every address, and the request goes to the first, with the
+   name in the `Host` header and in TLS so the certificate is still checked against the name. A name that
+   resolves differently a moment later cannot send the fetch inward (DNS rebinding). Each request says
+   `Connection: close`, so a connection verified for one name is not reused for another that shares an
+   address. Only one address is tried. **Still open: signed webhook delivery**, which asks the policy and
+   then lets the client resolve again (see [CONFIGURATION.md](CONFIGURATION.md)). The search and fetch
+   adapters have not been run against the live internet.
 7. **It is tested with hostile corpora.** M6 adds cassettes of pages that carry injection
    attempts, and the test is that the finished manuscript contains none of the injected text
    as an instruction followed.
@@ -181,6 +185,5 @@ These are open, in the order they would be fixed.
    **A remote (HTTP) server is a weaker pin still**: its code is not ours to hash, so only its address and what
    it advertises are locked, and it can change its behaviour on any day. It is held to https, a public address
    checked before every request, no redirects, no cookies and bounded replies, and its bearer token (a named
-   environment variable) goes to the locked address and nowhere else. The name is resolved when the policy is
-   asked and again when the connection is made, the same DNS-rebinding gap `fetch_url` has: a filtering
-   egress proxy closes it.
+   environment variable) goes to the locked address and nowhere else. The connection is pinned to the address
+   that was checked, as for `fetch_url`, so DNS rebinding cannot send it inward.
