@@ -224,6 +224,22 @@ def test_a_minimal_install_runs_the_server_commands(dist: Path, clean_env: Path)
         done = ei(clean_env, "plugins", *command)
         assert done.returncode == 0 and "Traceback" not in done.stderr, done.stderr
 
+    index = clean_env / "index.toml"
+    index.write_text(
+        'version = 1\n[[plugin]]\nname = "research_pack"\nversion = 1\n'
+        'url = "https://plugins.example.com/research_pack.toml"\n' + f'sha256 = "{"a" * 64}"\n',
+        encoding="utf-8",
+    )
+    found = ei(clean_env, "plugins", "search", str(index))
+    assert (
+        found.returncode == 0
+        and "research_pack@1" in found.stdout
+        and "nothing is installed" in found.stdout
+    )
+    online = ei(clean_env, "plugins", "search", "https://plugins.example.com/index.toml")
+    assert online.returncode == 2
+    assert "engineering-influence[runtime]" in online.stderr and "Traceback" not in online.stderr
+
 
 def test_the_api_and_runtime_extras_are_enough_to_serve(dist: Path, clean_env: Path) -> None:
     install(clean_env, f"{wheel(dist)}[api,runtime]")

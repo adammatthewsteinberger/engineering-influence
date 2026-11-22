@@ -272,3 +272,9 @@ beside it. `add`, `verify` and `remove` also use the skill lock (`--skill-lock`,
 **A run never reads the plugin lock.** It is a record for `verify` and `remove`; what a run may do is in the tool lock
 and the skill lock. A bundle is at most 512 KiB, with at most 16 servers and 16 skills; these are fixed in the code,
 not settings. See [PLUGINS.md](PLUGINS.md).
+
+`ei plugins search INDEX` and `fetch INDEX NAME` take an index that is **a file on disk or an `https://` address**. They are
+the only commands that can use a network, only for an `https://` address, with no setting for a proxy or a
+credential. An index may be up to 512 KiB and list 500 plugins, a download is at most 512 KiB, and a request has 30
+seconds; these are fixed in the code. Downloading needs the `runtime` extra (`pip install 'engineering-influence[runtime]'`),
+which a local index file does not. A run never contacts a marketplace.

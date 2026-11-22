@@ -13,6 +13,10 @@ from engineering_influence.controllers.interfaces.run_controller_interface impor
 from engineering_influence.controllers.project_controller import ProjectController
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
+from engineering_influence.infrastructure.plugins.lazy_bundle_fetcher import LazyBundleFetcher
+from engineering_influence.infrastructure.plugins.toml_plugin_index_parser import (
+    TomlPluginIndexParser,
+)
 from engineering_influence.infrastructure.plugins.toml_plugin_lock_store import (
     TomlPluginLockStore,
 )
@@ -42,6 +46,7 @@ from engineering_influence.interactions.cli.run_cli import RunCli
 from engineering_influence.interactions.cli.serve_cli import ServeCli
 from engineering_influence.interactions.cli.skills_cli import SkillsCli
 from engineering_influence.interactions.cli.tools_cli import ToolsCli
+from engineering_influence.interfaces.bundle_fetcher_interface import BundleFetcherInterface
 from engineering_influence.interfaces.mcp_remote_transport_factory_interface import (
     McpRemoteTransportFactoryInterface,
 )
@@ -67,6 +72,7 @@ from engineering_influence.services.mcp_server_probe import McpServerProbe
 from engineering_influence.services.model_doctor import ModelDoctor
 from engineering_influence.services.plugin_installer import PluginInstaller
 from engineering_influence.services.plugin_lock_verifier import PluginLockVerifier
+from engineering_influence.services.plugin_marketplace import PluginMarketplace
 from engineering_influence.services.resume_run import ResumeRun
 from engineering_influence.services.skill_lock_editor import SkillLockEditor
 from engineering_influence.services.skill_lock_verifier import SkillLockVerifier
@@ -99,10 +105,12 @@ class CliRuntime(CliRuntimeInterface):
         publishing: PublishingControllerFactoryInterface | None = None,
         queue: QueueInterface | None = None,
         probe_timeout_seconds: float = 10.0,
+        bundles: BundleFetcherInterface | None = None,
     ) -> None:
         self._publishing = publishing
         self._queue = queue
         self._probe_timeout_seconds = probe_timeout_seconds
+        self._bundles = bundles
 
     def build(self) -> CliApplicationInterface:
         """Wire the controller, the book commands and the server commands."""
@@ -141,12 +149,35 @@ class CliRuntime(CliRuntimeInterface):
         )
         bundle_files = DirectorySkillFiles(self.PLUGIN_BUNDLE_BYTES)
         parser = TomlPluginParser(skill_parser)
+        fetcher = self._bundles or LazyBundleFetcher(self._bundle_fetcher)
         return PluginsCli(
             PluginInstaller(bundle_files, parser, TomlSkillWriter(), skills),
             PluginLockVerifier(bundle_files, parser),
+            PluginMarketplace(
+                fetcher, bundle_files, TomlPluginIndexParser(), parser, self.PLUGIN_BUNDLE_BYTES
+            ),
             TomlPluginLockStore(),
             TomlSkillLockStore(),
             os.environ,
+        )
+
+    def _bundle_fetcher(self) -> BundleFetcherInterface:
+        """The downloader for an index or a plugin file; it needs ``httpx``, so it is built on first use only."""
+        import httpx
+
+        from engineering_influence.infrastructure.plugins.http_bundle_fetcher import (
+            HttpBundleFetcher,
+        )
+        from engineering_influence.infrastructure.security.public_https_url_pinner import (
+            PublicHttpsUrlPinner,
+        )
+        from engineering_influence.infrastructure.security.public_https_url_policy import (
+            PublicHttpsUrlPolicy,
+        )
+
+        client = httpx.Client(timeout=httpx.Timeout(self.TOOL_REQUEST_SECONDS, connect=10.0))
+        return HttpBundleFetcher(
+            client, PublicHttpsUrlPinner(PublicHttpsUrlPolicy()), self.TOOL_REQUEST_SECONDS
         )
 
     def _tools_cli(self) -> ToolsCli:

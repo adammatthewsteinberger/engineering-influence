@@ -207,4 +207,10 @@ These are open, in the order they would be fixed.
    server it describes is exactly as trustworthy as `ei tools add` makes it (gap 6); the printed command is what a
    stranger wrote, and running it **runs a local server once**; and a person with write access to the plugin or
    skill folders can change a file, which `ei plugins verify` and the next run refuse by hash. The plugin lock is
-   a record that a run never reads. Marketplace indexes and fetching a bundle from a network are not built.
+   a record that a run never reads. **A marketplace index** (`ei plugins search`, `fetch`) is a file that lists plugin
+   files with an address and a hash; the only commands that can use a network are those two, run by a person,
+   and a download goes through the same pinned-address URL policy as `fetch_url` (https, a public address, no
+   redirects, no compression, 512 KiB and 30 seconds) and is hashed before it is read. It installs nothing. What
+   that does not cover: indexes and plugin files are **not signed**, so the hash proves only that the bytes are the
+   ones the index described, and **an index is as trustworthy as the host it came from**; the plugin is then
+   read by a person before `add`. The downloader has not been run against the real internet.

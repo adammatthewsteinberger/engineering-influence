@@ -139,6 +139,8 @@ ei plugins show FILE
 ei plugins add [--lock PATH] [--skill-lock PATH] FILE
 ei plugins list [--lock PATH]
 ei plugins verify|remove … [--lock PATH] [--skill-lock PATH]
+ei plugins search INDEX [TEXT]
+ei plugins fetch INDEX NAME [--output DIR]
 ```
 
 | Command | What it does | Exit status |
@@ -167,6 +169,8 @@ ei plugins verify|remove … [--lock PATH] [--skill-lock PATH]
 | `ei plugins list` | Shows the installed plugins, the skills installed and the servers described. | `0`; `2` an unusable lock |
 | `ei plugins verify` | Re-hashes each kept bundle and checks that its skills are still locked as installed. | `0` all match; `1` one does not; `2` setup trouble |
 | `ei plugins remove NAME` | Uninstalls a plugin and the skills it installed that are still exactly what it installed; a skill locked again since is left. | `0`; `2` on a refusal |
+| `ei plugins search INDEX [TEXT]` | Lists the plugins in a marketplace index (a file on disk or an `https://` address), or those whose name or description has the text. May use a network for an `https://` index; installs nothing. See [PLUGINS.md](PLUGINS.md#marketplace-indexes). | `0`; `2` on a refusal |
+| `ei plugins fetch INDEX NAME [--output DIR]` | Downloads one plugin file from an index, **checks its SHA-256 against the index's before reading it**, checks it is the plugin and version listed, and saves it as `NAME.toml` (never over an existing file). **Installs nothing:** it prints the `show` and `add` commands to run next. | `0`; `2` on a refusal, a hash that differs or a download that fails |
 
 `python -m engineering_influence` is the same program. Walk-through: [`examples/cli/run.sh`](../examples/cli/run.sh).
 

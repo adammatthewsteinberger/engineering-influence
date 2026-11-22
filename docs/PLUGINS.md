@@ -2,8 +2,8 @@
 
 A **plugin** is one reviewed file that bundles [skills](SKILLS.md) and the definitions of tool servers
 (MCP servers), so a person can look at everything in it at once, pin it by hash and install it. It is slice 6
-of [ADR 0008](adr/0008-tools-for-the-model.md), built in two parts: this page is **6a, plugins installed
-from a file on disk**. Marketplace indexes (6b) are not built.
+of [ADR 0008](adr/0008-tools-for-the-model.md), built in two parts: **6a**, plugins installed from a file on
+disk, and **6b**, marketplace indexes, which list plugin files and let a person download one.
 
 **Installing a plugin starts nothing, contacts nothing, grants nothing and enables nothing.** That is the
 whole design. A bundle is text from someone else, and the step that starts a tool server is `ei tools add`,
@@ -11,7 +11,8 @@ which a person runs on purpose. So `ei plugins add` does only two things with wh
 bundle's **skills** (each enabled for no stage) and it **prints** the `ei tools add` command for each server.
 
 **Status.** Built and tested against fakes and real files: the bundle format, the plugin lock, `ei plugins`.
-No plugin has been used in a run with a live model, and no bundle has come from anywhere but a local file.
+No plugin has been used in a run with a live model, and the downloader has only been run against a local test
+server and a scripted address, never the real internet.
 
 ## A plugin file
 
@@ -63,6 +64,8 @@ ei plugins add [--lock PATH] [--skill-lock PATH] FILE
 ei plugins list [--lock PATH]
 ei plugins verify [--lock PATH] [--skill-lock PATH]
 ei plugins remove [--lock PATH] [--skill-lock PATH] NAME
+ei plugins search INDEX [TEXT]
+ei plugins fetch INDEX NAME [--output DIR]
 ```
 
 The plugin lock is `--lock`, else `EI_PLUGIN_LOCK`, else `ei-plugins.lock.toml`; the skill lock is
@@ -104,6 +107,44 @@ plain_style = "9f2c…"          # the hash each skill was locked under
 skills to (enabled for no stage) or prints commands for. Nothing about a plugin changes a run until a person
 runs `ei tools add` and `ei tools grant`, or `ei skills enable`, and reviews that change like any other commit.
 
+## Marketplace indexes
+
+A marketplace is **only an index**: a TOML file that lists plugin files, each with an address and the SHA-256
+the file must have. It has no code, no skill text and no server definition, so reading one cannot lead to any of
+them, and any key beyond these is refused:
+
+```toml
+version = 1
+
+[[plugin]]
+name = "research_pack"
+version = 1
+description = "Sources and style for research."
+url = "https://plugins.example.com/v1/research_pack.toml"
+sha256 = "5d1c…"                  # of the plugin file's bytes
+```
+
+`INDEX` is **a file on disk or an `https://` address**; any other kind of address is refused before anything is
+contacted. An index lists at most 500 plugins and may be up to 512 KiB.
+
+- **`search INDEX [TEXT]`** lists the plugins in an index, or those whose name or description contains the text,
+  with each one's short hash and address. It installs nothing.
+- **`fetch INDEX NAME [--output DIR]`** downloads one plugin file to `DIR` (default: here) as `NAME.toml`, and
+  **installs nothing**. The bytes are hashed **before they are read as anything**, and a file whose SHA-256 is not
+  the index's is discarded and never saved. Only then is it read as a plugin, which must be the plugin the index
+  named at the version it named. It never overwrites an existing file. It ends by telling you to read the file
+  with `ei plugins show` and install it with `ei plugins add`, which is the offline step described above.
+
+What the download is held to: https only, to a public address (the URL policy `fetch_url` uses, asked each time,
+so a name that resolves to this machine or its network is refused), sent to **the address that was checked** with
+the name in TLS so the certificate is still verified, **no redirects, no cookies, no compression**, at most 512 KiB
+and 30 seconds, and no credentials of any kind. An address in an index has no user, password, query string or
+fragment, so nothing secret can be carried in one.
+
+**A run never contacts a marketplace, and neither does `add`, `show`, `verify` or `remove`.** `search` and `fetch`
+are the only commands that can use a network, only when a person runs them, and only with the `runtime` extra for
+an `https://` address (a local index file needs nothing extra).
+
 ## What this does and does not give you
 
 - **It gives you one thing to review and one hash to pin** for a set of skills and server definitions, and a
@@ -112,6 +153,10 @@ runs `ei tools add` and `ei tools grant`, or `ei skills enable`, and reviews tha
   ([SKILLS.md](SKILLS.md#what-this-does-and-does-not-give-you)), and a server it describes is exactly as
   trustworthy as `ei tools add` makes it ([TOOL_LOCK.md](TOOL_LOCK.md)), which for a local server pins the
   files it runs and for a remote server pins only its address and what it advertises.
+- **The hash proves you got the file the index described, not that anyone vetted it.** An index is only as
+  trustworthy as whoever controls the host it came from, and so is every file it points to. What stands between
+  you and a hostile plugin is that you read it (`ei plugins show` prints every skill's text and every server's
+  command) before `add`, and that installing it enables nothing.
 - The printed command is shell-quoted, so what you see is what would be typed. Read it before you run it:
   `ei tools add` **runs a local server once**, and a command a stranger wrote can do anything its user can.
 - The kept copy is read through no link and refused if it is a link, a folder or too large, and the install
@@ -120,6 +165,6 @@ runs `ei tools add` and `ei tools grant`, or `ei skills enable`, and reviews tha
 
 ## What is not built
 
-**Marketplace indexes (6b).** A marketplace will be only an index of plugin files, each with an address and a
-hash, and a person will fetch one with a command, never a run: `ei plugins add` will check the downloaded
-bytes against the index's hash before reading them. Until then a plugin is a file you already have.
+Anything that vouches for a publisher: indexes and plugin files are not signed, so the hash is the only
+integrity check. Nothing updates itself or checks an index for newer versions, a plugin cannot name another
+plugin it depends on, and there is no registry service: an index is a file somebody publishes.
