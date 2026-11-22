@@ -100,8 +100,12 @@ jobs:
           subject-path: |
             dist/*.whl
             dist/*.tar.gz
-      # The tag is created here, at the commit that was built. Running this again for the same
-      # version finds the release and leaves it alone, so a failed run can be repeated.
+      # The tag is created here, at the commit that was built, and only if no tag by that name exists.
+      # A tag that already exists must point at that same commit, or nothing is released: anyone with
+      # write access can push a tag, and `gh release create --target` ignores the target when the tag
+      # exists, which would attach these artifacts to a different commit. Anything other than a clear
+      # "not found" from GitHub stops the release. Running this again for the same commit finds the
+      # tag and the release, and leaves them alone.
       - name: Create the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -109,6 +113,21 @@ jobs:
           TARGET: ${{ github.sha }}
         run: |
           set -eu
+          err="$(mktemp)"
+          if object="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.type + " " + .object.sha' 2>"$err")"; then
+            kind="${object%% *}"
+            commit="${object#* }"
+            if [ "$kind" = tag ]; then
+              commit="$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$commit" --jq .object.sha)"
+            fi
+            [ "$commit" = "$TARGET" ] || { echo "tag $TAG points at $commit, not at the built commit $TARGET" >&2; exit 1; }
+          elif grep -q "HTTP 404" "$err"; then
+            echo "$TAG does not exist yet"
+          else
+            cat "$err" >&2
+            echo "could not tell whether $TAG exists" >&2
+            exit 1
+          fi
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "$TAG is already released"
             exit 0

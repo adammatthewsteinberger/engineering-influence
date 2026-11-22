@@ -43,6 +43,7 @@ should upload to PyPI.
   already released version, its builds sort below that release.
 - A failure between the core and SDK uploads can publish one and not the other. A PyPI version can
   never be reused, so it is repaired with the next version.
+- The tag now comes from the workflow, so the workflow must not trust one it did not make: it looks the tag up, accepts one that already names the built commit, and stops on one that names another or on any lookup it cannot read.
 - The tag now comes from the workflow. Nothing reads a tag any more, so a person tagging by hand has
   no effect, and a release that failed after the GitHub release was created is repeated by running the
   workflow again, which finds the release and carries on.

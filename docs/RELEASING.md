@@ -41,7 +41,7 @@ branch is refused.
 |---|---|---|---|
 | `guard` | both | Reads the branch. On `main`, checks the version against the changelog | the ref is not `develop` or `main`; core and SDK versions differ; the version is not a plain release version; on `main`: no changelog section for exactly this version, unfolded fragments remain in `changelog.d/`, or the commit is not on `main` |
 | `build` | both | Builds both packages, installs the real artifacts in clean environments, writes `SHA256SUMS` and a CycloneDX SBOM. On `main` it also runs the whole test suite. On `develop` the packages are built from a copy of the commit with the version stamped as `<version>.dev<run number>` and checked to install and report that version | any test, `twine check --strict`, or an install check fails |
-| `github-release` | `main` | Attests the build provenance, then creates the tag `v<version>` at the built commit and a GitHub release with the artifacts, a checksum file and the SBOM. A repeat run finds the release and leaves it | it cannot create the release |
+| `github-release` | `main` | Attests the build provenance, then creates the tag `v<version>` at the built commit and a GitHub release with the artifacts, a checksum file and the SBOM. A repeat run finds the release and leaves it | it cannot create the release; a tag `v<version>` already exists and points at a different commit; GitHub gives any answer about the tag other than a clear "not found" |
 | `testpypi` | `develop` | Uploads the core package to TestPyPI | `PUBLISH_TO_TESTPYPI` is not `true` (the job is skipped), or the `testpypi` environment is not approved |
 | `testpypi-sdk` | `develop` | Uploads the SDK, after the core | the core upload did not succeed, or the `testpypi-sdk` environment is not approved |
 | `pypi` | `main` | Uploads the core package to PyPI with attestations, after the GitHub release | `PUBLISH_TO_PYPI` is not `true` (the job is skipped), or the `pypi` environment is not approved |
@@ -53,6 +53,19 @@ marked as pre-releases.
 
 Builds are reproducible: with the commit's timestamp fixed as `SOURCE_DATE_EPOCH`, two builds of the same
 commit give byte-identical files.
+
+## Tags
+
+The workflow creates the tag `v<version>` itself, at the commit it built. Before it does, it looks the tag
+up. A tag that does not exist is created. A tag that exists must point at the built commit (an annotated
+tag is followed to the commit it names), or nothing is released and the run fails with both commits in
+the message. That matters because anyone with write access can push a tag, and `gh release create` ignores
+its target when the tag exists, which would attach these files to a different commit. If GitHub answers
+the lookup with anything other than a clear "not found", the release also stops.
+
+If that happens, find out who made the tag and why, delete it if it is wrong, and run the workflow again.
+Do not tag by hand. In the repository settings, a **tag ruleset** for `v*` that only the release workflow
+can create would close this for good; that is a setting, and this repository does not change it for you.
 
 ## Development builds
 
