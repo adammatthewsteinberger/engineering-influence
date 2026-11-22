@@ -12,3 +12,7 @@ class ChapterOutlineInterface(ABC):
     @abstractmethod
     def heading(self) -> str:
         """The chapter as people name it: ``Chapter 3: The Hive``."""
+
+    @abstractmethod
+    def render(self) -> str:
+        """The chapter as the lines a drafting prompt shows: heading, purpose, beats, claims, where it leads."""

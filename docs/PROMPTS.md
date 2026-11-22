@@ -6,13 +6,15 @@ in `src/engineering_influence/infrastructure/prompt_library/templates/`, one TOM
 is called `templates`, never `prompts`, because the `leak-scan` CI job rejects any path containing
 `prompts/`.
 
-Today six templates ship. `stage_brief`, `stage_positioning`, `stage_research` and `stage_outline` are the prompts for the
+Today seven templates ship. `stage_brief`, `stage_positioning`, `stage_research` and `stage_outline` are the prompts for the
 four non-fiction stages; every blank in them that is filled from outside (the author's idea, and what an earlier stage
 wrote) is declared untrusted. `context_pack` (version 2) is the layout of the prompt that drafts one chapter: its fixed system text and the
 labels the context assembler puts between the parts. **Where each part goes is a trust decision**: the system part
 is fixed text, and the voice, the outline and research, the earlier chapters' summaries, the tail of the last chapter
 and this chapter's beats all came from a model or the web, so each is an untrusted blank and reaches the model as its
-own `<untrusted>` block in the prompt, never in the system part. `skill_guidance` frames the skills a person enabled for a stage ([SKILLS.md](SKILLS.md)); its
+own `<untrusted>` block in the prompt, never in the system part. `stage_summary` (version 1) is the second call of each chapter: it asks for a short summary of the chapter
+just written, which later chapters are given in place of the chapter itself; its one blank, the chapter, is untrusted.
+`skill_guidance` frames the skills a person enabled for a stage ([SKILLS.md](SKILLS.md)); its
 one blank is not declared untrusted, because the text that fills it is built by the product from skills a person
 installed, defused and delimited, and is meant to instruct.
 

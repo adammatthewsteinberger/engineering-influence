@@ -53,6 +53,16 @@ class ChapterOutline(ChapterOutlineInterface):
         """The chapter as people name it: ``Chapter 3: The Hive``."""
         return f"Chapter {self.number}: {self.title}"
 
+    def render(self) -> str:
+        """The chapter as the lines a drafting prompt shows: heading, purpose, beats, claims, where it leads."""
+        lines = [self.heading(), f"Purpose: {self.purpose}", "Beats:"]
+        lines += [f"- {beat}" for beat in self.beats]
+        if self.claims:
+            lines += ["Claims to source:", *(f"- {claim}" for claim in self.claims)]
+        if self.leads_to:
+            lines.append(f"Leads to: {self.leads_to}")
+        return "\n".join(lines)
+
     @staticmethod
     def _line(label: str, text: str, limit: int) -> None:
         if not isinstance(text, str) or not text.strip():

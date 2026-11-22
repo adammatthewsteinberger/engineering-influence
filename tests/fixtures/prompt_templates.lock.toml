@@ -24,3 +24,7 @@ fingerprint = "c83751d07fb0aba9077b044b7252ba91176aaa3213d1230abf61fecb80cc85b2"
 [stage_research]
 version = 1
 fingerprint = "b83f96ec8493c6c70c96a9ea7af5cecb3268b63e62e183e4d98e3712be2a5825"
+
+[stage_summary]
+version = 1
+fingerprint = "40ddadb5ca19aebd1871571ed573db273f19d33ae7b56b04305c7de8d2f90ba7"

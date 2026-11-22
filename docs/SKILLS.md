@@ -23,7 +23,7 @@ research = "Say where you read it, and what the page itself said."
 outline = "Prefer short chapters, each with one job."
 ```
 
-Each part is named for **the stage it speaks to** (`brief`, `positioning`, `research`, `outline`) and
+Each part is named for **the stage it speaks to** (`brief`, `positioning`, `research`, `outline`, `draft`) and
 holds the text for that stage. A skill with no text for a stage never reaches it.
 
 Reading is strict. Any other key (a misspelt one, `command`, `tools`, `url`, `untrusted`) is refused and

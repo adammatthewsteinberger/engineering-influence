@@ -10,12 +10,15 @@ from engineering_influence.models.stage_recipe import StageRecipe
 
 
 class NonfictionRecipes(StageRecipesInterface):
-    """Brief, positioning, research and outline. The plan is made from these recipes, so it cannot name a stage that has none.
+    """Brief, positioning, research and outline are one prompt each; ``draft`` follows them with its own executor.
 
-    Research is the one stage with tools (search and page reading); the others have none. The
-    later stages (drafting each chapter, revision, copy edit, front and back
-    matter, assembly) are added here as each one is built, and the plan grows with them.
+    Research is the one stage with tools (search and page reading); the others have none. ``draft`` has no
+    recipe because it is not one prompt: it loops over the chapters (see ``DraftStageExecutor``), so it is
+    named in the plan and routed to its own executor. The later stages (revision, copy edit, front and back
+    matter, assembly) are added as each one is built, and the plan grows with them.
     """
+
+    DRAFT_STAGE = "draft"
 
     RECIPES: ClassVar[tuple[StageRecipe, ...]] = (
         StageRecipe("brief", "stage_brief", (), 1_500),
@@ -32,7 +35,8 @@ class NonfictionRecipes(StageRecipesInterface):
 
     def plan(self) -> StagePlan:
         """The stages of a non-fiction run, in order."""
-        return StagePlan(BookKind.NONFICTION, tuple(recipe.stage for recipe in self.RECIPES))
+        stages = (*(recipe.stage for recipe in self.RECIPES), self.DRAFT_STAGE)
+        return StagePlan(BookKind.NONFICTION, stages)
 
     def recipe(self, stage: str) -> StageRecipe:
         """The recipe for the stage, or a ValueError when a non-fiction run has none for it."""
