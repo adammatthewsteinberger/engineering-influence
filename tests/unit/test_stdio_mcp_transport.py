@@ -424,3 +424,28 @@ def test_every_helper_thread_has_finished_once_it_is_closed_even_with_a_full_que
     time.sleep(0.5)  # the queue is full and the reader is waiting to put into it
     transport.close()
     assert not [thread for thread in transport._threads if thread.is_alive()]
+
+
+class KillsThenSays(Kills):
+    """Kills the group for real, then reports the error a platform may give for a group that is gone."""
+
+    def __init__(self, error: type[OSError]) -> None:
+        super().__init__()
+        self.error = error
+
+    def __call__(self, group: int, signum: int) -> None:
+        super().__call__(group, signum)
+        raise self.error
+
+
+@pytest.mark.parametrize("error", [ProcessLookupError, PermissionError])
+def test_a_group_that_is_already_gone_is_not_an_error_whatever_the_platform_calls_it(
+    error: type[OSError],
+) -> None:
+    # Linux says "no such process", macOS says "not permitted" for a group whose leader has exited
+    # but not been reaped. Both mean there is nothing left to kill, and closing must not raise.
+    kills = KillsThenSays(error)
+    transport = raw(kills)
+    transport.close()
+    assert kills.calls
+    transport.close()
