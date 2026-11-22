@@ -12,7 +12,7 @@ class PluginsCliInterface(ABC):
 
     @abstractmethod
     def register(self, subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]") -> None:
-        """Add ``plugins show``, ``add``, ``list``, ``verify`` and ``remove`` to the command line."""
+        """Add the ``plugins`` subcommands to the command line."""
 
     @abstractmethod
     def run(self, arguments: argparse.Namespace) -> int:

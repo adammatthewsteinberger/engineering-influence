@@ -17,6 +17,9 @@ from engineering_influence.interfaces.skill_lock_store_interface import SkillLoc
 from engineering_influence.models.plugin import Plugin
 from engineering_influence.models.plugin_addition import PluginAddition
 from engineering_influence.models.plugin_bundle import PluginBundle
+from engineering_influence.models.plugin_download import PluginDownload
+from engineering_influence.models.plugin_index import PluginIndex
+from engineering_influence.models.plugin_index_entry import PluginIndexEntry
 from engineering_influence.models.plugin_lock import PluginLock
 from engineering_influence.models.plugin_lock_entry import PluginLockEntry
 from engineering_influence.models.plugin_removal import PluginRemoval
@@ -29,6 +32,9 @@ from engineering_influence.services.interfaces.plugin_installer_interface import
 )
 from engineering_influence.services.interfaces.plugin_lock_verifier_interface import (
     PluginLockVerifierInterface,
+)
+from engineering_influence.services.interfaces.plugin_marketplace_interface import (
+    PluginMarketplaceInterface,
 )
 
 A, B = "a" * 64, "b" * 64
@@ -93,6 +99,34 @@ class Installer(PluginInstallerInterface):
     kept: tuple[str, ...] = ()
 
 
+LISTED = PluginIndexEntry(
+    "research_pack",
+    1,
+    "https://plugins.example.com/v1/research_pack.toml",
+    A,
+    "Sources and style.",
+)
+
+
+class Marketplace(PluginMarketplaceInterface):
+    def __init__(self, *entries: PluginIndexEntry, fail: Exception | None = None) -> None:
+        self.entries, self.fail = entries, fail
+        self.calls: list[tuple[object, ...]] = []
+
+    def index(self, address: str) -> PluginIndex:
+        self.calls.append(("index", address))
+        if self.fail:
+            raise self.fail
+        return PluginIndex(tuple(sorted(self.entries, key=lambda entry: entry.name)))
+
+    def download(self, address: str, name: str, folder: Path) -> PluginDownload:
+        self.calls.append(("download", address, name, folder))
+        if self.fail:
+            raise self.fail
+        entry = next(found for found in self.entries if found.name == name)
+        return PluginDownload(entry, PluginBundle(plugin(), A), folder / f"{name}.toml")
+
+
 class Verifier(PluginLockVerifierInterface):
     def __init__(self, *problems: str) -> None:
         self.found = problems
@@ -143,6 +177,7 @@ def cli(
     installer: Installer | None = None,
     verifier: Verifier | None = None,
     environment: dict[str, str] | None = None,
+    market: Marketplace | None = None,
 ) -> tuple[PluginsCli, Store, SkillStore, Installer, Verifier]:
     made = (
         store or Store(),
@@ -151,7 +186,9 @@ def cli(
         verifier or Verifier(),
     )
     made[1].order = made[0].order
-    return PluginsCli(made[2], made[3], made[0], made[1], environment or {}), *made
+    return PluginsCli(
+        made[2], made[3], market or Marketplace(), made[0], made[1], environment or {}
+    ), *made
 
 
 def run(plugins: PluginsCli, *argv: str) -> int:
@@ -390,3 +427,118 @@ def test_a_problem_text_from_a_file_is_cleaned_and_cut_too(
     first = capsys.readouterr().out.splitlines()[0]
     assert "\x1b" not in first and first.startswith("plugin 'a_one': line [31mred next")
     assert len(first) == 400 and first.endswith("…")
+
+
+# --------------------------------------------------------------------------- search and fetch
+def second(name: str = "beta_two", description: str = "House STYLE.") -> PluginIndexEntry:
+    return PluginIndexEntry(name, 3, f"https://other.example.com/{name}.toml", B, description)
+
+
+def test_search_lists_each_plugin_with_its_hash_and_address_and_installs_nothing(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    market = Marketplace(second(), LISTED)
+    plugins, store, skills, installer, _ = cli(market=market)
+    assert run(plugins, "search", "https://market.example.com/index.toml") == 0
+    out = capsys.readouterr().out
+    assert market.calls == [("index", "https://market.example.com/index.toml")]
+    assert out.index("beta_two@3") < out.index("research_pack@1")
+    assert f"research_pack@1  {A[:12]}  Sources and style.\n" in out
+    assert "    https://plugins.example.com/v1/research_pack.toml\n" in out
+    assert "2 of 2 plugins in https://market.example.com/index.toml; nothing is installed." in out
+    assert "ei plugins fetch INDEX NAME saves one to read" in out
+    assert store.saved == [] and skills.saved == [] and installer.calls == []
+
+
+def test_search_with_text_narrows_the_list_and_says_how_many_of_how_many(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    plugins = cli(market=Marketplace(second(), LISTED))[0]
+    assert run(plugins, "search", "/market/index.toml", "style") == 0
+    out = capsys.readouterr().out
+    assert "beta_two@3" in out and "research_pack@1" in out
+    assert "2 of 2 plugins" in out
+    assert run(plugins, "search", "/market/index.toml", "house") == 0
+    out = capsys.readouterr().out
+    assert "beta_two@3" in out and "research_pack" not in out and "1 of 2 plugins" in out
+
+
+def test_search_with_no_match_says_so_and_is_not_an_error(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    plugins = cli(market=Marketplace(LISTED))[0]
+    assert run(plugins, "search", "/market/index.toml", "zebra") == 0
+    assert capsys.readouterr().out == "no plugin in /market/index.toml matches 'zebra'\n"
+
+
+def test_an_entry_with_no_description_is_listed_without_a_trailing_gap(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    plugins = cli(market=Marketplace(second(description="")))[0]
+    assert run(plugins, "search", "/market/index.toml") == 0
+    first = capsys.readouterr().out.splitlines()[0]
+    assert first == f"beta_two@3  {B[:12]}"
+
+
+def test_what_an_index_says_is_printed_cleaned_and_cut(capsys: pytest.CaptureFixture[str]) -> None:
+    long = PluginIndexEntry("long_one", 1, "https://x.example.com/" + "p" * 400, A, "y" * 200)
+    plugins = cli(market=Marketplace(long))[0]
+    assert run(plugins, "search", "/market/index.toml") == 0
+    lines = capsys.readouterr().out.splitlines()
+    description = lines[0].split("  ", 2)[2]
+    assert len(description) == 100 and description.endswith("…")
+    assert len(lines[1].strip()) == 300 and lines[1].endswith("…")
+
+
+def test_fetch_downloads_checks_and_says_what_to_do_next_without_installing(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    market = Marketplace(LISTED)
+    plugins, store, skills, installer, _ = cli(market=market)
+    assert run(plugins, "fetch", "https://market.example.com/i.toml", "research_pack") == 0
+    out = capsys.readouterr().out
+    assert market.calls[-1] == (
+        "download",
+        "https://market.example.com/i.toml",
+        "research_pack",
+        Path("."),
+    )
+    assert (
+        f"fetched research_pack@1 from plugins.example.com (sha256 {A[:12]} matches the index)"
+        in out
+    )
+    assert "saved to research_pack.toml" in out
+    assert "nothing is installed. Read it, then install it:" in out
+    assert "  ei plugins show research_pack.toml\n  ei plugins add research_pack.toml\n" in out
+    assert store.saved == [] and skills.saved == [] and installer.calls == []
+
+
+def test_fetch_saves_where_asked_and_quotes_a_path_with_a_space(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    market = Marketplace(LISTED)
+    plugins = cli(market=market)[0]
+    assert (
+        run(
+            plugins, "fetch", "/market/index.toml", "research_pack", "--output", "/tmp/my downloads"
+        )
+        == 0
+    )
+    out = capsys.readouterr().out
+    assert market.calls[-1][3] == Path("/tmp/my downloads")
+    assert "saved to /tmp/my downloads/research_pack.toml" in out
+    assert "ei plugins show '/tmp/my downloads/research_pack.toml'" in out
+
+
+def test_a_marketplace_error_is_a_setup_error_for_both_commands(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    refusal = ApplicationError(
+        code="PLUGIN_HASH_MISMATCH", message="not what the index promised", http_status=422
+    )
+    market = Marketplace(LISTED, fail=refusal)
+    plugins = cli(market=market)[0]
+    assert run(plugins, "search", "/market/index.toml") == 2
+    assert "error: not what the index promised" in capsys.readouterr().err
+    assert run(plugins, "fetch", "/market/index.toml", "research_pack") == 2
+    assert "error: not what the index promised" in capsys.readouterr().err

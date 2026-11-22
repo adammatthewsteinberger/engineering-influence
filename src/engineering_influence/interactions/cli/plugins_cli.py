@@ -6,6 +6,7 @@ import shlex
 import sys
 from collections.abc import Mapping
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interactions.cli.interfaces.plugins_cli_interface import (
@@ -22,10 +23,18 @@ from engineering_influence.services.interfaces.plugin_installer_interface import
 from engineering_influence.services.interfaces.plugin_lock_verifier_interface import (
     PluginLockVerifierInterface,
 )
+from engineering_influence.services.interfaces.plugin_marketplace_interface import (
+    PluginMarketplaceInterface,
+)
 
 
 class PluginsCli(PluginsCliInterface):
-    """``plugins show`` reads a bundle, ``add`` installs its skills, ``list`` and ``verify`` check, ``remove`` undoes.
+    """``plugins show`` reads a bundle, ``add`` installs its skills, ``list`` and ``verify`` check, ``remove`` undoes,
+    and ``search`` and ``fetch`` read a marketplace index and download a plugin file from it.
+
+    ``search`` and ``fetch`` are the only commands here that can use a network, and only for an ``https://``
+    index or an https address an index lists. ``fetch`` checks the downloaded bytes against the index's hash
+    before reading them, saves a file, and **installs nothing**: a person reads it and runs ``add``.
 
     **Nothing here starts a process, opens a connection, grants a tool or enables a skill for a
     stage.** ``add`` locks the bundle's skills (enabled for no stage) and records the bundle's hash; the
@@ -46,12 +55,14 @@ class PluginsCli(PluginsCliInterface):
         self,
         installer: PluginInstallerInterface,
         verifier: PluginLockVerifierInterface,
+        marketplace: PluginMarketplaceInterface,
         store: PluginLockStoreInterface,
         skill_store: SkillLockStoreInterface,
         environment: Mapping[str, str],
     ) -> None:
         self._installer = installer
         self._verifier = verifier
+        self._marketplace = marketplace
         self._store = store
         self._skill_store = skill_store
         self._environment = environment
@@ -74,6 +85,25 @@ class PluginsCli(PluginsCliInterface):
         add.add_argument("--lock", type=Path, help=where)
         add.add_argument("--skill-lock", type=Path, help=skills)
         add.add_argument("file", type=Path, help="the plugin file, for example research_pack.toml")
+        search = commands.add_parser(
+            "search", help="list the plugins in a marketplace index (a file or an https address)"
+        )
+        search.add_argument("index", help="a file on disk or an https:// address")
+        search.add_argument(
+            "text", nargs="?", default="", help="only plugins whose name or description has this"
+        )
+        fetch = commands.add_parser(
+            "fetch",
+            help="download a plugin file from an index, checked against its hash (installs nothing)",
+        )
+        fetch.add_argument("index", help="a file on disk or an https:// address")
+        fetch.add_argument("name", help="the plugin's name in the index")
+        fetch.add_argument(
+            "--output",
+            type=Path,
+            default=Path("."),
+            help="the folder to save it in (default: here)",
+        )
         listing = commands.add_parser("list", help="show the installed plugins")
         listing.add_argument("--lock", type=Path, help=where)
         verify = commands.add_parser("verify", help="re-hash each installed plugin and its skills")
@@ -93,6 +123,10 @@ class PluginsCli(PluginsCliInterface):
             if command == "show":
                 self._describe(self._installer.inspect(arguments.file), "")
                 return 0
+            if command == "search":
+                return self._search(arguments.index, arguments.text)
+            if command == "fetch":
+                return self._fetch(arguments)
             path = arguments.lock or Path(
                 self._environment.get("EI_PLUGIN_LOCK", "").strip() or self.DEFAULT_LOCK
             )
@@ -160,6 +194,40 @@ class PluginsCli(PluginsCliInterface):
             )
             for server in plugin.servers:
                 print("  " + shlex.join(("ei", *server.tools_add_arguments())))
+
+    def _search(self, address: str, text: str) -> int:
+        index = self._marketplace.index(address)
+        found = index.search(text)
+        shown = self._safe(address, 200)
+        if not found:
+            print(f"no plugin in {shown} matches {self._safe(text, 60)!r}")
+            return 0
+        for entry in found:
+            description = self._safe(entry.description, self.SHOWN)
+            print(
+                f"{entry.identifier()}  {entry.sha256[:12]}"
+                + (f"  {description}" if description else "")
+            )
+            print(f"    {self._safe(entry.url, 300)}")
+        print(
+            f"{len(found)} of {len(index.entries)} plugins in {shown}; nothing is installed. "
+            "ei plugins fetch INDEX NAME saves one to read"
+        )
+        return 0
+
+    def _fetch(self, arguments: argparse.Namespace) -> int:
+        download = self._marketplace.download(arguments.index, arguments.name, arguments.output)
+        entry = download.entry
+        host = self._safe(urlsplit(entry.url).hostname or "the host", 100)
+        print(
+            f"fetched {entry.identifier()} from {host} (sha256 {entry.sha256[:12]} matches the index)"
+        )
+        print(f"saved to {download.path}")
+        quoted = shlex.quote(str(download.path))
+        print("nothing is installed. Read it, then install it:")
+        print(f"  ei plugins show {quoted}")
+        print(f"  ei plugins add {quoted}")
+        return 0
 
     def _list(self, path: Path) -> int:
         lock = self._store.load(path)

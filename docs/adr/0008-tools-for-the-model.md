@@ -226,3 +226,27 @@ slice 4 was: **6a** plugins installed from a file on disk, **6b** marketplace in
   decision, not a side effect. `remove` deletes only skills that are still exactly what the plugin installed.
 - **An install either completes or leaves nothing.** The bundle's copy is written first, and a failure while locking
   a later skill removes the copy and the skills already locked.
+
+## Amendments from slice 6b
+
+Recorded on 2026-11-22 while building the second part of slice 6 ([PLUGINS.md](../PLUGINS.md#marketplace-indexes)).
+
+- **A marketplace is only an index, and a download is a separate step from an install (decision 9).** An index is a
+  TOML file of plugin names, versions, descriptions, addresses and SHA-256 hashes, with no other key. `ei plugins
+  fetch INDEX NAME` downloads one plugin file, checks its hash against the index's **before reading it as
+  anything**, checks that it is the plugin and version the index named, and saves it; it installs nothing. A
+  person reads it with `ei plugins show` and installs it with `ei plugins add`, which stays an offline step on a
+  local file. This keeps the one network-facing command narrow: it can produce a file, and cannot change a lock.
+- **A run never contacts a marketplace.** Only `search` and `fetch`, run by a person, can use a network, and
+  `add`, `show`, `verify` and `remove` never do.
+- **The download is held to the rules every other outbound connection here is.** It goes through the same
+  pinned-address URL policy as `fetch_url` and the remote tool transport (https, a public address checked each
+  time, the connection made to the address that was checked with the name in TLS), follows no redirect, sends no
+  cookie or credential, accepts no compression and is bounded to 512 KiB and 30 seconds. An address in an index
+  is held to the lock's rules for a remote server (no user, password, query string or fragment).
+- **An index is not trusted more than its host.** Indexes and plugin files are not signed, so the hash only proves
+  that the bytes are the ones the index described. Vouching for a publisher (signatures, a key to trust) is a
+  decision this slice does not make; the defence is that a person reads the file and that installing enables
+  nothing.
+- **The core install still works without `httpx`.** The downloader is built on first use, and a missing dependency
+  becomes a message that names the `runtime` extra; a local index file needs no network code at all.
