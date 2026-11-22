@@ -2,6 +2,7 @@
 
 """The shipped local SearXNG: JSON on, bound to the loopback interface, and no default secret."""
 
+import re
 from pathlib import Path
 
 DIRECTORY = Path(__file__).resolve().parents[2] / "examples" / "searxng"
@@ -42,3 +43,10 @@ def test_the_settings_are_mounted_read_only_and_the_limiter_is_off_for_one_local
     assert "- ./settings.yml:/etc/searxng/settings.yml:ro" in lines(COMPOSE)
     assert "limiter: false" in lines(SETTINGS)
     assert "public_instance: false" in lines(SETTINGS)
+
+
+def test_the_image_is_pinned_by_digest_and_not_by_a_moving_tag() -> None:
+    images = [line for line in lines(COMPOSE) if line.startswith("image:")]
+    assert len(images) == 1
+    assert re.fullmatch(r"image: searxng/searxng@sha256:[0-9a-f]{64}", images[0])
+    assert ":latest" not in "\n".join(lines(COMPOSE))

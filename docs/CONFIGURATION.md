@@ -222,8 +222,11 @@ docker compose -f examples/searxng/docker-compose.yml up -d --wait
 export EI_SEARXNG_URL=http://127.0.0.1:8888
 ```
 
-What is and is not checked: the compose file is validated by `docker compose config` and its settings
-are pinned by tests, but the container has not been started by the project's tests, and the image is
-`searxng/searxng:latest` because no digest has been verified; pin it by digest before relying on it. SearXNG
-passes your queries to the public search engines it is set to use, and those engines can throttle or block
-a local instance, which is what the Brave backup is for. The port is `EI_SEARXNG_PORT` (default 8888).
+What is and is not checked: the compose file is validated by `docker compose config` and its settings are
+pinned by tests, and it has been started once by hand: the container went healthy and the adapter ran
+against it for real (queries, validation, and the 403 a default instance gives when `json` is not enabled).
+That is not run by the project's tests or CI. The image is pinned by digest to the build it was tested with
+(2026-11-21), so it does not get SearXNG updates until someone moves the digest: pull a newer image, check a
+search works against it, then replace the digest in the compose file. SearXNG passes your queries to the
+public search engines it is set to use, and those engines can throttle or block a local instance, which is
+what the Brave backup is for. The port is `EI_SEARXNG_PORT` (default 8888).
