@@ -114,3 +114,21 @@ the project can freeze for 1.0. It deserves a reviewed design before code.
   value ever being in it.
 - Whether a stage's tool allowlist lives with its recipe in code or in the lock file, or both with
   the lock file able to narrow but never widen the code's list. This ADR leans to the last.
+
+## Amendments from slice 4
+
+Recorded on 2026-11-22 while building slice 4 ([TOOL_LOCK.md](../TOOL_LOCK.md)).
+
+- **What the lock pins (decision 7).** The maintainer chose to hash the files, not only the tool
+  definitions: the lock records the SHA-256 of a stdio server's executable and of every script among its
+  arguments, plus the server's reported name and version and a hash of the tools it advertises. A
+  launcher that fetches code on each run (`npx`, `uvx`, `docker` and the like) is refused, because what
+  it would run cannot be hashed. Installed dependencies are not covered, and this is stated rather than
+  hidden.
+- **Names.** A tool from a server is offered to the model as `<server>__<tool>`, because the providers
+  accept only letters, digits, `-` and `_`; recipes and the lock use the same form, not `server.tool`.
+- **A tool's secret (open question 2).** The lock names the environment variables a server is given,
+  never their values. Values come from the environment at start.
+- **Slicing.** Slice 4 is built as 4a (lock models, file format, MCP client over an abstract transport,
+  verifier), 4b (a stdio transport under the build tools' limits, and `ei tools`), 4c (wiring the registry
+  and the start-up check) and 4d (HTTP).
