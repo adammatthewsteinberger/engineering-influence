@@ -10,9 +10,11 @@ from engineering_influence.models.interfaces.context_plan_interface import Conte
 class ContextPlan(ContextPlanInterface):
     """The parts of a prompt, split by how much they can give up.
 
-    ``style`` and ``grounding`` (the story bible, or the outline of a non-fiction book) hardly change
-    from chapter to chapter, so they form the stable prefix. ``beats`` and ``instruction`` are
-    what this call is for and are never cut. ``prior_summaries`` run oldest first and are dropped
+    ``style`` and ``grounding`` (the story bible, or the outline and research of a non-fiction book) hardly
+    change from chapter to chapter, so they come first in the prompt and the start of every request is the
+    same. ``beats`` and ``instruction`` are what this call is for and are never cut. All of it except the
+    ``instruction`` came from a model or the web, and the assembler puts it in the prompt as untrusted
+    blocks; the ``instruction`` is the caller's own text and holds none of that. ``prior_summaries`` run oldest first and are dropped
     oldest first; ``previous_tail`` is the end of the last chapter and is cut from its start.
     """
 

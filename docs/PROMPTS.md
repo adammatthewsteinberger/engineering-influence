@@ -8,8 +8,11 @@ is called `templates`, never `prompts`, because the `leak-scan` CI job rejects a
 
 Today six templates ship. `stage_brief`, `stage_positioning`, `stage_research` and `stage_outline` are the prompts for the
 four non-fiction stages; every blank in them that is filled from outside (the author's idea, and what an earlier stage
-wrote) is declared untrusted. `context_pack` holds the section labels the context assembler puts between the parts
-of a chapter prompt. `skill_guidance` frames the skills a person enabled for a stage ([SKILLS.md](SKILLS.md)); its
+wrote) is declared untrusted. `context_pack` (version 2) is the layout of the prompt that drafts one chapter: its fixed system text and the
+labels the context assembler puts between the parts. **Where each part goes is a trust decision**: the system part
+is fixed text, and the voice, the outline and research, the earlier chapters' summaries, the tail of the last chapter
+and this chapter's beats all came from a model or the web, so each is an untrusted blank and reaches the model as its
+own `<untrusted>` block in the prompt, never in the system part. `skill_guidance` frames the skills a person enabled for a stage ([SKILLS.md](SKILLS.md)); its
 one blank is not declared untrusted, because the text that fills it is built by the product from skills a person
 installed, defused and delimited, and is meant to instruct.
 
@@ -56,7 +59,7 @@ the damage if it does not. Nothing renders text from a real source yet.
 ## Versions are part of the journal key
 
 A model call's journal key contains the prompt version, so a resumed run reuses an answer only for the same
-prompt. The assembler records `template.identifier()` (`context_pack@1`). A stage with skills enabled adds their identity
+prompt. The assembler records `template.identifier()` (`context_pack@2`). A stage with skills enabled adds their identity
 (`stage_outline@1+skill_guidance@1:<digest>`), so a skill's text is part of the key too. Editing a template's text and
 keeping its version would make a resumed run replay answers written for the old text, so
 `tests/unit/test_prompt_template_lock.py` compares each shipped template with
