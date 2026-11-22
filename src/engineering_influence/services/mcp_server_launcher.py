@@ -3,9 +3,13 @@
 
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.errors.transient_stage_error import TransientStageError
+from engineering_influence.interfaces.mcp_remote_transport_factory_interface import (
+    McpRemoteTransportFactoryInterface,
+)
 from engineering_influence.interfaces.mcp_transport_factory_interface import (
     McpTransportFactoryInterface,
 )
+from engineering_influence.interfaces.mcp_transport_interface import McpTransportInterface
 from engineering_influence.models.mcp_server_lock import McpServerLock
 from engineering_influence.services.interfaces.mcp_client_factory_interface import (
     McpClientFactoryInterface,
@@ -26,8 +30,10 @@ from engineering_influence.services.mcp_connection import McpConnection
 class McpServerLauncher(McpServerLauncherInterface):
     """The start-up check of ADR 0008, in the order it can be made.
 
-    1. **The files**, before anything is started: a server whose files changed is never run.
-    2. **The server**, started with the lock's environment names only, initialized and asked for its tools.
+    1. **The files**, before anything is started: a server whose files changed is never run. (A remote
+       server has no files; its address is checked by the URL policy when it is contacted.)
+    2. **The server**, started with the lock's environment names only (or contacted at its address with
+       its bearer variable), initialized and asked for its tools.
     3. **What it says**, compared with the lock: its name, its version and the hash of its tools.
     4. **The grants**: a tool the lock grants to a stage must be one that can be offered.
 
@@ -39,10 +45,12 @@ class McpServerLauncher(McpServerLauncherInterface):
     def __init__(
         self,
         transports: McpTransportFactoryInterface,
+        remote: McpRemoteTransportFactoryInterface,
         clients: McpClientFactoryInterface,
         verifier: ToolLockVerifierInterface,
     ) -> None:
         self._transports = transports
+        self._remote = remote
         self._clients = clients
         self._verifier = verifier
 
@@ -51,7 +59,7 @@ class McpServerLauncher(McpServerLauncherInterface):
         self._refuse(entry, self._verifier.check_files(entry))
         client: McpClientInterface | None = None
         try:
-            client = self._clients.create(self._transports.open(entry.command, entry.env))
+            client = self._clients.create(self._open(entry))
             info = client.initialize()
             tools = client.list_tools()
             self._refuse(entry, self._verifier.check_server(entry, info, tools))
@@ -72,6 +80,11 @@ class McpServerLauncher(McpServerLauncherInterface):
             if error.code == "TOOL_LOCK_MISMATCH":
                 raise
             raise self._unavailable(entry, error.message, error.code) from error
+
+    def _open(self, entry: McpServerLock) -> McpTransportInterface:
+        if entry.remote():
+            return self._remote.open(entry.url, entry.bearer_env)
+        return self._transports.open(entry.command, entry.env)
 
     @staticmethod
     def _close(client: McpClientInterface | None) -> None:

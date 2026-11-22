@@ -6,6 +6,7 @@ from engineering_influence.errors.transient_stage_error import TransientStageErr
 from engineering_influence.interfaces.executable_finder_interface import ExecutableFinderInterface
 from engineering_influence.interfaces.file_hasher_interface import FileHasherInterface
 from engineering_influence.models.mcp_command import McpCommand
+from engineering_influence.models.mcp_endpoint_url import McpEndpointUrl
 from engineering_influence.models.mcp_server_lock import McpServerLock
 from engineering_influence.models.tool_lock import ToolLock
 from engineering_influence.models.tool_lock_addition import ToolLockAddition
@@ -47,16 +48,7 @@ class ToolLockEditor(ToolLockEditorInterface):
         replace: bool,
     ) -> ToolLockAddition:
         """Run the server once, record what it is, and return the lock with it added."""
-        if not McpServerLock.NAME.fullmatch(name):
-            raise self._refused(
-                "TOOL_NAME_INVALID",
-                "a server's name is lowercase letters, digits and -, from a letter, up to 32 characters",
-            )
-        if lock.server(name) is not None and not replace:
-            raise self._refused(
-                "TOOL_LOCK_EXISTS",
-                f"a server named {name!r} is already locked; use --replace to lock it again",
-            )
+        self._vacant(lock, name, replace)
         bad = [env for env in env_names if not McpServerLock.ENV.fullmatch(env)]
         if bad or len(set(env_names)) != len(env_names):
             raise self._refused(
@@ -85,6 +77,44 @@ class ToolLockEditor(ToolLockEditorInterface):
         except ValueError as error:
             raise self._refused("TOOL_LOCK_INVALID", str(error)) from error
 
+    def add_remote(
+        self, lock: ToolLock, name: str, url: str, bearer_env: str, replace: bool
+    ) -> ToolLockAddition:
+        """Contact the server at the address once, record what it is, and return the lock with it added.
+
+        The name, the address and the variable's name are all checked before anything is contacted.
+        Only the address, the server's name and version and a hash of its tools can be recorded: there
+        are no files to hash, and the server's code can change without the lock knowing.
+        """
+        self._vacant(lock, name, replace)
+        try:
+            McpEndpointUrl(url)
+        except (ValueError, TypeError) as error:
+            raise self._refused("TOOL_URL_REFUSED", str(error)) from error
+        if bearer_env and not McpServerLock.ENV.fullmatch(bearer_env):
+            raise self._refused(
+                "TOOL_ENV_INVALID", "a bearer variable name is capital letters, digits and _"
+            )
+        try:
+            inspection = self._probe.inspect_remote(url, bearer_env)
+        except TransientStageError as error:
+            raise ApplicationError(
+                code="TOOL_SERVER_UNRESPONSIVE", message=str(error), http_status=502
+            ) from error
+        server = McpServerLock(
+            name=name,
+            command=(),
+            files=(),
+            env=(),
+            server_name=inspection.info.name,
+            server_version=inspection.info.version,
+            tool_names=inspection.tools.names(),
+            tools_hash=inspection.tools.digest(),
+            url=url,
+            bearer_env=bearer_env,
+        )
+        return ToolLockAddition(lock.with_server(server, replace), server, inspection)
+
     def grant(self, lock: ToolLock, name: str, stage: str, tools: tuple[str, ...]) -> ToolLock:
         """The lock with these tools of the server added to what the stage may call."""
         server = self._server(lock, name)
@@ -101,6 +131,18 @@ class ToolLockEditor(ToolLockEditorInterface):
         if not any(granted for granted_stage, granted in server.grants if granted_stage == stage):
             raise self._refused("TOOL_GRANT_UNKNOWN", f"stage {stage!r} has no grant from {name!r}")
         return lock.with_server(server.without_grants(stage, tools), replace=True)
+
+    def _vacant(self, lock: ToolLock, name: str, replace: bool) -> None:
+        if not McpServerLock.NAME.fullmatch(name):
+            raise self._refused(
+                "TOOL_NAME_INVALID",
+                "a server's name is lowercase letters, digits and -, from a letter, up to 32 characters",
+            )
+        if lock.server(name) is not None and not replace:
+            raise self._refused(
+                "TOOL_LOCK_EXISTS",
+                f"a server named {name!r} is already locked; use --replace to lock it again",
+            )
 
     def _server(self, lock: ToolLock, name: str) -> McpServerLock:
         server = lock.server(name)

@@ -171,6 +171,21 @@ def test_a_minimal_install_runs_the_server_commands(dist: Path, clean_env: Path)
     assert "engineering-influence[api,runtime]" in served.stderr
     assert "Traceback" not in served.stderr
 
+    listed = ei(clean_env, "tools", "list", "--lock", str(clean_env / "no-such.lock.toml"))
+    assert listed.returncode == 0 and "no tool lock" in listed.stdout
+    remote = ei(
+        clean_env,
+        "tools",
+        "add",
+        "--lock",
+        str(clean_env / "no-such.lock.toml"),
+        "--url",
+        "https://mcp.example.com/mcp",
+        "docs",
+    )
+    assert remote.returncode == 2
+    assert "engineering-influence[runtime]" in remote.stderr and "Traceback" not in remote.stderr
+
 
 def test_the_api_and_runtime_extras_are_enough_to_serve(dist: Path, clean_env: Path) -> None:
     install(clean_env, f"{wheel(dist)}[api,runtime]")

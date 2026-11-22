@@ -11,8 +11,9 @@ from engineering_influence.interfaces.tool_lock_store_interface import ToolLockS
 from engineering_influence.models.mcp_server_lock import McpServerLock
 from engineering_influence.models.tool_lock import ToolLock
 
-REQUIRED = frozenset({"name", "command", "server_name", "server_version", "tools_hash", "files"})
-OPTIONAL = frozenset({"env", "tool_names", "grants"})
+REQUIRED = frozenset({"name", "server_name", "server_version", "tools_hash"})
+LOCAL = frozenset({"command", "files"})
+OPTIONAL = frozenset({"env", "tool_names", "grants", "url", "bearer_env"}) | LOCAL
 
 
 class TomlToolLockStore(ToolLockStoreInterface):
@@ -75,16 +76,21 @@ class TomlToolLockStore(ToolLockStoreInterface):
         unknown = sorted(set(entry) - REQUIRED - OPTIONAL)
         if unknown:
             raise self._invalid(f"{where} has an unknown key {unknown[0]!r}")
-        missing = sorted(REQUIRED - set(entry))
+        remote = "url" in entry
+        if remote and sorted(({"command", "files", "env"}) & set(entry)):
+            raise self._invalid(
+                f"{where} has an address, so it cannot have a command, files or env variables"
+            )
+        missing = sorted((REQUIRED | (frozenset() if remote else LOCAL)) - set(entry))
         if missing:
             raise self._invalid(f"{where} is missing {missing[0]!r}")
-        files = entry["files"]
+        files = entry.get("files", {})
         if not isinstance(files, dict):
             raise self._invalid(f"{where} has files that are not a table")
         try:
             return McpServerLock(
                 name=entry["name"],
-                command=self._tuple(entry["command"]),
+                command=self._tuple(entry.get("command", [])),
                 files=tuple(sorted(files.items())),
                 env=self._tuple(entry.get("env", [])),
                 server_name=entry["server_name"],
@@ -92,6 +98,8 @@ class TomlToolLockStore(ToolLockStoreInterface):
                 tool_names=self._tuple(entry.get("tool_names", [])),
                 tools_hash=entry["tools_hash"],
                 grants=self._grants(entry.get("grants", {})),
+                url=entry.get("url", ""),
+                bearer_env=entry.get("bearer_env", ""),
             )
         except (ValueError, TypeError, AttributeError) as error:
             raise self._invalid(f"{where}: {error}") from error
@@ -110,19 +118,29 @@ class TomlToolLockStore(ToolLockStoreInterface):
         return tuple(value)
 
     def _block(self, server: McpServerLock) -> str:
+        where = (
+            [f"url = {self._quote(server.url)}"]
+            + ([f"bearer_env = {self._quote(server.bearer_env)}"] if server.bearer_env else [])
+            if server.remote()
+            else [
+                f"command = {self._array(server.command)}",
+                f"env = {self._array(server.env)}",
+            ]
+        )
         lines = [
             "[[server]]",
             f"name = {self._quote(server.name)}",
-            f"command = {self._array(server.command)}",
-            f"env = {self._array(server.env)}",
+            *where,
             f"server_name = {self._quote(server.server_name)}",
             f"server_version = {self._quote(server.server_version)}",
             f"tool_names = {self._array(server.tool_names)}",
             f"tools_hash = {self._quote(server.tools_hash)}",
-            "",
-            "[server.files]",
         ]
-        lines += [f"{self._quote(path)} = {self._quote(digest)}" for path, digest in server.files]
+        if not server.remote():
+            lines += ["", "[server.files]"]
+            lines += [
+                f"{self._quote(path)} = {self._quote(digest)}" for path, digest in server.files
+            ]
         if server.grants:
             lines += ["", "[server.grants]"]
             lines += [f"{stage} = {self._array(tools)}" for stage, tools in server.grants]

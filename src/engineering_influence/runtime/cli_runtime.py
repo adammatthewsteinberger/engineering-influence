@@ -13,6 +13,9 @@ from engineering_influence.controllers.interfaces.run_controller_interface impor
 from engineering_influence.controllers.project_controller import ProjectController
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
+from engineering_influence.infrastructure.tools.lazy_remote_transport_factory import (
+    LazyRemoteTransportFactory,
+)
 from engineering_influence.infrastructure.tools.path_executable_finder import PathExecutableFinder
 from engineering_influence.infrastructure.tools.sha256_file_hasher import Sha256FileHasher
 from engineering_influence.infrastructure.tools.stdio_mcp_transport_factory import (
@@ -29,6 +32,9 @@ from engineering_influence.interactions.cli.interfaces.cli_application_interface
 from engineering_influence.interactions.cli.run_cli import RunCli
 from engineering_influence.interactions.cli.serve_cli import ServeCli
 from engineering_influence.interactions.cli.tools_cli import ToolsCli
+from engineering_influence.interfaces.mcp_remote_transport_factory_interface import (
+    McpRemoteTransportFactoryInterface,
+)
 from engineering_influence.interfaces.model_probe_interface import ModelProbeInterface
 from engineering_influence.interfaces.queue_interface import QueueInterface
 from engineering_influence.interfaces.run_repository_interface import RunRepositoryInterface
@@ -56,6 +62,8 @@ from engineering_influence.services.tool_lock_editor import ToolLockEditor
 from engineering_influence.services.tool_lock_verifier import ToolLockVerifier
 
 if TYPE_CHECKING:
+    import httpx
+
     from engineering_influence.controllers.publishing_controller import PublishingController
 
 
@@ -107,6 +115,7 @@ class CliRuntime(CliRuntimeInterface):
         hasher = Sha256FileHasher()
         probe = McpServerProbe(
             StdioMcpTransportFactory(limits, os.environ),
+            LazyRemoteTransportFactory(self._remote_transports),
             McpClientFactory("engineering-influence", __version__, self.TOOL_REQUEST_SECONDS),
             ToolLockVerifier(hasher),
         )
@@ -116,6 +125,29 @@ class CliRuntime(CliRuntimeInterface):
             TomlToolLockStore(),
             os.environ,
         )
+
+    def _remote_transports(self) -> McpRemoteTransportFactoryInterface:
+        """The transport for remote servers; it needs ``httpx``, so it is built on first use only."""
+        from engineering_influence.infrastructure.security.public_https_url_policy import (
+            PublicHttpsUrlPolicy,
+        )
+        from engineering_influence.infrastructure.tools.http_mcp_transport_factory import (
+            HttpMcpTransportFactory,
+        )
+
+        return HttpMcpTransportFactory(
+            self._tool_client,
+            PublicHttpsUrlPolicy(),
+            os.environ,
+            self.TOOL_REQUEST_SECONDS,
+            self.TOOL_SESSION_SECONDS,
+        )
+
+    def _tool_client(self) -> "httpx.Client":
+        """A client for one look at a remote tool server; httpx is imported only when one is needed."""
+        import httpx
+
+        return httpx.Client(timeout=httpx.Timeout(self.TOOL_REQUEST_SECONDS, connect=10.0))
 
     def _model_doctor(self, probe: bool) -> ModelDoctorInterface:
         """Build the model doctor; the probe, and the HTTP client behind it, only if asked for.

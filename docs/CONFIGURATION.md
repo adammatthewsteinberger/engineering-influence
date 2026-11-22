@@ -237,7 +237,9 @@ what the Brave backup is for. The port is `EI_SEARXNG_PORT` (default 8888).
 `ei-tools.lock.toml` in the current directory. **`add` and `verify` start the server's code**, so run them
 only on servers you mean to run. Each server is started with a bare environment (see
 [TOOL_LOCK.md](TOOL_LOCK.md)) and, for one look, at most **two minutes, 2 GiB of memory and 1 GiB of disk**.
-These are fixed in the command, not settings.
+These are fixed in the command, not settings. A **remote** server (`add --url`) is contacted, not started: it
+is held to https and a public address, with a 30-second request limit, and its token is the variable named by
+`--bearer-env`, read from the environment when the connection is made.
 
 **A run reads a lock only when `EI_TOOL_LOCK` names it** (the file in the current directory is not read).
 Its servers are then started and verified when the stage executor is built, a changed one stops the process

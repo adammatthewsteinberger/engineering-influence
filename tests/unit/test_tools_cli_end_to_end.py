@@ -10,6 +10,9 @@ from pathlib import Path
 
 import pytest
 
+from engineering_influence.infrastructure.tools.toml_tool_lock_store import TomlToolLockStore
+from engineering_influence.models.mcp_server_lock import McpServerLock
+from engineering_influence.models.tool_lock import ToolLock
 from engineering_influence.runtime.cli_runtime import CliRuntime
 
 SERVER = Path(__file__).resolve().parents[1] / "fixtures" / "mcp" / "stdio_server.py"
@@ -197,3 +200,57 @@ def test_tools_that_cannot_be_offered_and_escape_codes_are_handled(
     out = capsys.readouterr().out
     assert "1 that cannot be offered under that name" in out
     assert "\x1b" not in out and "\r" not in out
+
+
+# ------------------------------------------------------------------------------ a remote server
+LOCALHOST = "https://localhost/mcp"
+
+
+def test_an_address_that_is_not_https_is_refused_before_anything_is_contacted(
+    world: World, capsys: pytest.CaptureFixture[str]
+) -> None:
+    status = world.ei(
+        "tools", "add", "--lock", str(world.lock), "--url", "http://mcp.example.com/mcp", "docs"
+    )
+    assert status == 2 and not world.lock.exists()
+    assert "never plain http" in capsys.readouterr().err
+
+
+def test_an_address_on_this_machine_is_refused_by_the_url_policy_and_nothing_is_locked(
+    world: World, capsys: pytest.CaptureFixture[str]
+) -> None:
+    status = world.ei("tools", "add", "--lock", str(world.lock), "--url", LOCALHOST, "docs")
+    assert status == 2 and not world.lock.exists()
+    assert "error: localhost refused: non_public_address" in capsys.readouterr().err
+
+
+def test_a_bearer_variable_that_is_not_set_is_refused_before_anything_is_contacted(
+    world: World, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("NO_SUCH_TOKEN", raising=False)
+    status = world.ei(
+        "tools", "add", "--lock", str(world.lock), "--bearer-env", "NO_SUCH_TOKEN",
+        "--url", LOCALHOST, "docs",
+    )  # fmt: skip
+    assert status == 2 and not world.lock.exists()
+    assert "error: the environment variable NO_SUCH_TOKEN is not set" in capsys.readouterr().err
+
+
+def test_a_locked_remote_server_is_listed_and_a_verify_that_cannot_reach_it_says_why(
+    world: World, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DOCS_TOKEN", "a-token")
+    server = McpServerLock(
+        name="docs", command=(), files=(), env=(), server_name="docs-server", server_version="2",
+        tool_names=("read",), tools_hash="a" * 64, url=LOCALHOST, bearer_env="DOCS_TOKEN",
+    )  # fmt: skip
+    TomlToolLockStore().save(world.lock, ToolLock((server,)))
+
+    assert world.ei("tools", "list", "--lock", str(world.lock)) == 0
+    listed = capsys.readouterr().out
+    assert f"    url: {LOCALHOST}" in listed and "    bearer: DOCS_TOKEN" in listed
+
+    assert world.ei("tools", "verify", "--lock", str(world.lock)) == 1
+    out = capsys.readouterr().out
+    assert "the server could not be checked: localhost refused: non_public_address" in out
+    assert "1 of 1 servers no longer match the lock" in out

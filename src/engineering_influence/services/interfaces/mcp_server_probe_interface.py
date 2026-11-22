@@ -21,5 +21,9 @@ class McpServerProbeInterface(ABC):
         """Start the server, ask, stop it, and return what it said."""
 
     @abstractmethod
+    def inspect_remote(self, url: str, bearer_env: str) -> McpServerInspection:
+        """Contact the server at the address, ask, end the session, and return what it said."""
+
+    @abstractmethod
     def check(self, entry: McpServerLock) -> tuple[str, ...]:
         """What differs between the lock and the files and the running server; empty when nothing."""

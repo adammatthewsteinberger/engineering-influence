@@ -39,6 +39,9 @@ class Probe(McpServerProbeInterface):
     def inspect(self, command: tuple[str, ...], env_names: tuple[str, ...]) -> McpServerInspection:
         raise NotImplementedError
 
+    def inspect_remote(self, url: str, bearer_env: str) -> McpServerInspection:
+        raise NotImplementedError
+
     def check(self, entry: McpServerLock) -> tuple[str, ...]:
         self.checked.append(entry.name)
         return self.problems.get(entry.name, ())

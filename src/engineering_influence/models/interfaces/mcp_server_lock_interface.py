@@ -10,6 +10,10 @@ class McpServerLockInterface(ABC):
     __slots__ = ()
 
     @abstractmethod
+    def remote(self) -> bool:
+        """True for a server that is contacted at an address, false for one that is started."""
+
+    @abstractmethod
     def file_hashes(self) -> dict[str, str]:
         """The locked files and their SHA-256, by path."""
 
