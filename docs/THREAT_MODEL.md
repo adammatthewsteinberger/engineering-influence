@@ -199,3 +199,12 @@ These are open, in the order they would be fixed.
    already read. Text a reviewer cannot see (zero-width and bidirectional marks, control characters, private-use
    code points) is refused when a skill is read, and each part is capped at 8,000 characters. Nothing has been
    run by a live model.
+8. **Plugins bundle things that are each trusted separately, and a bundle is only as good as its reviewer.** A
+   plugin ([PLUGINS.md](PLUGINS.md)) is installed from a file on disk. Installing it starts nothing, contacts
+   nothing, grants nothing and enables nothing: it locks the bundle's skills for no stage and prints the
+   `ei tools add` commands for its servers, so every step that gives a bundle any reach is a separate command a
+   person runs. What that does not cover: the bundle's skills are trusted as installed once enabled (gap 7); a
+   server it describes is exactly as trustworthy as `ei tools add` makes it (gap 6); the printed command is what a
+   stranger wrote, and running it **runs a local server once**; and a person with write access to the plugin or
+   skill folders can change a file, which `ei plugins verify` and the next run refuse by hash. The plugin lock is
+   a record that a run never reads. Marketplace indexes and fetching a bundle from a network are not built.

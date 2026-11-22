@@ -123,3 +123,24 @@ def test_removing_a_link_removes_the_link_and_not_what_it_points_at(tmp_path: Pa
     files().remove(tmp_path / "link.toml")
     assert not os.path.lexists(tmp_path / "link.toml")
     assert (tmp_path / "real.toml").read_bytes() == b"x"
+
+
+def test_the_size_cap_can_be_given_and_is_enforced_on_both_sides(tmp_path: Path) -> None:
+    small = DirectorySkillFiles(10)
+    (tmp_path / "ok.toml").write_bytes(b"x" * 10)
+    assert small.read(tmp_path / "ok.toml") == b"x" * 10
+    (tmp_path / "big.toml").write_bytes(b"x" * 11)
+    assert "longer than 10 bytes" in refusal(lambda: small.read(tmp_path / "big.toml")).message
+    small.write(tmp_path / "new.toml", b"x" * 10, replace=False)
+    assert (
+        "longer than 10 bytes"
+        in refusal(lambda: small.write(tmp_path / "new2.toml", b"x" * 11, False)).message
+    )
+    assert not (tmp_path / "new2.toml").exists()
+    assert DirectorySkillFiles().read(tmp_path / "big.toml") == b"x" * 11
+
+
+def test_a_file_may_be_at_least_one_byte_long() -> None:
+    with pytest.raises(ValueError, match="at least one byte"):
+        DirectorySkillFiles(0)
+    assert DirectorySkillFiles(1).read(Path("/nonexistent/none.toml")) is None

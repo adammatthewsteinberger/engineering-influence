@@ -55,6 +55,12 @@ class Editor(SkillLockEditorInterface):
         self._go("add", folder, source, replace)
         return SkillLockAddition(lock.with_entry(entry(), replace), skill())
 
+    def add_bytes(
+        self, lock: SkillLock, folder: Path, name: str, data: bytes, replace: bool
+    ) -> SkillLockAddition:
+        self._go("add_bytes", folder, name, data, replace)
+        return SkillLockAddition(lock.with_entry(entry(name), replace), skill(name=name))
+
     def enable(self, lock: SkillLock, folder: Path, name: str, stage: str) -> SkillLock:
         self._go("enable", folder, name, stage)
         return lock.with_entry(entry(name, (stage,)), True)

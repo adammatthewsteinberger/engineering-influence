@@ -131,6 +131,6 @@ Prefer short chapters, each with one job.
 
 ## What is not built
 
-Plugins and marketplace indexes (slice 6 of the ADR): a plugin will be a bundle of MCP server definitions and
-skills that a person copies into the locks. Nothing fetches a skill from a network, and a run never contacts
-a marketplace.
+Marketplace indexes (slice 6b of the ADR). A plugin ([PLUGINS.md](PLUGINS.md)) is a bundle of skills and tool
+server definitions that a person installs from a file; its skills become ordinary skills here, enabled for no
+stage. Nothing fetches a skill from a network, and a run never contacts a marketplace.

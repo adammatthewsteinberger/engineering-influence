@@ -50,21 +50,25 @@ class SkillLockEditor(SkillLockEditorInterface):
                 f"underscores, then .toml (not {source.name!r})",
             )
         if lock.entry(name) is not None and not replace:
-            raise self._refused(
-                "SKILL_ALREADY_LOCKED",
-                f"a skill named {name!r} is already locked; use --replace to lock it again",
-                409,
-            )
+            raise self._already(name)
         data = self._files.read(source)
         if data is None:
             raise self._refused("SKILL_FILE_MISSING", f"there is no file at {source}")
-        skill = self._parser.parse(data, name)
-        entry = SkillLockEntry(name, skill.version, hashlib.sha256(data).hexdigest())
-        updated = self._with(lock, entry, True)
+        added = self._locked(lock, name, data)
         destination = folder / f"{name}.toml"
         if source.resolve() != destination.resolve():
             self._files.write(destination, data, replace)
-        return SkillLockAddition(updated, skill)
+        return added
+
+    def add_bytes(
+        self, lock: SkillLock, folder: Path, name: str, data: bytes, replace: bool
+    ) -> SkillLockAddition:
+        """Lock a skill given as the bytes of its file and keep them in ``folder``; nothing is enabled."""
+        if lock.entry(name) is not None and not replace:
+            raise self._already(name)
+        added = self._locked(lock, name, data)
+        self._files.write(folder / f"{name}.toml", data, replace)
+        return added
 
     def enable(self, lock: SkillLock, folder: Path, name: str, stage: str) -> SkillLock:
         """The lock with the skill enabled for the stage."""
@@ -93,6 +97,18 @@ class SkillLockEditor(SkillLockEditorInterface):
         updated = lock.without(name)
         self._files.remove(folder / f"{name}.toml")
         return updated
+
+    def _locked(self, lock: SkillLock, name: str, data: bytes) -> SkillLockAddition:
+        skill = self._parser.parse(data, name)
+        entry = SkillLockEntry(name, skill.version, hashlib.sha256(data).hexdigest())
+        return SkillLockAddition(self._with(lock, entry, True), skill)
+
+    def _already(self, name: str) -> ApplicationError:
+        return self._refused(
+            "SKILL_ALREADY_LOCKED",
+            f"a skill named {name!r} is already locked; use --replace to lock it again",
+            409,
+        )
 
     def _entry(self, lock: SkillLock, name: str) -> SkillLockEntry:
         entry = lock.entry(name)

@@ -7,6 +7,9 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+    from typing import Any
+
     from engineering_influence.models.skill import Skill
 
 
@@ -21,3 +24,7 @@ class SkillParserInterface(ABC):
 
         ``name`` is what the file is called without its extension; the file must name itself the same.
         """
+
+    @abstractmethod
+    def table(self, raw: Mapping[str, Any], name: str) -> Skill:
+        """The skill in an already-read table, checked the same way a skill file is."""

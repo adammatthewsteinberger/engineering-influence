@@ -135,6 +135,10 @@ ei skills add [--lock PATH] [--replace] FILE
 ei skills enable|disable [--lock PATH] NAME STAGE
 ei skills remove [--lock PATH] NAME
 ei skills list|verify [--lock PATH]
+ei plugins show FILE
+ei plugins add [--lock PATH] [--skill-lock PATH] FILE
+ei plugins list [--lock PATH]
+ei plugins verify|remove … [--lock PATH] [--skill-lock PATH]
 ```
 
 | Command | What it does | Exit status |
@@ -158,6 +162,11 @@ ei skills list|verify [--lock PATH]
 | `ei skills remove NAME` | Unlocks a skill and deletes its copy. | same |
 | `ei skills list` | Shows the locked skills with their short hash and stages. Reads no skill file. | `0`; `2` an unusable lock |
 | `ei skills verify` | Re-hashes every locked skill, enabled or not, against the lock. | `0` all match; `1` one does not; `2` setup trouble |
+| `ei plugins show FILE` | Reads a plugin file and says what installing it would do: its skills (with their text), and the `ei tools add` command for each server. Changes nothing. See [PLUGINS.md](PLUGINS.md). | `0`; `2` on a refusal |
+| `ei plugins add FILE` | Locks the bundle's skills (each enabled for **no** stage), keeps a copy of the bundle, and records its SHA-256 in the plugin lock. **Starts nothing, contacts nothing, grants nothing:** the commands for its servers are printed for you to review and run. Refuses a plugin that is installed or skills that are already locked, before writing anything. | `0`; `2` on a refusal or an unusable lock |
+| `ei plugins list` | Shows the installed plugins, the skills installed and the servers described. | `0`; `2` an unusable lock |
+| `ei plugins verify` | Re-hashes each kept bundle and checks that its skills are still locked as installed. | `0` all match; `1` one does not; `2` setup trouble |
+| `ei plugins remove NAME` | Uninstalls a plugin and the skills it installed that are still exactly what it installed; a skill locked again since is left. | `0`; `2` on a refusal |
 
 `python -m engineering_influence` is the same program. Walk-through: [`examples/cli/run.sh`](../examples/cli/run.sh).
 

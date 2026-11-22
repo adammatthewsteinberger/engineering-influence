@@ -253,3 +253,44 @@ def test_removing_a_skill_that_is_not_locked_deletes_nothing() -> None:
     files = RecordingFiles({COPY: text()})
     refused(lambda: editor(files).remove(SkillLock(), FOLDER, "plain_style"), "SKILL_UNKNOWN")
     assert files.removed == [] and COPY in files.files
+
+
+# ----------------------------------------------------------------------------- add_bytes
+def test_adding_bytes_locks_their_hash_keeps_them_and_enables_nothing() -> None:
+    data = text()
+    files = RecordingFiles()
+    added = editor(files).add_bytes(SkillLock(), FOLDER, "plain_style", data, replace=False)
+    assert added.lock.entry("plain_style") == SkillLockEntry(
+        "plain_style", 2, hashlib.sha256(data).hexdigest(), ()
+    )
+    assert added.skill.identifier() == "plain_style@2"
+    assert files.writes == [(COPY, data, False)]
+
+
+def test_adding_bytes_for_a_skill_that_is_locked_is_refused_unless_asked() -> None:
+    files = RecordingFiles()
+    lock = SkillLock((locked(text(), stages=("outline",)),))
+    error = refused(
+        lambda: editor(files).add_bytes(lock, FOLDER, "plain_style", text(), False),
+        "SKILL_ALREADY_LOCKED",
+        409,
+    )
+    assert "use --replace" in error.message and files.writes == []
+    again = text(version=3)
+    added = editor(files).add_bytes(lock, FOLDER, "plain_style", again, replace=True)
+    found = added.lock.entry("plain_style")
+    assert found is not None and found.stages == () and found.version == 3
+    assert files.writes == [(COPY, again, True)]
+
+
+def test_bytes_that_are_not_a_skill_are_refused_and_nothing_is_kept() -> None:
+    files = RecordingFiles()
+    refused(
+        lambda: editor(files).add_bytes(SkillLock(), FOLDER, "plain_style", b"not = = toml", False),
+        "SKILL_INVALID",
+    )
+    refused(
+        lambda: editor(files).add_bytes(SkillLock(), FOLDER, "other_name", text(), False),
+        "SKILL_INVALID",
+    )
+    assert files.writes == []

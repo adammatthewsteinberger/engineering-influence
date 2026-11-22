@@ -2,6 +2,8 @@
 """Reads a skill from TOML, strictly."""
 
 import tomllib
+from collections.abc import Mapping
+from typing import Any
 
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interfaces.skill_parser_interface import SkillParserInterface
@@ -29,6 +31,10 @@ class TomlSkillParser(SkillParserInterface):
             raw = tomllib.loads(text)
         except tomllib.TOMLDecodeError as error:
             raise self._invalid(name, f"it is not valid TOML: {error}") from error
+        return self.table(raw, name)
+
+    def table(self, raw: Mapping[str, Any], name: str) -> Skill:
+        """The skill in an already-read table, checked the same way a skill file is."""
         unknown = sorted(raw.keys() - self.KEYS)
         if unknown:
             raise self._invalid(name, f"it has unknown keys {unknown}")

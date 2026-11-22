@@ -17,6 +17,9 @@ from engineering_influence.interactions.cli.interfaces.db_cli_interface import D
 from engineering_influence.interactions.cli.interfaces.doctor_cli_interface import (
     DoctorCliInterface,
 )
+from engineering_influence.interactions.cli.interfaces.plugins_cli_interface import (
+    PluginsCliInterface,
+)
 from engineering_influence.interactions.cli.interfaces.run_cli_interface import RunCliInterface
 from engineering_influence.interactions.cli.interfaces.serve_cli_interface import ServeCliInterface
 from engineering_influence.interactions.cli.interfaces.skills_cli_interface import (
@@ -41,6 +44,7 @@ class CliApplication(CliApplicationInterface):
         doctor_cli: DoctorCliInterface,
         tools_cli: ToolsCliInterface,
         skills_cli: SkillsCliInterface,
+        plugins_cli: PluginsCliInterface,
     ) -> None:
         self._controller = controller
         self._book_cli = book_cli
@@ -50,6 +54,7 @@ class CliApplication(CliApplicationInterface):
         self._doctor_cli = doctor_cli
         self._tools_cli = tools_cli
         self._skills_cli = skills_cli
+        self._plugins_cli = plugins_cli
 
     def run(self, argv: list[str] | None = None) -> int:
         """Parse the command line and return its process status."""
@@ -72,6 +77,7 @@ class CliApplication(CliApplicationInterface):
         self._doctor_cli.register(subparsers)
         self._tools_cli.register(subparsers)
         self._skills_cli.register(subparsers)
+        self._plugins_cli.register(subparsers)
         arguments = parser.parse_args(argv)
         if arguments.command == "book":
             return self._book_cli.run(arguments)
@@ -87,6 +93,8 @@ class CliApplication(CliApplicationInterface):
             return self._tools_cli.run(arguments)
         if arguments.command == "skills":
             return self._skills_cli.run(arguments)
+        if arguments.command == "plugins":
+            return self._plugins_cli.run(arguments)
         if arguments.command == "pipeline" and arguments.pipeline_command == "start":
             request = ProjectRequest(
                 slug=arguments.slug,

@@ -261,3 +261,14 @@ server is started: a skill that changed is `SKILL_LOCK_MISMATCH`, a named file t
 `SKILL_LOCK_MISSING`, and a stage's prompt carries only the skills the lock enables for it. A file is at most
 64 KiB, a part at most 8,000 characters, and a stage at most four skills; these are fixed in the code, not
 settings. See [SKILLS.md](SKILLS.md#in-a-run).
+
+## The plugin lock (installed bundles)
+
+`ei plugins show`, `add`, `list`, `verify` and `remove` read and write the plugin lock: `--lock PATH`, else
+`EI_PLUGIN_LOCK`, else `ei-plugins.lock.toml` in the current directory, with the bundles kept in a `plugins/` folder
+beside it. `add`, `verify` and `remove` also use the skill lock (`--skill-lock`, else `EI_SKILL_LOCK`, else
+`ei-skills.lock.toml`). Nothing here starts a process or opens a connection.
+
+**A run never reads the plugin lock.** It is a record for `verify` and `remove`; what a run may do is in the tool lock
+and the skill lock. A bundle is at most 512 KiB, with at most 16 servers and 16 skills; these are fixed in the code,
+not settings. See [PLUGINS.md](PLUGINS.md).

@@ -199,3 +199,30 @@ Recorded on 2026-11-22 while building slice 5 ([SKILLS.md](../SKILLS.md)).
   installed but enabled for no stage is not read.
 - **What a skill still cannot do.** It adds no tool, changes no stage's allowlist, output cap or system
   prompt, and cannot raise a budget: those are decided in code, in the tool lock and in the spend guard.
+
+## Amendments from slice 6a
+
+Recorded on 2026-11-22 while building the first part of slice 6 ([PLUGINS.md](../PLUGINS.md)). Slice 6 is split as
+slice 4 was: **6a** plugins installed from a file on disk, **6b** marketplace indexes and fetching.
+
+- **Installing a plugin runs and contacts nothing (decision 9).** The ADR said a person runs `ei tools add` to copy
+  an entry into the lock. The installer therefore does not run a bundle's servers: a bundle is text from someone
+  else, and `ei tools add` is the step that starts a server (or contacts one) and pins what it reports. The
+  installer locks the bundle's **skills** (each enabled for no stage) and **prints** the exact `ei tools add`
+  command for each server, shell-quoted, for a person to review and run.
+- **A bundle cannot decide what a model may do.** There is no key for a grant, for a stage to enable a skill for,
+  or for anything else; any unknown key is refused. A server definition is held to the same rules the tool lock
+  uses (an absolute command that is not a launcher, an https address with no secret in it), so a plugin cannot
+  describe a server the lock would refuse.
+- **One file, one hash.** A plugin is a single TOML file with `[[server]]` and `[[skill]]` tables, so one SHA-256
+  pins everything a person reviewed. Skills in it are read by the same strict parser as a skill file, and are
+  written into the skill lock as skill files, so they are ordinary skills afterwards.
+- **A third lock file, which a run never reads.** `ei-plugins.lock.toml` records the bundle's hash, the servers it
+  described and the hash each skill was locked under, so `ei plugins verify` can check the bundle that was
+  reviewed and `ei plugins remove` can undo the install. What a run may do stays in the tool lock and the skill
+  lock; no new thing is added to the run's trust surface.
+- **No replace.** A plugin that is installed, or whose skills are already locked, is refused before anything is
+  written. Installing a newer version is `remove` then `add`, because replacing text a person approved is a
+  decision, not a side effect. `remove` deletes only skills that are still exactly what the plugin installed.
+- **An install either completes or leaves nothing.** The bundle's copy is written first, and a failure while locking
+  a later skill removes the copy and the skills already locked.

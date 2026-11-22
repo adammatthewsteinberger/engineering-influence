@@ -112,3 +112,20 @@ def test_what_the_model_refuses_comes_back_as_a_skill_error() -> None:
     }
     for text, expected in cases.items():
         assert expected in refused(text).message
+
+
+def test_a_table_that_is_already_read_is_checked_the_same_way_a_file_is() -> None:
+    from types import MappingProxyType
+
+    table = MappingProxyType({"name": "x", "version": 1, "parts": {"brief": "Be brief."}})
+    skill = TomlSkillParser().table(table, "x")
+    assert (skill.name, skill.version, skill.part("brief")) == ("x", 1, "Be brief.")
+    for bad, expected in (
+        ({"name": "x", "version": 1, "parts": {"brief": "x"}, "tools": ["a"]}, "unknown keys"),
+        ({"name": "y", "version": 1, "parts": {"brief": "x"}}, "names itself 'y', not 'x'"),
+        ({"name": "x", "version": 1}, "table of stage = text"),
+        ({"name": "x", "parts": {"brief": "x"}}, "missing 'version'"),
+    ):
+        with pytest.raises(ApplicationError, match=expected) as error:
+            TomlSkillParser().table(bad, "x")
+        assert error.value.code == "SKILL_INVALID"

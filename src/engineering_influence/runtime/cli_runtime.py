@@ -13,9 +13,14 @@ from engineering_influence.controllers.interfaces.run_controller_interface impor
 from engineering_influence.controllers.project_controller import ProjectController
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
+from engineering_influence.infrastructure.plugins.toml_plugin_lock_store import (
+    TomlPluginLockStore,
+)
+from engineering_influence.infrastructure.plugins.toml_plugin_parser import TomlPluginParser
 from engineering_influence.infrastructure.skills.directory_skill_files import DirectorySkillFiles
 from engineering_influence.infrastructure.skills.toml_skill_lock_store import TomlSkillLockStore
 from engineering_influence.infrastructure.skills.toml_skill_parser import TomlSkillParser
+from engineering_influence.infrastructure.skills.toml_skill_writer import TomlSkillWriter
 from engineering_influence.infrastructure.tools.lazy_remote_transport_factory import (
     LazyRemoteTransportFactory,
 )
@@ -32,6 +37,7 @@ from engineering_influence.interactions.cli.doctor_cli import DoctorCli
 from engineering_influence.interactions.cli.interfaces.cli_application_interface import (
     CliApplicationInterface,
 )
+from engineering_influence.interactions.cli.plugins_cli import PluginsCli
 from engineering_influence.interactions.cli.run_cli import RunCli
 from engineering_influence.interactions.cli.serve_cli import ServeCli
 from engineering_influence.interactions.cli.skills_cli import SkillsCli
@@ -59,6 +65,8 @@ from engineering_influence.services.interfaces.resume_run_interface import Resum
 from engineering_influence.services.mcp_client_factory import McpClientFactory
 from engineering_influence.services.mcp_server_probe import McpServerProbe
 from engineering_influence.services.model_doctor import ModelDoctor
+from engineering_influence.services.plugin_installer import PluginInstaller
+from engineering_influence.services.plugin_lock_verifier import PluginLockVerifier
 from engineering_influence.services.resume_run import ResumeRun
 from engineering_influence.services.skill_lock_editor import SkillLockEditor
 from engineering_influence.services.skill_lock_verifier import SkillLockVerifier
@@ -84,6 +92,7 @@ class CliRuntime(CliRuntimeInterface):
     TOOL_REQUEST_SECONDS = 30.0
     TOOL_MEMORY_BYTES = 2 * 1024**3
     TOOL_DISK_BYTES = 1024**3
+    PLUGIN_BUNDLE_BYTES = 512 * 1024
 
     def __init__(
         self,
@@ -107,6 +116,7 @@ class CliRuntime(CliRuntimeInterface):
             DoctorCli(self._model_doctor, os.environ),
             self._tools_cli(),
             self._skills_cli(),
+            self._plugins_cli(),
         )
 
     def _skills_cli(self) -> SkillsCli:
@@ -116,6 +126,27 @@ class CliRuntime(CliRuntimeInterface):
         verifier = SkillLockVerifier(files, parser)
         return SkillsCli(
             SkillLockEditor(files, parser, verifier), verifier, TomlSkillLockStore(), os.environ
+        )
+
+    def _plugins_cli(self) -> PluginsCli:
+        """Wire ``plugins``: it reads and writes locks and files, and starts and contacts nothing.
+
+        A bundle may be up to 512 KiB (a skill file stays at 64 KiB), which holds the most skills and
+        servers a plugin may name.
+        """
+        skill_files = DirectorySkillFiles()
+        skill_parser = TomlSkillParser()
+        skills = SkillLockEditor(
+            skill_files, skill_parser, SkillLockVerifier(skill_files, skill_parser)
+        )
+        bundle_files = DirectorySkillFiles(self.PLUGIN_BUNDLE_BYTES)
+        parser = TomlPluginParser(skill_parser)
+        return PluginsCli(
+            PluginInstaller(bundle_files, parser, TomlSkillWriter(), skills),
+            PluginLockVerifier(bundle_files, parser),
+            TomlPluginLockStore(),
+            TomlSkillLockStore(),
+            os.environ,
         )
 
     def _tools_cli(self) -> ToolsCli:
