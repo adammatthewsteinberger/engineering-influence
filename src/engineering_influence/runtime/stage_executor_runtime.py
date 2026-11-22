@@ -68,6 +68,8 @@ from engineering_influence.runtime.interfaces.stage_executor_runtime_interface i
 )
 from engineering_influence.services.ask_model import AskModel
 from engineering_influence.services.call_model import CallModel
+from engineering_influence.services.context_assembler import ContextAssembler
+from engineering_influence.services.draft_stage_executor import DraftStageExecutor
 from engineering_influence.services.fallback_search_provider import FallbackSearchProvider
 from engineering_influence.services.fetch_url_tool import FetchUrlTool
 from engineering_influence.services.lock_stage_guidance import LockStageGuidance
@@ -83,6 +85,7 @@ from engineering_influence.services.outline_parser import OutlineParser
 from engineering_influence.services.run_tool_loop import RunToolLoop
 from engineering_influence.services.skill_lock_verifier import SkillLockVerifier
 from engineering_influence.services.spend_guard import SpendGuard
+from engineering_influence.services.stage_executor_router import StageExecutorRouter
 from engineering_influence.services.tool_lock_verifier import ToolLockVerifier
 from engineering_influence.services.tool_registry import ToolRegistry
 from engineering_influence.services.tool_runner import ToolRunner
@@ -154,16 +157,34 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         runner = ToolRunner(tools, journal, limits)
         self._runner = runner
         ask = AskModel(CallModel(model, journal), model)
-        return ModelStageExecutor(
-            NonfictionRecipes(),
-            TomlPromptLibrary(),
+        prompts = TomlPromptLibrary()
+        loop = RunToolLoop(ask, runner, limits)
+        outlines = OutlineParser()
+        descriptor = model.describe()
+        drafter = DraftStageExecutor(
             artifacts,
-            RunToolLoop(ask, runner, limits),
-            tools,
-            LockToolGrants(lock),
+            prompts,
+            outlines,
+            ContextAssembler(model, prompts.get("context_pack")),
+            loop,
             guidance,
-            NonfictionOutputChecks(OutlineParser()),
             SpendGuard,
+            descriptor.context_window,
+            descriptor.max_output_tokens,
+        )
+        return StageExecutorRouter(
+            ModelStageExecutor(
+                NonfictionRecipes(),
+                prompts,
+                artifacts,
+                loop,
+                tools,
+                LockToolGrants(lock),
+                guidance,
+                NonfictionOutputChecks(outlines),
+                SpendGuard,
+            ),
+            {DraftStageExecutor.STAGE: drafter},
         )
 
     def close(self) -> None:

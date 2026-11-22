@@ -34,8 +34,8 @@ from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget import Budget
 from engineering_influence.runtime.stage_executor_runtime import StageExecutorRuntime
 from engineering_influence.services.fallback_search_provider import FallbackSearchProvider
-from engineering_influence.services.model_stage_executor import ModelStageExecutor
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
+from engineering_influence.services.stage_executor_router import StageExecutorRouter
 
 TODAY = date(2026, 11, 21)
 KEY = "sk-test-SECRETSECRET"
@@ -240,7 +240,7 @@ def test_an_openai_compatible_profile_runs_a_stage_against_a_real_server(tmp_pat
         rt = runtime(files(tmp_path, url=url))
         store = InMemoryArtifactStore()
         executor = rt.build(store, InMemoryJournal())
-        assert isinstance(executor, ModelStageExecutor)
+        assert isinstance(executor, StageExecutorRouter)
         asyncio.run(executor.execute(run_for("brief"), 1))
         rt.close()
     assert store.get("run-1", "brief.md") == b"The brief, written by the model."
@@ -249,6 +249,37 @@ def test_an_openai_compatible_profile_runs_a_stage_against_a_real_server(tmp_pat
     assert "authorization" not in headers
     sent = json.dumps(body)
     assert "How to keep bees" in sent and "untrusted" in sent
+
+
+def test_the_draft_stage_is_routed_to_the_drafter_and_writes_every_chapter(
+    tmp_path: Path,
+) -> None:
+    outline = (
+        "## Chapter 1: The Hive\nPurpose: How a colony works.\nBeats:\n- The queen\n\n"
+        "## Chapter 2: The Site\nPurpose: Where to put it.\nBeats:\n- Sun\n"
+    )
+    with provider("Words from the model.") as (url, seen):
+        rt = runtime(files(tmp_path, url=url))
+        store = InMemoryArtifactStore()
+        for name, text in (
+            ("brief.md", "the brief"),
+            ("positioning.md", "the positioning"),
+            ("research.md", "the research"),
+            ("outline.md", outline),
+        ):
+            store.put("run-1", name, text.encode())
+        executor = rt.build(store, InMemoryJournal())
+        asyncio.run(executor.execute(run_for("draft"), 1))
+        rt.close()
+    assert store.get("run-1", "chapter_02.md") == b"Words from the model."
+    assert store.get("run-1", "summary_02.md") == b"Words from the model."
+    index = store.get("run-1", "draft.md")
+    assert index is not None and b"Total: 8 words" in index
+    sent = [json.dumps(body) for _, _, body in seen.seen]
+    # The provider says the same words every time, so the second summary asks exactly what the first
+    # did and is replayed from the journal: three calls, not four.
+    assert len(sent) == 3
+    assert "Chapter 2: The Site" in sent[2] and "the positioning" in sent[2]
 
 
 def test_an_anthropic_profile_runs_a_stage_and_sends_its_key_only_as_a_header(

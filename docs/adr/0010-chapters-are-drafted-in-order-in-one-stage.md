@@ -36,7 +36,7 @@ fan-out for after 1.0.
    after drafting has been paid for. A model's preamble before the first heading and a closing paragraph after a blank
    line are ignored; hidden and control characters are removed.
 
-3. **Each chapter is drafted from what came before it** (to be built in the next slice). For chapter *n* the
+3. **Each chapter is drafted from what came before it.** For chapter *n* the
    context assembler is given the book's style (from the positioning), the grounding (the outline and the research
    notes), the chapter's beats, the summaries of chapters 1 to *n*−1 and the tail of chapter *n*−1. One model call,
    with no tools, drafts the chapter; a second summarizes it. They are stored as `chapter_NN.md` and `summary_NN.md`
@@ -76,3 +76,26 @@ on the outline alone, and because it adds a queue message, a table and a worker-
 - A run whose outline stage produced a malformed outline fails with `OUTLINE_INVALID`, and, because the journal
   replays the same request, trying the same stage again with the same prompt gives the same answer. The remedy is to
   change what the outline stage is asked (for example with a skill) and start a new run.
+
+## Amendment: the drafting stage as built (2026-11-22)
+
+`DraftStageExecutor` does the stage, and `StageExecutorRouter` sends `draft` to it and every other stage to
+`ModelStageExecutor`. The plan names `draft` after `outline`, but there is no recipe for it, because it is not one
+prompt. What the code does where this decision left room:
+
+- **A chapter written but not summarized is summarized from its stored text, never redrafted.** "Done" is both files,
+  but the two calls are separate, so a stage that fails between them resumes at the summary alone.
+- **How long a chapter is.** The brief's `target_words` shared across the chapters, or 2,500 words when there is none,
+  never under 300 or over 6,000. The output cap is that many words as tokens (1.6 a word) plus 400, never more than the
+  model allows. The input budget is the model's window less the output cap, less a 512-token margin, less an estimate
+  for any skills enabled for the stage. A window too small for that stops the stage before the first call
+  (`STAGE_MODEL_TOO_SMALL`).
+- **The instruction holds numbers only.** The only plain text in the draft prompt says which chapter of how many and
+  about how many words; the voice, the grounding, the beats, the summaries and the tail are untrusted blocks, as
+  the context assembler lays them out.
+- **A call that does not finish stores nothing for that chapter** and fails the stage (`STAGE_ANSWER_UNUSABLE`,
+  with the model's own reasons); the chapters before it stay, and the next delivery starts at that chapter.
+- **The summary of a chapter is a short note** (400 tokens at most) from `stage_summary`; the draft prompt gets each
+  one on one line as `Chapter k: ...`, oldest dropped first when the window is short.
+- **Not yet checked:** that a chapter keeps to its beats or its length. That belongs to revision. Nothing here has run
+  against a live model.

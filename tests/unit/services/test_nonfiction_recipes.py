@@ -24,8 +24,14 @@ def test_it_is_a_set_of_recipes() -> None:
 def test_the_plan_is_the_recipes_stages_in_order() -> None:
     plan = RECIPES.plan()
     assert plan.kind is BookKind.NONFICTION
-    assert plan.stages == ("brief", "positioning", "research", "outline")
-    assert plan.stages == tuple(recipe.stage for recipe in NonfictionRecipes.RECIPES)
+    assert plan.stages == ("brief", "positioning", "research", "outline", "draft")
+    assert plan.stages[:-1] == tuple(recipe.stage for recipe in NonfictionRecipes.RECIPES)
+
+
+def test_drafting_is_in_the_plan_but_has_no_recipe_because_it_is_not_one_prompt() -> None:
+    assert RECIPES.plan().stages[-1] == NonfictionRecipes.DRAFT_STAGE == "draft"
+    with pytest.raises(ValueError, match="no recipe for stage 'draft'"):
+        RECIPES.recipe("draft")
 
 
 def test_a_recipe_is_found_by_stage() -> None:

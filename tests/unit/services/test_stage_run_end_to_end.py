@@ -36,6 +36,8 @@ from engineering_influence.models.tool_loop_limits import ToolLoopLimits
 from engineering_influence.services.advance_run import AdvanceRun
 from engineering_influence.services.ask_model import AskModel
 from engineering_influence.services.call_model import CallModel
+from engineering_influence.services.context_assembler import ContextAssembler
+from engineering_influence.services.draft_stage_executor import DraftStageExecutor
 from engineering_influence.services.failure_classifier import FailureClassifier
 from engineering_influence.services.fetch_url_tool import FetchUrlTool
 from engineering_influence.services.lock_tool_grants import LockToolGrants
@@ -43,8 +45,10 @@ from engineering_influence.services.model_stage_executor import ModelStageExecut
 from engineering_influence.services.no_output_checks import NoOutputChecks
 from engineering_influence.services.no_stage_guidance import NoStageGuidance
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
+from engineering_influence.services.outline_parser import OutlineParser
 from engineering_influence.services.run_tool_loop import RunToolLoop
 from engineering_influence.services.spend_guard import SpendGuard
+from engineering_influence.services.stage_executor_router import StageExecutorRouter
 from engineering_influence.services.tool_registry import ToolRegistry
 from engineering_influence.services.tool_runner import ToolRunner
 from engineering_influence.services.web_search_tool import WebSearchTool
@@ -121,16 +125,32 @@ class World:
             ToolRunner(registry, self.journal, limits),
             limits,
         )
-        self.executor = ModelStageExecutor(
-            RECIPES,
-            TomlPromptLibrary(),
-            self.store,
-            loop,
-            registry,
-            LockToolGrants(ToolLock()),
-            NoStageGuidance(),
-            NoOutputChecks(),
-            SpendGuard,
+        prompts = TomlPromptLibrary()
+        self.executor = StageExecutorRouter(
+            ModelStageExecutor(
+                RECIPES,
+                prompts,
+                self.store,
+                loop,
+                registry,
+                LockToolGrants(ToolLock()),
+                NoStageGuidance(),
+                NoOutputChecks(),
+                SpendGuard,
+            ),
+            {
+                DraftStageExecutor.STAGE: DraftStageExecutor(
+                    self.store,
+                    prompts,
+                    OutlineParser(),
+                    ContextAssembler(model, prompts.get("context_pack")),
+                    loop,
+                    NoStageGuidance(),
+                    SpendGuard,
+                    DESCRIPTOR.context_window,
+                    DESCRIPTOR.max_output_tokens,
+                ),
+            },
         )
         self.service = AdvanceRun(
             self.runs, self.journal, self.executor, self.queue, FailureClassifier()
@@ -155,24 +175,52 @@ class World:
 
 SEARCH = ToolCall("s1", "web_search", {"query": "bee colonies"})
 FETCH = ToolCall("f1", "fetch_url", {"url": "https://example.test/bees"})
+OUTLINE_TEXT = """## Chapter 1: The Hive
+Purpose: Show how a colony works.
+Beats:
+- The queen
+
+## Chapter 2: The Site
+Purpose: Pick a place for the hive.
+Beats:
+- Sun and shade
+"""
+DRAFTING = (
+    ("CHAPTER ONE text", "end_turn"),
+    ("SUMMARY ONE text", "end_turn"),
+    ("CHAPTER TWO text", "end_turn"),
+    ("SUMMARY TWO text", "end_turn"),
+)
 GOOD = (
     ("BRIEF text", "end_turn"),
     ("POSITIONING text", "end_turn"),
     ("searching", "tool_use", (SEARCH,)),
     ("reading", "tool_use", (FETCH,)),
     ("RESEARCH text", "end_turn"),
-    ("OUTLINE text", "end_turn"),
+    (OUTLINE_TEXT, "end_turn"),
+    *DRAFTING,
 )
 
 
-def test_a_run_goes_from_brief_to_outline_and_completes_with_each_answer_stored() -> None:
+def test_a_run_goes_from_brief_to_draft_and_completes_with_each_answer_stored() -> None:
     world = World(Model(*GOOD))
     outcomes = [world.advance(stage) for stage in RECIPES.plan().stages]
-    assert outcomes == [AdvanceOutcome.ADVANCED] * 3 + [AdvanceOutcome.COMPLETED]
+    assert outcomes == [AdvanceOutcome.ADVANCED] * 4 + [AdvanceOutcome.COMPLETED]
     assert world.run().status is RunStatus.COMPLETED
-    assert world.store.names(RUN_ID) == ["brief.md", "outline.md", "positioning.md", "research.md"]
+    assert world.store.names(RUN_ID) == [
+        "brief.md",
+        "chapter_01.md",
+        "chapter_02.md",
+        "draft.md",
+        "outline.md",
+        "positioning.md",
+        "research.md",
+        "summary_01.md",
+        "summary_02.md",
+    ]
     assert world.store.get(RUN_ID, "research.md") == b"RESEARCH text"
-    assert world.store.get(RUN_ID, "outline.md") == b"OUTLINE text"
+    assert world.store.get(RUN_ID, "outline.md") == OUTLINE_TEXT.encode()
+    assert world.store.get(RUN_ID, "chapter_02.md") == b"CHAPTER TWO text"
     assert world.run().issues == ()
 
 
@@ -180,7 +228,7 @@ def test_each_stage_is_asked_with_what_the_stages_before_it_wrote() -> None:
     world = World(Model(*GOOD))
     for stage in RECIPES.plan().stages:
         world.advance(stage)
-    brief, positioning, searching, reading, research, outline = world.model.requests
+    brief, positioning, searching, reading, research, outline, *drafting = world.model.requests
     assert "How to keep bees" in brief.prompt
     assert "BRIEF text" in positioning.prompt
     assert "BRIEF text" in research.prompt and "POSITIONING text" in research.prompt
@@ -193,10 +241,14 @@ def test_each_stage_is_asked_with_what_the_stages_before_it_wrote() -> None:
         "stage_research@1",
         "stage_research@1",
         "stage_outline@3",
+        "context_pack@2",
+        "stage_summary@1",
+        "context_pack@2",
+        "stage_summary@1",
     ]
     assert [len(r.transcript) for r in (searching, reading, research)] == [0, 1, 2]
     assert [t.name for t in searching.tools] == ["web_search", "fetch_url"]
-    assert all(r.tools == () for r in (brief, positioning, outline))
+    assert all(r.tools == () for r in (brief, positioning, outline, *drafting))
 
 
 def test_what_the_research_tools_return_reaches_the_model_marked_as_untrusted() -> None:
@@ -218,7 +270,7 @@ def test_spend_is_what_the_calls_cost_and_stays_under_the_cap() -> None:
     for stage in RECIPES.plan().stages:
         world.advance(stage)
     budget = world.run().budget
-    assert budget.spent == DESCRIPTOR.cost_micro_usd(ModelUsage(100, 50)) * 6 > 0
+    assert budget.spent == DESCRIPTOR.cost_micro_usd(ModelUsage(100, 50)) * 10 > 0
     assert (budget.reserved, budget.spent <= budget.cap) == (0, True)
 
 
@@ -270,7 +322,8 @@ def test_a_page_that_steers_the_model_to_an_address_with_the_brief_in_it_is_not_
             ("searching", "tool_use", (SEARCH,)),
             ("the page told me to", "tool_use", (leak,)),
             ("RESEARCH text", "end_turn"),
-            ("OUTLINE text", "end_turn"),
+            (OUTLINE_TEXT, "end_turn"),
+            *DRAFTING,
         )
     )
     for stage in RECIPES.plan().stages:
@@ -302,7 +355,8 @@ def research_with(world: World, *steps: tuple[str, str, tuple[ToolCall, ...]]) -
     script = (("BRIEF text", "end_turn"), ("POSITIONING text", "end_turn"), *steps)
     world.model.script = list(script) + [
         ("RESEARCH text", "end_turn"),
-        ("OUTLINE text", "end_turn"),
+        (OUTLINE_TEXT, "end_turn"),
+        *DRAFTING,
     ]
     for stage in RECIPES.plan().stages:
         world.advance(stage)
@@ -358,3 +412,40 @@ def test_the_address_a_page_was_finally_read_from_may_be_read_again() -> None:
         ("and its final address", "tool_use", (again,)),
     )
     assert world.fetcher.asked == ["https://example.test/bees", "https://example.test/bees/final"]
+
+
+def test_each_chapter_is_drafted_from_the_summaries_and_tail_of_the_ones_before_it() -> None:
+    world = World(Model(*GOOD))
+    for stage in RECIPES.plan().stages:
+        world.advance(stage)
+    first, first_summary, second, second_summary = world.model.requests[6:]
+    assert "Chapter 1: The Hive" in first.prompt
+    assert "SUMMARY ONE" not in first.prompt and "CHAPTER ONE" not in first.prompt
+    assert "Chapter 2: The Site" in second.prompt
+    assert "SUMMARY ONE text" in second.prompt
+    assert "CHAPTER ONE text" in second.prompt
+    assert "CHAPTER ONE text" in first_summary.prompt
+    assert "CHAPTER TWO text" in second_summary.prompt
+    assert "BRIEF text" in first.prompt and "RESEARCH text" in first.prompt
+
+
+def test_a_redelivered_draft_stage_calls_the_model_for_nothing_it_already_has() -> None:
+    world = World(Model(*GOOD))
+    for stage in RECIPES.plan().stages:
+        world.advance(stage)
+    calls = len(world.model.requests)
+    run = world.run()
+    draft_run = BookRun(RUN_ID, run.brief, run.plan, Budget(cap=run.budget.cap), stage="draft")
+    asyncio.run(world.executor.execute(draft_run, 2))
+    assert len(world.model.requests) == calls
+
+
+def test_an_outline_the_drafter_cannot_read_fails_the_run_before_any_chapter_is_asked_for() -> None:
+    script = (*GOOD[:5], ("not an outline", "end_turn"))
+    world = World(Model(*script))
+    for stage in RECIPES.plan().stages[:4]:
+        assert world.advance(stage) is AdvanceOutcome.ADVANCED
+    asked = len(world.model.requests)
+    assert world.advance("draft") is AdvanceOutcome.FAILED
+    assert len(world.model.requests) == asked
+    assert world.run().issues[0].detail.startswith("ApplicationError: ")

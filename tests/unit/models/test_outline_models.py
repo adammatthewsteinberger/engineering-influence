@@ -27,6 +27,27 @@ def chapter(number: int = 1, **changes: Any) -> ChapterOutline:
 
 
 # --------------------------------------------------------------------------- ChapterOutline
+def test_a_chapter_renders_as_the_lines_a_drafting_prompt_shows() -> None:
+    assert chapter().render() == (
+        "Chapter 1: The Hive\n"
+        "Purpose: Show how a colony works.\n"
+        "Beats:\n"
+        "- Workers and drones\n"
+        "- The queen\n"
+        "Claims to source:\n"
+        "- A colony holds up to 60,000 bees\n"
+        "Leads to: From the hive to the apiary."
+    )
+
+
+def test_a_chapter_with_no_claims_and_no_next_step_renders_without_those_lines() -> None:
+    plain = chapter(claims=(), leads_to="")
+    assert plain.render() == (
+        "Chapter 1: The Hive\nPurpose: Show how a colony works.\nBeats:\n"
+        "- Workers and drones\n- The queen"
+    )
+
+
 def test_a_chapter_has_a_title_a_purpose_beats_claims_and_where_it_leads() -> None:
     made = chapter(3)
     assert isinstance(made, ChapterOutlineInterface)
