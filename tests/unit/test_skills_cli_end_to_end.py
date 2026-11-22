@@ -101,7 +101,7 @@ def test_a_source_that_is_a_link_is_refused(project: Project) -> None:
     link = project.root / "elsewhere" / "linked_style.toml"
     link.symlink_to(project.source)
     status, _, err = project.add(link)
-    assert status == 2 and "cannot be used as a skill" in err and not project.lock.exists()
+    assert status == 2 and "cannot be used: " in err and not project.lock.exists()
 
 
 def test_a_skill_that_names_a_stage_it_has_no_text_for_cannot_be_enabled(project: Project) -> None:

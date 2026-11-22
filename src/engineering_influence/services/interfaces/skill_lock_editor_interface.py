@@ -22,6 +22,12 @@ class SkillLockEditorInterface(ABC):
         """Lock the skill in ``source`` and keep a copy in ``folder``; nothing is enabled."""
 
     @abstractmethod
+    def add_bytes(
+        self, lock: SkillLock, folder: Path, name: str, data: bytes, replace: bool
+    ) -> SkillLockAddition:
+        """Lock a skill given as the bytes of its file and keep them in ``folder``; nothing is enabled."""
+
+    @abstractmethod
     def enable(self, lock: SkillLock, folder: Path, name: str, stage: str) -> SkillLock:
         """The lock with the skill enabled for the stage."""
 

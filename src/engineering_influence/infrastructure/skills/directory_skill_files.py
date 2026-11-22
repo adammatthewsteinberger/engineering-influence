@@ -10,7 +10,7 @@ from engineering_influence.interfaces.skill_files_interface import SkillFilesInt
 
 
 class DirectorySkillFiles(SkillFilesInterface):
-    """Reads a skill file only if it is a regular file of at most ``MAX_BYTES``, and refuses a link.
+    """Reads a skill file only if it is a regular file of at most ``max_bytes`` (64 KiB for a skill), and refuses a link.
 
     The file is opened without following a link and checked on the descriptor that was opened, so
     a path that is swapped for a link between a check and a read cannot send the read somewhere
@@ -19,6 +19,11 @@ class DirectorySkillFiles(SkillFilesInterface):
     """
 
     MAX_BYTES = 64 * 1024
+
+    def __init__(self, max_bytes: int = MAX_BYTES) -> None:
+        if max_bytes < 1:
+            raise ValueError("a file may be at least one byte long")
+        self._max_bytes = max_bytes
 
     def read(self, path: Path) -> bytes | None:
         """The file's bytes, or None when there is no such file."""
@@ -33,15 +38,15 @@ class DirectorySkillFiles(SkillFilesInterface):
             os.close(descriptor)
             raise self._unusable(path, "it is not a plain file")
         with os.fdopen(descriptor, "rb") as handle:
-            data = handle.read(self.MAX_BYTES + 1)
-        if len(data) > self.MAX_BYTES:
-            raise self._unusable(path, f"it is longer than {self.MAX_BYTES} bytes")
+            data = handle.read(self._max_bytes + 1)
+        if len(data) > self._max_bytes:
+            raise self._unusable(path, f"it is longer than {self._max_bytes} bytes")
         return data
 
     def write(self, path: Path, data: bytes, replace: bool) -> None:
         """Write the file whole or not at all; an existing file is replaced only if asked."""
-        if len(data) > self.MAX_BYTES:
-            raise self._unusable(path, f"it is longer than {self.MAX_BYTES} bytes")
+        if len(data) > self._max_bytes:
+            raise self._unusable(path, f"it is longer than {self._max_bytes} bytes")
         if os.path.lexists(path) and not replace:
             raise ApplicationError(
                 code="SKILL_FILE_EXISTS",
@@ -64,6 +69,6 @@ class DirectorySkillFiles(SkillFilesInterface):
     def _unusable(path: Path, why: str) -> ApplicationError:
         return ApplicationError(
             code="SKILL_FILE_UNUSABLE",
-            message=f"{path} cannot be used as a skill: {why}",
+            message=f"{path} cannot be used: {why}",
             http_status=422,
         )

@@ -202,6 +202,28 @@ def test_a_minimal_install_runs_the_server_commands(dist: Path, clean_env: Path)
         assert done.returncode == 0 and "Traceback" not in done.stderr, done.stderr
     assert "plain_style@1" in done.stdout and "enabled for outline" in done.stdout
 
+    bundle = clean_env / "research_pack.toml"
+    bundle.write_text(
+        'name = "research_pack"\nversion = 1\n[[server]]\nname = "docs"\n'
+        'url = "https://mcp.example.com/mcp"\n[[skill]]\nname = "house_style"\nversion = 1\n'
+        '[skill.parts]\nbrief = "Keep it short."\n',
+        encoding="utf-8",
+    )
+    plugin_lock = str(clean_env / "ei-plugins.lock.toml")
+    shown = ei(clean_env, "plugins", "show", str(bundle))
+    assert (
+        shown.returncode == 0
+        and "ei tools add --url https://mcp.example.com/mcp docs" in shown.stdout
+    )
+    for command in (
+        ("add", "--lock", plugin_lock, "--skill-lock", lock, str(bundle)),
+        ("verify", "--lock", plugin_lock, "--skill-lock", lock),
+        ("list", "--lock", plugin_lock),
+        ("remove", "--lock", plugin_lock, "--skill-lock", lock, "research_pack"),
+    ):
+        done = ei(clean_env, "plugins", *command)
+        assert done.returncode == 0 and "Traceback" not in done.stderr, done.stderr
+
 
 def test_the_api_and_runtime_extras_are_enough_to_serve(dist: Path, clean_env: Path) -> None:
     install(clean_env, f"{wheel(dist)}[api,runtime]")
