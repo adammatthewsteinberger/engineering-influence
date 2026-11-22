@@ -5,13 +5,14 @@
 #   export EI_SEARXNG_URL=http://127.0.0.1:8888
 #
 # It is published on the loopback interface only, and it refuses to start without a secret.
-# Tag note: `latest` is used because no digest has been verified for this file. Pin the image by
-# digest (`image: searxng/searxng@sha256:...`) before running it anywhere that matters.
+# The image is pinned by digest: the one below is the `latest` image of 2026-11-21 (built that day), the
+# one this file was tested with. It does not update itself. To move to a newer SearXNG, pull it, start
+# this file with it and check a search works, then replace the digest.
 name: ei-searxng
 
 services:
   searxng:
-    image: searxng/searxng:latest
+    image: searxng/searxng@sha256:fc1d81d7e9d04d3c8b3e23c7162feddf5c3d6aecd32e67a56eaabcb8d8747f79
     restart: unless-stopped
     environment:
       SEARXNG_SECRET: "${SEARXNG_SECRET:?set SEARXNG_SECRET, for example with openssl rand -hex 32}"
