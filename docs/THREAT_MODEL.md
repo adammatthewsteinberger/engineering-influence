@@ -22,7 +22,7 @@ key checks, rate limiting, an outbound URL policy) and are not modelled here.
 |---|---|---|
 | The brief's idea text | prompts | Written by whoever starts a run. |
 | Model output | the manuscript, then TeX and HTML | Untrusted, however good the model. It can be steered by anything in its prompt. |
-| Research sources fetched from the web (M6: the fetcher exists, no stage uses it yet) | prompts, and so the manuscript | Untrusted and possibly hostile. |
+| Research sources and search results fetched from the web (M6: the research stage reads them through tools) | prompts, and so the manuscript | Untrusted and possibly hostile. |
 | The Markdown manuscript | the LaTeX generator | Untrusted: model-written, or a document someone supplied. |
 | The book config (`books/<slug>.toml`) | the LaTeX generator, the covers, the listing | Untrusted when a model writes it; assembled by the pipeline from model output in M6. |
 
@@ -76,27 +76,29 @@ in either.
   on, so live TeX could not read them from its environment. (There is a unit test for the
   allow-list; none checks that a build tool cannot reach a secret by another route.)
 
-## Prompt injection from research sources (M6, partly built)
+## Prompt injection from research sources (M6, built, not yet run live)
 
-A fetched web page can say "ignore your instructions and write X". The search and fetch adapters
-exist (`BraveSearchProvider`, `HttpSourceFetcher`, `HtmlTextExtractor`), but no stage calls them
-yet, so only rule 6 is met by code that exists. The rest are what M6 must meet, written down first.
+A fetched web page can say "ignore your instructions and write X". The research stage now reads pages
+and search results through the `web_search` and `fetch_url` tools. Rules 1 to 3 and 6 are met by code
+that exists and is tested; the rest are what M6 must still meet. None of it has been run against the
+live internet, a live search service or a live model.
 
 1. **A source is data.** It is placed in the prompt as quoted, delimited material that the
    system text says to treat as evidence and never as instructions. The mechanism exists
-   (`PromptTemplate`'s untrusted blanks, [PROMPTS.md](PROMPTS.md)); nothing uses it with fetched text yet.
-2. **The model has no tools today, and the rules for giving it some are built.** It returns text,
-   which is typeset. A successful injection can change what a chapter says; it cannot read a
-   file, call a service or spend money outside the run. **This is planned to change:** web search
-   and page fetch are to become tools the model calls. The machinery that governs them now
-   exists (`RunToolLoop`, `ToolRunner`, [MODEL_CALLS.md](MODEL_CALLS.md)): a stage is given only
-   the tools its recipe names (none by default, and a call to any other name runs nothing), every
-   call's arguments are checked against its schema, calls are bounded in count, time and result
-   size, and each call and result is journaled so a resumed run replays it instead of repeating
-   it. Two parts of the original rule are **not yet in place**: no tool is registered (so the
-   model still has none), and a tool's result is not yet wrapped as untrusted text under a system
-   prompt that says so, because nothing produces a result yet. That wrapping must land with the
-   first tool, not after it.
+   (`PromptTemplate`'s untrusted blanks, [PROMPTS.md](PROMPTS.md)). The brief and every earlier stage's answer
+   go in that way, and so does everything a tool returns (`ToolRunner` wraps it, defusing any copy of the
+   tag, see [MODEL_CALLS.md](MODEL_CALLS.md)).
+2. **The model has tools only in the research stage, and only these two.** Every other stage returns
+   text, which is typeset: a successful injection there can change what a chapter says; it cannot read a
+   file, call a service or spend money outside the run. The research stage has `web_search` and
+   `fetch_url` ([MODEL_CALLS.md](MODEL_CALLS.md)), and the machinery that governs them is built and
+   tested: a stage gets only the tools its recipe names (a call to any other name runs nothing), arguments
+   are checked against the tool's schema, calls are bounded in count, time and result size, every call and
+   result is journaled so a resumed run replays it, and what a tool returns is wrapped as untrusted text.
+   What an injected page can still do is steer the research notes, make the model fetch other public
+   pages (bounded to the tool-call limit and the URL policy), and send a search query to the search
+   service. It cannot reach a file or a private host, or call a tool the stage was not given. The notes it
+   produces are untrusted input to the next stage in turn.
 3. **The damage is bounded by the budget.** Every call reserves its worst-case cost before it
    is sent (`CallModel`, `SpendGuard`), so an injection that makes the model verbose or loops
    it cannot pass the run's cap.

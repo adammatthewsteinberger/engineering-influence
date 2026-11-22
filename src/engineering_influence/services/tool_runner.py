@@ -31,6 +31,9 @@ class ToolRunner(ToolRunnerInterface):
       is not asked again. A tool failure the model can work around (``ApplicationError``) is stored
       as an error result; a transient or capacity failure is not stored and goes up to the run.
     - **A result is cut** to the limit, with a note of how much, before it is stored or shown.
+    - **Whatever a tool says is untrusted.** Its text, and the text of an error it raises, is
+      wrapped in an ``<untrusted name="tool:...">`` block that it cannot close early. The
+      runner's own refusals (no such tool, bad arguments) are ours and are not wrapped.
     - **A call has a time limit.** A tool that has not answered in ``call_seconds`` raises
       ``TransientStageError``. Its thread cannot be killed, so a tool should also bound itself;
       the pool is small, so a tool that never returns fills it and later calls time out.
@@ -65,7 +68,11 @@ class ToolRunner(ToolRunnerInterface):
         key = self._key(call)
         recorded = self._journal.find(run_id, stage, key.digest())
         if recorded is None:
-            made = self._invoke(tool, call).capped(self._limits.result_characters)
+            made = (
+                self._invoke(tool, call)
+                .capped(self._limits.result_characters)
+                .untrusted(f"tool:{call.name}")
+            )
             entry = JournalEntry(run_id, stage, attempt, key, self._encoded(made), 0)
             recorded = self._journal.record(entry)
         return self._decoded(call, recorded.response)

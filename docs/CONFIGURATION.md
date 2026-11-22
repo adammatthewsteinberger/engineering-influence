@@ -181,11 +181,18 @@ and republish it by hand. Stopping the worker finishes the job in flight first.
   (the files `ei doctor --models` checks, see [MODEL_PROFILES.md](MODEL_PROFILES.md)) are set,
   the profile exists, a price is in force today, and its key is available. A profile file being
   present never switches it on, because this spends money. Only non-fiction runs have stages so
-  far: brief, positioning and outline. An answer that is refused, cut off or empty stops the run.
+  far: brief, positioning, research and outline. An answer that is refused, cut off or empty stops the run.
   Nothing has been run against a live provider.
-- **Web search is built but nothing uses it.** `BraveSearchProvider` will read the key from
-  `BRAVE_SEARCH_API_KEY` once a stage calls it; nothing reads that variable today, and the
-  adapter has not been run against Brave's live API. A search sends the query to Brave.
+- **Web search for the research stage.** The research stage gives the model two tools, `web_search`
+  and `fetch_url`, so a model-backed run needs a search. Set `EI_SEARXNG_URL` to a
+  [SearXNG](https://github.com/searxng/searxng) instance (free; `examples/searxng/` runs one locally,
+  see below) and it is tried first. Set `BRAVE_SEARCH_API_KEY` and Brave is the backup: it is asked
+  only when SearXNG fails, is refused, is rate-limited or finds nothing, so a query reaches Brave
+  only then. With only one of the two set, that one is the search. With neither, the process stops
+  at start (`STAGE_SEARCH_NOT_CONFIGURED`) before anything is spent. A search sends the query to
+  the instance (which sends it on to its engines) or to Brave. `fetch_url` reads public https
+  pages only. Neither search adapter has been run against a live service, and nothing here has
+  touched the live internet.
 - **Retries are immediate.** A transient failure is re-queued with no delay, because the
   queue port has none yet.
 - **The runner and gate are placeholders.** `DeterministicRunner` returns a fixed line
@@ -202,3 +209,21 @@ and republish it by hand. Stopping the worker finishes the job in flight first.
   server have no run methods yet.
 - **The base images are tags, not digests**, and the worker has no container
   healthcheck; it logs a heartbeat and raises a critical alert if it stalls.
+
+## A free local web search (SearXNG)
+
+`examples/searxng/` runs SearXNG on your machine, so the research stage can search without an account or
+a key. It is published on `127.0.0.1` only, refuses to start without a secret, and its `settings.yml`
+turns on the `json` format the adapter asks for (without it SearXNG answers 403).
+
+```sh
+export SEARXNG_SECRET="$(openssl rand -hex 32)"
+docker compose -f examples/searxng/docker-compose.yml up -d --wait
+export EI_SEARXNG_URL=http://127.0.0.1:8888
+```
+
+What is and is not checked: the compose file is validated by `docker compose config` and its settings
+are pinned by tests, but the container has not been started by the project's tests, and the image is
+`searxng/searxng:latest` because no digest has been verified; pin it by digest before relying on it. SearXNG
+passes your queries to the public search engines it is set to use, and those engines can throttle or block
+a local instance, which is what the Brave backup is for. The port is `EI_SEARXNG_PORT` (default 8888).

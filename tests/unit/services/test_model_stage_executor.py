@@ -193,14 +193,19 @@ def test_an_idea_cannot_close_its_own_block_and_speak_outside_it() -> None:
 def test_a_later_stage_reads_the_earlier_answers_as_untrusted_text() -> None:
     world = World(
         "outline",
-        stored={"brief.md": "BRIEF caf\u00e9 text", "positioning.md": "POSITIONING text"},
+        stored={
+            "brief.md": "BRIEF caf\u00e9 text",
+            "positioning.md": "POSITIONING text",
+            "research.md": "RESEARCH text",
+        },
     )
     world.execute()
     request = world.request()
     assert '<untrusted name="brief">\nBRIEF caf\u00e9 text\n</untrusted>' in request.prompt
     assert '<untrusted name="positioning">\nPOSITIONING text\n</untrusted>' in request.prompt
+    assert '<untrusted name="research">\nRESEARCH text\n</untrusted>' in request.prompt
     assert request.max_output_tokens == 4_000
-    assert request.prompt_version == "stage_outline@1"
+    assert request.prompt_version == "stage_outline@2"
     assert world.store.get("run-1", "outline.md") == b"A fine answer."
 
 
@@ -214,11 +219,11 @@ def test_a_stage_whose_input_was_never_stored_asks_nothing() -> None:
 
 
 def test_a_stage_with_no_recipe_is_refused_before_anything_is_read() -> None:
-    plan = StagePlan(BookKind.NONFICTION, ("research",))
-    world = World("research", plan=plan)
+    plan = StagePlan(BookKind.NONFICTION, ("drafting",))
+    world = World("drafting", plan=plan)
     error = refused(world)
     assert (error.code, error.http_status) == ("STAGE_HAS_NO_RECIPE", 422)
-    assert "research" in error.message
+    assert "drafting" in error.message
     assert world.asker.calls == []
 
 
