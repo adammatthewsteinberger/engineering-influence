@@ -13,6 +13,12 @@ on:
         description: The git ref to build; empty builds the ref that called this workflow.
         type: string
         default: ""
+      dev_build:
+        description: >-
+          A build number, digits only. If set, the packages are built as <version>.dev<number> from a
+          copy of the commit, and the checkout itself is not changed. Empty builds the release version.
+        type: string
+        default: ""
     outputs:
       version:
         description: The package version that was built.
@@ -39,21 +45,56 @@ jobs:
           python-version: "3.13"
           enable-cache: true
       - run: uv sync --locked --extra test --extra dev --extra runtime --extra publishing --extra api
+      # A development build is made from a copy of the commit with the version stamped, so the checkout,
+      # uv.lock and every later step see the real source. A release build is made in place.
+      - id: stage
+        env:
+          DEV_BUILD: ${{ inputs.dev_build }}
+        run: |
+          set -eu
+          if [ -z "$DEV_BUILD" ]; then
+            echo "source=$PWD" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          stage="$RUNNER_TEMP/dev-source"
+          mkdir -p "$stage"
+          git archive HEAD | tar -x -C "$stage"
+          stamped="$(python3 scripts/stamp_dev_version.py "$DEV_BUILD" "$stage/src/engineering_influence/__init__.py" "$stage/packages/engineering-influence-sdk/src/engineering_influence_sdk/__init__.py")"
+          echo "source=$stage" >> "$GITHUB_OUTPUT"
+          echo "stamped=$stamped" >> "$GITHUB_OUTPUT"
       - id: version
-        run: echo "version=$(uv run python -c 'import engineering_influence as e; print(e.__version__)')" >> "$GITHUB_OUTPUT"
+        env:
+          STAMPED: ${{ steps.stage.outputs.stamped }}
+        run: echo "version=${STAMPED:-$(uv run python -c 'import engineering_influence as e; print(e.__version__)')}" >> "$GITHUB_OUTPUT"
       - if: inputs.run_tests
         run: uv run pytest
       # A fixed timestamp makes the wheel and sdist byte-for-byte reproducible.
       - name: Build both distributions
+        env:
+          SOURCE: ${{ steps.stage.outputs.source }}
         run: |
           set -eu
           SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
           export SOURCE_DATE_EPOCH
-          uv build --out-dir dist
-          uv build --package engineering-influence-sdk --out-dir dist
+          out="$PWD/dist"
+          cd "$SOURCE"
+          uv build --out-dir "$out"
+          uv build --package engineering-influence-sdk --out-dir "$out"
       - run: uvx twine check --strict dist/*
       - name: Install and run the real artifacts
         run: uv run pytest -m distribution --no-cov tests/e2e/test_distribution.py
+      # The step above builds its own packages from the checkout. A development build is stamped, so
+      # check the stamped files themselves: both install together and report the stamped version.
+      - name: Install the development build and check its version
+        if: inputs.dev_build != ''
+        env:
+          EXPECTED: ${{ steps.version.outputs.version }}
+        run: |
+          set -eu
+          uv venv "$RUNNER_TEMP/dev-check"
+          uv pip install --python "$RUNNER_TEMP/dev-check/bin/python" dist/engineering_influence-*.whl dist/engineering_influence_sdk-*.whl
+          [ "$("$RUNNER_TEMP/dev-check/bin/ei" --version)" = "engineering-influence $EXPECTED" ]
+          [ "$("$RUNNER_TEMP/dev-check/bin/python" -c 'import engineering_influence_sdk as s; print(s.__version__)')" = "$EXPECTED" ]
       - name: Software bill of materials and checksums
         run: |
           set -eu

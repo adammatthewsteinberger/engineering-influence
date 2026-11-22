@@ -1,6 +1,6 @@
 # ADR 0005: Release flow and changelog fragments
 
-Status: accepted
+Status: accepted; points 2 and 5 are replaced by [ADR 0009](0009-branch-driven-publishing.md)
 
 ## Context
 

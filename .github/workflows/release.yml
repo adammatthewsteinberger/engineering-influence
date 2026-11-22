@@ -1,32 +1,31 @@
-# Publishing a release: push a tag named v<version> from the main branch.
+# Publishing is driven by the branch a commit lands on, and a person approves each upload.
 #
-#   1. The guard job checks the tag matches the code, the changelog and the main branch.
-#   2. The build job is the same reusable workflow CI runs on every push, plus the full tests.
-#   3. The GitHub release attaches the artifacts with signed build provenance.
-#   4. A rehearsal on TestPyPI (the core, then the SDK) runs only if the repository variable
-#      PUBLISH_TO_TESTPYPI is 'true'.
-#   5. Publishing to PyPI is last, is skipped unless the repository variable PUBLISH_TO_PYPI is
-#      'true', waits for the rehearsal if there was one (a failed rehearsal stops it), and waits
-#      for approval of the 'pypi' environment. The SDK is uploaded by its own job after the core,
-#      from its own environment ('pypi-sdk'), because PyPI tells pending publishers apart by it.
+#   develop  Every merge builds <version>.dev<run number> and uploads it to TestPyPI.
+#   main     Every merge is a release: the guard checks the version, the changelog and the folded
+#            changelog fragments, a GitHub release is created with signed provenance, and the
+#            packages are uploaded to PyPI.
+#
+#   1. The guard job reads the branch and decides which of the two this is. Only develop and main
+#      publish; a manual run from any other branch is refused.
+#   2. The build job is the same reusable workflow CI runs on every push. A release also runs the
+#      full tests. A development build is made from a copy of the commit with its version stamped.
+#   3. A release creates the tag v<version> and the GitHub release. A development build does not.
+#   4. The uploads are separate jobs and environments for the core and the SDK, because PyPI tells
+#      pending publishers apart by their environment: testpypi and testpypi-sdk for develop, pypi and
+#      pypi-sdk for main. The SDK goes up only after the core. Each environment needs a person's
+#      approval, and each index has its own on/off variable (PUBLISH_TO_TESTPYPI, PUBLISH_TO_PYPI).
 name: Release
 
 on:
   push:
-    tags: ["v*"]
-  # The same pipeline, started by hand for a tag that already exists. Use it if a tag push does not
-  # start the workflow.
+    branches: [develop, main]
+  # The same pipeline, started by hand on develop or main.
   workflow_dispatch:
-    inputs:
-      tag:
-        description: An existing tag to release, for example v0.1.0a1
-        required: true
-        type: string
 
 permissions: {}
 
 concurrency:
-  group: release-${{ inputs.tag || github.ref_name }}
+  group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -35,29 +34,42 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: read
+    outputs:
+      kind: ${{ steps.guard.outputs.kind }}
+      version: ${{ steps.guard.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: refs/tags/${{ inputs.tag || github.ref_name }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - name: The tag must match the code, the changelog and the main branch
+      - name: The branch decides what is published, and a release must match the code and the changelog
+        id: guard
         env:
-          TAG: ${{ inputs.tag || github.ref_name }}
+          REF: ${{ github.ref }}
         run: |
           set -eu
           core="$(sed -n 's/^__version__ = "\(.*\)"/\1/p' src/engineering_influence/__init__.py)"
           sdk="$(sed -n 's/^__version__ = "\(.*\)"/\1/p' packages/engineering-influence-sdk/src/engineering_influence_sdk/__init__.py)"
           [ -n "$core" ] || { echo "could not read the package version" >&2; exit 1; }
           [ "$core" = "$sdk" ] || { echo "core $core and sdk $sdk versions differ" >&2; exit 1; }
-          [ "$TAG" = "v$core" ] || { echo "tag $TAG does not match version $core" >&2; exit 1; }
-          # The dots in a version are regex wildcards; escape them so only this exact version matches.
-          pattern="$(printf '%s' "$core" | sed 's/[][\.*^$+?(){}|]/\\&/g')"
-          grep -Eq "^## \[?$pattern\]?( |$)" CHANGELOG.md || { echo "CHANGELOG.md has no '## $core' section" >&2; exit 1; }
-          leftover="$(find changelog.d -type f -name '*.md' ! -name README.md 2>/dev/null | head -n 1)"
-          [ -z "$leftover" ] || { echo "$leftover is an unfolded changelog fragment; run scripts/fold_changelog.py" >&2; exit 1; }
-          git merge-base --is-ancestor HEAD origin/main || { echo "$TAG is not on the main branch" >&2; exit 1; }
-          echo "releasing $core"
+          printf '%s' "$core" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+((a|b|rc)[0-9]+)?$' || { echo "version $core is not a plain release version" >&2; exit 1; }
+          case "$REF" in
+            refs/heads/develop) kind=dev ;;
+            refs/heads/main) kind=release ;;
+            *) echo "only develop and main are published, not $REF" >&2; exit 1 ;;
+          esac
+          if [ "$kind" = release ]; then
+            # The dots in a version are regex wildcards; escape them so only this exact version matches.
+            pattern="$(printf '%s' "$core" | sed 's/[][\.*^$+?(){}|]/\\&/g')"
+            grep -Eq "^## \[?$pattern\]?( |$)" CHANGELOG.md || { echo "CHANGELOG.md has no '## $core' section" >&2; exit 1; }
+            leftover="$(find changelog.d -type f -name '*.md' ! -name README.md 2>/dev/null | head -n 1)"
+            [ -z "$leftover" ] || { echo "$leftover is an unfolded changelog fragment; run scripts/fold_changelog.py" >&2; exit 1; }
+            git merge-base --is-ancestor HEAD origin/main || { echo "$core is not on the main branch" >&2; exit 1; }
+          fi
+          echo "kind=$kind" >> "$GITHUB_OUTPUT"
+          echo "version=$core" >> "$GITHUB_OUTPUT"
+          echo "$kind build of $core"
 
   build:
     needs: guard
@@ -65,11 +77,13 @@ jobs:
       contents: read
     uses: ./.github/workflows/build-distribution.yml
     with:
-      run_tests: true
-      ref: refs/tags/${{ inputs.tag || github.ref_name }}
+      run_tests: ${{ needs.guard.outputs.kind == 'release' }}
+      ref: ${{ github.sha }}
+      dev_build: ${{ needs.guard.outputs.kind == 'dev' && format('{0}', github.run_number) || '' }}
 
   github-release:
-    needs: build
+    needs: [guard, build]
+    if: needs.guard.outputs.kind == 'release'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -86,25 +100,30 @@ jobs:
           subject-path: |
             dist/*.whl
             dist/*.tar.gz
+      # The tag is created here, at the commit that was built. Running this again for the same
+      # version finds the release and leaves it alone, so a failed run can be repeated.
       - name: Create the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ inputs.tag || github.ref_name }}
+          TAG: v${{ needs.guard.outputs.version }}
+          TARGET: ${{ github.sha }}
         run: |
           set -eu
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "$TAG is already released"
+            exit 0
+          fi
           flag=""
-          case "$TAG" in *a[0-9]*|*b[0-9]*|*rc[0-9]*|*.dev*) flag="--prerelease" ;; esac
-          gh release create "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes --title "$TAG" $flag
+          case "$TAG" in *a[0-9]*|*b[0-9]*|*rc[0-9]*) flag="--prerelease" ;; esac
+          gh release create "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --target "$TARGET" --generate-notes --title "$TAG" $flag
 
+  # develop: a development build, to TestPyPI. Configure the trusted publisher for each project on
+  # TestPyPI, and require reviewers on each environment, before setting PUBLISH_TO_TESTPYPI.
   testpypi:
-    needs: github-release
-    if: vars.PUBLISH_TO_TESTPYPI == 'true'
+    needs: [guard, build]
+    if: needs.guard.outputs.kind == 'dev' && vars.PUBLISH_TO_TESTPYPI == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # A rehearsal of the PyPI upload, one job and one environment for each package, because a pending
-    # trusted publisher is told apart by its environment. Configure the trusted publisher for each
-    # project on TestPyPI, and require reviewers on each environment, before setting
-    # PUBLISH_TO_TESTPYPI. See docs/RELEASING.md. No token is used: the run's identity authorises it.
     environment:
       name: testpypi
       url: https://test.pypi.org/project/engineering-influence/
@@ -128,11 +147,10 @@ jobs:
           skip-existing: true
 
   testpypi-sdk:
-    needs: testpypi
-    if: vars.PUBLISH_TO_TESTPYPI == 'true'
+    needs: [guard, testpypi]
+    if: needs.guard.outputs.kind == 'dev' && vars.PUBLISH_TO_TESTPYPI == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # The SDK, after the core has gone up. A failed or skipped core upload skips this.
     environment:
       name: testpypi-sdk
       url: https://test.pypi.org/project/engineering-influence-sdk/
@@ -155,24 +173,13 @@ jobs:
           attestations: true
           skip-existing: true
 
+  # main: a release, to PyPI. Configure the trusted publisher for each project on PyPI, and require
+  # reviewers on each environment, before setting PUBLISH_TO_PYPI. See docs/RELEASING.md.
   pypi:
-    needs: [github-release, testpypi, testpypi-sdk]
-    # PUBLISH_TO_PYPI must be 'true'. If the TestPyPI rehearsal ran, neither upload may have failed or
-    # been cancelled; if it was skipped, this goes ahead. `always()` is needed so that a skipped
-    # rehearsal does not skip this job, so the release job's success is checked here by hand.
-    if: >-
-      ${{ always()
-      && vars.PUBLISH_TO_PYPI == 'true'
-      && needs.github-release.result == 'success'
-      && needs.testpypi.result != 'failure'
-      && needs.testpypi.result != 'cancelled'
-      && needs.testpypi-sdk.result != 'failure'
-      && needs.testpypi-sdk.result != 'cancelled' }}
+    needs: [guard, github-release]
+    if: needs.guard.outputs.kind == 'release' && vars.PUBLISH_TO_PYPI == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # One job and one environment for each package, because a pending trusted publisher is told apart
-    # by its environment. Configure the trusted publisher for each project on PyPI, and require
-    # reviewers on each environment, before setting PUBLISH_TO_PYPI. See docs/RELEASING.md.
     environment:
       name: pypi
       url: https://pypi.org/project/engineering-influence/
@@ -194,11 +201,10 @@ jobs:
           attestations: true
 
   pypi-sdk:
-    needs: pypi
-    if: ${{ always() && vars.PUBLISH_TO_PYPI == 'true' && needs.pypi.result == 'success' }}
+    needs: [guard, pypi]
+    if: needs.guard.outputs.kind == 'release' && vars.PUBLISH_TO_PYPI == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # The SDK, after the core has been published. If the core was not published, this does not run.
     environment:
       name: pypi-sdk
       url: https://pypi.org/project/engineering-influence-sdk/
