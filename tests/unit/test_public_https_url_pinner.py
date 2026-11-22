@@ -223,3 +223,9 @@ def test_a_name_that_resolves_public_and_then_inward_is_pinned_to_the_first_answ
 def test_the_default_resolver_asks_the_system_and_this_machine_is_not_public() -> None:
     decision = PublicHttpsUrlPinner(PublicHttpsUrlPolicy()).pin("https://localhost/x")
     assert decision.target is None and decision.reason == "non_public_address"
+
+
+def test_a_scope_id_on_an_address_is_dropped_so_the_policy_judges_the_address_itself() -> None:
+    found, policy, _ = pinner(["fe80::1%eth0", "fe80::1%wlan0"])
+    assert found.pin("https://bees.example/x").target is not None
+    assert policy.checked == ["https://[fe80::1]/x"]

@@ -58,7 +58,10 @@ class PublicHttpsUrlPinner(OutboundUrlPinnerInterface):
             except UnicodeError:
                 return PinDecision.refused("invalid_host")
             try:
-                addresses = list(dict.fromkeys(self._resolve(name)))
+                # a scope id (fe80::1%eth0) names a network interface of this machine: drop it, so the policy
+                # judges the address itself, the same on every platform
+                answers = (address.split("%", 1)[0] for address in self._resolve(name))
+                addresses = list(dict.fromkeys(answers))
             except OSError:
                 return PinDecision.refused("unresolvable_host")
             if not addresses:
