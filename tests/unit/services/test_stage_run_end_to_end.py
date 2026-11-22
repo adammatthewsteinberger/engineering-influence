@@ -35,7 +35,10 @@ from engineering_influence.models.tool_lock import ToolLock
 from engineering_influence.models.tool_loop_limits import ToolLoopLimits
 from engineering_influence.services.advance_run import AdvanceRun
 from engineering_influence.services.ask_model import AskModel
+from engineering_influence.services.assemble_stage_executor import AssembleStageExecutor
+from engineering_influence.services.book_config_writer import BookConfigWriter
 from engineering_influence.services.call_model import CallModel
+from engineering_influence.services.chapter_cleaner import ChapterCleaner
 from engineering_influence.services.context_assembler import ContextAssembler
 from engineering_influence.services.draft_stage_executor import DraftStageExecutor
 from engineering_influence.services.failure_classifier import FailureClassifier
@@ -150,6 +153,9 @@ class World:
                     DESCRIPTOR.context_window,
                     DESCRIPTOR.max_output_tokens,
                 ),
+                AssembleStageExecutor.STAGE: AssembleStageExecutor(
+                    self.store, OutlineParser(), ChapterCleaner(), BookConfigWriter()
+                ),
             },
         )
         self.service = AdvanceRun(
@@ -205,19 +211,27 @@ GOOD = (
 def test_a_run_goes_from_brief_to_draft_and_completes_with_each_answer_stored() -> None:
     world = World(Model(*GOOD))
     outcomes = [world.advance(stage) for stage in RECIPES.plan().stages]
-    assert outcomes == [AdvanceOutcome.ADVANCED] * 4 + [AdvanceOutcome.COMPLETED]
+    assert outcomes == [AdvanceOutcome.ADVANCED] * 5 + [AdvanceOutcome.COMPLETED]
     assert world.run().status is RunStatus.COMPLETED
     assert world.store.names(RUN_ID) == [
+        "assemble.md",
         "brief.md",
         "chapter_01.md",
         "chapter_02.md",
         "draft.md",
+        "manuscript/books/how-to-keep-bees.toml",
+        "manuscript/src/chapter_01.md",
+        "manuscript/src/chapter_02.md",
         "outline.md",
         "positioning.md",
         "research.md",
         "summary_01.md",
         "summary_02.md",
     ]
+    assert (
+        world.store.get(RUN_ID, "manuscript/src/chapter_02.md")
+        == b"# The Site\n\nCHAPTER TWO text\n"
+    )
     assert world.store.get(RUN_ID, "research.md") == b"RESEARCH text"
     assert world.store.get(RUN_ID, "outline.md") == OUTLINE_TEXT.encode()
     assert world.store.get(RUN_ID, "chapter_02.md") == b"CHAPTER TWO text"
