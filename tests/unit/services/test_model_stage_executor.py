@@ -31,6 +31,7 @@ from engineering_influence.services.interfaces.ask_model_interface import AskMod
 from engineering_influence.services.interfaces.spend_guard_interface import SpendGuardInterface
 from engineering_influence.services.lock_tool_grants import LockToolGrants
 from engineering_influence.services.model_stage_executor import ModelStageExecutor
+from engineering_influence.services.no_output_checks import NoOutputChecks
 from engineering_influence.services.no_stage_guidance import NoStageGuidance
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 from engineering_influence.services.run_tool_loop import RunToolLoop
@@ -95,6 +96,7 @@ class World:
             registry,
             LockToolGrants(ToolLock()),
             NoStageGuidance(),
+            NoOutputChecks(),
             self._guard,
         )
         self.run = BookRun(
@@ -210,7 +212,7 @@ def test_a_later_stage_reads_the_earlier_answers_as_untrusted_text() -> None:
     assert '<untrusted name="positioning">\nPOSITIONING text\n</untrusted>' in request.prompt
     assert '<untrusted name="research">\nRESEARCH text\n</untrusted>' in request.prompt
     assert request.max_output_tokens == 4_000
-    assert request.prompt_version == "stage_outline@2"
+    assert request.prompt_version == "stage_outline@3"
     assert world.store.get("run-1", "outline.md") == b"A fine answer."
 
 

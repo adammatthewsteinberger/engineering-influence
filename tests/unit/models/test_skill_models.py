@@ -159,7 +159,7 @@ def test_the_refusal_names_the_character_and_the_part() -> None:
 
 
 def test_ordinary_text_is_kept_whole() -> None:
-    text = "Line one.\n\tIndented résumé — “quoted” 😀 ünïcode nbsp.\nLine three."
+    text = "Line one.\n\tIndented résumé — “quoted” 😀 ünïcode" + chr(0xA0) + "nbsp.\nLine three."
     assert skill(parts=(("outline", text),)).part("outline") == text
 
 

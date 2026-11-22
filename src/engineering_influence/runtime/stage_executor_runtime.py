@@ -77,7 +77,9 @@ from engineering_influence.services.mcp_server_launcher import McpServerLauncher
 from engineering_influence.services.mcp_tool_factory import McpToolFactory
 from engineering_influence.services.model_stage_executor import ModelStageExecutor
 from engineering_influence.services.no_stage_guidance import NoStageGuidance
+from engineering_influence.services.nonfiction_output_checks import NonfictionOutputChecks
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
+from engineering_influence.services.outline_parser import OutlineParser
 from engineering_influence.services.run_tool_loop import RunToolLoop
 from engineering_influence.services.skill_lock_verifier import SkillLockVerifier
 from engineering_influence.services.spend_guard import SpendGuard
@@ -160,6 +162,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             tools,
             LockToolGrants(lock),
             guidance,
+            NonfictionOutputChecks(OutlineParser()),
             SpendGuard,
         )
 

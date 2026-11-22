@@ -9,6 +9,9 @@ from engineering_influence.interfaces.artifact_store_interface import ArtifactSt
 from engineering_influence.interfaces.prompt_library_interface import PromptLibraryInterface
 from engineering_influence.interfaces.stage_executor_interface import StageExecutorInterface
 from engineering_influence.interfaces.stage_guidance_interface import StageGuidanceInterface
+from engineering_influence.interfaces.stage_output_check_interface import (
+    StageOutputCheckInterface,
+)
 from engineering_influence.interfaces.stage_recipes_interface import StageRecipesInterface
 from engineering_influence.interfaces.tool_grants_interface import ToolGrantsInterface
 from engineering_influence.interfaces.tool_registry_interface import ToolRegistryInterface
@@ -45,6 +48,9 @@ class ModelStageExecutor(StageExecutorInterface):
     and it is not given a say in which tools are offered. A stage with no skill enabled sends
     exactly the prompt and version it always did.
 
+    An answer that the stage after it could not read (the outline must parse as chapters) **stops the run
+    where it was written**, before it is stored, so a malformed one is not paid for twice.
+
     An answer that is not complete (cut off at the model's limit, or declined) or that has no
     text **stops the run**: nothing is stored, and the error carries the reason. Building the next
     stage on an empty or half-written artifact would spend money on top of a defect. The calls
@@ -66,6 +72,7 @@ class ModelStageExecutor(StageExecutorInterface):
         tools: ToolRegistryInterface,
         grants: ToolGrantsInterface,
         guidance: StageGuidanceInterface,
+        checks: StageOutputCheckInterface,
         guards: Callable[[Budget], SpendGuardInterface],
     ) -> None:
         self._recipes = recipes
@@ -75,6 +82,7 @@ class ModelStageExecutor(StageExecutorInterface):
         self._tools = tools
         self._grants = grants
         self._guidance = guidance
+        self._checks = checks
         self._guards = guards
 
     async def execute(self, run: BookRun, attempt: int) -> StageReport:
@@ -113,6 +121,7 @@ class ModelStageExecutor(StageExecutorInterface):
             raise ApplicationError(
                 code="STAGE_ANSWER_UNUSABLE", message=self._why(outcome, run.stage), http_status=502
             )
+        self._checks.check(run.stage, outcome.text)
         await asyncio.to_thread(
             self._artifacts.put, run.run_id, recipe.output_name(), outcome.text.encode("utf-8")
         )
