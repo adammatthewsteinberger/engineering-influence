@@ -132,3 +132,8 @@ Recorded on 2026-11-22 while building slice 4 ([TOOL_LOCK.md](../TOOL_LOCK.md)).
 - **Slicing.** Slice 4 is built as 4a (lock models, file format, MCP client over an abstract transport,
   verifier), 4b (a stdio transport under the build tools' limits, and `ei tools`), 4c (wiring the registry
   and the start-up check) and 4d (HTTP).
+- **Running a server (4b).** A stdio server runs in its own process group with a bare environment and a
+  throwaway home, under time, memory and disk limits, and is stopped by killing the group before the leader
+  is reaped. It is not sandboxed. `ei tools add` runs the server, so it refuses a launcher, a missing
+  executable or a relative script before starting anything, and `ei tools verify` never starts a server
+  whose files have changed.

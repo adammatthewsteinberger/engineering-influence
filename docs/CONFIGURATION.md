@@ -230,3 +230,11 @@ That is not run by the project's tests or CI. The image is pinned by digest to t
 search works against it, then replace the digest in the compose file. SearXNG passes your queries to the
 public search engines it is set to use, and those engines can throttle or block a local instance, which is
 what the Brave backup is for. The port is `EI_SEARXNG_PORT` (default 8888).
+
+## The tool lock (third-party tool servers)
+
+`ei tools add`, `list` and `verify` read and write one lock file: `--lock PATH`, else `EI_TOOL_LOCK`, else
+`ei-tools.lock.toml` in the current directory. **`add` and `verify` start the server's code**, so run them
+only on servers you mean to run. Each server is started with a bare environment (see
+[TOOL_LOCK.md](TOOL_LOCK.md)) and, for one look, at most **two minutes, 2 GiB of memory and 1 GiB of disk**.
+These are fixed in the command, not settings. Nothing in a run reads the lock yet.

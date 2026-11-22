@@ -1,7 +1,6 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """One MCP server that has been reviewed and pinned."""
 
-import posixpath
 import re
 from dataclasses import dataclass
 from typing import ClassVar
@@ -9,6 +8,7 @@ from typing import ClassVar
 from engineering_influence.models.interfaces.mcp_server_lock_interface import (
     McpServerLockInterface,
 )
+from engineering_influence.models.mcp_command import McpCommand
 
 
 @dataclass(frozen=True, slots=True)
@@ -19,8 +19,9 @@ class McpServerLock(McpServerLockInterface):
       executable and of every file named in its arguments (the script it runs), so changed code is
       noticed before it is started. Installed dependencies are not covered, and neither is anything
       the script fetches or reads at run time.
-    - A launcher that downloads code on each run (``npx``, ``uvx``, ``docker``, ...) is refused:
-      what it would run cannot be hashed here.
+    - The command is checked by ``McpCommand``: an absolute executable, and no launcher that
+      downloads code on each run (``npx``, ``uvx``, ``docker``, ...), because what it would run
+      cannot be hashed here.
     - ``server_name``, ``server_version`` and ``tools_hash`` are what the server reported and
       advertised when it was added. A server that later says or advertises anything else is not
       started. ``tool_names`` is the same list in words, so a refusal can say what changed.
@@ -31,9 +32,6 @@ class McpServerLock(McpServerLockInterface):
     NAME: ClassVar[re.Pattern[str]] = re.compile(r"[a-z][a-z0-9-]{0,31}")
     HASH: ClassVar[re.Pattern[str]] = re.compile(r"[0-9a-f]{64}")
     ENV: ClassVar[re.Pattern[str]] = re.compile(r"[A-Z][A-Z0-9_]{0,63}")
-    LAUNCHERS: ClassVar[frozenset[str]] = frozenset(
-        {"npx", "pnpx", "bunx", "uvx", "pipx", "npm", "pnpm", "yarn", "docker", "podman", "env"}
-    )
 
     name: str
     command: tuple[str, ...]
@@ -62,18 +60,7 @@ class McpServerLock(McpServerLockInterface):
         return dict(self.files)
 
     def _check_command(self) -> None:
-        if not isinstance(self.command, tuple) or not self.command:
-            raise ValueError("a server's command is a non-empty tuple")
-        if any(not isinstance(part, str) or not part for part in self.command):
-            raise ValueError("every part of a command is a non-empty string")
-        if not self.command[0].startswith("/"):
-            raise ValueError("a command starts with the absolute path of its executable")
-        launcher = posixpath.basename(self.command[0])
-        if launcher in self.LAUNCHERS:
-            raise ValueError(
-                f"{launcher} fetches code that cannot be hashed here; "
-                "install the server and lock its own executable"
-            )
+        McpCommand(self.command)
 
     def _check_files(self) -> None:
         if not isinstance(self.files, tuple):

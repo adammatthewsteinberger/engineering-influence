@@ -125,6 +125,9 @@ ei serve api|worker
 ei db upgrade
 ei run status|resume|cancel RUN_ID
 ei book [--root DIR] audit|build|epub|covers|qa|publish …
+ei tools add [--lock PATH] [--env VAR …] [--replace] NAME -- COMMAND [ARG …]
+ei tools list [--lock PATH]
+ei tools verify [--lock PATH] [NAME …]
 ```
 
 | Command | What it does | Exit status |
@@ -136,6 +139,9 @@ ei book [--root DIR] audit|build|epub|covers|qa|publish …
 | `ei run resume RUN_ID` | Moves a parked run back to running and queues its current stage; on a run that is already running it only queues the stage again, which repairs a resume that died half-way. Reads `EI_DATABASE_URL` and `EI_RABBITMQ_URL`. | `0`; `1` unknown run, finished run or a run that kept changing; `2` setup trouble |
 | `ei run cancel RUN_ID` | Stops a run for good; cancelling twice is fine, and a completed or failed run is refused. Needs only `EI_DATABASE_URL`. | same |
 | `ei book …` | Audit, build and publish books (needs the `publishing` extra and, for PDFs, a TeX toolchain). Reads `engineering-influence.toml` in `--root`. | `0` ok; `1` a build or audit failure; `2` bad arguments |
+| `ei tools add NAME -- COMMAND …` | **Runs** an MCP server once, under limits and with a bare environment, and records what it is in the tool lock: its files' hashes, the name and version it reported and a hash of its tools. Options go before `NAME`. Refuses a launcher (`npx`, `uvx`, `docker`, …) and a relative script path before anything is run. See [TOOL_LOCK.md](TOOL_LOCK.md). | `0`; `2` on a refusal or an unusable lock |
+| `ei tools list` | Shows the locked servers. Starts nothing. | `0`; `2` an unusable lock |
+| `ei tools verify [NAME …]` | **Runs** each locked server (a server whose files changed is not started) and compares it with the lock. | `0` all match; `1` one does not; `2` setup trouble or an unknown name |
 
 `python -m engineering_influence` is the same program. Walk-through: [`examples/cli/run.sh`](../examples/cli/run.sh).
 

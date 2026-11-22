@@ -34,6 +34,13 @@ class ToolLock(ToolLockInterface):
                 return server
         return None
 
+    def with_server(self, server: McpServerLock, replace: bool) -> "ToolLock":
+        """This lock with the server added; an existing one of that name is replaced only if asked."""
+        kept = tuple(existing for existing in self.servers if existing.name != server.name)
+        if len(kept) != len(self.servers) and not replace:
+            raise ValueError(f"a server named {server.name!r} is already locked")
+        return ToolLock((*kept, server))
+
     def names(self) -> tuple[str, ...]:
         """The locked servers' names, sorted."""
         return tuple(sorted(server.name for server in self.servers))

@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from engineering_influence.models.mcp_server_lock import McpServerLock
+    from engineering_influence.models.tool_lock import ToolLock
 
 
 class ToolLockInterface(ABC):
@@ -18,6 +19,10 @@ class ToolLockInterface(ABC):
     @abstractmethod
     def server(self, name: str) -> McpServerLock | None:
         """The locked server with this name, or None."""
+
+    @abstractmethod
+    def with_server(self, server: McpServerLock, replace: bool) -> ToolLock:
+        """This lock with the server added; an existing one of that name is replaced only if asked."""
 
     @abstractmethod
     def names(self) -> tuple[str, ...]:

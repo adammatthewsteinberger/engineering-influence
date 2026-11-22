@@ -167,8 +167,10 @@ These are open, in the order they would be fixed.
 5. **The print and ebook documents were checked field by field in M5**; a new metadata field
    that bypasses `TexText` would be caught by `test_latex_injection.py` only if it is added to
    that test's field list.
-6. **Third-party tool servers (MCP) are not usable yet, and a lock has limits.** The lock, its
-   verifier and the MCP client are built ([TOOL_LOCK.md](TOOL_LOCK.md)) but nothing starts a server or
-   reads a lock in a run. When it does, a lock will not cover a server's installed dependencies or what it
-   fetches at run time, and a file could change between the check and the start. A stdio server's
-   sandbox beyond the allow-list environment and resource limits is an open question in the ADR.
+6. **Third-party tool servers (MCP) are not usable by a model yet, and a lock has limits.** The lock, its
+   verifier, the MCP client, the stdio transport and `ei tools` are built ([TOOL_LOCK.md](TOOL_LOCK.md)), and
+   `ei tools add` and `verify` run a server's code, but no run reads a lock. A lock does not cover a server's
+   installed dependencies or what it fetches at run time, and a file could change between the check and the
+   start. A server is run with a bare environment, a throwaway home and resource limits, **not in a
+   sandbox**: it can read any file the user can, and use the network. How strong a sandbox it needs is an
+   open question in the ADR.

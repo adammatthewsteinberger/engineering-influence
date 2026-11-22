@@ -5,10 +5,47 @@ are still what was approved. The approval is the **tool lock**, a TOML file you 
 commit. This is slice 4 of [ADR 0008](adr/0008-tools-for-the-model.md), built in parts.
 
 **Status.** Built and tested: the lock's models and file format, a strict reader and writer, the MCP
-client (over an abstract transport, tested with a fake), and the verifier. **Not built yet:** a real
-transport that starts a server (4b), the `ei tools` commands (4b), offering a locked server's tools to
-a stage and checking the lock at start (4c), and HTTP servers (4d). Nothing in a run reads a lock today,
-so no third-party tool can be called.
+client, the verifier, a **stdio transport that runs a server as a child process under limits**, and the
+`ei tools add`, `list` and `verify` commands (slices 4a and 4b). **Not built yet:** offering a locked
+server's tools to a stage and checking the lock at start (4c), and HTTP servers (4d). Nothing in a run
+reads a lock today, so no third-party tool can be called by a model.
+
+## The `ei tools` commands
+
+```text
+ei tools add [--lock PATH] [--env VAR …] [--replace] NAME -- COMMAND [ARG …]
+ei tools list [--lock PATH]
+ei tools verify [--lock PATH] [NAME …]
+```
+
+- **`add` runs the server.** Everything that can be refused is refused first: a bad name, a name already
+  locked (unless `--replace`), a bad environment name, a command that does not exist, a launcher, an
+  executable that cannot be read, and a script given by a relative path (give an absolute path, so the
+  file locked is the file run). Then the server is started once, asked who it is and what it offers, and
+  stopped, and the entry is written. It prints every tool and its description, cut and with control
+  characters removed, because **the descriptions are written by the server: read them before you commit
+  the lock.** Options go before `NAME`; an option after it gets a clear error.
+- **`list`** shows what is locked and starts nothing.
+- **`verify` runs each locked server**, but a server whose files changed is **never started**. It then
+  compares the name, version and tools. A server that cannot be started or does not answer is a failed
+  check, not a crash, so every server is reported. Exit `1` if any no longer matches, `2` for setup
+  trouble or a name that is not locked.
+
+## How a server is run
+
+- A child process in its own session. Closing it kills the whole process group, then reaps the leader;
+  the leader is never reaped earlier, so its id is still ours when the group is killed.
+- **A bare environment:** `PATH`, `LANG`, `TZ`, `SYSTEMROOT` and `LC_*`, plus the variables the lock names
+  (a name that is not set is an error). `HOME` and the temporary-directory variables point at the server's
+  own throwaway directory (mode 0700), which is also its working directory and is removed when it stops.
+  No API key or token reaches it unless the lock names it.
+- **Limits, as for the build tools:** resident memory of the whole group, the size of that directory and the
+  session's time are sampled every half second, and the server is stopped when it passes one. A limit is
+  enforced to within what the server can use in one interval. Only the working directory counts for disk.
+- **A line is bounded** (4 MiB) and a server that talks faster than it is read is slowed by a short queue.
+  A line that is not a JSON object is refused. Its last 2,000 bytes of error output are quoted if it dies.
+- **This is not a sandbox.** A server can still read any file the user can read, by absolute path, and use
+  the network. Linux and macOS only (it needs process groups).
 
 ## The file
 
@@ -71,8 +108,8 @@ temporary name and renamed, with servers in name order, so two saves of one lock
 ## The MCP client
 
 `McpClient` speaks JSON-RPC 2.0 for `initialize`, `tools/list` and `tools/call`, written from the
-protocol's published shape. It has been tested against a fake transport only: **not against a real
-server**, which 4b adds.
+protocol's published shape. It has been run against a small server written for the tests, over a real
+process and pipes. **It has not been run against third-party MCP servers.**
 
 - **It offers the server nothing.** It announces no capabilities. A request the server sends anyway is
   refused with `-32601`, except `ping`, so a server cannot ask this client to sample the model, read a
