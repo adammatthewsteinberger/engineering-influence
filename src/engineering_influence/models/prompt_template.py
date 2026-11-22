@@ -24,14 +24,17 @@ class PromptTemplate(PromptTemplateInterface):
     Rendering fills every blank in one pass: a value is never searched for further blanks, and
     a blank that is missing or not in the part is an error. A blank named in ``untrusted`` takes
     text from outside (a fetched page, a user's file): it is always rendered inside an
-    ``<untrusted name="...">`` block, any copy of that tag in the value is defused first, and
+    ``<untrusted name="...">`` block, any copy of that tag in the value (or of the tags that frame installed skills, so text from outside
+    cannot pose as operator guidance) is defused first, and
     the template may not put it in the ``system`` part, which must tell the model to treat that
     block as evidence and never as instructions.
     """
 
     NAME: ClassVar[re.Pattern[str]] = re.compile(r"[a-z][a-z0-9_]*")
     BLANK: ClassVar[re.Pattern[str]] = re.compile(r"\{\{\s*([a-z][a-z0-9_]*)\s*\}\}")
-    UNTRUSTED_TAG: ClassVar[re.Pattern[str]] = re.compile(r"<\s*(/?)\s*(untrusted)", re.IGNORECASE)
+    UNTRUSTED_TAG: ClassVar[re.Pattern[str]] = re.compile(
+        r"<\s*(/?)\s*(untrusted|installed_guidance|skill)", re.IGNORECASE
+    )
 
     name: str
     version: int

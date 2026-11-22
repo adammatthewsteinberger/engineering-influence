@@ -39,6 +39,9 @@ from engineering_influence.infrastructure.security.public_https_url_pinner impor
 from engineering_influence.infrastructure.security.public_https_url_policy import (
     PublicHttpsUrlPolicy,
 )
+from engineering_influence.infrastructure.skills.directory_skill_files import DirectorySkillFiles
+from engineering_influence.infrastructure.skills.toml_skill_lock_store import TomlSkillLockStore
+from engineering_influence.infrastructure.skills.toml_skill_parser import TomlSkillParser
 from engineering_influence.infrastructure.tools.http_mcp_transport_factory import (
     HttpMcpTransportFactory,
 )
@@ -53,6 +56,7 @@ from engineering_influence.interfaces.model_interface import ModelInterface
 from engineering_influence.interfaces.search_provider_interface import SearchProviderInterface
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
 from engineering_influence.interfaces.stage_executor_interface import StageExecutorInterface
+from engineering_influence.interfaces.stage_guidance_interface import StageGuidanceInterface
 from engineering_influence.interfaces.tool_interface import ToolInterface
 from engineering_influence.models.model_profile import ModelProfile
 from engineering_influence.models.provider_descriptor import ProviderDescriptor
@@ -66,13 +70,16 @@ from engineering_influence.services.ask_model import AskModel
 from engineering_influence.services.call_model import CallModel
 from engineering_influence.services.fallback_search_provider import FallbackSearchProvider
 from engineering_influence.services.fetch_url_tool import FetchUrlTool
+from engineering_influence.services.lock_stage_guidance import LockStageGuidance
 from engineering_influence.services.lock_tool_grants import LockToolGrants
 from engineering_influence.services.mcp_client_factory import McpClientFactory
 from engineering_influence.services.mcp_server_launcher import McpServerLauncher
 from engineering_influence.services.mcp_tool_factory import McpToolFactory
 from engineering_influence.services.model_stage_executor import ModelStageExecutor
+from engineering_influence.services.no_stage_guidance import NoStageGuidance
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 from engineering_influence.services.run_tool_loop import RunToolLoop
+from engineering_influence.services.skill_lock_verifier import SkillLockVerifier
 from engineering_influence.services.spend_guard import SpendGuard
 from engineering_influence.services.tool_lock_verifier import ToolLockVerifier
 from engineering_influence.services.tool_registry import ToolRegistry
@@ -95,6 +102,10 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
     ``EI_TOOL_LOCK`` names a tool lock ([TOOL_LOCK.md](../../../docs/TOOL_LOCK.md)). Its servers are
     started and verified here, a changed one stops the process, and a stage is offered only the
     locked tools the lock grants it.
+
+    ``EI_SKILL_LOCK`` names a skill lock ([SKILLS.md](../../../docs/SKILLS.md)). Each skill enabled for a
+    stage is checked against its hash here, before any tool server is started, and a changed one stops the
+    process; a stage's prompt then carries only the skills the lock enables for it.
     """
 
     CONNECT_TIMEOUT_SECONDS = 10.0
@@ -134,6 +145,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                 http_status=503,
             )
         model = self._model()
+        guidance = self._guidance()
         lock, locked_tools = self._locked_servers()
         tools = ToolRegistry((*self._tools(), *locked_tools))
         limits = ToolLoopLimits()
@@ -147,6 +159,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             RunToolLoop(ask, runner, limits),
             tools,
             LockToolGrants(lock),
+            guidance,
             SpendGuard,
         )
 
@@ -163,6 +176,29 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                 client.close()
         self._client = None
         self._research_client = None
+
+    def _guidance(self) -> StageGuidanceInterface:
+        """The skills in the lock that ``EI_SKILL_LOCK`` names, checked against their hashes.
+
+        A lock is read only when it is named, so a stray file in the working directory adds nothing
+        to a prompt. A skill that is not the text the lock approved stops the process at start, before
+        any tool server is started or any call is made. The skills are read once, here, so every stage of
+        the run sees the same text.
+        """
+        named = self._environment.get("EI_SKILL_LOCK", "").strip()
+        if not named:
+            return NoStageGuidance()
+        path = Path(named)
+        lock = TomlSkillLockStore().load(path)
+        if lock is None:
+            raise ApplicationError(
+                code="SKILL_LOCK_MISSING",
+                message=f"EI_SKILL_LOCK names {named}, which does not exist",
+                http_status=503,
+            )
+        verifier = SkillLockVerifier(DirectorySkillFiles(), TomlSkillParser())
+        skills = verifier.verified(lock, path.parent / "skills")
+        return LockStageGuidance(lock, skills, TomlPromptLibrary().get("skill_guidance"))
 
     def _locked_servers(self) -> tuple[ToolLock, tuple[ToolInterface, ...]]:
         """The servers in the lock that ``EI_TOOL_LOCK`` names, started and verified, and their tools.

@@ -248,3 +248,16 @@ Its servers are then started and verified when the stage executor is built, a ch
 (`TOOL_LOCK_MISMATCH`), a named file that does not exist is `TOOL_LOCK_MISSING`, and a stage is offered only the
 locked tools the lock grants it (`ei tools grant`). For the life of the process each server may use four
 hours, 2 GiB of memory and 1 GiB of disk. See [TOOL_LOCK.md](TOOL_LOCK.md#in-a-run).
+
+## The skill lock (installed prompt text)
+
+`ei skills add`, `enable`, `disable`, `remove`, `list` and `verify` read and write one lock file: `--lock PATH`,
+else `EI_SKILL_LOCK`, else `ei-skills.lock.toml` in the current directory, with the skill files in a `skills/`
+folder beside it. Nothing here starts a process or opens a connection; a skill is text.
+
+**A run reads a skill lock only when `EI_SKILL_LOCK` names it** (the file in the current directory is not read).
+Each skill enabled for some stage is read and hashed once when the stage executor is built, before any tool
+server is started: a skill that changed is `SKILL_LOCK_MISMATCH`, a named file that does not exist is
+`SKILL_LOCK_MISSING`, and a stage's prompt carries only the skills the lock enables for it. A file is at most
+64 KiB, a part at most 8,000 characters, and a stage at most four skills; these are fixed in the code, not
+settings. See [SKILLS.md](SKILLS.md#in-a-run).

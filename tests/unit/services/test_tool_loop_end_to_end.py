@@ -38,6 +38,7 @@ from engineering_influence.services.ask_model import AskModel
 from engineering_influence.services.call_model import CallModel
 from engineering_influence.services.lock_tool_grants import LockToolGrants
 from engineering_influence.services.model_stage_executor import ModelStageExecutor
+from engineering_influence.services.no_stage_guidance import NoStageGuidance
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 from engineering_influence.services.run_tool_loop import RunToolLoop
 from engineering_influence.services.spend_guard import SpendGuard
@@ -152,6 +153,7 @@ class World:
             loop,
             registry,
             LockToolGrants(ToolLock()),
+            NoStageGuidance(),
             SpendGuard,
         )
 

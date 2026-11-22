@@ -6,8 +6,12 @@ in `src/engineering_influence/infrastructure/prompt_library/templates/`, one TOM
 is called `templates`, never `prompts`, because the `leak-scan` CI job rejects any path containing
 `prompts/`.
 
-Today four templates ship. `stage_brief`, `stage_positioning` and `stage_outline` are the prompts for the first three non-fiction stages; every blank in them that is filled from outside (the author's idea, and what an earlier stage wrote) is declared untrusted. `context_pack` holds the section labels the context assembler puts between the parts
-of a chapter prompt.
+Today six templates ship. `stage_brief`, `stage_positioning`, `stage_research` and `stage_outline` are the prompts for the
+four non-fiction stages; every blank in them that is filled from outside (the author's idea, and what an earlier stage
+wrote) is declared untrusted. `context_pack` holds the section labels the context assembler puts between the parts
+of a chapter prompt. `skill_guidance` frames the skills a person enabled for a stage ([SKILLS.md](SKILLS.md)); its
+one blank is not declared untrusted, because the text that fills it is built by the product from skills a person
+installed, defused and delimited, and is meant to instruct.
 
 ## A template
 
@@ -52,7 +56,8 @@ the damage if it does not. Nothing renders text from a real source yet.
 ## Versions are part of the journal key
 
 A model call's journal key contains the prompt version, so a resumed run reuses an answer only for the same
-prompt. The assembler records `template.identifier()` (`context_pack@1`). Editing a template's text and
+prompt. The assembler records `template.identifier()` (`context_pack@1`). A stage with skills enabled adds their identity
+(`stage_outline@1+skill_guidance@1:<digest>`), so a skill's text is part of the key too. Editing a template's text and
 keeping its version would make a resumed run replay answers written for the old text, so
 `tests/unit/test_prompt_template_lock.py` compares each shipped template with
 `tests/fixtures/prompt_templates.lock.toml`, which pins its version to a fingerprint of everything the

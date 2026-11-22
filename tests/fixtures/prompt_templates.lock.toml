@@ -5,6 +5,10 @@
 version = 1
 fingerprint = "435cbca350fb1cbcc85e901667e0e94e181bfa2f532e6b685789985f6e14ea20"
 
+[skill_guidance]
+version = 1
+fingerprint = "2be57e42e7f8e1669f4be1cb4da20006692a6efb6b01bfdf26ec037c571a5e5e"
+
 [stage_brief]
 version = 1
 fingerprint = "ef5260c5d38559d6ed0f72bfbabf048b489ecb668e5ad5126512d749d606c361"

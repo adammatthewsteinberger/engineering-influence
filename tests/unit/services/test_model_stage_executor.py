@@ -31,6 +31,7 @@ from engineering_influence.services.interfaces.ask_model_interface import AskMod
 from engineering_influence.services.interfaces.spend_guard_interface import SpendGuardInterface
 from engineering_influence.services.lock_tool_grants import LockToolGrants
 from engineering_influence.services.model_stage_executor import ModelStageExecutor
+from engineering_influence.services.no_stage_guidance import NoStageGuidance
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 from engineering_influence.services.run_tool_loop import RunToolLoop
 from engineering_influence.services.spend_guard import SpendGuard
@@ -93,6 +94,7 @@ class World:
             RunToolLoop(self.asker, runner, limits),
             registry,
             LockToolGrants(ToolLock()),
+            NoStageGuidance(),
             self._guard,
         )
         self.run = BookRun(
