@@ -19,6 +19,9 @@ from engineering_influence.interactions.cli.interfaces.doctor_cli_interface impo
 )
 from engineering_influence.interactions.cli.interfaces.run_cli_interface import RunCliInterface
 from engineering_influence.interactions.cli.interfaces.serve_cli_interface import ServeCliInterface
+from engineering_influence.interactions.cli.interfaces.skills_cli_interface import (
+    SkillsCliInterface,
+)
 from engineering_influence.interactions.cli.interfaces.tools_cli_interface import ToolsCliInterface
 
 
@@ -37,6 +40,7 @@ class CliApplication(CliApplicationInterface):
         run_cli: RunCliInterface,
         doctor_cli: DoctorCliInterface,
         tools_cli: ToolsCliInterface,
+        skills_cli: SkillsCliInterface,
     ) -> None:
         self._controller = controller
         self._book_cli = book_cli
@@ -45,6 +49,7 @@ class CliApplication(CliApplicationInterface):
         self._run_cli = run_cli
         self._doctor_cli = doctor_cli
         self._tools_cli = tools_cli
+        self._skills_cli = skills_cli
 
     def run(self, argv: list[str] | None = None) -> int:
         """Parse the command line and return its process status."""
@@ -66,6 +71,7 @@ class CliApplication(CliApplicationInterface):
         self._run_cli.register(subparsers)
         self._doctor_cli.register(subparsers)
         self._tools_cli.register(subparsers)
+        self._skills_cli.register(subparsers)
         arguments = parser.parse_args(argv)
         if arguments.command == "book":
             return self._book_cli.run(arguments)
@@ -79,6 +85,8 @@ class CliApplication(CliApplicationInterface):
             return self._doctor_cli.run(arguments)
         if arguments.command == "tools":
             return self._tools_cli.run(arguments)
+        if arguments.command == "skills":
+            return self._skills_cli.run(arguments)
         if arguments.command == "pipeline" and arguments.pipeline_command == "start":
             request = ProjectRequest(
                 slug=arguments.slug,

@@ -8,6 +8,7 @@ from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interfaces.artifact_store_interface import ArtifactStoreInterface
 from engineering_influence.interfaces.prompt_library_interface import PromptLibraryInterface
 from engineering_influence.interfaces.stage_executor_interface import StageExecutorInterface
+from engineering_influence.interfaces.stage_guidance_interface import StageGuidanceInterface
 from engineering_influence.interfaces.stage_recipes_interface import StageRecipesInterface
 from engineering_influence.interfaces.tool_grants_interface import ToolGrantsInterface
 from engineering_influence.interfaces.tool_registry_interface import ToolRegistryInterface
@@ -38,6 +39,12 @@ class ModelStageExecutor(StageExecutorInterface):
     the stage before anything is asked. Every stage goes through the tool loop, which for a stage
     with no tools is a single call.
 
+    **A stage's prompt also carries the skills a person enabled for it**, as text added after the
+    stage's own prompt, and the skills' identity is added to the prompt version so a resumed run
+    replays an answer only for the same text. A skill is text and nothing more: it adds no tool,
+    and it is not given a say in which tools are offered. A stage with no skill enabled sends
+    exactly the prompt and version it always did.
+
     An answer that is not complete (cut off at the model's limit, or declined) or that has no
     text **stops the run**: nothing is stored, and the error carries the reason. Building the next
     stage on an empty or half-written artifact would spend money on top of a defect. The calls
@@ -58,6 +65,7 @@ class ModelStageExecutor(StageExecutorInterface):
         loop: RunToolLoopInterface,
         tools: ToolRegistryInterface,
         grants: ToolGrantsInterface,
+        guidance: StageGuidanceInterface,
         guards: Callable[[Budget], SpendGuardInterface],
     ) -> None:
         self._recipes = recipes
@@ -66,6 +74,7 @@ class ModelStageExecutor(StageExecutorInterface):
         self._loop = loop
         self._tools = tools
         self._grants = grants
+        self._guidance = guidance
         self._guards = guards
 
     async def execute(self, run: BookRun, attempt: int) -> StageReport:
@@ -84,11 +93,17 @@ class ModelStageExecutor(StageExecutorInterface):
             data = await asyncio.to_thread(self._artifacts.get, run.run_id, artifact)
             values[blank] = (data or b"").decode("utf-8")
         template = self._prompts.get(recipe.template)
+        prompt = self._render(template, "user", values)
+        version = template.identifier()
+        guidance = self._guidance.for_stage(run.stage)
+        if not guidance.empty():
+            prompt = f"{prompt}\n\n{guidance.text}"
+            version = f"{version}+{guidance.identity}"
         request = ModelRequest(
             system=self._render(template, "system", values),
-            prompt=self._render(template, "user", values),
+            prompt=prompt,
             max_output_tokens=recipe.max_output_tokens,
-            prompt_version=template.identifier(),
+            prompt_version=version,
             tools=self._definitions(recipe),
         )
         outcome = await asyncio.to_thread(

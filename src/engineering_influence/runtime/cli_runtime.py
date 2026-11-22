@@ -13,6 +13,9 @@ from engineering_influence.controllers.interfaces.run_controller_interface impor
 from engineering_influence.controllers.project_controller import ProjectController
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
+from engineering_influence.infrastructure.skills.directory_skill_files import DirectorySkillFiles
+from engineering_influence.infrastructure.skills.toml_skill_lock_store import TomlSkillLockStore
+from engineering_influence.infrastructure.skills.toml_skill_parser import TomlSkillParser
 from engineering_influence.infrastructure.tools.lazy_remote_transport_factory import (
     LazyRemoteTransportFactory,
 )
@@ -31,6 +34,7 @@ from engineering_influence.interactions.cli.interfaces.cli_application_interface
 )
 from engineering_influence.interactions.cli.run_cli import RunCli
 from engineering_influence.interactions.cli.serve_cli import ServeCli
+from engineering_influence.interactions.cli.skills_cli import SkillsCli
 from engineering_influence.interactions.cli.tools_cli import ToolsCli
 from engineering_influence.interfaces.mcp_remote_transport_factory_interface import (
     McpRemoteTransportFactoryInterface,
@@ -56,6 +60,8 @@ from engineering_influence.services.mcp_client_factory import McpClientFactory
 from engineering_influence.services.mcp_server_probe import McpServerProbe
 from engineering_influence.services.model_doctor import ModelDoctor
 from engineering_influence.services.resume_run import ResumeRun
+from engineering_influence.services.skill_lock_editor import SkillLockEditor
+from engineering_influence.services.skill_lock_verifier import SkillLockVerifier
 from engineering_influence.services.start_pipeline import StartPipeline
 from engineering_influence.services.tool_lock_auditor import ToolLockAuditor
 from engineering_influence.services.tool_lock_editor import ToolLockEditor
@@ -100,6 +106,16 @@ class CliRuntime(CliRuntimeInterface):
             RunCli(self._resume_run, self._cancel_run, self._run_status),
             DoctorCli(self._model_doctor, os.environ),
             self._tools_cli(),
+            self._skills_cli(),
+        )
+
+    def _skills_cli(self) -> SkillsCli:
+        """Wire ``skills``: it reads and writes the lock and the skill files, and starts nothing."""
+        files = DirectorySkillFiles()
+        parser = TomlSkillParser()
+        verifier = SkillLockVerifier(files, parser)
+        return SkillsCli(
+            SkillLockEditor(files, parser, verifier), verifier, TomlSkillLockStore(), os.environ
         )
 
     def _tools_cli(self) -> ToolsCli:

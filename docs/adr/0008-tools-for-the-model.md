@@ -160,3 +160,42 @@ Recorded on 2026-11-22 while building slice 4 ([TOOL_LOCK.md](../TOOL_LOCK.md)).
   certificate is still checked against the name. `fetch_url` and the remote transport use it; only one
   address is tried, and `fetch_url` sends `Connection: close` so a connection verified for one name is not
   reused for another that shares its address. Signed webhook delivery was not changed.
+
+## Amendments from slice 5
+
+Recorded on 2026-11-22 while building slice 5 ([SKILLS.md](../SKILLS.md)).
+
+- **A skill is one file of text, with a part for each stage it speaks to (decision 8).** The ADR said "named
+  prompt parts, in the same TOML shape as `PromptTemplate`". A template's parts are the pieces of one prompt
+  (`system`, `user`) with blanks to fill; a skill's parts are *which stage the text is for*. A skill has no
+  blanks, so there is nothing to fill and no value to smuggle into; it has no `untrusted` list, because all of
+  it is text a person chose; and any key it should not have (`command`, `tools`, `url`) is refused by name.
+- **The version lock is a hash, in its own lock file.** A shipped template is pinned by a fingerprint in a test
+  fixture. A skill is installed by a person, so it is pinned by the SHA-256 of its file's bytes in
+  `ei-skills.lock.toml`, which a run reads only when `EI_SKILL_LOCK` names it. It is a separate file from the tool
+  lock so either can be used alone; plugins (slice 6) will copy entries into both. `ei skills add` keeps a copy
+  of the file in a `skills/` folder beside the lock, so what is committed is what is hashed, and the lock
+  needs no paths.
+- **Permission is per stage and explicit, as for tools.** A new skill is enabled for no stage. `ei skills
+  enable NAME STAGE` checks the file against its hash and refuses a stage the skill has no text for; at most four
+  skills may be enabled for one stage; locking a skill again clears its stages, because new text has not been
+  approved for anything.
+- **Where the text goes (a decision the ADR left open).** At the end of the **user** part of the stage's prompt, in
+  a delimited block under a fixed frame (the `skill_guidance` template), never in the system part. It is not
+  wrapped as `<untrusted>`: unlike a page, it is meant to instruct, and the person approved it. The trade-off
+  is stated plainly in [SKILLS.md](SKILLS.md#what-this-does-and-does-not-give-you): **a skill that was hostile
+  when it was locked is trusted as locked.** A copy of the block's tags inside a skill is defused.
+- **What a person approved is what a model sees.** Text that renders as nothing or reorders what is shown
+  (control characters, zero-width and bidirectional marks, line and paragraph separators, private-use and
+  unassigned code points) is refused when the skill is read, and each part is capped, so a skill cannot hide an
+  instruction from the review the lock exists for.
+- **The journal key (decision 3) names the skills.** A stage with skills sends
+  `<template>@<n>+skill_guidance@<n>:<digest>`, the digest covering each skill's name, version and hash, so a
+  resumed run replays an answer only for the same text. A stage with no skill enabled sends exactly the prompt
+  and version it always did, so existing journals are unaffected.
+- **The check happens once, at start, before anything else.** Skills enabled for some stage are read and
+  hashed when the stage executor is built, before any tool server is started or any model is called; the text
+  is then held for the life of the process, so every stage of a run sees the same text. A skill that is
+  installed but enabled for no stage is not read.
+- **What a skill still cannot do.** It adds no tool, changes no stage's allowlist, output cap or system
+  prompt, and cannot raise a budget: those are decided in code, in the tool lock and in the spend guard.

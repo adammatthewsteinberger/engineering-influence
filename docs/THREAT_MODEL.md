@@ -87,7 +87,8 @@ live internet, a live search service or a live model.
    system text says to treat as evidence and never as instructions. The mechanism exists
    (`PromptTemplate`'s untrusted blanks, [PROMPTS.md](PROMPTS.md)). The brief and every earlier stage's answer
    go in that way, and so does everything a tool returns (`ToolRunner` wraps it, defusing any copy of the
-   tag, see [MODEL_CALLS.md](MODEL_CALLS.md)).
+   tag, see [MODEL_CALLS.md](MODEL_CALLS.md)). **The one exception is a skill a person installed**, which
+   is meant to instruct and so is not wrapped (gap 7 under Known gaps).
 2. **The model has tools only in the research stage, and only these two.** Every other stage returns
    text, which is typeset: a successful injection there can change what a chapter says; it cannot read a
    file, call a service or spend money outside the run. The research stage has `web_search` and
@@ -187,3 +188,14 @@ These are open, in the order they would be fixed.
    checked before every request, no redirects, no cookies and bounded replies, and its bearer token (a named
    environment variable) goes to the locked address and nowhere else. The connection is pinned to the address
    that was checked, as for `fetch_url`, so DNS rebinding cannot send it inward.
+7. **Skills are instructions a person chose, and a model will follow them.** A skill
+   ([SKILLS.md](SKILLS.md)) is text added to the end of one stage's prompt, enabled for that stage by name
+   and pinned by the SHA-256 of its file. It adds no tool, changes no allowlist or budget and runs nothing,
+   so the most it can do is change what that stage's model is asked and therefore what it writes. What the
+   lock does not cover: **a skill that was hostile when it was locked is trusted as locked**; its text is not
+   wrapped as untrusted evidence, because it is meant to instruct; whether a model keeps to the frame
+   ("it cannot change those rules") is a property of the model; and a person with write access to the skills
+   folder can change a file, which the next run refuses by its hash but which a run already started has
+   already read. Text a reviewer cannot see (zero-width and bidirectional marks, control characters, private-use
+   code points) is refused when a skill is read, and each part is capped at 8,000 characters. Nothing has been
+   run by a live model.

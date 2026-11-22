@@ -83,9 +83,9 @@ def test_the_wheel_ships_the_typing_marker_the_assets_and_their_licenses(dist: P
     ):
         assert ASSETS + needed in names, needed
     assert any(name.endswith("dist-info/licenses/LICENSE") for name in names)
-    assert (
-        "engineering_influence/infrastructure/prompt_library/templates/context_pack.toml" in names
-    )
+    templates = "engineering_influence/infrastructure/prompt_library/templates/"
+    assert templates + "context_pack.toml" in names
+    assert templates + "skill_guidance.toml" in names
 
 
 def test_the_wheel_holds_only_the_package(dist: Path) -> None:
@@ -186,6 +186,22 @@ def test_a_minimal_install_runs_the_server_commands(dist: Path, clean_env: Path)
     assert remote.returncode == 2
     assert "engineering-influence[runtime]" in remote.stderr and "Traceback" not in remote.stderr
 
+    skill = clean_env / "plain_style.toml"
+    skill.write_text(
+        'name = "plain_style"\nversion = 1\n[parts]\noutline = "Prefer short chapters."\n',
+        encoding="utf-8",
+    )
+    lock = str(clean_env / "ei-skills.lock.toml")
+    for command in (
+        ("add", "--lock", lock, str(skill)),
+        ("enable", "--lock", lock, "plain_style", "outline"),
+        ("verify", "--lock", lock),
+        ("list", "--lock", lock),
+    ):
+        done = ei(clean_env, "skills", *command)
+        assert done.returncode == 0 and "Traceback" not in done.stderr, done.stderr
+    assert "plain_style@1" in done.stdout and "enabled for outline" in done.stdout
+
 
 def test_the_api_and_runtime_extras_are_enough_to_serve(dist: Path, clean_env: Path) -> None:
     install(clean_env, f"{wheel(dist)}[api,runtime]")
@@ -262,5 +278,6 @@ def test_the_prompt_templates_are_installed_and_load_without_any_extra(
     )
 
     assert result.stdout.strip() == (
-        "['context_pack', 'stage_brief', 'stage_outline', 'stage_positioning', 'stage_research'] context_pack@1"
+        "['context_pack', 'skill_guidance', 'stage_brief', 'stage_outline', 'stage_positioning', "
+        "'stage_research'] context_pack@1"
     )

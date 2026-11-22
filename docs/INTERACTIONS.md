@@ -131,6 +131,10 @@ ei tools list [--lock PATH]
 ei tools verify [--lock PATH] [NAME …]
 ei tools grant [--lock PATH] NAME STAGE TOOL …
 ei tools revoke [--lock PATH] NAME STAGE [TOOL …]
+ei skills add [--lock PATH] [--replace] FILE
+ei skills enable|disable [--lock PATH] NAME STAGE
+ei skills remove [--lock PATH] NAME
+ei skills list|verify [--lock PATH]
 ```
 
 | Command | What it does | Exit status |
@@ -148,6 +152,12 @@ ei tools revoke [--lock PATH] NAME STAGE [TOOL …]
 | `ei tools verify [NAME …]` | **Runs** each locked server (a server whose files changed is not started) and compares it with the lock. | `0` all match; `1` one does not; `2` setup trouble or an unknown name |
 | `ei tools grant NAME STAGE TOOL …` | Lets a stage call some of a locked server's tools: edits the lock, runs nothing. The tools must be ones the lock lists; no wildcards. A stage with no grant gets none. | `0`; `2` on a refusal or an unusable lock |
 | `ei tools revoke NAME STAGE [TOOL …]` | Takes tools back from a stage, or all of them if none are named. A stage with no grant is an error. | same |
+| `ei skills add FILE` | Reads a skill file once, checks it strictly (no key but `name`, `version`, `description` and `[parts]`; no invisible or control characters) and records the SHA-256 of its bytes in the skill lock, keeping a copy in `skills/` beside it. **Enables nothing**; prints each part so you can read what will be added to prompts. `--replace` locks it again and clears its stages. Starts nothing. See [SKILLS.md](SKILLS.md). | `0`; `2` on a refusal or an unusable lock |
+| `ei skills enable NAME STAGE` | Lets a stage's prompt carry a skill: checks the file against its hash and refuses a stage the skill has no text for. At most four skills per stage. | same |
+| `ei skills disable NAME STAGE` | Stops a stage carrying a skill. | same |
+| `ei skills remove NAME` | Unlocks a skill and deletes its copy. | same |
+| `ei skills list` | Shows the locked skills with their short hash and stages. Reads no skill file. | `0`; `2` an unusable lock |
+| `ei skills verify` | Re-hashes every locked skill, enabled or not, against the lock. | `0` all match; `1` one does not; `2` setup trouble |
 
 `python -m engineering_influence` is the same program. Walk-through: [`examples/cli/run.sh`](../examples/cli/run.sh).
 
