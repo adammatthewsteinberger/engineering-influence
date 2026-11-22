@@ -3,7 +3,7 @@
 
 import hashlib
 import json
-from collections.abc import Collection
+from collections.abc import Collection, Sequence
 from concurrent.futures import ThreadPoolExecutor
 
 from engineering_influence.errors.application_error import ApplicationError
@@ -13,6 +13,7 @@ from engineering_influence.interfaces.tool_interface import ToolInterface
 from engineering_influence.interfaces.tool_registry_interface import ToolRegistryInterface
 from engineering_influence.models.journal_entry import JournalEntry
 from engineering_influence.models.journal_key import JournalKey
+from engineering_influence.models.model_turn import ModelTurn
 from engineering_influence.models.tool_call import ToolCall
 from engineering_influence.models.tool_loop_limits import ToolLoopLimits
 from engineering_influence.models.tool_result import ToolResult
@@ -27,8 +28,9 @@ class ToolRunner(ToolRunnerInterface):
     - **Arguments are checked first** against the tool's schema, and a bad call gets an error
       result saying what is wrong. A tool can then refuse a call by what the model has been shown
       (``ToolInterface.refuses``), which is how ``fetch_url`` keeps a hostile page from steering
-      the model to an address that carries data out. Refusals are ours: they are not journaled and
-      not wrapped.
+      the model to an address that carries data out. What counts as shown is the prompt and the
+      part of each earlier successful result that its own tool vouches for, never an error or
+      anything the model typed. Refusals are ours: they are not journaled and not wrapped.
     - **A call is made once.** Its result is journaled by tool and arguments, so a resumed or
       retried run, or a model that asks the same thing twice, gets the stored result and the web
       is not asked again. A tool failure the model can work around (``ApplicationError``) is stored
@@ -65,7 +67,8 @@ class ToolRunner(ToolRunnerInterface):
         attempt: int,
         call: ToolCall,
         offered: Collection[str],
-        evidence: str,
+        prompt: str,
+        transcript: Sequence[ModelTurn],
     ) -> ToolResult:
         """The result of the call, replayed from the journal if this run already made it."""
         tool = self._registry.lookup(call.name) if call.name in offered else None
@@ -74,7 +77,7 @@ class ToolRunner(ToolRunnerInterface):
         problem = tool.definition().check(call.arguments)
         if problem:
             return ToolResult(call.id, f"invalid arguments: {problem}", True)
-        reason = tool.refuses(call.arguments, evidence)
+        reason = tool.refuses(call.arguments, self._evidence(prompt, transcript))
         if reason:
             return ToolResult(call.id, reason, True)
         key = self._key(call)
@@ -88,6 +91,23 @@ class ToolRunner(ToolRunnerInterface):
             entry = JournalEntry(run_id, stage, attempt, key, self._encoded(made), 0)
             recorded = self._journal.record(entry)
         return self._decoded(call, recorded.response)
+
+    def _evidence(self, prompt: str, transcript: Sequence[ModelTurn]) -> str:
+        """What the model has legitimately been shown: the prompt, and what each tool vouches for.
+
+        Only a successful result counts, and only the part its own tool names. The runner's
+        refusals and a tool's errors are left out because they can echo what the model typed,
+        which would let a call launder an address into the evidence by naming it. A call to a tool
+        that is not registered counts for nothing.
+        """
+        shown = [prompt]
+        for turn in transcript:
+            for call in turn.calls:
+                result = turn.result_for(call.id)
+                tool = self._registry.lookup(call.name)
+                if tool is not None and not result.is_error:
+                    shown.append(tool.shown(result.content))
+        return "\n".join(shown)
 
     def close(self) -> None:
         """Stop accepting calls and let the threads that run tools finish."""

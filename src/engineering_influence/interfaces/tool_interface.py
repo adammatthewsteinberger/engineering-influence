@@ -23,11 +23,22 @@ class ToolInterface(ABC):
     def refuses(self, arguments: Mapping[str, Any], evidence: str) -> str:
         """Why this call may not run, or an empty string when it may.
 
-        ``evidence`` is everything the model has legitimately been shown in this conversation: the
-        stage's own prompt and every earlier tool result. A tool whose arguments could carry data
-        out (an address the model chose) can insist that they came from there. A refusal is
-        answered to the model as an error and is not journaled, so it cannot stick to a later,
+        ``evidence`` is what the model has legitimately been shown in this conversation, and only
+        that: the stage's own prompt, and for each earlier successful call the part its tool
+        names in ``shown``. It never includes an error message, text a page or a server wrote
+        outside what ``shown`` picks out, or anything the model typed. A tool whose arguments could
+        carry data out (an address the model chose) can insist that they came from there. A refusal
+        is answered to the model as an error and is not journaled, so it cannot stick to a later,
         permitted call. The default allows everything.
+        """
+        return ""
+
+    def shown(self, result: str) -> str:
+        """The part of a successful result of this tool that counts as having been shown.
+
+        Only text the tool itself produced from a trusted source belongs here (a list of links a
+        search returned, the address a fetch finally read), never text a page or a person wrote.
+        The default is nothing: a tool's output does not count as evidence unless it says so.
         """
         return ""
 

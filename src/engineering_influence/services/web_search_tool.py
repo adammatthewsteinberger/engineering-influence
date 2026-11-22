@@ -44,6 +44,10 @@ class WebSearchTool(ToolInterface):
             },
         )
 
+    def shown(self, result: str) -> str:
+        """The links of a result, and not the titles: a title is text some page wrote."""
+        return "\n".join(line.strip() for line in result.splitlines() if line.startswith("   "))
+
     def invoke(self, arguments: Mapping[str, Any]) -> str:
         """The numbered links for the query, or a line saying there were none."""
         count = arguments.get("count", self.DEFAULT_COUNT)

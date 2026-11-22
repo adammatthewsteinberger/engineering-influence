@@ -15,6 +15,7 @@ from engineering_influence.errors.capacity_exhausted_error import CapacityExhaus
 from engineering_influence.errors.transient_stage_error import TransientStageError
 from engineering_influence.infrastructure.in_memory_journal import InMemoryJournal
 from engineering_influence.interfaces.tool_interface import ToolInterface
+from engineering_influence.models.model_turn import ModelTurn
 from engineering_influence.models.tool_call import ToolCall
 from engineering_influence.models.tool_definition import ToolDefinition
 from engineering_influence.models.tool_loop_limits import ToolLoopLimits
@@ -49,10 +50,13 @@ class Echo(ToolInterface):
 
 
 class Picky(Echo):
-    """Refuses unless the evidence says 'ok'."""
+    """Refuses unless the evidence says 'ok'; vouches for the whole of its own results."""
 
     def refuses(self, arguments: Mapping[str, Any], evidence: str) -> str:
         return "" if "ok" in evidence else "not shown to you"
+
+    def shown(self, result: str) -> str:
+        return result
 
 
 class World:
@@ -71,9 +75,10 @@ class World:
         offered: tuple[str, ...] = ("echo",),
         run_id: str = "run-1",
         stage: str = "research",
-        evidence: str = "",
+        prompt: str = "",
+        transcript: tuple[ModelTurn, ...] = (),
     ) -> ToolResult:
-        return self.runner.run(run_id, stage, 1, call, offered, evidence)
+        return self.runner.run(run_id, stage, 1, call, offered, prompt, transcript)
 
 
 @contextmanager
@@ -260,21 +265,21 @@ def test_what_a_tool_says_in_its_error_is_untrusted_too_but_our_own_refusals_are
 
 def test_a_tool_with_no_opinion_about_its_arguments_runs_whatever_the_evidence() -> None:
     with made() as world:
-        assert world.run(say(), evidence="").content.endswith("echo: hi\n</untrusted>")
+        assert world.run(say()).content.endswith("echo: hi\n</untrusted>")
 
 
 def test_a_call_a_tool_refuses_is_answered_with_its_reason_and_nothing_runs() -> None:
     with made(tool=Picky()) as world:
-        result = world.run(say(), evidence="nothing to see")
+        result = world.run(say(), prompt="nothing to see")
         assert result == ToolResult("c1", "not shown to you", True)  # ours: not wrapped
         assert world.tool.calls == []
 
 
 def test_a_refusal_is_not_journaled_so_it_cannot_stick_to_a_later_permitted_call() -> None:
     with made(tool=Picky()) as world:
-        world.run(say(), evidence="nothing")
+        world.run(say(), prompt="nothing")
         assert world.journal.entries("run-1") == []
-        allowed = world.run(say("hi", "c2"), evidence="this is ok")
+        allowed = world.run(say("hi", "c2"), prompt="this is ok")
         assert allowed.content.endswith("echo: hi\n</untrusted>") and not allowed.is_error
         assert len(world.tool.calls) == 1
         assert len(world.journal.entries("run-1")) == 1
@@ -282,6 +287,69 @@ def test_a_refusal_is_not_journaled_so_it_cannot_stick_to_a_later_permitted_call
 
 def test_a_call_made_while_permitted_replays_even_if_the_evidence_is_later_missing() -> None:
     with made(tool=Picky()) as world:
-        world.run(say(), evidence="ok")
-        again = world.run(say("hi", "c2"), evidence="ok")
+        world.run(say(), prompt="ok")
+        again = world.run(say("hi", "c2"), prompt="ok")
         assert not again.is_error and len(world.tool.calls) == 1
+
+
+# ------------------------------------------------------------ what counts as evidence
+def earlier(content: str, is_error: bool = False, name: str = "echo") -> ModelTurn:
+    call = ToolCall("p1", name, {"text": "x"})
+    return ModelTurn("t", (call,), (ToolResult("p1", content, is_error),))
+
+
+def tried(*turns: ModelTurn, prompt: str = "") -> ToolResult:
+    with made(tool=Picky()) as world:
+        return world.run(say(), prompt=prompt, transcript=turns)
+
+
+def test_the_prompt_is_evidence() -> None:
+    assert not tried(prompt="this is ok").is_error
+
+
+def test_what_a_tool_vouches_for_in_a_successful_earlier_result_is_evidence() -> None:
+    assert not tried(earlier("found ok here")).is_error
+
+
+def test_an_earlier_error_is_never_evidence_because_it_can_echo_what_the_model_typed() -> None:
+    assert tried(earlier("unknown argument 'ok'", is_error=True)).content == "not shown to you"
+
+
+def test_a_result_of_a_tool_that_vouches_for_nothing_is_not_evidence() -> None:
+    class Quiet(Picky):
+        def shown(self, result: str) -> str:
+            return ""
+
+    with made(tool=Quiet()) as world:
+        turn = earlier("an ok result")
+        assert world.run(say(), transcript=(turn,)).content == "not shown to you"
+
+
+def test_a_call_to_a_tool_nobody_registered_is_not_evidence() -> None:
+    assert tried(earlier("an ok result", name="ghost")).content == "not shown to you"
+
+
+def test_a_tool_that_does_not_override_shown_adds_nothing() -> None:
+    with made() as world:  # Echo keeps the default ToolInterface.shown
+        assert world.runner._evidence("p", (earlier("anything"),)) == "p\n"
+
+
+def test_each_call_of_a_turn_is_judged_by_its_own_result_not_the_first_one() -> None:
+    failed = ToolCall("p1", "echo", {"text": "x"})
+    worked = ToolCall("p2", "echo", {"text": "y"})
+    turn = ModelTurn(
+        "t",
+        (failed, worked),
+        (ToolResult("p1", "unknown argument 'ok'", True), ToolResult("p2", "found ok")),
+    )
+    assert not tried(turn).is_error  # the second call's good result counts
+    swapped = ModelTurn(
+        "t",
+        (worked, failed),
+        (ToolResult("p2", "found ok"), ToolResult("p1", "unknown argument 'ok'", True)),
+    )
+    assert not tried(swapped).is_error
+    only_errors = ModelTurn(
+        "t", (failed, worked), (ToolResult("p1", "bad ok", True), ToolResult("p2", "bad ok", True))
+    )
+    assert tried(only_errors).content == "not shown to you"

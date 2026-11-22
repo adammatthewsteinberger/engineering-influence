@@ -60,6 +60,17 @@ class FetchUrlTool(ToolInterface):
             "or page you have already been given, copied exactly; find it with web_search first"
         )
 
+    def shown(self, result: str) -> str:
+        """The address the page was finally read from, and not the page's own text.
+
+        The header is the first thing in the result, so the first ``Source:`` line is ours; a page
+        that prints its own ``Source:`` line comes after it and is not looked at.
+        """
+        for line in result.splitlines():
+            if line.startswith("Source: "):
+                return line
+        return ""
+
     def invoke(self, arguments: Mapping[str, Any]) -> str:
         """The page under its header."""
         page = self._fetcher.fetch(arguments["url"])

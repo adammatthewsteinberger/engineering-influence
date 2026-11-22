@@ -31,7 +31,8 @@ class RunToolLoop(RunToolLoopInterface):
       issue. A call beyond ``max_tool_calls`` is not run; its result tells the model to answer with
       what it has. Neither the model nor a tool can make the loop run on.
     - **The request names the tools.** The runner is given the same names and runs nothing else,
-      and the text the model has been shown so far, so a tool can check where an argument came from.
+      and what the model has been shown so far (the prompt and the transcript), from which it builds the
+      evidence a tool can check where an argument came from.
     - A request with no tools is one turn, so a stage can use this for every call.
     """
 
@@ -76,10 +77,11 @@ class RunToolLoop(RunToolLoopInterface):
                     tuple(transcript),
                 )
             results: list[ToolResult] = []
-            evidence = self._evidence(request, transcript)
             for call in answer.tool_calls:
                 results.append(
-                    self._result(run_id, stage, attempt, call, offered, evidence, tool_calls)
+                    self._result(
+                        run_id, stage, attempt, call, offered, request, transcript, tool_calls
+                    )
                 )
                 tool_calls += self._limits.room_for(tool_calls, 1)
             transcript.append(ModelTurn(answer.text, answer.tool_calls, tuple(results)))
@@ -107,18 +109,14 @@ class RunToolLoop(RunToolLoopInterface):
         attempt: int,
         call: ToolCall,
         offered: tuple[str, ...],
-        evidence: str,
+        request: ModelRequest,
+        transcript: list[ModelTurn],
         made: int,
     ) -> ToolResult:
         if not self._limits.room_for(made, 1):
             return ToolResult(
                 call.id, "no more tool calls are allowed; answer with what you have", True
             )
-        return self._runner.run(run_id, stage, attempt, call, offered, evidence)
-
-    @staticmethod
-    def _evidence(request: ModelRequest, transcript: list[ModelTurn]) -> str:
-        """What the model has legitimately been shown: the stage's prompt and every tool result."""
-        shown = [request.prompt]
-        shown += [result.content for turn in transcript for result in turn.results]
-        return "\n".join(shown)
+        return self._runner.run(
+            run_id, stage, attempt, call, offered, request.prompt, tuple(transcript)
+        )
