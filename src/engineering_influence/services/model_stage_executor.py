@@ -9,6 +9,7 @@ from engineering_influence.interfaces.artifact_store_interface import ArtifactSt
 from engineering_influence.interfaces.prompt_library_interface import PromptLibraryInterface
 from engineering_influence.interfaces.stage_executor_interface import StageExecutorInterface
 from engineering_influence.interfaces.stage_recipes_interface import StageRecipesInterface
+from engineering_influence.interfaces.tool_grants_interface import ToolGrantsInterface
 from engineering_influence.interfaces.tool_registry_interface import ToolRegistryInterface
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget import Budget
@@ -31,7 +32,8 @@ class ModelStageExecutor(StageExecutorInterface):
     declares untrusted, so each arrives inside an ``<untrusted>`` block: what a model wrote one
     stage ago is text from outside again, and a request that made it into the brief is data.
 
-    **A stage gets only the tools its recipe names**, and none if it names none. The request offers
+    **A stage gets only the tools its recipe names and the tools the tool lock grants it**, and none if
+    there are none. The request offers
     those tools and the loop runs nothing else. A recipe that names a tool nobody registered stops
     the stage before anything is asked. Every stage goes through the tool loop, which for a stage
     with no tools is a single call.
@@ -55,6 +57,7 @@ class ModelStageExecutor(StageExecutorInterface):
         artifacts: ArtifactStoreInterface,
         loop: RunToolLoopInterface,
         tools: ToolRegistryInterface,
+        grants: ToolGrantsInterface,
         guards: Callable[[Budget], SpendGuardInterface],
     ) -> None:
         self._recipes = recipes
@@ -62,6 +65,7 @@ class ModelStageExecutor(StageExecutorInterface):
         self._artifacts = artifacts
         self._loop = loop
         self._tools = tools
+        self._grants = grants
         self._guards = guards
 
     async def execute(self, run: BookRun, attempt: int) -> StageReport:
@@ -107,9 +111,16 @@ class ModelStageExecutor(StageExecutorInterface):
                 code="STAGE_HAS_NO_RECIPE", message=str(error), http_status=422
             ) from error
 
+    def _offered(self, recipe: StageRecipe) -> tuple[str, ...]:
+        """The recipe's own tools, then the locked-server tools the lock grants this stage."""
+        granted = tuple(
+            name for name in self._grants.for_stage(recipe.stage) if name not in recipe.tools
+        )
+        return recipe.tools + granted
+
     def _definitions(self, recipe: StageRecipe) -> tuple[ToolDefinition, ...]:
         try:
-            return self._tools.definitions(recipe.tools)
+            return self._tools.definitions(self._offered(recipe))
         except ValueError as error:
             raise ApplicationError(
                 code="STAGE_TOOL_UNKNOWN", message=str(error), http_status=500

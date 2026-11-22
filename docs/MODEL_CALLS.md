@@ -92,7 +92,8 @@ the next request carries.
 ### The tools that exist
 
 The runtime registers `web_search` and `fetch_url` (model-backed runs only), and only the research stage
-names them.
+names them. A run given a tool lock (`EI_TOOL_LOCK`) also registers the tools of each locked MCP server as
+`<server>__<tool>`, and a stage is offered one only if the lock grants it that stage ([TOOL_LOCK.md](TOOL_LOCK.md#in-a-run)).
 
 - **`web_search`** lists titles and links, best first, with no page text (a hit carries no snippet), so
   nothing is quoted until it has been read. The provider is SearXNG, with Brave behind it when both are

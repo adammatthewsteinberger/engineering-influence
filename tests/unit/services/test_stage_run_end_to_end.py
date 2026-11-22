@@ -31,12 +31,14 @@ from engineering_influence.models.provider_descriptor import ProviderDescriptor
 from engineering_influence.models.run_status import RunStatus
 from engineering_influence.models.search_hit import SearchHit
 from engineering_influence.models.tool_call import ToolCall
+from engineering_influence.models.tool_lock import ToolLock
 from engineering_influence.models.tool_loop_limits import ToolLoopLimits
 from engineering_influence.services.advance_run import AdvanceRun
 from engineering_influence.services.ask_model import AskModel
 from engineering_influence.services.call_model import CallModel
 from engineering_influence.services.failure_classifier import FailureClassifier
 from engineering_influence.services.fetch_url_tool import FetchUrlTool
+from engineering_influence.services.lock_tool_grants import LockToolGrants
 from engineering_influence.services.model_stage_executor import ModelStageExecutor
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 from engineering_influence.services.run_tool_loop import RunToolLoop
@@ -118,7 +120,13 @@ class World:
             limits,
         )
         self.executor = ModelStageExecutor(
-            RECIPES, TomlPromptLibrary(), self.store, loop, registry, SpendGuard
+            RECIPES,
+            TomlPromptLibrary(),
+            self.store,
+            loop,
+            registry,
+            LockToolGrants(ToolLock()),
+            SpendGuard,
         )
         self.service = AdvanceRun(
             self.runs, self.journal, self.executor, self.queue, FailureClassifier()

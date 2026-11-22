@@ -25,9 +25,11 @@ from engineering_influence.models.prompt_template import PromptTemplate
 from engineering_influence.models.quality_issue import QualityIssue
 from engineering_influence.models.stage_plan import StagePlan
 from engineering_influence.models.stage_report import StageReport
+from engineering_influence.models.tool_lock import ToolLock
 from engineering_influence.models.tool_loop_limits import ToolLoopLimits
 from engineering_influence.services.interfaces.ask_model_interface import AskModelInterface
 from engineering_influence.services.interfaces.spend_guard_interface import SpendGuardInterface
+from engineering_influence.services.lock_tool_grants import LockToolGrants
 from engineering_influence.services.model_stage_executor import ModelStageExecutor
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 from engineering_influence.services.run_tool_loop import RunToolLoop
@@ -90,6 +92,7 @@ class World:
             self.store,
             RunToolLoop(self.asker, runner, limits),
             registry,
+            LockToolGrants(ToolLock()),
             self._guard,
         )
         self.run = BookRun(

@@ -353,3 +353,48 @@ def test_each_call_of_a_turn_is_judged_by_its_own_result_not_the_first_one() -> 
         "t", (failed, worked), (ToolResult("p1", "bad ok", True), ToolResult("p2", "bad ok", True))
     )
     assert tried(only_errors).content == "not shown to you"
+
+
+# ------------------------------------------------------------------------------- the revision
+class Versioned(Echo):
+    """A tool whose answers depend on something besides its name and arguments."""
+
+    def __init__(self, revision: str) -> None:
+        super().__init__()
+        self.version = revision
+
+    def revision(self) -> str:
+        return self.version
+
+
+def test_a_tool_with_no_revision_is_keyed_exactly_as_before() -> None:
+    with made() as world:
+        world.run(say())
+        [entry] = world.journal.entries("run-1")
+        assert entry.key.prompt_version == "tool-v1"
+
+
+def test_a_tools_revision_is_part_of_the_key() -> None:
+    with made(tool=Versioned("abc123")) as world:
+        world.run(say())
+        [entry] = world.journal.entries("run-1")
+        assert entry.key.prompt_version == "tool-v1:abc123"
+
+
+def test_a_result_is_replayed_for_the_same_revision() -> None:
+    with made(tool=Versioned("r1")) as world:
+        world.run(say())
+        world.run(say("hi", "c2"))
+        assert len(world.tool.calls) == 1
+
+
+def test_a_tool_that_was_replaced_is_asked_again_instead_of_replaying_the_old_ones_answers() -> (
+    None
+):
+    with made(tool=Versioned("r1")) as world:
+        assert isinstance(world.tool, Versioned)
+        world.run(say())
+        world.tool.version = "r2"
+        world.run(say("hi", "c2"))
+        assert len(world.tool.calls) == 2
+        assert len(world.journal.entries("run-1")) == 2

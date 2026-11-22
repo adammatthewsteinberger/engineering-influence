@@ -71,6 +71,20 @@ class ToolsCli(ToolsCliInterface):
         listing.add_argument(
             "--lock", type=Path, help="default: EI_TOOL_LOCK or ei-tools.lock.toml"
         )
+        grant = commands.add_parser(
+            "grant", help="let a stage call some of a locked server's tools"
+        )
+        grant.add_argument("--lock", type=Path, help="default: EI_TOOL_LOCK or ei-tools.lock.toml")
+        grant.add_argument("name", help="the locked server")
+        grant.add_argument("stage", help="the stage that may call the tools, for example research")
+        grant.add_argument(
+            "tool_names", nargs="+", metavar="TOOL", help="the server's own tool names"
+        )
+        revoke = commands.add_parser("revoke", help="take tools back from a stage")
+        revoke.add_argument("--lock", type=Path, help="default: EI_TOOL_LOCK or ei-tools.lock.toml")
+        revoke.add_argument("name", help="the locked server")
+        revoke.add_argument("stage", help="the stage")
+        revoke.add_argument("tool_names", nargs="*", metavar="TOOL", help="default: all of them")
         verify = commands.add_parser(
             "verify", help="run each locked server and compare it with the lock"
         )
@@ -87,6 +101,8 @@ class ToolsCli(ToolsCliInterface):
                 return self._add(arguments, path)
             if arguments.tools_command == "list":
                 return self._list(path)
+            if arguments.tools_command in ("grant", "revoke"):
+                return self._grants(arguments, path)
             return self._verify(arguments, path)
         except (ApplicationError, ValueError) as error:
             print(
@@ -136,6 +152,23 @@ class ToolsCli(ToolsCliInterface):
             )
         print(f"wrote {path}; review the change like any other commit")
 
+    def _grants(self, arguments: argparse.Namespace, path: Path) -> int:
+        lock = self._store.load(path)
+        if lock is None:
+            print(f"error: no tool lock at {path}", file=sys.stderr)
+            return 2
+        tools = tuple(arguments.tool_names)
+        if arguments.tools_command == "grant":
+            changed = self._editor.grant(lock, arguments.name, arguments.stage, tools)
+            said = f"granted {arguments.name} {', '.join(tools)} to stage {arguments.stage}"
+        else:
+            changed = self._editor.revoke(lock, arguments.name, arguments.stage, tools)
+            said = f"took {', '.join(tools) or 'all the tools'} of {arguments.name} from stage {arguments.stage}"
+        self._store.save(path, changed)
+        print(self._safe(said, 300))
+        print(f"wrote {path}; review the change like any other commit")
+        return 0
+
     def _list(self, path: Path) -> int:
         lock = self._store.load(path)
         if lock is None:
@@ -152,6 +185,8 @@ class ToolsCli(ToolsCliInterface):
             print("    " + self._safe(" ".join(server.command), 300))
             if server.env:
                 print("    env: " + " ".join(server.env))
+            for stage, tools in server.grants:
+                print(f"    {stage} may call: " + " ".join(self._safe(tool, 60) for tool in tools))
         return 0
 
     def _verify(self, arguments: argparse.Namespace, path: Path) -> int:

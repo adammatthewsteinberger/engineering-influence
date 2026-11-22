@@ -61,6 +61,14 @@ def tools() -> list[dict]:
                 "inputSchema": {"type": "object"},
             }
         )
+    if changes.get("non_object_tool"):
+        listed.append(
+            {
+                "name": "weird",
+                "description": "Takes a bare string.",
+                "inputSchema": {"type": "string"},
+            }
+        )
     if changes.get("extra_tool"):
         listed.append(
             {

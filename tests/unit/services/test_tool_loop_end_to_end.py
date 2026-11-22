@@ -32,9 +32,11 @@ from engineering_influence.models.stage_plan import StagePlan
 from engineering_influence.models.stage_recipe import StageRecipe
 from engineering_influence.models.tool_call import ToolCall
 from engineering_influence.models.tool_definition import ToolDefinition
+from engineering_influence.models.tool_lock import ToolLock
 from engineering_influence.models.tool_loop_limits import ToolLoopLimits
 from engineering_influence.services.ask_model import AskModel
 from engineering_influence.services.call_model import CallModel
+from engineering_influence.services.lock_tool_grants import LockToolGrants
 from engineering_influence.services.model_stage_executor import ModelStageExecutor
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 from engineering_influence.services.run_tool_loop import RunToolLoop
@@ -144,7 +146,13 @@ class World:
         self.runners.append(runner)
         loop = RunToolLoop(AskModel(CallModel(model, self.journal), model), runner, limits)
         return ModelStageExecutor(
-            Recipes(*tools), TomlPromptLibrary(), self.store, loop, registry, SpendGuard
+            Recipes(*tools),
+            TomlPromptLibrary(),
+            self.store,
+            loop,
+            registry,
+            LockToolGrants(ToolLock()),
+            SpendGuard,
         )
 
     def go(self, executor: ModelStageExecutor) -> None:

@@ -68,6 +68,7 @@ class Editor(ToolLockEditorInterface):
         self.tools = tools or (McpToolDescriptor("read", "Reads a file.", {"type": "object"}),)
         self.fail = fail
         self.calls: list[tuple[ToolLock, str, tuple[str, ...], tuple[str, ...], bool]] = []
+        self.edits: list[tuple[str, str, str, tuple[str, ...]]] = []
 
     def add(
         self,
@@ -85,6 +86,20 @@ class Editor(ToolLockEditorInterface):
             McpServerInfo("files-server", "1.2.0", "p"), McpToolSet(self.tools)
         )
         return ToolLockAddition(lock.with_server(entry, replace), entry, inspection)
+
+    def grant(self, lock: ToolLock, name: str, stage: str, tools: tuple[str, ...]) -> ToolLock:
+        self.edits.append(("grant", name, stage, tools))
+        if self.fail:
+            raise self.fail
+        return lock.with_server((lock.server(name) or server(name)).with_grants(stage, tools), True)
+
+    def revoke(self, lock: ToolLock, name: str, stage: str, tools: tuple[str, ...]) -> ToolLock:
+        self.edits.append(("revoke", name, stage, tools))
+        if self.fail:
+            raise self.fail
+        return lock.with_server(
+            (lock.server(name) or server(name)).without_grants(stage, tools), True
+        )
 
 
 class Auditor(ToolLockAuditorInterface):
@@ -413,3 +428,75 @@ def test_text_of_exactly_the_limit_is_shown_whole_and_one_over_is_cut(
     }
     assert lines["exact"] == "x" * ToolsCli.SHOWN
     assert lines["over"] == "y" * (ToolsCli.SHOWN - 1) + "…"
+
+
+# ---------------------------------------------------------------------------- grant and revoke
+def granted_lock() -> ToolLock:
+    return ToolLock((server("files").with_grants("research", ("read",)),))
+
+
+def test_grant_lets_a_stage_call_a_tool_saves_the_lock_and_says_to_review_it(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    tools, store, editor, _ = cli(Store(ToolLock((server("files"),))))
+    assert run(tools, "grant", "--lock", "/x/l.toml", "files", "research", "read") == 0
+    out = capsys.readouterr().out
+    assert editor.edits == [("grant", "files", "research", ("read",))]
+    assert store.saved[0][0] == Path("/x/l.toml")
+    saved = store.saved[0][1].server("files")
+    assert saved is not None and saved.granted("research") == ("read",)
+    assert "granted files read to stage research" in out
+    assert "wrote /x/l.toml; review the change like any other commit" in out
+
+
+def test_grant_needs_at_least_one_tool() -> None:
+    with pytest.raises(SystemExit):
+        run(cli()[0], "grant", "files", "research")
+
+
+def test_grant_with_no_lock_file_is_a_setup_error(capsys: pytest.CaptureFixture[str]) -> None:
+    tools, store, editor, _ = cli()
+    assert run(tools, "grant", "--lock", "/x/none.toml", "files", "research", "read") == 2
+    assert "error: no tool lock at /x/none.toml" in capsys.readouterr().err
+    assert editor.edits == [] and store.saved == []
+
+
+def test_a_grant_the_editor_refuses_is_a_setup_error_and_nothing_is_saved(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    refusal = ApplicationError(
+        code="TOOL_GRANT_INVALID", message="'delete' is not listed", http_status=422
+    )
+    tools, store, _, _ = cli(Store(ToolLock((server("files"),))), editor=Editor(fail=refusal))
+    assert run(tools, "grant", "files", "research", "delete") == 2
+    assert "error: 'delete' is not listed" in capsys.readouterr().err
+    assert store.saved == []
+
+
+def test_revoke_takes_named_tools_back_and_saves(capsys: pytest.CaptureFixture[str]) -> None:
+    tools, store, editor, _ = cli(Store(granted_lock()))
+    assert run(tools, "revoke", "files", "research", "read") == 0
+    assert editor.edits == [("revoke", "files", "research", ("read",))]
+    saved = store.saved[0][1].server("files")
+    assert saved is not None and saved.grants == ()
+    assert "took read of files from stage research" in capsys.readouterr().out
+
+
+def test_revoke_naming_no_tool_takes_them_all(capsys: pytest.CaptureFixture[str]) -> None:
+    tools, _, editor, _ = cli(Store(granted_lock()))
+    assert run(tools, "revoke", "files", "research") == 0
+    assert editor.edits == [("revoke", "files", "research", ())]
+    assert "took all the tools of files from stage research" in capsys.readouterr().out
+
+
+def test_revoke_with_no_lock_file_is_a_setup_error(capsys: pytest.CaptureFixture[str]) -> None:
+    assert run(cli()[0], "revoke", "files", "research") == 2
+    assert "no tool lock at" in capsys.readouterr().err
+
+
+def test_list_shows_what_each_stage_may_call(capsys: pytest.CaptureFixture[str]) -> None:
+    entry = server("files").with_grants("outline", ("read",)).with_grants("research", ("read",))
+    assert run(cli(Store(ToolLock((entry,))))[0], "list") == 0
+    lines = capsys.readouterr().out.splitlines()
+    assert "    outline may call: read" in lines and "    research may call: read" in lines
+    assert lines.index("    outline may call: read") < lines.index("    research may call: read")
