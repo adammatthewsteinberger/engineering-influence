@@ -196,7 +196,9 @@ def test_a_tool_round_happens_and_the_final_text_is_what_the_stage_keeps(world: 
     assert world.tool.calls == [{"topic": "bees"}]
     assert world.store.get("run-1", "brief.md") == b"The brief, with facts."
     [turn] = model.requests[1].transcript
-    assert turn.result_for("c1").content == "facts about bees"
+    assert turn.result_for("c1").content == (
+        '<untrusted name="tool:lookup">\nfacts about bees\n</untrusted>'
+    )
 
 
 def test_a_registered_tool_the_stage_was_not_given_is_refused_and_never_runs(

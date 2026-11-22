@@ -24,18 +24,30 @@ def test_it_is_a_set_of_recipes() -> None:
 def test_the_plan_is_the_recipes_stages_in_order() -> None:
     plan = RECIPES.plan()
     assert plan.kind is BookKind.NONFICTION
-    assert plan.stages == ("brief", "positioning", "outline")
+    assert plan.stages == ("brief", "positioning", "research", "outline")
     assert plan.stages == tuple(recipe.stage for recipe in NonfictionRecipes.RECIPES)
 
 
 def test_a_recipe_is_found_by_stage() -> None:
     assert RECIPES.recipe("positioning").template == "stage_positioning"
-    assert RECIPES.recipe("outline").inputs == ("brief", "positioning")
+    assert RECIPES.recipe("outline").inputs == ("brief", "positioning", "research")
+    assert RECIPES.recipe("research").template == "stage_research"
+    assert RECIPES.recipe("research").inputs == ("brief", "positioning")
 
 
 def test_a_stage_with_no_recipe_is_refused() -> None:
-    with pytest.raises(ValueError, match="no recipe for stage 'research'"):
-        RECIPES.recipe("research")
+    with pytest.raises(ValueError, match="no recipe for stage 'drafting'"):
+        RECIPES.recipe("drafting")
+
+
+def test_only_research_has_tools_and_they_are_search_and_page_reading() -> None:
+    tools = {recipe.stage: recipe.tools for recipe in NonfictionRecipes.RECIPES}
+    assert tools == {
+        "brief": (),
+        "positioning": (),
+        "research": ("web_search", "fetch_url"),
+        "outline": (),
+    }
 
 
 @pytest.mark.parametrize("recipe", NonfictionRecipes.RECIPES, ids=lambda r: r.stage)
@@ -60,3 +72,12 @@ def test_every_blank_filled_from_outside_the_template_is_untrusted(recipe: Stage
     template = TomlPromptLibrary().get(recipe.template)
     used = {blank for text in template.parts.values() for blank in template.BLANK.findall(text)}
     assert used - TRUSTED <= template.untrusted
+
+
+def test_the_research_prompt_names_its_tools_and_says_what_comes_from_them_is_untrusted() -> None:
+    template = TomlPromptLibrary().get("stage_research")
+    system = template.parts["system"]
+    assert "web_search" in system and "fetch_url" in system
+    assert "<untrusted>" in system and "everything a tool returns" in system
+    assert "SHA-256" in system and "never invent a source" in system
+    assert template.untrusted == frozenset({"brief", "positioning"})

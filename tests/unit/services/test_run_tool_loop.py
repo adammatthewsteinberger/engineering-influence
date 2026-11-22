@@ -2,7 +2,7 @@
 
 """RunToolLoop: ask, run the tools the model calls, ask again, and stop at the limits."""
 
-from collections.abc import Collection
+from collections.abc import Collection, Sequence
 from typing import Any
 
 from engineering_influence.models.budget import Budget
@@ -67,12 +67,21 @@ class Asker(AskModelInterface):
 
 class Runner(ToolRunnerInterface):
     def __init__(self) -> None:
-        self.calls: list[tuple[str, str, int, ToolCall, tuple[str, ...]]] = []
+        self.calls: list[
+            tuple[str, str, int, ToolCall, tuple[str, ...], str, tuple[ModelTurn, ...]]
+        ] = []
 
     def run(
-        self, run_id: str, stage: str, attempt: int, call: ToolCall, offered: Collection[str]
+        self,
+        run_id: str,
+        stage: str,
+        attempt: int,
+        call: ToolCall,
+        offered: Collection[str],
+        prompt: str,
+        transcript: Sequence[ModelTurn],
     ) -> ToolResult:
-        self.calls.append((run_id, stage, attempt, call, tuple(offered)))
+        self.calls.append((run_id, stage, attempt, call, tuple(offered), prompt, tuple(transcript)))
         return ToolResult(call.id, f"result for {call.id}")
 
     def close(self) -> None:
@@ -229,3 +238,21 @@ def test_exactly_the_limit_of_calls_all_run() -> None:
     result = world.run()
     assert [c[3].id for c in world.runner.calls] == ["a", "b"]
     assert not any(r.is_error for r in result.transcript[0].results)
+
+
+def test_the_runner_is_given_the_prompt_and_the_conversation_so_far() -> None:
+    world = World(asks("", call("a")), asks("", call("b"), call("c")), asks("done"))
+    world.run()
+    first, second, third = world.runner.calls
+    assert (first[5], first[6]) == ("prompt", ())
+    assert [turn.calls[0].id for turn in second[6]] == ["a"]
+    assert third[6] == second[6]  # calls in one turn see the same conversation, not each other
+    assert second[5] == third[5] == "prompt"
+
+
+def test_a_conversation_carried_over_is_what_the_runner_is_given() -> None:
+    earlier = ModelTurn("t", (call("old"),), (ToolResult("old", "an old result"),))
+    resumed = ModelRequest("sys", "prompt", 500, "v1", tools=(SEARCH,), transcript=(earlier,))
+    world = World(asks("", call("new")), asks("done"))
+    world.run(resumed)
+    assert world.runner.calls[0][6] == (earlier,)

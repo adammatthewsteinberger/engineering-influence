@@ -83,6 +83,29 @@ the next request carries.
   tool should bound itself too; the runner's pool is small (4), so a tool that never returns fills it and
   later calls time out.
 
-**No tool is registered yet.** The runtime builds an empty `ToolRegistry`, so in practice the model still
-has none: the loop, the allowlist, the journal and the replay are in place and tested, and `web_search` and
-`fetch_url` are the next slice. Neither adapter has been run against a live provider with tools.
+- **Whatever a tool says is untrusted.** `ToolRunner` wraps a tool's text, and the text of an error it
+  raises, in an `<untrusted name="tool:...">` block, after cutting it to the limit and before it is stored,
+  so a replay shows the model the same wrapped text. A copy of the tag inside the text is defused, so a
+  page cannot close the block and speak outside it. The runner's own refusals are ours and are not wrapped.
+  The research prompt tells the model that everything a tool returns is evidence, never instructions.
+
+### The tools that exist
+
+The runtime registers `web_search` and `fetch_url` (model-backed runs only), and only the research stage
+names them.
+
+- **`web_search`** lists titles and links, best first, with no page text (a hit carries no snippet), so
+  nothing is quoted until it has been read. The provider is SearXNG, with Brave behind it when both are
+  configured (see [CONFIGURATION.md](CONFIGURATION.md)).
+- **`fetch_url`** reads one page through the source fetcher, which only reads public https, checks every
+  redirect, limits size and encoding, and drops hidden text. It only reads an address the model was shown,
+  copied exactly: one in the stage's prompt, a link line of an earlier successful search, or the `Source:`
+  header of an earlier successful fetch. A tool can refuse a call by what the model has seen
+  (`ToolInterface.refuses`) and says what counts as shown (`ToolInterface.shown`, nothing by default); the
+  runner builds the evidence from the prompt and those parts of successful results only, never from an
+  error message or page text, and checks it before the journal, so a refusal is never stored. This stops a
+  hostile page steering the model to an address with the brief in it. It returns the final address, the title, a
+  SHA-256 of the text and the text. That header is the pin a later claim check will use; the journal keeps
+  it, but it is not yet stored as a separate source record.
+
+Neither the model nor either adapter has been run against a live provider, search service or website.

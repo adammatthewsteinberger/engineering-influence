@@ -16,5 +16,9 @@ class ToolResultInterface(ABC):
     __slots__ = ()
 
     @abstractmethod
+    def untrusted(self, name: str) -> ToolResult:
+        """The same result with its content in an ``<untrusted>`` block that it cannot close early."""
+
+    @abstractmethod
     def capped(self, limit: int) -> ToolResult:
         """The same result with at most ``limit`` characters of content, and a note of what was cut."""

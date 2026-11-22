@@ -10,9 +10,13 @@ version = 1
 fingerprint = "ef5260c5d38559d6ed0f72bfbabf048b489ecb668e5ad5126512d749d606c361"
 
 [stage_outline]
-version = 1
-fingerprint = "df048cb6522b5bd5a8b0b8eff182dfa28caab7fe6a6cc7c4592782fce3543217"
+version = 2
+fingerprint = "1b2de26fdb008390ab6cf77739025344e5adef9f0e46d5aa97bb79a3e6a5ddde"
 
 [stage_positioning]
 version = 1
 fingerprint = "c83751d07fb0aba9077b044b7252ba91176aaa3213d1230abf61fecb80cc85b2"
+
+[stage_research]
+version = 1
+fingerprint = "b83f96ec8493c6c70c96a9ea7af5cecb3268b63e62e183e4d98e3712be2a5825"

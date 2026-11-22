@@ -10,16 +10,24 @@ from engineering_influence.models.stage_recipe import StageRecipe
 
 
 class NonfictionRecipes(StageRecipesInterface):
-    """Brief, positioning and outline. The plan is made from these recipes, so it cannot name a stage that has none.
+    """Brief, positioning, research and outline. The plan is made from these recipes, so it cannot name a stage that has none.
 
-    The later stages (research, drafting each chapter, revision, copy edit, front and back
+    Research is the one stage with tools (search and page reading); the others have none. The
+    later stages (drafting each chapter, revision, copy edit, front and back
     matter, assembly) are added here as each one is built, and the plan grows with them.
     """
 
     RECIPES: ClassVar[tuple[StageRecipe, ...]] = (
         StageRecipe("brief", "stage_brief", (), 1_500),
         StageRecipe("positioning", "stage_positioning", ("brief",), 2_000),
-        StageRecipe("outline", "stage_outline", ("brief", "positioning"), 4_000),
+        StageRecipe(
+            "research",
+            "stage_research",
+            ("brief", "positioning"),
+            4_000,
+            ("web_search", "fetch_url"),
+        ),
+        StageRecipe("outline", "stage_outline", ("brief", "positioning", "research"), 4_000),
     )
 
     def plan(self) -> StagePlan:

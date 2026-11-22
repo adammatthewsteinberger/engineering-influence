@@ -12,6 +12,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
+import httpx
 import pytest
 
 from engineering_influence.errors.application_error import ApplicationError
@@ -20,12 +21,19 @@ from engineering_influence.infrastructure.deterministic_stage_executor import (
 )
 from engineering_influence.infrastructure.in_memory_artifact_store import InMemoryArtifactStore
 from engineering_influence.infrastructure.in_memory_journal import InMemoryJournal
+from engineering_influence.infrastructure.research.brave_search_provider import (
+    BraveSearchProvider,
+)
+from engineering_influence.infrastructure.research.searxng_search_provider import (
+    SearxngSearchProvider,
+)
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
 from engineering_influence.models.book_brief import BookBrief
 from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget import Budget
 from engineering_influence.runtime.stage_executor_runtime import StageExecutorRuntime
+from engineering_influence.services.fallback_search_provider import FallbackSearchProvider
 from engineering_influence.services.model_stage_executor import ModelStageExecutor
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 
@@ -142,6 +150,7 @@ def files(
         "EI_STAGE_MODEL_PROFILE": "writer",
         "EI_MODEL_PROFILES": str(profiles),
         "EI_MODEL_CATALOG": str(catalog),
+        "EI_SEARXNG_URL": "http://127.0.0.1:1",
     }
 
 
@@ -289,3 +298,74 @@ def test_the_profiles_output_cap_field_is_the_one_the_server_receives(tmp_path: 
     body = seen.seen[-1][2]
     assert "max_completion_tokens" in body
     assert "max_tokens" not in body
+
+
+# ------------------------------------------------------------------- which search is used
+BRAVE = "brave-test-key-0123456789"  # gitleaks:allow
+
+
+def search_of(environment: dict[str, str], **secrets: str) -> Any:
+    rt = runtime(environment, **secrets)
+    client = httpx.Client()
+    try:
+        return rt._search(client)
+    finally:
+        client.close()
+
+
+def test_a_local_searxng_alone_is_the_search_when_there_is_no_brave_key(tmp_path: Path) -> None:
+    found = search_of(files(tmp_path))
+    assert isinstance(found, SearxngSearchProvider)
+
+
+def test_brave_alone_is_the_search_when_there_is_no_searxng_address(tmp_path: Path) -> None:
+    environment = files(tmp_path)
+    del environment["EI_SEARXNG_URL"]
+    assert isinstance(search_of(environment, BRAVE_SEARCH_API_KEY=BRAVE), BraveSearchProvider)
+
+
+def test_with_both_searxng_is_tried_first_and_brave_is_the_backup(tmp_path: Path) -> None:
+    found = search_of(files(tmp_path), BRAVE_SEARCH_API_KEY=BRAVE)
+    assert isinstance(found, FallbackSearchProvider)
+    assert isinstance(found._primary, SearxngSearchProvider)
+    assert isinstance(found._backup, BraveSearchProvider)
+
+
+@pytest.mark.parametrize("blank", [None, "", "   "])
+def test_a_blank_searxng_address_counts_as_none(tmp_path: Path, blank: str | None) -> None:
+    environment = files(tmp_path)
+    if blank is None:
+        del environment["EI_SEARXNG_URL"]
+    else:
+        environment["EI_SEARXNG_URL"] = blank
+    assert isinstance(search_of(environment, BRAVE_SEARCH_API_KEY=BRAVE), BraveSearchProvider)
+
+
+def test_a_blank_brave_key_counts_as_none(tmp_path: Path) -> None:
+    assert isinstance(search_of(files(tmp_path), BRAVE_SEARCH_API_KEY="  "), SearxngSearchProvider)
+
+
+def test_no_web_search_at_all_is_refused_at_start_and_says_what_to_set(tmp_path: Path) -> None:
+    environment = files(tmp_path)
+    del environment["EI_SEARXNG_URL"]
+    error = refused(runtime(environment))
+    assert (error.code, error.http_status) == ("STAGE_SEARCH_NOT_CONFIGURED", 503)
+    assert "EI_SEARXNG_URL" in error.message and "BRAVE_SEARCH_API_KEY" in error.message
+
+
+def test_a_searxng_address_that_cannot_be_used_is_refused_at_start(tmp_path: Path) -> None:
+    environment = files(tmp_path)
+    environment["EI_SEARXNG_URL"] = "ftp://search.example"
+    error = refused(runtime(environment))
+    assert (error.code, error.http_status) == ("STAGE_SEARXNG_URL_INVALID", 503)
+    assert "EI_SEARXNG_URL is not usable" in error.message
+
+
+def test_the_research_client_is_closed_with_the_runtime(tmp_path: Path) -> None:
+    with provider("x") as (url, _):
+        rt = runtime(files(tmp_path, url=url))
+        build(rt)
+        research = rt._research_client
+        assert research is not None and not research.is_closed
+        rt.close()
+        assert research.is_closed and rt._research_client is None

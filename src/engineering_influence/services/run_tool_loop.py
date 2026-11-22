@@ -30,7 +30,9 @@ class RunToolLoop(RunToolLoopInterface):
     - **Bounded.** After ``max_turns`` the loop stops with a blocking ``TOOL_LOOP_EXHAUSTED``
       issue. A call beyond ``max_tool_calls`` is not run; its result tells the model to answer with
       what it has. Neither the model nor a tool can make the loop run on.
-    - **The request names the tools.** The runner is given the same names and runs nothing else.
+    - **The request names the tools.** The runner is given the same names and runs nothing else,
+      and what the model has been shown so far (the prompt and the transcript), from which it builds the
+      evidence a tool can check where an argument came from.
     - A request with no tools is one turn, so a stage can use this for every call.
     """
 
@@ -76,7 +78,11 @@ class RunToolLoop(RunToolLoopInterface):
                 )
             results: list[ToolResult] = []
             for call in answer.tool_calls:
-                results.append(self._result(run_id, stage, attempt, call, offered, tool_calls))
+                results.append(
+                    self._result(
+                        run_id, stage, attempt, call, offered, request, transcript, tool_calls
+                    )
+                )
                 tool_calls += self._limits.room_for(tool_calls, 1)
             transcript.append(ModelTurn(answer.text, answer.tool_calls, tuple(results)))
         issue = QualityIssue(
@@ -103,10 +109,14 @@ class RunToolLoop(RunToolLoopInterface):
         attempt: int,
         call: ToolCall,
         offered: tuple[str, ...],
+        request: ModelRequest,
+        transcript: list[ModelTurn],
         made: int,
     ) -> ToolResult:
         if not self._limits.room_for(made, 1):
             return ToolResult(
                 call.id, "no more tool calls are allowed; answer with what you have", True
             )
-        return self._runner.run(run_id, stage, attempt, call, offered)
+        return self._runner.run(
+            run_id, stage, attempt, call, offered, request.prompt, tuple(transcript)
+        )

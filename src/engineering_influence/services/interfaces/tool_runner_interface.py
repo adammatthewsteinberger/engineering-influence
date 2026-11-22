@@ -4,10 +4,11 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Collection
+from collections.abc import Collection, Sequence
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from engineering_influence.models.model_turn import ModelTurn
     from engineering_influence.models.tool_call import ToolCall
     from engineering_influence.models.tool_result import ToolResult
 
@@ -19,9 +20,20 @@ class ToolRunnerInterface(ABC):
 
     @abstractmethod
     def run(
-        self, run_id: str, stage: str, attempt: int, call: ToolCall, offered: Collection[str]
+        self,
+        run_id: str,
+        stage: str,
+        attempt: int,
+        call: ToolCall,
+        offered: Collection[str],
+        prompt: str,
+        transcript: Sequence[ModelTurn],
     ) -> ToolResult:
-        """The result of the call, replayed from the journal if this run already made it."""
+        """The result of the call, replayed from the journal if this run already made it.
+
+        ``prompt`` and ``transcript`` are what the model has seen so far. The runner builds from
+        them the evidence a tool may check where its arguments came from.
+        """
 
     @abstractmethod
     def close(self) -> None:
