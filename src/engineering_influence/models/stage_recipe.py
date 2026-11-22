@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 from engineering_influence.models.interfaces.stage_recipe_interface import StageRecipeInterface
+from engineering_influence.models.tool_definition import ToolDefinition
 
 
 @dataclass(frozen=True, slots=True)
@@ -15,6 +16,7 @@ class StageRecipe(StageRecipeInterface):
 
     A stage's answer is kept as ``<stage>.md``, so ``inputs`` names earlier stages and each one
     is read from that stage's file. An input is also the name of a blank in the template.
+    ``tools`` are the only tools the stage may use; a stage that names none gets none.
     """
 
     NAME: ClassVar[re.Pattern[str]] = re.compile(r"[a-z][a-z0-9_]*")
@@ -23,6 +25,7 @@ class StageRecipe(StageRecipeInterface):
     template: str
     inputs: tuple[str, ...]
     max_output_tokens: int
+    tools: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         for label, value in (("stage", self.stage), ("template", self.template)):
@@ -38,6 +41,12 @@ class StageRecipe(StageRecipeInterface):
             raise ValueError("a stage cannot read its own answer")
         if self.max_output_tokens <= 0:
             raise ValueError("a recipe needs a positive output cap")
+        if not isinstance(self.tools, tuple):
+            raise TypeError("a recipe's tools are a tuple of tool names")
+        if any(not ToolDefinition.NAME.fullmatch(name) for name in self.tools):
+            raise ValueError("a recipe's tools are tool names")
+        if len(set(self.tools)) != len(self.tools):
+            raise ValueError("a recipe names each tool once")
 
     def output_name(self) -> str:
         """The artifact this stage's answer is kept as."""

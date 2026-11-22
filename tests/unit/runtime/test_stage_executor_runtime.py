@@ -270,7 +270,11 @@ def test_closing_is_safe_before_a_model_was_built_and_twice_after(tmp_path: Path
     with provider("x") as (url, _):
         rt = runtime(files(tmp_path, url=url))
         build(rt)
+        runner = rt._runner
+        assert runner is not None  # the tool threads belong to the runtime
         rt.close()
+        assert rt._runner is None  # and are let go with it
+        assert runner._pool._shutdown  # after being told to stop, not just forgotten
         rt.close()
 
 

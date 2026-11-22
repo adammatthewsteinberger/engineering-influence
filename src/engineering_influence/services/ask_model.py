@@ -17,6 +17,8 @@ class AskModel(AskModelInterface):
 
     - **Replay first.** Every output cap the escalation could reach is checked in the journal, for
       nothing, so a resumed run that already has an answer never pays for the attempts before it.
+    - **A complete turn** is an ``end_turn`` or a ``tool_use``: the second carries the tool calls the
+      model asked for, for the tool loop to run.
     - **Cut off** (the model hit its output cap): ask again with the cap doubled, up to the
       model's own limit. At the limit there is nothing more to try.
     - **Declined**: ask the identical request again, up to ``refusal_retries`` times. A refusal is
@@ -62,7 +64,7 @@ class AskModel(AskModelInterface):
         for cap in caps:
             replayed = self._caller.replay(run_id, stage, self._with_cap(request, cap))
             if replayed is not None:
-                return ModelAnswer(replayed.text, True, (), 0, 0, True)
+                return ModelAnswer(replayed.text, True, (), 0, 0, True, replayed.tool_calls)
         index, refusals_left = 0, self._refusal_retries
         best: str | None = None
         last, declined = "", ""
@@ -77,8 +79,8 @@ class AskModel(AskModelInterface):
             )
             calls += 1
             cost += result.cost_micro_usd
-            if result.stop_reason == "end_turn":
-                return ModelAnswer(result.text, True, (), cost, calls, False)
+            if result.stop_reason in ("end_turn", "tool_use"):
+                return ModelAnswer(result.text, True, (), cost, calls, False, result.tool_calls)
             if result.stop_reason == "max_tokens":
                 best, last = result.text, "max_tokens"
                 if index == len(caps) - 1:

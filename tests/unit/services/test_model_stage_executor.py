@@ -9,6 +9,7 @@ import pytest
 
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.infrastructure.in_memory_artifact_store import InMemoryArtifactStore
+from engineering_influence.infrastructure.in_memory_journal import InMemoryJournal
 from engineering_influence.infrastructure.prompt_library.toml_prompt_library import (
     TomlPromptLibrary,
 )
@@ -24,11 +25,15 @@ from engineering_influence.models.prompt_template import PromptTemplate
 from engineering_influence.models.quality_issue import QualityIssue
 from engineering_influence.models.stage_plan import StagePlan
 from engineering_influence.models.stage_report import StageReport
+from engineering_influence.models.tool_loop_limits import ToolLoopLimits
 from engineering_influence.services.interfaces.ask_model_interface import AskModelInterface
 from engineering_influence.services.interfaces.spend_guard_interface import SpendGuardInterface
 from engineering_influence.services.model_stage_executor import ModelStageExecutor
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
+from engineering_influence.services.run_tool_loop import RunToolLoop
 from engineering_influence.services.spend_guard import SpendGuard
+from engineering_influence.services.tool_registry import ToolRegistry
+from engineering_influence.services.tool_runner import ToolRunner
 
 RECIPES = NonfictionRecipes()
 CAP = 5_000_000
@@ -76,8 +81,16 @@ class World:
         self.asker = Asker(*answers)
         self.budgets: list[Budget] = []
         self.guard = SpendGuard(Budget(cap=CAP))
+        registry = ToolRegistry(())
+        limits = ToolLoopLimits()
+        runner = ToolRunner(registry, InMemoryJournal(), limits)
         self.executor = ModelStageExecutor(
-            RECIPES, prompts or TomlPromptLibrary(), self.store, self.asker, self._guard
+            RECIPES,
+            prompts or TomlPromptLibrary(),
+            self.store,
+            RunToolLoop(self.asker, runner, limits),
+            registry,
+            self._guard,
         )
         self.run = BookRun(
             run_id="run-1",

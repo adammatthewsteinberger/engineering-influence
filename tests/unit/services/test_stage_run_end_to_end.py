@@ -26,13 +26,17 @@ from engineering_influence.models.model_response import ModelResponse
 from engineering_influence.models.model_usage import ModelUsage
 from engineering_influence.models.provider_descriptor import ProviderDescriptor
 from engineering_influence.models.run_status import RunStatus
+from engineering_influence.models.tool_loop_limits import ToolLoopLimits
 from engineering_influence.services.advance_run import AdvanceRun
 from engineering_influence.services.ask_model import AskModel
 from engineering_influence.services.call_model import CallModel
 from engineering_influence.services.failure_classifier import FailureClassifier
 from engineering_influence.services.model_stage_executor import ModelStageExecutor
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
+from engineering_influence.services.run_tool_loop import RunToolLoop
 from engineering_influence.services.spend_guard import SpendGuard
+from engineering_influence.services.tool_registry import ToolRegistry
+from engineering_influence.services.tool_runner import ToolRunner
 
 DESCRIPTOR = ProviderDescriptor(
     provider="fake",
@@ -81,12 +85,15 @@ class World:
         self.journal = InMemoryJournal()
         self.store = InMemoryArtifactStore()
         self.queue = InMemoryQueue()
-        self.executor = ModelStageExecutor(
-            RECIPES,
-            TomlPromptLibrary(),
-            self.store,
+        registry = ToolRegistry(())
+        limits = ToolLoopLimits()
+        loop = RunToolLoop(
             AskModel(CallModel(model, self.journal), model),
-            SpendGuard,
+            ToolRunner(registry, self.journal, limits),
+            limits,
+        )
+        self.executor = ModelStageExecutor(
+            RECIPES, TomlPromptLibrary(), self.store, loop, registry, SpendGuard
         )
         self.service = AdvanceRun(
             self.runs, self.journal, self.executor, self.queue, FailureClassifier()

@@ -3,7 +3,7 @@
 
 import json
 import re
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any, ClassVar
 
@@ -22,6 +22,14 @@ class ToolDefinition(ToolDefinitionInterface):
     """
 
     NAME: ClassVar[re.Pattern[str]] = re.compile(r"[A-Za-z0-9_-]{1,64}")
+    KINDS: ClassVar[dict[str, Callable[[Any], bool]]] = {
+        "string": lambda value: isinstance(value, str),
+        "integer": lambda value: isinstance(value, int) and not isinstance(value, bool),
+        "number": lambda value: isinstance(value, int | float) and not isinstance(value, bool),
+        "boolean": lambda value: isinstance(value, bool),
+        "array": lambda value: isinstance(value, list),
+        "object": lambda value: isinstance(value, Mapping),
+    }
 
     name: str
     description: str
@@ -38,6 +46,29 @@ class ToolDefinition(ToolDefinitionInterface):
             json.dumps(self.parameters)
         except (TypeError, ValueError) as error:
             raise ValueError("a tool's parameters must be plain JSON") from error
+
+    def check(self, arguments: Mapping[str, Any]) -> str:
+        """An empty string if the arguments fit the schema, otherwise a sentence saying how not.
+
+        Only the parts of JSON Schema a tool needs are read: ``required``, each property's
+        ``type`` and ``enum``, and ``additionalProperties: false``.
+        """
+        properties = self.parameters.get("properties") or {}
+        for name in self.parameters.get("required") or []:
+            if name not in arguments:
+                return f"missing the required argument {name!r}"
+        for name, value in arguments.items():
+            spec = properties.get(name)
+            if spec is None:
+                if self.parameters.get("additionalProperties") is False:
+                    return f"unknown argument {name!r}"
+                continue
+            kind = spec.get("type")
+            if kind in self.KINDS and not self.KINDS[kind](value):
+                return f"argument {name!r} must be of type {kind}"
+            if "enum" in spec and value not in spec["enum"]:
+                return f"argument {name!r} must be one of {spec['enum']}"
+        return ""
 
     def json_schema(self) -> dict[str, Any]:
         """A copy of the parameter schema, safe to give to an adapter that may reshape it."""

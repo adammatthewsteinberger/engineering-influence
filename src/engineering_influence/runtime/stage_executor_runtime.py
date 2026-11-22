@@ -31,6 +31,7 @@ from engineering_influence.interfaces.secret_provider_interface import SecretPro
 from engineering_influence.interfaces.stage_executor_interface import StageExecutorInterface
 from engineering_influence.models.model_profile import ModelProfile
 from engineering_influence.models.provider_descriptor import ProviderDescriptor
+from engineering_influence.models.tool_loop_limits import ToolLoopLimits
 from engineering_influence.runtime.interfaces.stage_executor_runtime_interface import (
     StageExecutorRuntimeInterface,
 )
@@ -38,7 +39,10 @@ from engineering_influence.services.ask_model import AskModel
 from engineering_influence.services.call_model import CallModel
 from engineering_influence.services.model_stage_executor import ModelStageExecutor
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
+from engineering_influence.services.run_tool_loop import RunToolLoop
 from engineering_influence.services.spend_guard import SpendGuard
+from engineering_influence.services.tool_registry import ToolRegistry
+from engineering_influence.services.tool_runner import ToolRunner
 
 
 class StageExecutorRuntime(StageExecutorRuntimeInterface):
@@ -65,6 +69,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         self._today = today
         self._timeout = request_timeout_seconds
         self._client: httpx.Client | None = None
+        self._runner: ToolRunner | None = None
 
     def build(
         self, artifacts: ArtifactStoreInterface, journal: JournalInterface
@@ -80,16 +85,25 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                 http_status=503,
             )
         model = self._model()
+        tools = ToolRegistry(())  # the native tools are registered here as they are built
+        limits = ToolLoopLimits()
+        runner = ToolRunner(tools, journal, limits)
+        self._runner = runner
+        ask = AskModel(CallModel(model, journal), model)
         return ModelStageExecutor(
             NonfictionRecipes(),
             TomlPromptLibrary(),
             artifacts,
-            AskModel(CallModel(model, journal), model),
+            RunToolLoop(ask, runner, limits),
+            tools,
             SpendGuard,
         )
 
     def close(self) -> None:
-        """Close the HTTP client behind a model-backed executor, if one was built."""
+        """Close the HTTP client and the tool threads behind a model-backed executor, if built."""
+        if self._runner is not None:
+            self._runner.close()
+            self._runner = None
         if self._client is not None:
             self._client.close()
             self._client = None
