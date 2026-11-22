@@ -7,6 +7,7 @@ from pathlib import Path
 
 import httpx
 
+from engineering_influence import __version__
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.infrastructure.deterministic_stage_executor import (
     DeterministicStageExecutor,
@@ -35,6 +36,11 @@ from engineering_influence.infrastructure.research.searxng_search_provider impor
 from engineering_influence.infrastructure.security.public_https_url_policy import (
     PublicHttpsUrlPolicy,
 )
+from engineering_influence.infrastructure.tools.sha256_file_hasher import Sha256FileHasher
+from engineering_influence.infrastructure.tools.stdio_mcp_transport_factory import (
+    StdioMcpTransportFactory,
+)
+from engineering_influence.infrastructure.tools.toml_tool_lock_store import TomlToolLockStore
 from engineering_influence.interfaces.artifact_store_interface import ArtifactStoreInterface
 from engineering_influence.interfaces.journal_interface import JournalInterface
 from engineering_influence.interfaces.model_interface import ModelInterface
@@ -44,6 +50,8 @@ from engineering_influence.interfaces.stage_executor_interface import StageExecu
 from engineering_influence.interfaces.tool_interface import ToolInterface
 from engineering_influence.models.model_profile import ModelProfile
 from engineering_influence.models.provider_descriptor import ProviderDescriptor
+from engineering_influence.models.tool_limits import ToolLimits
+from engineering_influence.models.tool_lock import ToolLock
 from engineering_influence.models.tool_loop_limits import ToolLoopLimits
 from engineering_influence.runtime.interfaces.stage_executor_runtime_interface import (
     StageExecutorRuntimeInterface,
@@ -52,12 +60,18 @@ from engineering_influence.services.ask_model import AskModel
 from engineering_influence.services.call_model import CallModel
 from engineering_influence.services.fallback_search_provider import FallbackSearchProvider
 from engineering_influence.services.fetch_url_tool import FetchUrlTool
+from engineering_influence.services.lock_tool_grants import LockToolGrants
+from engineering_influence.services.mcp_client_factory import McpClientFactory
+from engineering_influence.services.mcp_server_launcher import McpServerLauncher
+from engineering_influence.services.mcp_tool_factory import McpToolFactory
 from engineering_influence.services.model_stage_executor import ModelStageExecutor
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 from engineering_influence.services.run_tool_loop import RunToolLoop
 from engineering_influence.services.spend_guard import SpendGuard
+from engineering_influence.services.tool_lock_verifier import ToolLockVerifier
 from engineering_influence.services.tool_registry import ToolRegistry
 from engineering_influence.services.tool_runner import ToolRunner
+from engineering_influence.services.tool_server_fleet import ToolServerFleet
 from engineering_influence.services.web_search_tool import WebSearchTool
 
 
@@ -71,10 +85,18 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
     (Brave, the backup, or the only search when there is no instance), or both. Anything missing, an unknown
     profile, no price in force today, or a key that would cross a network in clear stops the
     process at start, before any call is made. The price is looked up once, at start.
+
+    ``EI_TOOL_LOCK`` names a tool lock ([TOOL_LOCK.md](../../../docs/TOOL_LOCK.md)). Its servers are
+    started and verified here, a changed one stops the process, and a stage is offered only the
+    locked tools the lock grants it.
     """
 
     CONNECT_TIMEOUT_SECONDS = 10.0
     RESEARCH_TIMEOUT_SECONDS = 30.0
+    SERVER_SESSION_SECONDS = 4 * 3600.0
+    SERVER_REQUEST_SECONDS = 30.0
+    SERVER_MEMORY_BYTES = 2 * 1024**3
+    SERVER_DISK_BYTES = 1024**3
 
     def __init__(
         self,
@@ -90,6 +112,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         self._client: httpx.Client | None = None
         self._research_client: httpx.Client | None = None
         self._runner: ToolRunner | None = None
+        self._fleet: ToolServerFleet | None = None
 
     def build(
         self, artifacts: ArtifactStoreInterface, journal: JournalInterface
@@ -105,7 +128,8 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                 http_status=503,
             )
         model = self._model()
-        tools = ToolRegistry(self._tools())
+        lock, locked_tools = self._locked_servers()
+        tools = ToolRegistry((*self._tools(), *locked_tools))
         limits = ToolLoopLimits()
         runner = ToolRunner(tools, journal, limits)
         self._runner = runner
@@ -116,6 +140,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             artifacts,
             RunToolLoop(ask, runner, limits),
             tools,
+            LockToolGrants(lock),
             SpendGuard,
         )
 
@@ -124,11 +149,45 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         if self._runner is not None:
             self._runner.close()
             self._runner = None
+        if self._fleet is not None:
+            self._fleet.close()
+            self._fleet = None
         for client in (self._client, self._research_client):
             if client is not None:
                 client.close()
         self._client = None
         self._research_client = None
+
+    def _locked_servers(self) -> tuple[ToolLock, tuple[ToolInterface, ...]]:
+        """The servers in the lock that ``EI_TOOL_LOCK`` names, started and verified, and their tools.
+
+        A lock is read only when it is named: a stray file in the working directory starts nothing.
+        A server that is not what the lock approved stops the process at start.
+        """
+        named = self._environment.get("EI_TOOL_LOCK", "").strip()
+        if not named:
+            return ToolLock(), ()
+        lock = TomlToolLockStore().load(Path(named))
+        if lock is None:
+            raise ApplicationError(
+                code="TOOL_LOCK_MISSING",
+                message=f"EI_TOOL_LOCK names {named}, which does not exist",
+                http_status=503,
+            )
+        limits = ToolLimits(
+            timeout_seconds=self.SERVER_SESSION_SECONDS,
+            max_memory_bytes=self.SERVER_MEMORY_BYTES,
+            max_disk_bytes=self.SERVER_DISK_BYTES,
+        )
+        launcher = McpServerLauncher(
+            StdioMcpTransportFactory(limits, self._environment),
+            McpClientFactory("engineering-influence", __version__, self.SERVER_REQUEST_SECONDS),
+            ToolLockVerifier(Sha256FileHasher()),
+        )
+        fleet = ToolServerFleet(launcher, McpToolFactory())
+        fleet.start(lock)
+        self._fleet = fleet
+        return lock, fleet.tools()
 
     def _tools(self) -> tuple[ToolInterface, ...]:
         """Search and page reading, which the research stage names."""

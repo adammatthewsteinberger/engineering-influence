@@ -12,7 +12,7 @@ from engineering_influence.models.mcp_server_lock import McpServerLock
 from engineering_influence.models.tool_lock import ToolLock
 
 REQUIRED = frozenset({"name", "command", "server_name", "server_version", "tools_hash", "files"})
-OPTIONAL = frozenset({"env", "tool_names"})
+OPTIONAL = frozenset({"env", "tool_names", "grants"})
 
 
 class TomlToolLockStore(ToolLockStoreInterface):
@@ -91,9 +91,17 @@ class TomlToolLockStore(ToolLockStoreInterface):
                 server_version=entry["server_version"],
                 tool_names=self._tuple(entry.get("tool_names", [])),
                 tools_hash=entry["tools_hash"],
+                grants=self._grants(entry.get("grants", {})),
             )
         except (ValueError, TypeError, AttributeError) as error:
             raise self._invalid(f"{where}: {error}") from error
+
+    def _grants(self, table: Any) -> tuple[tuple[str, tuple[str, ...]], ...]:
+        if not isinstance(table, dict):
+            raise TypeError("grants are a table of stage = [tools]")
+        return tuple(
+            sorted((stage, tuple(sorted(self._tuple(tools)))) for stage, tools in table.items())
+        )
 
     @staticmethod
     def _tuple(value: Any) -> tuple[Any, ...]:
@@ -115,6 +123,9 @@ class TomlToolLockStore(ToolLockStoreInterface):
             "[server.files]",
         ]
         lines += [f"{self._quote(path)} = {self._quote(digest)}" for path, digest in server.files]
+        if server.grants:
+            lines += ["", "[server.grants]"]
+            lines += [f"{stage} = {self._array(tools)}" for stage, tools in server.grants]
         return "\n".join(lines) + "\n"
 
     def _array(self, items: tuple[str, ...]) -> str:

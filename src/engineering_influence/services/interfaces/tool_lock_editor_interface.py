@@ -26,3 +26,11 @@ class ToolLockEditorInterface(ABC):
         replace: bool,
     ) -> ToolLockAddition:
         """Run the server once, record what it is, and return the lock with it added."""
+
+    @abstractmethod
+    def grant(self, lock: ToolLock, name: str, stage: str, tools: tuple[str, ...]) -> ToolLock:
+        """The lock with these tools of the server added to what the stage may call."""
+
+    @abstractmethod
+    def revoke(self, lock: ToolLock, name: str, stage: str, tools: tuple[str, ...]) -> ToolLock:
+        """The lock with these tools taken from the stage, or all of them if none are named."""

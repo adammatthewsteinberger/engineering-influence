@@ -137,3 +137,10 @@ Recorded on 2026-11-22 while building slice 4 ([TOOL_LOCK.md](../TOOL_LOCK.md)).
   is reaped. It is not sandboxed. `ei tools add` runs the server, so it refuses a launcher, a missing
   executable or a relative script before starting anything, and `ei tools verify` never starts a server
   whose files have changed.
+- **Where a stage's permission for a locked tool lives (4c; the third open question).** In the lock file,
+  chosen by the maintainer: a per-server `[server.grants]` table naming, for each stage, exactly which of the
+  server's tools it may call, with no wildcards. Recipes in code still name the built-in tools; the stage's
+  offered tools are the recipe's plus the lock's grants. It is reviewed in the same commit as the server.
+- **A run reads a lock only when `EI_TOOL_LOCK` names it**, so a stray file in the working directory starts no
+  server, and a tool's journal key includes the tool's revision (for a locked tool, the hash of the server's
+  tools) so a replaced server's old answers are not replayed.

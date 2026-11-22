@@ -85,6 +85,29 @@ class ToolLockEditor(ToolLockEditorInterface):
         except ValueError as error:
             raise self._refused("TOOL_LOCK_INVALID", str(error)) from error
 
+    def grant(self, lock: ToolLock, name: str, stage: str, tools: tuple[str, ...]) -> ToolLock:
+        """The lock with these tools of the server added to what the stage may call."""
+        server = self._server(lock, name)
+        if not tools:
+            raise self._refused("TOOL_GRANT_INVALID", "name at least one tool to grant")
+        try:
+            return lock.with_server(server.with_grants(stage, tools), replace=True)
+        except ValueError as error:
+            raise self._refused("TOOL_GRANT_INVALID", str(error)) from error
+
+    def revoke(self, lock: ToolLock, name: str, stage: str, tools: tuple[str, ...]) -> ToolLock:
+        """The lock with these tools taken from the stage, or all of them if none are named."""
+        server = self._server(lock, name)
+        if not any(granted for granted_stage, granted in server.grants if granted_stage == stage):
+            raise self._refused("TOOL_GRANT_UNKNOWN", f"stage {stage!r} has no grant from {name!r}")
+        return lock.with_server(server.without_grants(stage, tools), replace=True)
+
+    def _server(self, lock: ToolLock, name: str) -> McpServerLock:
+        server = lock.server(name)
+        if server is None:
+            raise self._refused("TOOL_SERVER_UNKNOWN", f"no server named {name!r} is locked")
+        return server
+
     def _command(self, argv: tuple[str, ...]) -> McpCommand:
         executable = self._finder.find(argv[0])
         if executable is None:

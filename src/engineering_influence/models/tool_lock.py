@@ -41,6 +41,11 @@ class ToolLock(ToolLockInterface):
             raise ValueError(f"a server named {server.name!r} is already locked")
         return ToolLock((*kept, server))
 
+    def granted(self, stage: str) -> tuple[str, ...]:
+        """The model names of every locked tool this stage may call, servers in name order."""
+        servers = sorted(self.servers, key=lambda server: server.name)
+        return tuple(name for server in servers for name in server.model_names(stage))
+
     def names(self) -> tuple[str, ...]:
         """The locked servers' names, sorted."""
         return tuple(sorted(server.name for server in self.servers))

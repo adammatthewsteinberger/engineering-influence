@@ -42,6 +42,15 @@ class ToolInterface(ABC):
         """
         return ""
 
+    def revision(self) -> str:
+        """What a stored result of this tool depends on besides its name and arguments.
+
+        A result is replayed by tool and arguments. A tool whose answers change when it is replaced
+        (a locked server that was updated and locked again) names that here, so a run resumed after
+        the change asks again instead of replaying the old server's answers. The default is nothing.
+        """
+        return ""
+
     @abstractmethod
     def invoke(self, arguments: Mapping[str, Any]) -> str:
         """Run the tool and return its text.

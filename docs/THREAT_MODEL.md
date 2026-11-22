@@ -167,10 +167,14 @@ These are open, in the order they would be fixed.
 5. **The print and ebook documents were checked field by field in M5**; a new metadata field
    that bypasses `TexText` would be caught by `test_latex_injection.py` only if it is added to
    that test's field list.
-6. **Third-party tool servers (MCP) are not usable by a model yet, and a lock has limits.** The lock, its
-   verifier, the MCP client, the stdio transport and `ei tools` are built ([TOOL_LOCK.md](TOOL_LOCK.md)), and
-   `ei tools add` and `verify` run a server's code, but no run reads a lock. A lock does not cover a server's
-   installed dependencies or what it fetches at run time, and a file could change between the check and the
-   start. A server is run with a bare environment, a throwaway home and resource limits, **not in a
-   sandbox**: it can read any file the user can, and use the network. How strong a sandbox it needs is an
-   open question in the ADR.
+6. **Third-party tool servers (MCP): a model can now call them, and a lock has limits.** A run given
+   `EI_TOOL_LOCK` starts each locked server, refuses to start if one differs from the lock, and offers a stage
+   only the tools the lock grants it ([TOOL_LOCK.md](TOOL_LOCK.md)). What that does not cover: a lock does
+   not pin a server's installed dependencies or what it fetches at run time; a file could change between the
+   check and the start; and a server is run with a bare environment, a throwaway home and resource limits,
+   **not in a sandbox**, so it can read any file the user can and use the network. Its answers are
+   untrusted text like any tool's, and its tool descriptions are the place a hostile server would hide
+   instructions, which the lock's hash of the tools is there to catch only if the server changes after
+   review: **a server that was hostile when it was locked is trusted as locked.** The grant is the
+   defence in depth: a stage only sees the tools a person named for it. How strong a sandbox a server
+   needs is an open question in the ADR. Nothing has been run against a third-party server or a live model.

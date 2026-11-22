@@ -6,9 +6,57 @@ commit. This is slice 4 of [ADR 0008](adr/0008-tools-for-the-model.md), built in
 
 **Status.** Built and tested: the lock's models and file format, a strict reader and writer, the MCP
 client, the verifier, a **stdio transport that runs a server as a child process under limits**, and the
-`ei tools add`, `list` and `verify` commands (slices 4a and 4b). **Not built yet:** offering a locked
-server's tools to a stage and checking the lock at start (4c), and HTTP servers (4d). Nothing in a run
-reads a lock today, so no third-party tool can be called by a model.
+`ei tools add`, `list`, `verify`, `grant` and `revoke` commands, and (slice 4c) **the wiring into a run**:
+a run that is given a lock starts and verifies each server, registers its tools, and offers a stage only
+the tools the lock grants it. **Not built yet:** HTTP servers (4d). No third-party server has been run
+by a live model, and none other than a small server written for the tests has been run at all.
+
+## In a run
+
+A model-backed run reads a lock only when **`EI_TOOL_LOCK`** names one. The file in the current directory
+is not read, so a stray `ei-tools.lock.toml` starts nothing. At start, for each locked server in name order:
+
+1. the locked **files** are compared, and a server whose files changed is **never started**;
+2. the server is started with only the variables the lock names, and asked who it is and what it offers;
+3. its **name, version and tools** are compared with the lock, and a **granted tool that cannot be offered**
+   to a model (its schema is not an object) is refused;
+4. each tool that can be offered is registered as `<server>__<tool>`.
+
+Any difference stops the process at start with `TOOL_LOCK_MISMATCH` (naming the server and every problem),
+and **stops every server already started**. A server that cannot be started or does not answer is
+`TOOL_SERVER_UNAVAILABLE`. A run does not begin with a tool it was promised and cannot have.
+
+**Registering a tool does not offer it.** A stage is offered its recipe's own tools plus the tools the lock
+**grants that stage**, and the tool runner runs only what was offered, so a tool that exists but was not
+granted is refused as "no tool named ..." even if the model asks for it. A stage the lock does not mention
+gets none. Everything a locked tool returns goes through the same runner as the built-in tools: its
+arguments are checked against the schema the server advertised, its answer (and the text of an error it
+reports) is cut and wrapped as untrusted text, and it is journaled.
+
+**The journal remembers which server answered.** A stored tool result is keyed by the tool, its arguments
+and the tool's *revision*, which for a locked tool is the hash of the server's tools. A server that is updated
+and locked again is asked again; a resumed run does not replay the old server's answers.
+
+Servers stay running for the life of the process, one call at a time per server, and are stopped when the
+runtime is closed. A server's session is limited to **four hours, 2 GiB of memory and 1 GiB of disk**
+(fixed, not settings). A server that is stopped for passing a limit fails its later calls; it is not restarted.
+
+## Grants
+
+A grant says which stage may call which of a server's tools. It lives in the lock, so it is reviewed in the
+same commit as the server it applies to:
+
+```text
+ei tools grant [--lock PATH] NAME STAGE TOOL [TOOL …]
+ei tools revoke [--lock PATH] NAME STAGE [TOOL …]
+```
+
+- `grant` adds tools to a stage's list; it runs nothing. The tools must be ones the lock lists, and must be
+  able to be offered under `<server>__<tool>`. There are **no wildcards**.
+- `revoke` takes the named tools back, or all of the stage's if none are named. Revoking from a stage that
+  has no grant is an error, so a misspelt stage is noticed.
+- A stage name that no recipe uses is not an error here: the lock does not know the recipes, so the grant
+  would simply never be used. `ei tools list` shows every stage's grants.
 
 ## The `ei tools` commands
 
@@ -66,6 +114,9 @@ tools_hash = "<SHA-256 of every tool the server advertised>"
 [server.files]
 "/opt/mcp/files/index.js" = "<SHA-256>"
 "/usr/local/bin/node" = "<SHA-256>"
+
+[server.grants]
+research = ["read_file"]
 ```
 
 - **`name`** is lowercase letters, digits and `-`, from a letter, up to 32 characters. A tool is offered
@@ -78,6 +129,9 @@ tools_hash = "<SHA-256 of every tool the server advertised>"
   the environment when the server starts. Everything else is dropped by the allow-list environment.
 - **`server_name`, `server_version`, `tools_hash`** are what the server reported when it was added.
   `tool_names` is the same list in words, so a refusal can say which tool was added or removed.
+- **`[server.grants]`** is optional: for each stage, the tools it may call (sorted, each once, each one in
+  `tool_names`). Without it no stage gets any of the server's tools. A lock written before grants existed
+  is read as having none, and a lock with none is written without the table.
 
 The file is read strictly: an unknown key, a missing one, a wrong or non-integer `version` or an entry
 the model refuses is an error naming the entry, never something skipped. It is written whole to a

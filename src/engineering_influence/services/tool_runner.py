@@ -80,7 +80,7 @@ class ToolRunner(ToolRunnerInterface):
         reason = tool.refuses(call.arguments, self._evidence(prompt, transcript))
         if reason:
             return ToolResult(call.id, reason, True)
-        key = self._key(call)
+        key = self._key(call, tool)
         recorded = self._journal.find(run_id, stage, key.digest())
         if recorded is None:
             made = (
@@ -124,11 +124,12 @@ class ToolRunner(ToolRunnerInterface):
         except ApplicationError as error:
             return ToolResult(call.id, error.message, True)
 
-    def _key(self, call: ToolCall) -> JournalKey:
+    def _key(self, call: ToolCall, tool: ToolInterface) -> JournalKey:
+        revision = tool.revision()
         return JournalKey(
             model=f"tool:{call.name}",
             params_hash=hashlib.sha256(call.arguments_json().encode("utf-8")).hexdigest(),
-            prompt_version=self.VERSION,
+            prompt_version=f"{self.VERSION}:{revision}" if revision else self.VERSION,
             context_hash=hashlib.sha256(b"tool").hexdigest(),
         )
 
