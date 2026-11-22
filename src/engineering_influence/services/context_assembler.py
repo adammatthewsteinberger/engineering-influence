@@ -17,14 +17,22 @@ from engineering_influence.services.interfaces.context_assembler_interface impor
 class ContextAssembler(ContextAssemblerInterface):
     """Keep everything that must be there, then spend what is left on history.
 
-    The section labels come from the ``context_pack`` prompt template, and its identifier
-    (``context_pack@1``) is the prompt version recorded in the journal.
+    The layout comes from the ``context_pack`` prompt template, and its identifier
+    (``context_pack@2``) is the prompt version recorded in the journal.
+
+    **Where each part goes is a trust decision.** The ``system`` part is fixed text the product
+    wrote and is the same for every call. Everything else came from outside it: the style and
+    the grounding (an outline, research notes from the web) were written by earlier stages, the
+    summaries and the tail are model output, and the beats are the outline's. All of it goes in
+    the prompt, each as an ``<untrusted>`` block that cannot close itself, so none of it is ever
+    in the high-trust system part. Only the ``instruction`` is the caller's own text, and
+    it must not contain text from a model or the web.
 
     Policy, in order: the style, the grounding, the beats and the instruction are never cut.
     Then as many of the *newest* prior-chapter summaries as fit (plot facts outrank prose), then
     the end of the previous chapter in whatever room remains, up to ``max_tail_characters``.
-    The stable prefix (style and grounding) goes in ``system``, so the adapter can cache it; the
-    parts that change from call to call go in the prompt. When no summary is kept the section
+    The parts that never change from call to call come first in the prompt, so the start of the
+    request is the same every time. When no summary is kept the section
     is left out altogether, so a budget that fits the fixed parts always fits; the omission is
     reported in ``omitted_summaries`` instead. Fitting binary-searches the model's own
     token counter, so a draft costs a few dozen counting calls however long the book is.
@@ -42,7 +50,7 @@ class ContextAssembler(ContextAssemblerInterface):
 
     def assemble(self, plan: ContextPlan, max_input_tokens: int) -> AssembledContext:
         """The fullest prompt that fits, or an ApplicationError when the fixed parts do not."""
-        system = self._system(plan)
+        system = self._system()
         base = self._count(system, self._prompt(plan, 0, ""))
         if base > max_input_tokens:
             raise ApplicationError(
@@ -102,24 +110,33 @@ class ContextAssembler(ContextAssemblerInterface):
         )
         return self._model.count_tokens(request)
 
-    @staticmethod
-    def _system(plan: ContextPlan) -> str:
-        parts = [plan.style.strip(), plan.grounding.strip()]
-        return "\n\n".join(part for part in parts if part)
+    def _system(self) -> str:
+        return self._template.render("system")
+
+    def _block(self, name: str, text: str) -> str:
+        """A labelled section whose text is wrapped as untrusted, however it is worded."""
+        heading = self._template.render(f"{name}_heading")
+        return heading + "\n" + self._template.render(f"{name}_block", {name: text})
 
     def _prompt(self, plan: ContextPlan, summaries: int, tail: str) -> str:
         total = len(plan.prior_summaries)
-        sections: list[str] = []
+        sections = [self._block("style", plan.style.strip())]
+        if plan.grounding.strip():
+            sections.append(self._block("grounding", plan.grounding.strip()))
         if summaries:
-            left_out = {"count": str(total - summaries)}
-            lines = [self._template.render("omitted_note", left_out)] if summaries < total else []
-            lines += [
-                f"- {summary.strip()}" for summary in plan.prior_summaries[total - summaries :]
-            ]
-            sections.append(self._template.render("earlier_heading") + "\n" + "\n".join(lines))
+            kept = plan.prior_summaries[total - summaries :]
+            bullets = "\n".join(f"- {summary.strip()}" for summary in kept)
+            note = (
+                self._template.render("omitted_note", {"count": str(total - summaries)}) + "\n"
+                if summaries < total
+                else ""
+            )
+            heading = self._template.render("earlier_heading")
+            block = self._template.render("summaries_block", {"summaries": bullets})
+            sections.append(f"{heading}\n{note}{block}")
         if tail:
-            sections.append(self._template.render("tail_heading") + "\n" + tail)
-        sections.append(self._template.render("beats_heading") + "\n" + plan.beats.strip())
+            sections.append(self._block("tail", tail))
+        sections.append(self._block("beats", plan.beats.strip()))
         sections.append(plan.instruction.strip())
         return "\n\n".join(sections)
 
