@@ -22,7 +22,7 @@ class BookBriefV1(BookBriefV1Interface, BaseModel):
     Version 1 carries the idea, the kind of book and a required spending cap in whole
     micro-dollars. Later compatible versions may add optional fields; they will not change
     these. ``inputs`` is such a field: text the person gave the run, none by default, so every
-    brief written before it still reads the same.
+    brief written before it still reads the same. So are ``violence`` and ``heat``, the levels a novel may go to.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -37,6 +37,8 @@ class BookBriefV1(BookBriefV1Interface, BaseModel):
     trim_size: Literal["5x8", "5.5x8.5", "6x9"] | None = None
     language: NonBlank = "en"
     inputs: list[RunInputV1] = Field(default_factory=list, max_length=BookBrief.MAX_INPUTS)
+    violence: Literal["none", "mild", "moderate", "graphic"] | None = None
+    heat: Literal["none", "sweet", "steamy", "explicit"] | None = None
 
     @model_validator(mode="after")
     def _check(self) -> "BookBriefV1":
@@ -55,4 +57,6 @@ class BookBriefV1(BookBriefV1Interface, BaseModel):
             trim_size=self.trim_size,
             language=self.language,
             inputs=tuple(RunInput(item.name, item.text, item.origin) for item in self.inputs),
+            violence=self.violence,
+            heat=self.heat,
         )

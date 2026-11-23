@@ -4,6 +4,7 @@
 from dataclasses import dataclass
 from datetime import date
 
+from engineering_influence.models.book_brief import BookBrief
 from engineering_influence.models.interfaces.provider_descriptor_interface import (
     ProviderDescriptorInterface,
 )
@@ -23,6 +24,9 @@ class ProviderDescriptor(ProviderDescriptorInterface):
     A call whose prompt exceeds ``long_context_threshold_tokens`` (zero means there is no such
     tier) is billed at ``long_context_input_percent`` of every input rate and
     ``long_context_output_percent`` of the output rate. Neither percentage can be below 100.
+
+    ``max_violence`` and ``max_heat`` are the most a novel may ask of this model: levels the person recorded after
+    reading ``usage_policy_url``, not something this project asserts about any provider. Unset means not recorded.
     """
 
     provider: str
@@ -40,6 +44,8 @@ class ProviderDescriptor(ProviderDescriptorInterface):
     long_context_threshold_tokens: int = 0
     long_context_input_percent: int = 100
     long_context_output_percent: int = 100
+    max_violence: str | None = None
+    max_heat: str | None = None
 
     def __post_init__(self) -> None:
         if not self.provider.strip() or not self.model.strip() or not self.family.strip():
@@ -60,6 +66,12 @@ class ProviderDescriptor(ProviderDescriptorInterface):
             date.fromisoformat(self.price_effective)
         except ValueError as error:
             raise ValueError("price_effective must be an ISO date such as 2026-11-01") from error
+        for label, ceiling, levels in (
+            ("max_violence", self.max_violence, BookBrief.VIOLENCE_LEVELS),
+            ("max_heat", self.max_heat, BookBrief.HEAT_LEVELS),
+        ):
+            if ceiling is not None and ceiling not in levels:
+                raise ValueError(f"{label} must be one of {', '.join(levels)}")
         if self.long_context_threshold_tokens < 0:
             raise ValueError("the long-context threshold cannot be negative")
         if min(self.long_context_input_percent, self.long_context_output_percent) < 100:

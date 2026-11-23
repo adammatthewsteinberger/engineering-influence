@@ -18,10 +18,14 @@ class BookBrief(BookBriefInterface):
     micro-dollars, the same unit as ``Budget``. ``inputs`` are blocks of text the person gave the run (notes, an
     excerpt, reference material): at most ``MAX_INPUTS``, each name once, ``MAX_INPUT_CHARS`` characters in all.
     They are untrusted data, and a brief with none is exactly what it was before they existed.
+    ``violence`` and ``heat`` are how far a novel may go, each one of an ordered list (the lists are
+    ``VIOLENCE_LEVELS`` and ``HEAT_LEVELS``, mildest first); they are unset by default and only a novel may set them.
     """
 
     MAX_INPUTS: ClassVar[int] = 8
     MAX_INPUT_CHARS: ClassVar[int] = 200_000
+    VIOLENCE_LEVELS: ClassVar[tuple[str, ...]] = ("none", "mild", "moderate", "graphic")
+    HEAT_LEVELS: ClassVar[tuple[str, ...]] = ("none", "sweet", "steamy", "explicit")
 
     kind: BookKind
     idea: str
@@ -32,6 +36,8 @@ class BookBrief(BookBriefInterface):
     trim_size: str | None = None
     language: str = "en"
     inputs: tuple[RunInput, ...] = ()
+    violence: str | None = None
+    heat: str | None = None
 
     def __post_init__(self) -> None:
         if not self.idea.strip():
@@ -48,6 +54,19 @@ class BookBrief(BookBriefInterface):
             if text is not None and not text.strip():
                 raise ValueError("optional brief text cannot be blank")
         self._check_inputs()
+        self._check_levels()
+
+    def _check_levels(self) -> None:
+        for label, level, levels in (
+            ("violence", self.violence, self.VIOLENCE_LEVELS),
+            ("heat", self.heat, self.HEAT_LEVELS),
+        ):
+            if level is None:
+                continue
+            if self.kind is not BookKind.NOVEL:
+                raise ValueError("violence and heat levels apply to a novel")
+            if level not in levels:
+                raise ValueError(f"{label} must be one of {', '.join(levels)}")
 
     def _check_inputs(self) -> None:
         if not isinstance(self.inputs, tuple) or any(
