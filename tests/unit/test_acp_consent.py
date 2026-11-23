@@ -5,6 +5,7 @@ import json
 
 import pytest
 
+from engineering_influence.infrastructure.in_memory_acp_session_store import InMemoryAcpSessionStore
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
 from engineering_influence.infrastructure.in_memory_run_repository import InMemoryRunRepository
 from engineering_influence.interactions.acp.application import AcpApplication
@@ -27,6 +28,7 @@ def stack() -> tuple[AcpApplication, InMemoryRunRepository, InMemoryQueue, str]:
         BriefReader(),
         RunProgress(repo),
         ResolveSpendConsent(repo, queue),
+        InMemoryAcpSessionStore(),
     )
     created = app.handle(
         {"jsonrpc": "2.0", "id": 1, "method": "session/new", "params": {"cwd": "/work"}}

@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 
 from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.infrastructure.in_memory_acp_session_store import InMemoryAcpSessionStore
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
 from engineering_influence.infrastructure.in_memory_run_repository import InMemoryRunRepository
 from engineering_influence.interactions.acp.application import AcpApplication
@@ -66,6 +67,7 @@ def app(
         BriefReader(),
         RunProgress(InMemoryRunRepository()),
         ResolveSpendConsent(InMemoryRunRepository(), InMemoryQueue()),
+        InMemoryAcpSessionStore(),
     )
 
 
@@ -89,7 +91,7 @@ def test_initialize_agrees_protocol_version_one() -> None:
     assert result["protocolVersion"] == 1
     assert result["agentInfo"]["name"] == "engineering-influence"
     assert result["authMethods"] == []
-    assert result["agentCapabilities"] == {"loadSession": False}
+    assert result["agentCapabilities"] == {"loadSession": True}
 
 
 def test_session_new_returns_a_session_id() -> None:
@@ -146,6 +148,7 @@ def test_a_prompt_is_read_the_same_way_as_a_brief_file_would_be() -> None:
         BriefReader(),
         RunProgress(acp_repository),
         ResolveSpendConsent(acp_repository, InMemoryQueue()),
+        InMemoryAcpSessionStore(),
     )
     session_id = new_session(agent)
     agent.handle(request("session/prompt", sessionId=session_id, prompt=prompt(BRIEF_TOML)))
@@ -291,10 +294,10 @@ def test_a_notification_that_fails_gets_no_reply() -> None:
 
 
 def test_an_unknown_method_is_method_not_found() -> None:
-    reply = app().handle(request("session/load", sessionId="sess_1"))
+    reply = app().handle(request("session/fork", sessionId="sess_1"))
     assert reply[0]["error"] == {
         "code": -32601,
-        "message": "this agent does not implement session/load",
+        "message": "this agent does not implement session/fork",
     }
 
 

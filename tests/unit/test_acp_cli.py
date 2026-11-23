@@ -7,6 +7,7 @@ import json
 import pytest
 
 from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.infrastructure.in_memory_acp_session_store import InMemoryAcpSessionStore
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
 from engineering_influence.infrastructure.in_memory_run_repository import InMemoryRunRepository
 from engineering_influence.interactions.acp.application import AcpApplication
@@ -40,6 +41,7 @@ def application() -> AcpApplicationInterface:
         BriefReader(),
         RunProgress(InMemoryRunRepository()),
         ResolveSpendConsent(InMemoryRunRepository(), InMemoryQueue()),
+        InMemoryAcpSessionStore(),
     )
 
 

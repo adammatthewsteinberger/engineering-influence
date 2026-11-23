@@ -492,6 +492,9 @@ class CliRuntime(CliRuntimeInterface):
     def _acp_application(self) -> AcpApplicationInterface:
         """Build the Agent Client Protocol application over the same services ``ei run`` uses."""
         from engineering_influence.interactions.acp.application import AcpApplication
+        from engineering_influence.repositories.sqlmodel_acp_session_store import (
+            SqlModelAcpSessionStore,
+        )
         from engineering_influence.services.create_run import CreateRun
 
         runs = self._run_repository()
@@ -501,6 +504,9 @@ class CliRuntime(CliRuntimeInterface):
             BriefReader(),
             RunProgress(runs),
             ResolveSpendConsent(runs, self._broker_queue()),
+            SqlModelAcpSessionStore(
+                self._secret_provider().require("EI_DATABASE_URL"), pooled=False
+            ),
         )
 
     def _cancel_run(self) -> CancelRunInterface:
