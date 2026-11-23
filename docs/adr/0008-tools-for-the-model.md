@@ -279,3 +279,8 @@ Recorded on 2026-11-22 while building the second part of slice 6 ([PLUGINS.md](.
   values and headers are not copied, only environment *names* and a `Bearer ${NAME}` token as `bearer_env`. Commands, agents, hooks,
   output styles, monitors and `.lsp.json` are named and set aside, never read or run. Every skipped piece is printed with its reason.
 - Decision 9 is unchanged: importing, like installing, starts nothing, contacts nothing, grants nothing and enables nothing.
+- **`ei plugins search FILE.json`** lists a Claude Code `marketplace.json` (four fields read per plugin, all other keys ignored; sources
+  classified as `path`, `github`, `url` or `other` and printed, never followed). It fetches, clones and installs nothing, because a
+  marketplace names folders and repositories rather than hashable files; a `path` source in a local marketplace prints the
+  `ei plugins import` command for it. The import is where the bundle is read and checked. Pinning a source by commit and hash-checking
+  a fetched folder is not built.

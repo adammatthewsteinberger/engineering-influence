@@ -14,6 +14,8 @@ from engineering_influence.interactions.cli.interfaces.plugins_cli_interface imp
 from engineering_influence.interactions.cli.plugins_cli import PluginsCli
 from engineering_influence.interfaces.plugin_lock_store_interface import PluginLockStoreInterface
 from engineering_influence.interfaces.skill_lock_store_interface import SkillLockStoreInterface
+from engineering_influence.models.marketplace_entry import MarketplaceEntry
+from engineering_influence.models.marketplace_listing import MarketplaceListing
 from engineering_influence.models.plugin import Plugin
 from engineering_influence.models.plugin_addition import PluginAddition
 from engineering_influence.models.plugin_bundle import PluginBundle
@@ -114,8 +116,14 @@ LISTED = PluginIndexEntry(
 
 
 class Marketplace(PluginMarketplaceInterface):
-    def __init__(self, *entries: PluginIndexEntry, fail: Exception | None = None) -> None:
+    def __init__(
+        self,
+        *entries: PluginIndexEntry,
+        fail: Exception | None = None,
+        catalogue: MarketplaceListing | None = None,
+    ) -> None:
         self.entries, self.fail = entries, fail
+        self.catalogue = catalogue or MarketplaceListing("Team")
         self.calls: list[tuple[object, ...]] = []
 
     def index(self, address: str) -> PluginIndex:
@@ -123,6 +131,12 @@ class Marketplace(PluginMarketplaceInterface):
         if self.fail:
             raise self.fail
         return PluginIndex(tuple(sorted(self.entries, key=lambda entry: entry.name)))
+
+    def listing(self, address: str) -> MarketplaceListing:
+        self.calls.append(("listing", address))
+        if self.fail:
+            raise self.fail
+        return self.catalogue
 
     def download(self, address: str, name: str, folder: Path) -> PluginDownload:
         self.calls.append(("download", address, name, folder))
@@ -635,3 +649,63 @@ def test_import_that_cannot_be_done_exits_2_with_one_line(
     )
     assert run(cli(importer=Importer(failure))[0], "import", "folder") == 2
     assert capsys.readouterr().err.strip() == "error: nothing in the folder could be imported"
+
+
+# ------------------------------------------------------------------------ search a marketplace.json
+def listing(*entries: MarketplaceEntry, unreadable: int = 0) -> MarketplaceListing:
+    return MarketplaceListing("Team Market", entries, unreadable)
+
+
+def test_search_of_a_json_file_reads_a_claude_code_marketplace_and_never_the_index_parser(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    market = Marketplace(
+        catalogue=listing(
+            MarketplaceEntry(
+                "alpha", "Does alpha", "path", "./plugins/alpha", "2", "/m/plugins/alpha"
+            ),
+            MarketplaceEntry("beta", "", "github", "o/r @ main"),
+        )
+    )
+    assert run(cli(market=market)[0], "search", "/m/.claude-plugin/MARKETPLACE.JSON") == 0
+    assert market.calls == [("listing", "/m/.claude-plugin/MARKETPLACE.JSON")]
+    out = capsys.readouterr().out
+    assert "alpha@2  [path ./plugins/alpha]  Does alpha" in out
+    assert "    ei plugins import /m/plugins/alpha" in out
+    assert "beta  [github o/r @ main]\n" in out
+    assert "2 of 2 plugins in the marketplace 'Team Market'; nothing is fetched or installed" in out
+    assert "could not be read" not in out
+
+
+def test_search_of_a_json_file_quotes_a_path_with_spaces_and_narrows_by_text(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    market = Marketplace(
+        catalogue=listing(
+            MarketplaceEntry("alpha", "Sources", "path", "./a", "", "/my folder/a"),
+            MarketplaceEntry("beta", "Style", "path", "./b", "", "/my folder/b"),
+        )
+    )
+    run(cli(market=market)[0], "search", "m.json", "sources")
+    out = capsys.readouterr().out
+    assert "ei plugins import '/my folder/a'" in out and "beta" not in out
+    assert "1 of 2 plugins" in out
+
+
+def test_search_of_a_json_file_with_no_match_and_unreadable_entries_says_so(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    market = Marketplace(
+        catalogue=listing(MarketplaceEntry("alpha", "", "other", "x"), unreadable=3)
+    )
+    assert run(cli(market=market)[0], "search", "m.json", "zzz") == 0
+    out = capsys.readouterr().out
+    assert "no plugin in m.json matches 'zzz'" in out and "0 of 1 plugins" in out
+    assert "3 entries could not be read and are not shown" in out
+
+
+def test_search_of_a_toml_index_still_reads_an_index(capsys: pytest.CaptureFixture[str]) -> None:
+    market = Marketplace()
+    run(cli(market=market)[0], "search", "index.toml")
+    assert market.calls == [("index", "index.toml")]
+    capsys.readouterr()

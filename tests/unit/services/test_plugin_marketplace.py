@@ -8,6 +8,9 @@ from pathlib import Path
 import pytest
 
 from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.infrastructure.plugins.json_marketplace_parser import (
+    JsonMarketplaceParser,
+)
 from engineering_influence.infrastructure.plugins.toml_plugin_index_parser import (
     TomlPluginIndexParser,
 )
@@ -79,6 +82,7 @@ def market(
         files or Files(),
         TomlPluginIndexParser(),
         TomlPluginParser(TomlSkillParser()),
+        JsonMarketplaceParser(),
         max_bytes,
     )
 
@@ -246,3 +250,45 @@ def test_a_download_that_fails_is_passed_on_and_saves_nothing() -> None:
         400,
     )
     assert files.writes == []
+
+
+# ------------------------------------------------------------------------------ listing
+MARKETPLACE = (
+    b'{"name": "Team Market", "plugins": ['
+    b'{"name": "local-one", "source": "./plugins/local-one", "description": "A local one"},'
+    b'{"name": "remote-one", "source": {"source": "github", "repo": "o/r"}}]}'
+)
+
+
+def test_a_marketplace_on_disk_resolves_a_path_source_against_the_folder_holding_dot_claude_plugin() -> (
+    None
+):
+    path = Path("/m/.claude-plugin/marketplace.json")
+    listing = market(Fetcher(), Files({path: MARKETPLACE})).listing(str(path))
+    local, remote = listing.entries
+    assert local.local == "/m/plugins/local-one" and remote.local == ""
+
+
+def test_a_marketplace_file_elsewhere_resolves_against_its_own_folder() -> None:
+    path = Path("/m/sub/market.json")
+    listing = market(Fetcher(), Files({path: MARKETPLACE})).listing(str(path))
+    assert listing.entries[0].local == "/m/sub/plugins/local-one"
+
+
+def test_a_marketplace_at_an_https_address_is_downloaded_with_the_cap_and_never_resolved() -> None:
+    url = "https://example.com/.claude-plugin/marketplace.json"
+    fetcher = Fetcher({url: MARKETPLACE})
+    listing = market(fetcher, max_bytes=999).listing(url)
+    assert fetcher.asked == [(url, 999)]
+    assert [entry.local for entry in listing.entries] == ["", ""]
+
+
+def test_a_missing_marketplace_and_a_non_https_address_are_refused() -> None:
+    refused(lambda: market(Fetcher()).listing("/nowhere/marketplace.json"), "PLUGIN_INDEX_MISSING")
+    refused(lambda: market(Fetcher()).listing("http://x.example/m.json"), "PLUGIN_INDEX_REFUSED")
+
+
+def test_the_count_of_entries_that_could_not_be_read_is_kept() -> None:
+    path = Path("/m/market.json")
+    data = b'{"name": "M", "plugins": [{"name": "ok", "source": "./ok"}, "junk", 3]}'
+    assert market(Fetcher(), Files({path: data})).listing(str(path)).unreadable == 2
