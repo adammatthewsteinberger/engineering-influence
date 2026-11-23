@@ -162,6 +162,8 @@ class ModelStageExecutor(StageExecutorInterface):
             "target_words": str(brief.target_words) if brief.target_words else self.UNSET,
             "language": brief.language,
             "inputs": "\n\n".join(item.block() for item in brief.inputs) or self.UNSET,
+            "violence": brief.violence or self.UNSET,
+            "heat": brief.heat or self.UNSET,
         }
 
     @staticmethod
