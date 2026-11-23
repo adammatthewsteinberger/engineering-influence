@@ -4,21 +4,29 @@
 import argparse
 import json
 import sys
+import tomllib
 from collections.abc import Callable
 from pathlib import Path
 
+from engineering_influence.contracts.brief.v1.book_brief_v1 import BookBriefV1
 from engineering_influence.controllers.interfaces.run_controller_interface import (
     RunControllerInterface,
 )
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interactions.cli.interfaces.run_cli_interface import RunCliInterface
+from engineering_influence.models.book_brief import BookBrief
 from engineering_influence.services.interfaces.cancel_run_interface import CancelRunInterface
+from engineering_influence.services.interfaces.create_run_interface import CreateRunInterface
 from engineering_influence.services.interfaces.export_run_interface import ExportRunInterface
+from engineering_influence.services.interfaces.list_runs_interface import ListRunsInterface
 from engineering_influence.services.interfaces.resume_run_interface import ResumeRunInterface
 
 REFUSALS = frozenset(
     {
         "RUN_NOT_FOUND",
+        "BRIEF_INVALID",
+        "BRIEF_UNREADABLE",
+        "RUN_KIND_UNSUPPORTED",
         "RUN_FINISHED",
         "RUN_CHANGED",
         "RUN_HAS_NO_ARTIFACTS",
@@ -42,11 +50,15 @@ class RunCli(RunCliInterface):
         cancel: Callable[[], CancelRunInterface],
         status: Callable[[], RunControllerInterface],
         export: Callable[[], ExportRunInterface],
+        create: Callable[[], CreateRunInterface],
+        listing: Callable[[], ListRunsInterface],
     ) -> None:
         self._resume = resume
         self._cancel = cancel
         self._status = status
         self._export = export
+        self._create = create
+        self._listing = listing
 
     def register(self, subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]") -> None:
         """Add ``run status``, ``run resume``, ``run cancel`` and ``run export``."""
@@ -63,6 +75,36 @@ class RunCli(RunCliInterface):
         )
         export.add_argument("run_id")
         export.add_argument("directory", type=Path, help="a folder that does not exist or is empty")
+        create = commands.add_parser(
+            "create", help="start a book run from a brief file (TOML) and queue its first stage"
+        )
+        create.add_argument("brief", type=Path, help="the brief, as TOML")
+        commands.add_parser("runs", help="list the saved runs, one line each")
+
+    @staticmethod
+    def _brief(path: Path) -> BookBrief:
+        """Read a brief file as TOML and check it against the brief contract; refuse anything else with one line."""
+        try:
+            data = tomllib.loads(path.read_text(encoding="utf-8"))
+        except OSError as error:
+            raise ApplicationError(
+                code="BRIEF_UNREADABLE",
+                message=f"cannot read {path}: {error.strerror}",
+                http_status=422,
+            ) from error
+        except tomllib.TOMLDecodeError as error:
+            raise ApplicationError(
+                code="BRIEF_INVALID", message=f"{path} is not valid TOML: {error}", http_status=422
+            ) from error
+        try:
+            return BookBriefV1.model_validate(data).to_model()
+        except ValueError as error:
+            first = str(error).splitlines()[1:2] or [str(error)]
+            raise ApplicationError(
+                code="BRIEF_INVALID",
+                message=f"{path} is not a brief: {first[0].strip()}",
+                http_status=422,
+            ) from error
 
     def run(self, arguments: argparse.Namespace) -> int:
         """Resume or cancel the named run; return the process status."""
@@ -76,6 +118,16 @@ class RunCli(RunCliInterface):
                     f"run {resumed.run_id} is {resumed.status.value} at stage "
                     f"{resumed.stage!r}; its next stage is queued"
                 )
+            elif arguments.run_command == "create":
+                brief = self._brief(arguments.brief)
+                started = self._create().create(brief)
+                print(
+                    f"run {started.run_id} is {started.status.value} at stage {started.stage!r}; "
+                    "its first stage is queued"
+                )
+            elif arguments.run_command == "runs":
+                for item in self._listing().runs():
+                    print(f"{item.run_id}  {item.status.value:<18} {item.stage}")
             elif arguments.run_command == "export":
                 done = self._export().export(arguments.run_id, arguments.directory)
                 print(

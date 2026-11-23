@@ -174,8 +174,8 @@ and republish it by hand. Stopping the worker finishes the job in flight first.
 
 ### Limits to know
 
-- **Nothing starts a run yet.** The worker can advance a run that exists, and `ei run` can
-  resume or cancel one, but no command or endpoint creates one; `ei book create` arrives with the model-backed stages.
+- **A run starts from `ei run create BRIEF.TOML`.** It saves the run and queues its first stage on the broker, and the
+  worker does the stages, as `resume` does. No API endpoint or MCP tool starts a run yet; `ei run runs` lists them.
 - **The worker's default is a free local model.** `EI_STAGE_EXECUTOR` is `local` unless set:
   an open-source model (`gpt-oss:20b`, Apache 2.0) on this machine through Ollama, no key, no cost, and a SearXNG at
   `http://127.0.0.1:8888` for research. Nothing is contacted when the worker starts; [LOCAL_MODEL.md](LOCAL_MODEL.md) says how to
