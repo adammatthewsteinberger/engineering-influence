@@ -20,6 +20,7 @@ from engineering_influence.infrastructure.epub.epub_cover_inspector import EpubC
 from engineering_influence.infrastructure.epub.epubcheck_runner import EpubcheckRunner
 from engineering_influence.infrastructure.epub.tex4ebook_compiler import Tex4ebookCompiler
 from engineering_influence.infrastructure.epub.zip_epub_package import ZipEpubPackage
+from engineering_influence.infrastructure.publishing.directory_publisher import DirectoryPublisher
 from engineering_influence.infrastructure.publishing.filesystem_manuscript_source import (
     FilesystemManuscriptSource,
 )
@@ -40,6 +41,7 @@ from engineering_influence.models.publishing.project_config import ProjectConfig
 from engineering_influence.models.qa.page_record import PageRecord
 from engineering_influence.models.qa.render_report import RenderReport
 from engineering_influence.models.typesetting.book import Book
+from engineering_influence.repositories.release.artifact_inventory import ArtifactInventory
 from engineering_influence.repositories.typesetting.book_loader import BookLoader
 from engineering_influence.runtime.cli_runtime import CliRuntime
 from engineering_influence.runtime.cover_builder_provider import CoverBuilderProvider
@@ -51,6 +53,7 @@ from engineering_influence.services.epub.epub_builder import EpubBuilder
 from engineering_influence.services.epub.epub_identifier import EpubIdentifier
 from engineering_influence.services.epub.epub_repacker import EpubRepacker
 from engineering_influence.services.epub.epub_verifier import EpubVerifier
+from engineering_influence.services.package_book import PackageBook
 from engineering_influence.services.publishing.interfaces.pdf_verifier_interface import (
     PdfVerifierInterface,
 )
@@ -245,6 +248,10 @@ def controller(root: Path, **kwargs: Any) -> PublishingController:
             collaborators.get("strict_epub_verifier", collaborators["epub_verifier"]),
         ),
     )
+    collaborators.setdefault(
+        "packager",
+        PackageBook(layout, ArtifactInventory(layout), DirectoryPublisher()),
+    )
     return PublishingController(config, files, pdfs, **collaborators)
 
 
@@ -270,6 +277,16 @@ def test_controller_audits_a_book(root: Path) -> None:
         controller(root).book_slugs() == ["demo"]
         and controller(root).layout.books == root.resolve() / "books"
     )
+
+
+def test_controller_packages_only_after_the_release_check_and_names_a_missing_contract(
+    root: Path,
+) -> None:
+    # The demo book has no [release] contract: packaging reads the release status first, then refuses for that.
+    with pytest.raises(BookBuildError, match=r"\[demo\] the book has no \[release\] contract"):
+        controller(root).package("demo")
+    with pytest.raises(BookBuildError, match=r"no such book config: books/absent\.toml"):
+        controller(root).package("absent")
 
 
 def test_controller_builds_the_interior(root: Path, stubs: Stubs) -> None:
@@ -399,6 +416,14 @@ def test_cli_audit(root: Path, capsys: pytest.CaptureFixture[str]) -> None:
     (root / "src" / "stray.md").write_text("# Stray\n\nx\n", encoding="utf-8")
     assert run(root, "audit", "demo") == 1
     assert run(root, "audit", "demo", "--strict-release") == 1
+
+
+def test_cli_package_names_why_a_book_without_a_contract_is_not_packaged(
+    root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert run(root, "package", "demo") == 1
+    assert "[demo] the book has no [release] contract" in capsys.readouterr().err
+    assert not (root / "build" / "demo" / "release" / "kdp").exists()
 
 
 def test_cli_reports_errors_cleanly(root: Path, capsys: pytest.CaptureFixture[str]) -> None:

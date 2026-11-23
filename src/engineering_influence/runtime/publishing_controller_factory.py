@@ -10,6 +10,7 @@ from engineering_influence.infrastructure.epub.epub_cover_inspector import EpubC
 from engineering_influence.infrastructure.epub.epubcheck_runner import EpubcheckRunner
 from engineering_influence.infrastructure.epub.tex4ebook_compiler import Tex4ebookCompiler
 from engineering_influence.infrastructure.epub.zip_epub_package import ZipEpubPackage
+from engineering_influence.infrastructure.publishing.directory_publisher import DirectoryPublisher
 from engineering_influence.infrastructure.publishing.filesystem_manuscript_source import (
     FilesystemManuscriptSource,
 )
@@ -21,6 +22,7 @@ from engineering_influence.infrastructure.typesetting.filesystem_build_workspace
 )
 from engineering_influence.infrastructure.typesetting.latex_compiler import LatexCompiler
 from engineering_influence.models.publishing.project_config import ProjectConfig
+from engineering_influence.repositories.release.artifact_inventory import ArtifactInventory
 from engineering_influence.repositories.typesetting.book_loader import BookLoader
 from engineering_influence.runtime.cover_builder_provider import CoverBuilderProvider
 from engineering_influence.runtime.interfaces.publishing_controller_factory_interface import (
@@ -31,6 +33,7 @@ from engineering_influence.services.epub.epub_builder import EpubBuilder
 from engineering_influence.services.epub.epub_identifier import EpubIdentifier
 from engineering_influence.services.epub.epub_repacker import EpubRepacker
 from engineering_influence.services.epub.epub_verifier import EpubVerifier
+from engineering_influence.services.package_book import PackageBook
 from engineering_influence.services.publishing.pdf_verifier import PdfVerifier
 from engineering_influence.services.typesetting.book_builder import BookBuilder
 
@@ -79,6 +82,11 @@ class PublishingControllerFactory(PublishingControllerFactoryInterface):
             epub_verifier,
             strict_verifier,
         )
+        packager = PackageBook(
+            config.layout(),
+            ArtifactInventory(config.layout()),
+            DirectoryPublisher(),
+        )
         return PublishingController(
             config,
             files,
@@ -91,4 +99,5 @@ class PublishingControllerFactory(PublishingControllerFactoryInterface):
             covers,
             qa,
             publisher,
+            packager,
         )
