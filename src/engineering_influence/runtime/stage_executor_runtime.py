@@ -66,6 +66,7 @@ from engineering_influence.interfaces.stage_executor_interface import StageExecu
 from engineering_influence.interfaces.stage_guidance_interface import StageGuidanceInterface
 from engineering_influence.interfaces.tool_interface import ToolInterface
 from engineering_influence.models.author_profile import AuthorProfile
+from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.model_profile import ModelProfile
 from engineering_influence.models.provider_descriptor import ProviderDescriptor
 from engineering_influence.models.tool_limits import ToolLimits
@@ -81,11 +82,16 @@ from engineering_influence.services.audit_stage_executor import AuditStageExecut
 from engineering_influence.services.book_config_writer import BookConfigWriter
 from engineering_influence.services.call_model import CallModel
 from engineering_influence.services.chapter_cleaner import ChapterCleaner
+from engineering_influence.services.content_policy import ContentPolicy
+from engineering_influence.services.content_policy_stage_executor import (
+    ContentPolicyStageExecutor,
+)
 from engineering_influence.services.context_assembler import ContextAssembler
 from engineering_influence.services.dash_rewriter import DashRewriter
 from engineering_influence.services.draft_stage_executor import DraftStageExecutor
 from engineering_influence.services.fallback_search_provider import FallbackSearchProvider
 from engineering_influence.services.fetch_url_tool import FetchUrlTool
+from engineering_influence.services.kind_stage_executor import KindStageExecutor
 from engineering_influence.services.local_default_model import LocalDefaultModel
 from engineering_influence.services.lock_stage_guidance import LockStageGuidance
 from engineering_influence.services.lock_tool_grants import LockToolGrants
@@ -98,6 +104,8 @@ from engineering_influence.services.no_stage_guidance import NoStageGuidance
 from engineering_influence.services.nonfiction_output_checks import NonfictionOutputChecks
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 from engineering_influence.services.nonfiction_revision_passes import NonfictionRevisionPasses
+from engineering_influence.services.novel_output_checks import NovelOutputChecks
+from engineering_influence.services.novel_recipes import NovelRecipes
 from engineering_influence.services.outline_parser import OutlineParser
 from engineering_influence.services.read_skill_tool import ReadSkillTool
 from engineering_influence.services.revision_stage_executor import RevisionStageExecutor
@@ -105,6 +113,7 @@ from engineering_influence.services.run_tool_loop import RunToolLoop
 from engineering_influence.services.skill_lock_verifier import SkillLockVerifier
 from engineering_influence.services.spend_guard import SpendGuard
 from engineering_influence.services.stage_executor_router import StageExecutorRouter
+from engineering_influence.services.story_bible_parser import StoryBibleParser
 from engineering_influence.services.tool_lock_verifier import ToolLockVerifier
 from engineering_influence.services.tool_registry import ToolRegistry
 from engineering_influence.services.tool_runner import ToolRunner
@@ -208,18 +217,35 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             descriptor.max_output_tokens,
             tools,
         )
-        return StageExecutorRouter(
+        grants = LockToolGrants(lock)
+        nonfiction = ModelStageExecutor(
+            NonfictionRecipes(),
+            prompts,
+            artifacts,
+            loop,
+            tools,
+            grants,
+            guidance,
+            NonfictionOutputChecks(outlines, metadata),
+            SpendGuard,
+        )
+        novel = ContentPolicyStageExecutor(
             ModelStageExecutor(
-                NonfictionRecipes(),
+                NovelRecipes(),
                 prompts,
                 artifacts,
                 loop,
                 tools,
-                LockToolGrants(lock),
+                grants,
                 guidance,
-                NonfictionOutputChecks(outlines, metadata),
+                NovelOutputChecks(StoryBibleParser(), outlines),
                 SpendGuard,
             ),
+            ContentPolicy(),
+            descriptor,
+        )
+        return StageExecutorRouter(
+            KindStageExecutor({BookKind.NONFICTION: nonfiction, BookKind.NOVEL: novel}),
             {
                 DraftStageExecutor.STAGE: drafter,
                 **{

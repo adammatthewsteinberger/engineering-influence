@@ -6,7 +6,7 @@ in `src/engineering_influence/infrastructure/prompt_library/templates/`, one TOM
 is called `templates`, never `prompts`, because the `leak-scan` CI job rejects any path containing
 `prompts/`.
 
-Today eleven templates ship. `stage_brief`, `stage_positioning`, `stage_research`, `stage_outline` and `stage_metadata` are the
+Today fifteen templates ship, the four `novel_*` ones among them (see [NOVELS.md](NOVELS.md)). `stage_brief`, `stage_positioning`, `stage_research`, `stage_outline` and `stage_metadata` are the
 prompts for five of the non-fiction stages; every blank in them that is filled from outside (the author's idea, and what an earlier stage
 wrote) is declared untrusted. `context_pack` (version 2) is the layout of the prompt that drafts one chapter: its fixed system text and the
 labels the context assembler puts between the parts. **Where each part goes is a trust decision**: the system part

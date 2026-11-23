@@ -35,6 +35,7 @@ from engineering_influence.models.budget import Budget
 from engineering_influence.runtime.stage_executor_runtime import StageExecutorRuntime
 from engineering_influence.services.fallback_search_provider import FallbackSearchProvider
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
+from engineering_influence.services.novel_recipes import NovelRecipes
 from engineering_influence.services.stage_executor_router import StageExecutorRouter
 
 TODAY = date(2026, 11, 21)
@@ -593,3 +594,103 @@ def test_the_local_default_searches_the_local_searxng_only_when_nothing_else_is_
     assert isinstance(search_for({}, BRAVE_SEARCH_API_KEY="brave-key"), BraveSearchProvider)
     both = search_for({"EI_SEARXNG_URL": "http://127.0.0.1:1"}, BRAVE_SEARCH_API_KEY="brave-key")
     assert isinstance(both, FallbackSearchProvider)
+
+
+def novel_run(stage: str, **changes: Any) -> BookRun:
+    brief = BookBrief(BookKind.NOVEL, "A night nurse meets her brother", 5_000_000, **changes)
+    return BookRun("run-1", brief, NovelRecipes().plan(), Budget(cap=5_000_000), stage=stage)
+
+
+NOVEL_BIBLE = json.dumps({"premise": "A reunion.", "characters": [{"name": "Mara", "age": 34}]})
+NOVEL_OUTLINE = "## Chapter 1: The Car Park\nPurpose: They meet.\nBeats:\n- Mara leaves her shift\n"
+
+
+def execute(rt: StageExecutorRuntime, store: InMemoryArtifactStore, run: BookRun) -> None:
+    asyncio.run(rt.build(store, InMemoryJournal()).execute(run, 1))
+    rt.close()
+
+
+def test_a_novel_run_uses_the_novel_prompts_and_carries_the_content_levels() -> None:
+    with provider("The novel brief.") as (url, seen):
+        store = InMemoryArtifactStore()
+        execute(
+            runtime(local_environment(url)), store, novel_run("brief", violence="mild", heat="none")
+        )
+    assert store.get("run-1", "brief.md") == b"The novel brief."
+    body = seen.seen[-1][2]
+    sent = json.dumps(body)
+    assert "fiction imprint" in sent and "Violence: mild. Heat: none." in sent
+    assert "A night nurse meets her brother" in sent and "untrusted" in sent
+
+
+def test_a_novel_brief_with_no_levels_says_not_given() -> None:
+    with provider("Written.") as (url, seen):
+        execute(runtime(local_environment(url)), InMemoryArtifactStore(), novel_run("brief"))
+    assert "Violence: not given. Heat: not given." in json.dumps(seen.seen[-1][2])
+
+
+def test_the_story_bible_stage_reads_the_brief_and_stores_a_bible_that_parses() -> None:
+    with provider(NOVEL_BIBLE) as (url, seen):
+        store = InMemoryArtifactStore()
+        store.put("run-1", "brief.md", b"the novel brief")
+        execute(runtime(local_environment(url)), store, novel_run("story_bible"))
+    assert store.get("run-1", "story_bible.md") == NOVEL_BIBLE.encode()
+    sent = json.dumps(seen.seen[-1][2])
+    assert "continuity editor" in sent and "the novel brief" in sent
+
+
+def test_a_story_bible_that_cannot_be_read_stops_the_run_and_stores_nothing() -> None:
+    with provider("Sorry, no.") as (url, _):
+        store = InMemoryArtifactStore()
+        store.put("run-1", "brief.md", b"the novel brief")
+        rt = runtime(local_environment(url))
+        with pytest.raises(ApplicationError) as caught:
+            asyncio.run(rt.build(store, InMemoryJournal()).execute(novel_run("story_bible"), 1))
+        rt.close()
+    assert caught.value.code == "STORY_BIBLE_INVALID"
+    assert store.get("run-1", "story_bible.md") is None
+
+
+def test_the_beats_and_the_outline_stages_read_what_came_before() -> None:
+    with provider("1. Mara meets Daniel.") as (url, seen):
+        store = InMemoryArtifactStore()
+        for name, text in (("brief.md", "the brief"), ("story_bible.md", NOVEL_BIBLE)):
+            store.put("run-1", name, text.encode())
+        execute(runtime(local_environment(url)), store, novel_run("beats", heat="sweet"))
+    sent = json.dumps(seen.seen[-1][2])
+    assert "story editor" in sent and "the brief" in sent and "A reunion." in sent
+    assert "Heat: sweet." in sent
+    with provider(NOVEL_OUTLINE) as (url, seen):
+        store = InMemoryArtifactStore()
+        for name, text in (
+            ("brief.md", "b"),
+            ("story_bible.md", NOVEL_BIBLE),
+            ("beats.md", "the beats"),
+        ):
+            store.put("run-1", name, text.encode())
+        execute(runtime(local_environment(url)), store, novel_run("outline"))
+    assert store.get("run-1", "outline.md") == NOVEL_OUTLINE.encode()
+    assert "developmental editor for novels" in json.dumps(seen.seen[-1][2])
+
+
+def test_a_brief_the_local_model_is_not_recorded_as_allowing_is_refused_before_any_call() -> None:
+    with provider("never sent") as (url, seen):
+        rt = runtime(local_environment(url))
+        with pytest.raises(ApplicationError) as caught:
+            asyncio.run(
+                rt.build(InMemoryArtifactStore(), InMemoryJournal()).execute(
+                    novel_run("brief", violence="graphic"), 1
+                )
+            )
+        rt.close()
+    assert caught.value.code == "CONTENT_LEVEL_NOT_ALLOWED"
+    assert "set max_violence" in caught.value.message
+    assert seen.seen == []
+
+
+def test_a_nonfiction_run_still_uses_the_nonfiction_prompts_by_default() -> None:
+    with provider("The brief.") as (url, seen):
+        execute(runtime(local_environment(url)), InMemoryArtifactStore(), run_for("brief"))
+    sent = json.dumps(seen.seen[-1][2])
+    assert "editor in chief of a non-fiction publishing project" in sent
+    assert "fiction imprint" not in sent
