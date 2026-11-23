@@ -1,10 +1,11 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
-"""The ``run`` command group: look at, resume or cancel a book run on the stack's database."""
+"""The ``run`` command group: look at, resume, cancel or export a book run on the stack's database."""
 
 import argparse
 import json
 import sys
 from collections.abc import Callable
+from pathlib import Path
 
 from engineering_influence.controllers.interfaces.run_controller_interface import (
     RunControllerInterface,
@@ -12,9 +13,18 @@ from engineering_influence.controllers.interfaces.run_controller_interface impor
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interactions.cli.interfaces.run_cli_interface import RunCliInterface
 from engineering_influence.services.interfaces.cancel_run_interface import CancelRunInterface
+from engineering_influence.services.interfaces.export_run_interface import ExportRunInterface
 from engineering_influence.services.interfaces.resume_run_interface import ResumeRunInterface
 
-REFUSALS = frozenset({"RUN_NOT_FOUND", "RUN_FINISHED", "RUN_CHANGED"})
+REFUSALS = frozenset(
+    {
+        "RUN_NOT_FOUND",
+        "RUN_FINISHED",
+        "RUN_CHANGED",
+        "RUN_HAS_NO_ARTIFACTS",
+        "EXPORT_TARGET_NOT_EMPTY",
+    }
+)
 
 
 class RunCli(RunCliInterface):
@@ -31,13 +41,15 @@ class RunCli(RunCliInterface):
         resume: Callable[[], ResumeRunInterface],
         cancel: Callable[[], CancelRunInterface],
         status: Callable[[], RunControllerInterface],
+        export: Callable[[], ExportRunInterface],
     ) -> None:
         self._resume = resume
         self._cancel = cancel
         self._status = status
+        self._export = export
 
     def register(self, subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]") -> None:
-        """Add ``run status``, ``run resume`` and ``run cancel``."""
+        """Add ``run status``, ``run resume``, ``run cancel`` and ``run export``."""
         run = subparsers.add_parser("run", help="resume or cancel a book run")
         commands = run.add_subparsers(dest="run_command", required=True)
         status = commands.add_parser("status", help="print a run's status as JSON")
@@ -46,6 +58,11 @@ class RunCli(RunCliInterface):
         resume.add_argument("run_id")
         cancel = commands.add_parser("cancel", help="stop a run for good")
         cancel.add_argument("run_id")
+        export = commands.add_parser(
+            "export", help="write a run's book and stage outputs to a new folder"
+        )
+        export.add_argument("run_id")
+        export.add_argument("directory", type=Path, help="a folder that does not exist or is empty")
 
     def run(self, arguments: argparse.Namespace) -> int:
         """Resume or cancel the named run; return the process status."""
@@ -58,6 +75,12 @@ class RunCli(RunCliInterface):
                 print(
                     f"run {resumed.run_id} is {resumed.status.value} at stage "
                     f"{resumed.stage!r}; its next stage is queued"
+                )
+            elif arguments.run_command == "export":
+                done = self._export().export(arguments.run_id, arguments.directory)
+                print(
+                    f"exported {done.files} files of run {arguments.run_id} to {arguments.directory}: "
+                    f"{done.book_files} are the book (books/ and src/), the rest are under run/"
                 )
             else:
                 cancelled = self._cancel().cancel(arguments.run_id)
