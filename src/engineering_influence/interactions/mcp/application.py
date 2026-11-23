@@ -13,16 +13,23 @@ from engineering_influence.interactions.mcp.interfaces.application_interface imp
     McpApplicationInterface,
 )
 from engineering_influence.services.interfaces.create_run_interface import CreateRunInterface
+from engineering_influence.services.interfaces.run_management_interface import (
+    RunManagementInterface,
+)
 
 
 class McpApplication(McpApplicationInterface):
     """Expose pipeline tools through the official MCP SDK's `MCPServer` (mcp 2.x)."""
 
     def __init__(
-        self, controller: ProjectControllerInterface, creator: CreateRunInterface | None = None
+        self,
+        controller: ProjectControllerInterface,
+        creator: CreateRunInterface | None = None,
+        manager: RunManagementInterface | None = None,
     ) -> None:
         self._controller = controller
         self._creator = creator
+        self._manager = manager
 
     def build(self) -> Any:
         """Build a server with a typed `start_pipeline` tool."""
@@ -57,6 +64,26 @@ class McpApplication(McpApplicationInterface):
                 """Start a book run from a brief (the brief contract v1); returns the new run."""
                 value = BookBriefV1.model_validate(brief).to_model()
                 return RunSummaryV1.from_run(creator.create(value), []).model_dump(mode="json")
+
+        if self._manager is not None:
+            manager = self._manager
+
+            @server.tool()
+            def list_runs() -> list[dict[str, Any]]:
+                """Every saved book run, as run summaries."""
+                return [
+                    RunSummaryV1.from_run(run, []).model_dump(mode="json") for run in manager.runs()
+                ]
+
+            @server.tool()
+            def resume_run(run_id: str) -> dict[str, Any]:
+                """Un-park a parked run and queue its current stage."""
+                return RunSummaryV1.from_run(manager.resume(run_id), []).model_dump(mode="json")
+
+            @server.tool()
+            def cancel_run(run_id: str) -> dict[str, Any]:
+                """Stop a run for good."""
+                return RunSummaryV1.from_run(manager.cancel(run_id), []).model_dump(mode="json")
 
         return server
 

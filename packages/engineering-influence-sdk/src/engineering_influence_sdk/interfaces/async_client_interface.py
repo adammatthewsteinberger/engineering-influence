@@ -16,6 +16,18 @@ class AsyncEngineeringInfluenceClientInterface(ABC):
         """Start a book run from a brief (the brief contract v1) asynchronously."""
 
     @abstractmethod
+    async def list_runs(self) -> list[dict[str, Any]]:
+        """Every saved book run, as run summaries, asynchronously."""
+
+    @abstractmethod
+    async def resume_run(self, run_id: str) -> dict[str, Any]:
+        """Un-park a parked run and queue its current stage, asynchronously."""
+
+    @abstractmethod
+    async def cancel_run(self, run_id: str) -> dict[str, Any]:
+        """Stop a run for good, asynchronously."""
+
+    @abstractmethod
     async def start_pipeline(
         self,
         slug: str,
