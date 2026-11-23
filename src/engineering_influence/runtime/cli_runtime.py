@@ -2,6 +2,7 @@
 """Compose the command-line application."""
 
 import os
+import sys
 from datetime import date
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -44,6 +45,10 @@ from engineering_influence.infrastructure.tools.stdio_mcp_transport_factory impo
     StdioMcpTransportFactory,
 )
 from engineering_influence.infrastructure.tools.toml_tool_lock_store import TomlToolLockStore
+from engineering_influence.interactions.acp.interfaces.application_interface import (
+    AcpApplicationInterface,
+)
+from engineering_influence.interactions.cli.acp_cli import AcpCli
 from engineering_influence.interactions.cli.book_cli import BookCli
 from engineering_influence.interactions.cli.cli_application import CliApplication
 from engineering_influence.interactions.cli.db_cli import DbCli
@@ -72,6 +77,7 @@ from engineering_influence.runtime.interfaces.publishing_controller_factory_inte
     PublishingControllerFactoryInterface,
 )
 from engineering_influence.runtime.serve_starter import ServeStarter
+from engineering_influence.services.brief_reader import BriefReader
 from engineering_influence.services.cancel_run import CancelRun
 from engineering_influence.services.interfaces.cancel_run_interface import CancelRunInterface
 from engineering_influence.services.interfaces.create_run_interface import CreateRunInterface
@@ -159,6 +165,7 @@ class CliRuntime(CliRuntimeInterface):
                 self._export_run,
                 self._create_run,
                 self._list_runs,
+                BriefReader(),
             ),
             DoctorCli(
                 self._model_doctor, self._search_doctor, self._local_model_doctor, os.environ
@@ -166,6 +173,7 @@ class CliRuntime(CliRuntimeInterface):
             self._tools_cli(),
             self._skills_cli(),
             self._plugins_cli(),
+            AcpCli(self._acp_application, sys.stdin, sys.stdout),
         )
 
     def _skills_cli(self) -> SkillsCli:
@@ -477,6 +485,14 @@ class CliRuntime(CliRuntimeInterface):
             ),
             DirectoryProjectFilesWriter(),
         )
+
+    def _acp_application(self) -> AcpApplicationInterface:
+        """Build the Agent Client Protocol application over the same services ``ei run`` uses."""
+        from engineering_influence.interactions.acp.application import AcpApplication
+        from engineering_influence.services.create_run import CreateRun
+
+        runs = self._run_repository()
+        return AcpApplication(CreateRun(runs, self._broker_queue()), CancelRun(runs), BriefReader())
 
     def _cancel_run(self) -> CancelRunInterface:
         """Build the cancel service; it needs only the database."""

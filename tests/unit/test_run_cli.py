@@ -24,6 +24,7 @@ from engineering_influence.models.stage_plan import StagePlan
 from engineering_influence.repositories.sqlmodel_artifact_store import SqlModelArtifactStore
 from engineering_influence.repositories.sqlmodel_run_repository import SqlModelRunRepository
 from engineering_influence.runtime.cli_runtime import CliRuntime
+from engineering_influence.services.brief_reader import BriefReader
 from engineering_influence.services.interfaces.cancel_run_interface import CancelRunInterface
 from engineering_influence.services.interfaces.create_run_interface import CreateRunInterface
 from engineering_influence.services.interfaces.export_run_interface import ExportRunInterface
@@ -122,6 +123,7 @@ def cli(
         lambda: exporter or Exporter(),
         lambda: creator or Creator(),
         lambda: lister or Lister(),
+        BriefReader(),
     )
 
 
@@ -209,6 +211,7 @@ def test_a_missing_runtime_extra_says_how_to_install_it(capsys: pytest.CaptureFi
             lambda: Exporter(),
             lambda: Creator(),
             lambda: Lister(),
+            BriefReader(),
         ).run(resume_args())
         == 1
     )

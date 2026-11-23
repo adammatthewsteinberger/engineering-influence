@@ -4,17 +4,16 @@
 import argparse
 import json
 import sys
-import tomllib
 from collections.abc import Callable
 from pathlib import Path
 
-from engineering_influence.contracts.brief.v1.book_brief_v1 import BookBriefV1
 from engineering_influence.controllers.interfaces.run_controller_interface import (
     RunControllerInterface,
 )
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interactions.cli.interfaces.run_cli_interface import RunCliInterface
 from engineering_influence.models.book_brief import BookBrief
+from engineering_influence.services.interfaces.brief_reader_interface import BriefReaderInterface
 from engineering_influence.services.interfaces.cancel_run_interface import CancelRunInterface
 from engineering_influence.services.interfaces.create_run_interface import CreateRunInterface
 from engineering_influence.services.interfaces.export_run_interface import ExportRunInterface
@@ -52,6 +51,7 @@ class RunCli(RunCliInterface):
         export: Callable[[], ExportRunInterface],
         create: Callable[[], CreateRunInterface],
         listing: Callable[[], ListRunsInterface],
+        briefs: BriefReaderInterface,
     ) -> None:
         self._resume = resume
         self._cancel = cancel
@@ -59,6 +59,7 @@ class RunCli(RunCliInterface):
         self._export = export
         self._create = create
         self._listing = listing
+        self._briefs = briefs
 
     def register(self, subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]") -> None:
         """Add ``run status``, ``run resume``, ``run cancel`` and ``run export``."""
@@ -81,30 +82,17 @@ class RunCli(RunCliInterface):
         create.add_argument("brief", type=Path, help="the brief, as TOML")
         commands.add_parser("runs", help="list the saved runs, one line each")
 
-    @staticmethod
-    def _brief(path: Path) -> BookBrief:
-        """Read a brief file as TOML and check it against the brief contract; refuse anything else with one line."""
+    def _brief(self, path: Path) -> BookBrief:
+        """Read a brief file and check it; a file that cannot be read is refused with one line."""
         try:
-            data = tomllib.loads(path.read_text(encoding="utf-8"))
+            text = path.read_text(encoding="utf-8")
         except OSError as error:
             raise ApplicationError(
                 code="BRIEF_UNREADABLE",
                 message=f"cannot read {path}: {error.strerror}",
                 http_status=422,
             ) from error
-        except tomllib.TOMLDecodeError as error:
-            raise ApplicationError(
-                code="BRIEF_INVALID", message=f"{path} is not valid TOML: {error}", http_status=422
-            ) from error
-        try:
-            return BookBriefV1.model_validate(data).to_model()
-        except ValueError as error:
-            first = str(error).splitlines()[1:2] or [str(error)]
-            raise ApplicationError(
-                code="BRIEF_INVALID",
-                message=f"{path} is not a brief: {first[0].strip()}",
-                http_status=422,
-            ) from error
+        return self._briefs.read_text(text, str(path))
 
     def run(self, arguments: argparse.Namespace) -> int:
         """Resume or cancel the named run; return the process status."""

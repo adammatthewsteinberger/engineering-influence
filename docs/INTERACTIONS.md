@@ -194,8 +194,22 @@ ei plugins fetch INDEX NAME [--output DIR]
 | `ei plugins remove NAME` | Uninstalls a plugin and the skills it installed that are still exactly what it installed; a skill locked again since is left. | `0`; `2` on a refusal |
 | `ei plugins search INDEX [TEXT]` | Lists the plugins in a marketplace index (a file on disk or an `https://` address), or those whose name or description has the text. May use a network for an `https://` index; installs nothing. See [PLUGINS.md](PLUGINS.md#marketplace-indexes). | `0`; `2` on a refusal |
 | `ei plugins fetch INDEX NAME [--output DIR]` | Downloads one plugin file from an index, **checks its SHA-256 against the index's before reading it**, checks it is the plugin and version listed, and saves it as `NAME.toml` (never over an existing file). **Installs nothing:** it prints the `show` and `add` commands to run next. | `0`; `2` on a refusal, a hash that differs or a download that fails |
+| `ei acp` | Serves the Agent Client Protocol (stable, version 1) over stdin and stdout, for an editor or agent client. Each line is one JSON-RPC message; only protocol messages go to stdout, and logs and errors go to stderr. Needs the `runtime` extra and `EI_DATABASE_URL`. See [Agent Client Protocol](#agent-client-protocol). | `0` when the input ends; `1` the runtime extra is missing; `2` setup trouble |
 
 `python -m engineering_influence` is the same program. Walk-through: [`examples/cli/run.sh`](../examples/cli/run.sh).
+
+## Agent Client Protocol
+
+`ei acp` speaks the Agent Client Protocol, version 1 of the stable specification, so an editor or agent client can start book runs the way `ei run create` does. Only the parts below are implemented; anything else is refused with `ACP_METHOD_NOT_FOUND`.
+
+- `initialize` agrees version 1 and reports `loadSession: false` and no authentication methods.
+- `session/new` takes an absolute `cwd` and returns a `sessionId`. `mcpServers` must be empty: this agent does not connect MCP servers yet.
+- `session/prompt` takes text content blocks, joined by newlines and read as a brief in TOML, the same contract `ei run create` reads. The first prompt of a session starts its run, a second prompt in the same session is refused, and the turn ends with `stopReason: end_turn` once the run is saved and its first stage queued. The stages themselves run in the worker, not in the session. Before the turn ends the agent sends one `session/update` notice naming the run and its stage.
+- `session/cancel` is a notification. It stops the session's run and gets no reply.
+
+Sessions live in the memory of the `ei acp` process. A run outlives its session, so `ei run status RUN_ID` and `ei run cancel RUN_ID` still work after the client disconnects. Not yet implemented: `session/load`, permission requests (so a run cannot yet ask the person to approve spending), progress streaming from the run journal, and MCP servers in a session.
+
+Refusals are JSON-RPC errors: `-32700` for a line that is not JSON, `-32600` for a message that is not a JSON-RPC 2.0 request, `-32601` for a method this agent does not implement, and `-32602` for invalid parameters, including a prompt that is not valid TOML (`BRIEF_INVALID`) or a kind this build cannot start. An unexpected failure is `-32603` with the message `internal error`; only the exception's class name is written to stderr, because a message can carry a connection string.
 
 ## Webhooks
 
