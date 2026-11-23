@@ -25,6 +25,7 @@ class SkillImporterInterface(ABC):
         version: int,
         stages: tuple[str, ...],
         titles: tuple[str, ...],
+        reference: bool,
         target: Path | None,
     ) -> SkillImportResult:
         """Write the skill file and say what it holds, or raise an ApplicationError saying what to change."""

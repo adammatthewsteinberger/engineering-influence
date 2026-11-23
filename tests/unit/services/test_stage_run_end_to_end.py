@@ -176,6 +176,7 @@ class World:
                     SpendGuard,
                     DESCRIPTOR.context_window,
                     DESCRIPTOR.max_output_tokens,
+                    registry,
                 ),
                 AssembleStageExecutor.STAGE: AssembleStageExecutor(
                     self.store,
@@ -197,6 +198,7 @@ class World:
                         SpendGuard,
                         DESCRIPTOR.context_window,
                         DESCRIPTOR.max_output_tokens,
+                        registry,
                     )
                     for editing in NonfictionRevisionPasses().passes()
                 },

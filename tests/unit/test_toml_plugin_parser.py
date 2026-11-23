@@ -137,7 +137,7 @@ def test_a_skill_in_a_bundle_is_held_to_the_rules_of_a_skill_file() -> None:
         '[[skill]]\nname = "plain_style"\nversion = 1\n[skill.parts]\nbrief = "a\\u200bb"\n': "cannot be seen",
         '[[skill]]\nname = "plain_style"\nversion = 0\n[skill.parts]\nbrief = "x"\n': "whole number",
         '[[skill]]\nname = "plain_style"\nversion = 1\n[skill.parts]\nBrief = "x"\n': "named for a stage",
-        '[[skill]]\nname = "plain_style"\nversion = 1\n': "table of stage = text",
+        '[[skill]]\nname = "plain_style"\nversion = 1\n': "at least one part or one reference section",
     }
     for body, expected in cases.items():
         message = refused(HEAD + body).message

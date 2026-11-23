@@ -202,7 +202,7 @@ def test_an_enabled_skill_reaches_the_stages_prompt_and_its_version_but_not_the_
     assert user.rstrip().endswith("</installed_guidance>")
     assert "installed_guidance" not in system and "plain_style" not in system
     assert "Prefer short chapters." not in user
-    assert version_of(journal).startswith("stage_brief@1+skill_guidance@1:")
+    assert version_of(journal).startswith("stage_brief@1+skill_guidance@2:")
 
 
 def test_a_skill_is_not_shown_without_a_lock_being_named_even_if_one_is_in_the_folder(
@@ -309,3 +309,111 @@ def test_the_skill_lock_is_checked_before_any_tool_server_would_be_started(world
         world.run_stage("brief", url, **environment)
     assert error.value.code == "SKILL_LOCK_MISMATCH"
     assert provider.bodies == []
+
+
+# ------------------------------------------------------------------- reference sections, read on request
+REFERENCE_SKILL = """name = "plain_style"
+version = 1
+
+[reference]
+"Source Evaluation" = "Judge a source with SIFT."
+"Database Searching" = "Use Boolean operators."
+"""
+
+
+def calls(name: str, **arguments: str) -> dict[str, Any]:
+    return {
+        "model": "gpt-snap",
+        "choices": [
+            {
+                "message": {
+                    "role": "assistant",
+                    "content": None,
+                    "tool_calls": [
+                        {
+                            "id": "c1",
+                            "type": "function",
+                            "function": {"name": name, "arguments": json.dumps(arguments)},
+                        }
+                    ],
+                },
+                "finish_reason": "tool_calls",
+            }
+        ],
+        "usage": {"prompt_tokens": 50, "completion_tokens": 9},
+    }
+
+
+def test_a_reference_skill_gives_the_research_stage_an_index_and_the_read_skill_tool(
+    world: World,
+) -> None:
+    world.install("research", text=REFERENCE_SKILL)
+    with model(says("RESEARCH notes")) as (url, provider):
+        world.run_stage("research", url, **world.named())
+    body = provider.bodies[0]
+    assert tool_names(body) == ["fetch_url", "read_skill", "web_search"]
+    user = message(body, "user")
+    assert (
+        "- plain_style: Source Evaluation (" in user
+        and "- plain_style: Database Searching (" in user
+    )
+    assert "SIFT" not in user and "Boolean" not in user
+
+
+def test_the_model_reads_a_section_it_was_told_about_and_the_text_comes_back_as_untrusted(
+    world: World,
+) -> None:
+    world.install("research", text=REFERENCE_SKILL)
+    asked = calls("read_skill", skill="plain_style", section="Source Evaluation")
+    with model(asked, says("RESEARCH notes")) as (url, provider):
+        world.run_stage("research", url, **world.named())
+    follow_up = json.dumps(provider.bodies[1]["messages"])
+    assert "Judge a source with SIFT." in follow_up
+    assert 'untrusted name=\\"tool:read_skill\\"' in follow_up
+
+
+def test_a_section_the_prompt_does_not_list_is_refused_and_its_text_is_not_returned(
+    world: World,
+) -> None:
+    world.install("research", text=REFERENCE_SKILL)
+    asked = calls("read_skill", skill="plain_style", section="Ethics")
+    with model(asked, says("RESEARCH notes")) as (url, provider):
+        world.run_stage("research", url, **world.named())
+    follow_up = json.dumps(provider.bodies[1]["messages"])
+    assert "only reads a section that the installed guidance for this stage lists" in follow_up
+    assert "SIFT" not in follow_up
+
+
+def test_a_stage_the_reference_skill_is_not_enabled_for_is_offered_no_read_tool(
+    world: World,
+) -> None:
+    world.install("outline", text=REFERENCE_SKILL)
+    with model(says("RESEARCH notes")) as (url, provider):
+        world.run_stage("research", url, **world.named())
+    assert tool_names(provider.bodies[0]) == ["fetch_url", "web_search"]
+    assert "plain_style" not in json.dumps(provider.bodies[0])
+
+
+def test_the_editing_and_drafting_stages_are_offered_the_tool_too_when_they_list_a_skill(
+    world: World,
+) -> None:
+    world.install("revise_lines", text=REFERENCE_SKILL)
+    store = InMemoryArtifactStore()
+    outline = "## Chapter 1: Light\nPurpose: Light.\nBeats:\n- Windows\n"
+    store.put("run-1", "outline.md", outline.encode())
+    store.put("run-1", "positioning.md", b"calm")
+    store.put("run-1", "structure_01.md", b"Bees live in colonies.")
+    run = BookRun(
+        "run-1",
+        BookBrief(BookKind.NONFICTION, "How to keep bees", CAP),
+        NonfictionRecipes().plan(),
+        Budget(cap=CAP),
+        stage="revise_lines",
+    )
+    with model(says("Words from the model.")) as (url, provider):
+        runtime = StageExecutorRuntime(world.environment(url, **world.named()), NoSecrets(), TODAY)
+        try:
+            asyncio.run(runtime.build(store, InMemoryJournal()).execute(run, 1))
+        finally:
+            runtime.close()
+    assert tool_names(provider.bodies[0]) == ["read_skill"]

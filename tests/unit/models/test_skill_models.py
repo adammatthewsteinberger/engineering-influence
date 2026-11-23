@@ -75,8 +75,10 @@ def test_a_description_is_one_short_line_of_visible_text() -> None:
 
 
 def test_a_skill_needs_parts_in_a_tuple_and_not_too_many() -> None:
-    for bad in ((), [("outline", "x")], None):
-        with pytest.raises(ValueError, match="at least one part"):
+    with pytest.raises(ValueError, match="at least one part or one reference section"):
+        skill(parts=())
+    for bad in ([("outline", "x")], None):
+        with pytest.raises(TypeError, match="parts and sections are tuples"):
             skill(parts=bad)
     many = tuple((f"stage_{index:02d}", "text") for index in range(32))
     assert len(skill(parts=many).parts) == 32

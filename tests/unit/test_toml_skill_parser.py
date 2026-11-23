@@ -89,7 +89,10 @@ def test_a_missing_version_is_named() -> None:
 
 
 def test_parts_must_be_a_table_of_text() -> None:
-    assert "table of stage = text" in refused('name = "plain_style"\nversion = 1\n').message
+    assert (
+        "at least one part or one reference section"
+        in refused('name = "plain_style"\nversion = 1\n').message
+    )
     assert (
         "table of stage = text"
         in refused('name = "plain_style"\nversion = 1\nparts = ["a"]\n').message
@@ -123,7 +126,7 @@ def test_a_table_that_is_already_read_is_checked_the_same_way_a_file_is() -> Non
     for bad, expected in (
         ({"name": "x", "version": 1, "parts": {"brief": "x"}, "tools": ["a"]}, "unknown keys"),
         ({"name": "y", "version": 1, "parts": {"brief": "x"}}, "names itself 'y', not 'x'"),
-        ({"name": "x", "version": 1}, "table of stage = text"),
+        ({"name": "x", "version": 1}, "at least one part or one reference section"),
         ({"name": "x", "parts": {"brief": "x"}}, "missing 'version'"),
     ):
         with pytest.raises(ApplicationError, match=expected) as error:

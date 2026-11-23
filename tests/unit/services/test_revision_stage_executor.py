@@ -21,6 +21,7 @@ from engineering_influence.models.guidance import Guidance
 from engineering_influence.models.model_request import ModelRequest
 from engineering_influence.models.quality_issue import QualityIssue
 from engineering_influence.models.revision_pass import RevisionPass
+from engineering_influence.models.skill import Skill
 from engineering_influence.models.stage_report import StageReport
 from engineering_influence.models.tool_loop_result import ToolLoopResult
 from engineering_influence.services.interfaces.run_tool_loop_interface import (
@@ -31,8 +32,10 @@ from engineering_influence.services.no_stage_guidance import NoStageGuidance
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 from engineering_influence.services.nonfiction_revision_passes import NonfictionRevisionPasses
 from engineering_influence.services.outline_parser import OutlineParser
+from engineering_influence.services.read_skill_tool import ReadSkillTool
 from engineering_influence.services.revision_stage_executor import RevisionStageExecutor
 from engineering_influence.services.spend_guard import SpendGuard
+from engineering_influence.services.tool_registry import ToolRegistry
 
 CAP = 5_000_000
 STRUCTURE, LINES, COPY = NonfictionRevisionPasses.PASSES
@@ -86,6 +89,14 @@ class Loop(RunToolLoopInterface):
         return done(source + " edited")
 
 
+class ReadingGuidance(StageGuidanceInterface):
+    def __init__(self, *tools: str) -> None:
+        self.tools = tools
+
+    def for_stage(self, stage: str) -> Guidance:
+        return Guidance("ADVICE: read the index", "skill_guidance@2:abc", self.tools)
+
+
 class FixedGuidance(StageGuidanceInterface):
     def for_stage(self, stage: str) -> Guidance:
         return Guidance("ADVICE: be kind", "skill_guidance@1:abc")
@@ -100,6 +111,7 @@ class World:
         window: int = 200_000,
         model_max: int = 32_000,
         guidance: StageGuidanceInterface | None = None,
+        tools: ToolRegistry | None = None,
     ) -> None:
         self.editing = editing
         self.store = InMemoryArtifactStore()
@@ -116,6 +128,7 @@ class World:
             self._guard,
             window,
             model_max,
+            tools or ToolRegistry(()),
         )
         self.run = BookRun(
             run_id="run-1",
@@ -390,4 +403,29 @@ def test_a_window_or_an_output_limit_below_one_is_not_a_model() -> None:
                 SpendGuard,
                 window,
                 limit,
+                ToolRegistry(()),
             )
+
+
+def reading_tools() -> ToolRegistry:
+    skill = Skill("research_methodology", 1, (), sections=(("Source Evaluation", "Use SIFT."),))
+    return ToolRegistry((ReadSkillTool((skill,)),))
+
+
+def test_an_edit_is_offered_the_tools_its_guidance_asks_for() -> None:
+    world = World(guidance=ReadingGuidance("read_skill"), tools=reading_tools())
+    world.execute()
+    assert [[t.name for t in call[4].tools] for call in world.loop.calls] == [["read_skill"]] * 3
+
+
+def test_an_edit_with_no_guidance_tools_is_offered_none() -> None:
+    world = World(guidance=FixedGuidance(), tools=reading_tools())
+    world.execute()
+    assert all(call[4].tools == () for call in world.loop.calls)
+
+
+def test_guidance_that_asks_for_a_tool_nobody_registered_stops_the_stage_before_the_call() -> None:
+    world = World(guidance=ReadingGuidance("read_skill"))
+    error = world.refused()
+    assert (error.code, error.http_status) == ("STAGE_TOOL_UNKNOWN", 500)
+    assert world.loop.calls == []

@@ -70,7 +70,14 @@ class SkillsCli(SkillsCliInterface):
         )
         convert.add_argument("source", type=Path, help="a SKILL.md, or the folder that holds one")
         convert.add_argument(
-            "--stage", action="append", required=True, help="a stage the skill speaks to (repeat)"
+            "--stage",
+            action="append",
+            help="a stage the skill speaks to (repeat); not with --reference",
+        )
+        convert.add_argument(
+            "--reference",
+            action="store_true",
+            help="keep the sections as reference the model reads on request, not as stage text",
         )
         convert.add_argument(
             "--section", action="append", help="a section to keep, by title (repeat); default: all"
@@ -130,8 +137,9 @@ class SkillsCli(SkillsCliInterface):
             arguments.source,
             arguments.name,
             arguments.version,
-            tuple(arguments.stage),
+            tuple(arguments.stage or ()),
             tuple(arguments.section or ()),
+            arguments.reference,
             arguments.out,
         )
         skill = done.skill
@@ -139,6 +147,8 @@ class SkillsCli(SkillsCliInterface):
         print(f"  sections: {self._safe(', '.join(done.sections), 300)}")
         for stage, text in skill.parts:
             print(f"  {stage}: {len(text):,} characters")
+        for title, text in skill.sections:
+            print(f"  reference {self._safe(title, 100)}: {len(text):,} characters")
         if done.description_shortened:
             print("  the description was shortened to fit its limit")
         if done.ignored:
@@ -162,7 +172,10 @@ class SkillsCli(SkillsCliInterface):
 
     def _show(self, path: Path, added: SkillLockAddition) -> None:
         skill = added.skill
-        print(f"locked {skill.identifier()}: {len(skill.parts)} parts")
+        print(
+            f"locked {skill.identifier()}: {len(skill.parts)} parts, "
+            f"{len(skill.sections)} reference sections"
+        )
         if skill.description:
             print(f"  {self._safe(skill.description, self.SHOWN)}")
         print(
@@ -171,10 +184,16 @@ class SkillsCli(SkillsCliInterface):
         )
         for stage, text in skill.parts:
             print(f"  {stage} ({len(text)} characters): {self._safe(text, self.SHOWN)}")
+        for title, text in skill.sections:
+            print(
+                f"  reference {self._safe(title, 100)} ({len(text)} characters): "
+                f"{self._safe(text, self.SHOWN)}"
+            )
         print(f"copy kept at {self._folder(path) / (skill.name + '.toml')}")
+        where = ", ".join(skill.stages()) or "any stage"
         print(
             f"enabled for no stage yet: ei skills enable {skill.name} STAGE "
-            f"(it has text for {', '.join(skill.stages())})"
+            f"(it has text for {where})"
         )
         print(f"wrote {path}; review the change like any other commit")
 

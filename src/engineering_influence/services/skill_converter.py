@@ -28,11 +28,14 @@ class SkillConverter(SkillConverterInterface):
         version: int,
         stages: tuple[str, ...],
         titles: tuple[str, ...],
+        reference: bool,
     ) -> Skill:
         """The skill."""
+        chosen = self._chosen(document, titles)
+        if reference:
+            return self._reference(document, name, version, stages, chosen)
         if not stages:
             raise self._invalid("name at least one stage for the skill to speak to, with --stage")
-        chosen = self._chosen(document, titles)
         text = "\n\n".join(f"## {title}\n\n{body}" for title, body in chosen)
         if len(text) > Skill.MAX_PART_CHARS:
             raise ApplicationError(
@@ -50,6 +53,41 @@ class SkillConverter(SkillConverterInterface):
                 version=version,
                 parts=tuple((stage, text) for stage in sorted(set(stages))),
                 description=self._describe(document.description),
+            )
+        except (ValueError, TypeError) as error:
+            raise self._invalid(str(error)) from error
+
+    def _reference(
+        self,
+        document: SkillDocument,
+        name: str | None,
+        version: int,
+        stages: tuple[str, ...],
+        chosen: list[tuple[str, str]],
+    ) -> Skill:
+        if stages:
+            raise self._invalid(
+                "a reference skill is read on request and is not tied to stages; leave out --stage "
+                "and enable it for the stages that should read it"
+            )
+        too_big = [(t, b) for t, b in chosen if len(b) > Skill.MAX_SECTION_CHARS]
+        if too_big:
+            raise ApplicationError(
+                code="SKILL_IMPORT_TOO_LARGE",
+                message=(
+                    f"a reference section holds at most {Skill.MAX_SECTION_CHARS:,} characters, and "
+                    + "; ".join(f"{t!r} has {len(b):,}" for t, b in too_big)
+                    + "; leave those out with --section"
+                ),
+                http_status=422,
+            )
+        try:
+            return Skill(
+                name=name or self._derive(document.name),
+                version=version,
+                parts=(),
+                description=self._describe(document.description),
+                sections=tuple(chosen),
             )
         except (ValueError, TypeError) as error:
             raise self._invalid(str(error)) from error

@@ -22,6 +22,7 @@ from engineering_influence.models.context_plan import ContextPlan
 from engineering_influence.models.guidance import Guidance
 from engineering_influence.models.model_request import ModelRequest
 from engineering_influence.models.quality_issue import QualityIssue
+from engineering_influence.models.skill import Skill
 from engineering_influence.models.stage_report import StageReport
 from engineering_influence.models.tool_loop_result import ToolLoopResult
 from engineering_influence.services.draft_stage_executor import DraftStageExecutor
@@ -35,7 +36,9 @@ from engineering_influence.services.interfaces.spend_guard_interface import Spen
 from engineering_influence.services.no_stage_guidance import NoStageGuidance
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 from engineering_influence.services.outline_parser import OutlineParser
+from engineering_influence.services.read_skill_tool import ReadSkillTool
 from engineering_influence.services.spend_guard import SpendGuard
+from engineering_influence.services.tool_registry import ToolRegistry
 
 CAP = 5_000_000
 OUTLINE = """## Chapter 1: The Hive
@@ -103,6 +106,14 @@ class Loop(RunToolLoopInterface):
         return done(f"# Chapter {self.drafts}\n\nwords here for chapter {self.drafts}")
 
 
+class ReadingGuidance(StageGuidanceInterface):
+    def __init__(self, *tools: str) -> None:
+        self.tools = tools
+
+    def for_stage(self, stage: str) -> Guidance:
+        return Guidance("ADVICE: read the index", "skill_guidance@2:abc", self.tools)
+
+
 class FixedGuidance(StageGuidanceInterface):
     def for_stage(self, stage: str) -> Guidance:
         return Guidance("ADVICE: be kind", "skill_guidance@1:abc")
@@ -126,6 +137,7 @@ class World:
         window: int = 200_000,
         model_max: int = 32_000,
         guidance: StageGuidanceInterface | None = None,
+        tools: ToolRegistry | None = None,
     ) -> None:
         self.store = InMemoryArtifactStore()
         self.contexts = Contexts()
@@ -142,6 +154,7 @@ class World:
             self._guard,
             window,
             model_max,
+            tools or ToolRegistry(()),
         )
         self.run = BookRun(
             run_id="run-1",
@@ -435,6 +448,7 @@ def test_a_window_or_an_output_limit_below_one_is_not_a_model() -> None:
                 lambda budget: SpendGuard(budget),
                 window,
                 limit,
+                ToolRegistry(()),
             )
 
 
@@ -448,3 +462,30 @@ def test_the_index_writes_long_chapters_with_thousands_separators() -> None:
     assert index is not None
     assert "(1,234 words)" in index
     assert "Total: 1,236 words" in index
+
+
+def reading_tools() -> ToolRegistry:
+    skill = Skill("research_methodology", 1, (), sections=(("Source Evaluation", "Use SIFT."),))
+    return ToolRegistry((ReadSkillTool((skill,)),))
+
+
+def test_a_draft_is_offered_the_tools_its_guidance_asks_for_and_the_summary_is_not() -> None:
+    world = World(guidance=ReadingGuidance("read_skill"), tools=reading_tools())
+    world.execute()
+    drafts = [c[4] for c in world.loop.calls if not c[4].prompt_version.startswith("stage_summary")]
+    summaries = [c[4] for c in world.loop.calls if c[4].prompt_version.startswith("stage_summary")]
+    assert [[t.name for t in r.tools] for r in drafts] == [["read_skill"]] * 3
+    assert all(r.tools == () for r in summaries)
+
+
+def test_a_draft_with_no_guidance_tools_is_offered_none() -> None:
+    world = World(guidance=FixedGuidance(), tools=reading_tools())
+    world.execute()
+    assert all(call[4].tools == () for call in world.loop.calls)
+
+
+def test_guidance_that_asks_for_a_tool_nobody_registered_stops_the_stage_before_the_call() -> None:
+    world = World(guidance=ReadingGuidance("read_skill"))
+    error = world.refused()
+    assert (error.code, error.http_status) == ("STAGE_TOOL_UNKNOWN", 500)
+    assert "read_skill" in error.message and world.loop.calls == []

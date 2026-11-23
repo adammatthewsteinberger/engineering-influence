@@ -9,6 +9,7 @@ from engineering_influence.interfaces.artifact_store_interface import ArtifactSt
 from engineering_influence.interfaces.prompt_library_interface import PromptLibraryInterface
 from engineering_influence.interfaces.stage_executor_interface import StageExecutorInterface
 from engineering_influence.interfaces.stage_guidance_interface import StageGuidanceInterface
+from engineering_influence.interfaces.tool_registry_interface import ToolRegistryInterface
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget import Budget
 from engineering_influence.models.chapter_outline import ChapterOutline
@@ -16,6 +17,7 @@ from engineering_influence.models.context_plan import ContextPlan
 from engineering_influence.models.model_request import ModelRequest
 from engineering_influence.models.outline import Outline
 from engineering_influence.models.stage_report import StageReport
+from engineering_influence.models.tool_definition import ToolDefinition
 from engineering_influence.models.tool_loop_result import ToolLoopResult
 from engineering_influence.services.interfaces.context_assembler_interface import (
     ContextAssemblerInterface,
@@ -77,6 +79,7 @@ class DraftStageExecutor(StageExecutorInterface):
         guards: Callable[[Budget], SpendGuardInterface],
         context_window: int,
         max_output_tokens: int,
+        tools: ToolRegistryInterface,
     ) -> None:
         if context_window < 1 or max_output_tokens < 1:
             raise ValueError("a model has a window and an output limit")
@@ -89,6 +92,7 @@ class DraftStageExecutor(StageExecutorInterface):
         self._guards = guards
         self._window = context_window
         self._max_output = max_output_tokens
+        self._tools = tools
 
     async def execute(self, run: BookRun, attempt: int) -> StageReport:
         """Draft the chapters that are not done, then write the index."""
@@ -205,7 +209,16 @@ class DraftStageExecutor(StageExecutorInterface):
             prompt=prompt,
             max_output_tokens=output_cap,
             prompt_version=version,
+            tools=self._offered(guidance.tools),
         )
+
+    def _offered(self, names: tuple[str, ...]) -> tuple[ToolDefinition, ...]:
+        try:
+            return self._tools.definitions(names)
+        except ValueError as error:
+            raise ApplicationError(
+                code="STAGE_TOOL_UNKNOWN", message=str(error), http_status=500
+            ) from error
 
     def _summary_request(self, chapter_text: str) -> ModelRequest:
         template = self._prompts.get("stage_summary")

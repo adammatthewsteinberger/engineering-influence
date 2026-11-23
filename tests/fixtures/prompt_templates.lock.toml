@@ -6,8 +6,8 @@ version = 2
 fingerprint = "6536536270f882538435c9ee6af2c3e7ee9ff09d94f659c3919739b61834a676"
 
 [skill_guidance]
-version = 1
-fingerprint = "2be57e42e7f8e1669f4be1cb4da20006692a6efb6b01bfdf26ec037c571a5e5e"
+version = 2
+fingerprint = "a4201ec270b5535eadbad3b7fa5df2ad493f34e1036f55f10a04da2dd13ea9aa"
 
 [stage_brief]
 version = 1

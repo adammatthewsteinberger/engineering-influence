@@ -74,7 +74,7 @@ class SkillLockEditor(SkillLockEditorInterface):
         """The lock with the skill enabled for the stage."""
         entry = self._entry(lock, name)
         skill = self._verifier.skill(entry, folder)
-        if skill.part(stage) is None:
+        if skill.part(stage) is None and not skill.sections:
             raise self._refused(
                 "SKILL_STAGE_UNKNOWN",
                 f"skill {name!r} has no text for stage {stage!r}; it has text for: "

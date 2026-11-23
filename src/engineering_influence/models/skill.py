@@ -29,6 +29,10 @@ class Skill(SkillInterface):
     NAME: ClassVar[re.Pattern[str]] = re.compile(r"[a-z][a-z0-9_]*")
     MAX_PARTS: ClassVar[int] = 32
     MAX_PART_CHARS: ClassVar[int] = 8_000
+    MAX_SECTIONS: ClassVar[int] = 64
+    MAX_SECTION_CHARS: ClassVar[int] = 20_000
+    MAX_SECTION_TITLE_CHARS: ClassVar[int] = 100
+    MAX_REFERENCE_CHARS: ClassVar[int] = 200_000
     MAX_DESCRIPTION_CHARS: ClassVar[int] = 300
     HIDDEN: ClassVar[frozenset[str]] = frozenset({"Cc", "Cf", "Cs", "Co", "Cn", "Zl", "Zp"})
     # Code points that render as nothing although their category is an ordinary letter, mark or symbol:
@@ -51,6 +55,7 @@ class Skill(SkillInterface):
     version: int
     parts: tuple[tuple[str, str], ...]
     description: str = ""
+    sections: tuple[tuple[str, str], ...] = ()
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.NAME.fullmatch(self.name):
@@ -66,8 +71,10 @@ class Skill(SkillInterface):
         if "\n" in self.description:
             raise ValueError("a description is one line")
         self._plain("the description", self.description)
-        if not isinstance(self.parts, tuple) or not self.parts:
-            raise ValueError("a skill needs at least one part")
+        if not isinstance(self.parts, tuple) or not isinstance(self.sections, tuple):
+            raise TypeError("parts and sections are tuples")
+        if not self.parts and not self.sections:
+            raise ValueError("a skill needs at least one part or one reference section")
         if len(self.parts) > self.MAX_PARTS:
             raise ValueError(f"a skill has at most {self.MAX_PARTS} parts")
         for part in self.parts:
@@ -86,6 +93,44 @@ class Skill(SkillInterface):
                     f"the part for {stage!r} is longer than {self.MAX_PART_CHARS} characters"
                 )
             self._plain(f"the part for {stage!r}", text)
+        self._reference()
+
+    def _reference(self) -> None:
+        if len(self.sections) > self.MAX_SECTIONS:
+            raise ValueError(f"a skill has at most {self.MAX_SECTIONS} reference sections")
+        total = 0
+        for section in self.sections:
+            if not isinstance(section, tuple) or len(section) != 2:
+                raise TypeError("a reference section is a (title, text) pair")
+            title, text = section
+            if (
+                not isinstance(title, str)
+                or not title.strip()
+                or title != title.strip()
+                or "\n" in title
+                or "<" in title
+                or ">" in title
+                or len(title) > self.MAX_SECTION_TITLE_CHARS
+            ):
+                raise ValueError(
+                    f"a section title is one line of at most {self.MAX_SECTION_TITLE_CHARS} characters, with no angle brackets"
+                )
+            self._plain("a section title", title)
+            if not isinstance(text, str) or not text.strip():
+                raise ValueError(f"the section {title!r} needs text")
+            if len(text) > self.MAX_SECTION_CHARS:
+                raise ValueError(
+                    f"the section {title!r} is longer than {self.MAX_SECTION_CHARS} characters"
+                )
+            self._plain(f"the section {title!r}", text)
+            total += len(text)
+        if total > self.MAX_REFERENCE_CHARS:
+            raise ValueError(
+                f"the reference sections hold {total} characters; the most is {self.MAX_REFERENCE_CHARS}"
+            )
+        folded = [title.casefold() for title, _ in self.sections]
+        if len(set(folded)) != len(folded):
+            raise ValueError("section titles differ, ignoring case")
 
     def identifier(self) -> str:
         """The name and version, as people write it: ``plain_style@2``."""
@@ -94,6 +139,14 @@ class Skill(SkillInterface):
     def stages(self) -> tuple[str, ...]:
         """The stages this skill has text for, in order."""
         return tuple(stage for stage, _ in self.parts)
+
+    def section_titles(self) -> tuple[str, ...]:
+        """The titles of the reference sections, in order."""
+        return tuple(title for title, _ in self.sections)
+
+    def section(self, title: str) -> str | None:
+        """The text of the reference section with exactly this title, or None."""
+        return next((text for found, text in self.sections if found == title), None)
 
     def part(self, stage: str) -> str | None:
         """The text for the stage, or None when the skill says nothing about it."""
