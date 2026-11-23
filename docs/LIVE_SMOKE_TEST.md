@@ -56,6 +56,15 @@ uv run pytest -m paid tests/paid
 It prints each stage with its outcome, its cost and its time, then the folder. The folder is written **even when the run
 fails**, so you can see how far it got.
 
+## Novels are not in this test yet
+
+The test above drives the non-fiction plan only. A novel run is brief, story bible, beats, outline and draft
+(see [NOVELS.md](NOVELS.md)) and then stops, because the editing passes, assembly and the audit for a novel are not built.
+Pointing `EI_SMOKE_IDEA` at a novel would not make the test write a novel: the smoke harness always builds a non-fiction
+brief and plan. So there is no paid novel check yet. A novel live check needs two things first: the harness taking a
+novel plan that ends at the draft, and a way to read the chapters it writes. Until then, a novel has only ever been run
+against scripted servers, and its first real-model run will be a manual one with `ei doctor --local` and the prompts.
+
 ## What to read afterwards
 
 In the folder:

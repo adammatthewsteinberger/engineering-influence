@@ -53,6 +53,14 @@ name twice, more than 60 characters) stops the run where it was written, before 
 `ContinuityChecker` reads chapters against the bible with no model call and reports near-miss names and places, ages
 outside the bible's range, and events mentioned out of order. The draft stage calls it once, over the whole draft.
 
+## Trying it
+
+A novel is not yet runnable from the command line: `ei book create` is M8, and the paid smoke test in
+[LIVE_SMOKE_TEST.md](LIVE_SMOKE_TEST.md) drives only the non-fiction plan. What exists today is the stage code, tested
+against scripted servers. To see the prompts a novel sends without a model, read the templates named in the table above
+(`src/engineering_influence/infrastructure/prompt_library/templates/novel_*.toml`); each is versioned, and its text is
+pinned in `tests/fixtures/prompt_templates.lock.toml`.
+
 ## What is not built or not checked
 
 - Revision, copy editing, assembly and the audit for a novel; the metadata and KDP listing for fiction; a repair pass that
