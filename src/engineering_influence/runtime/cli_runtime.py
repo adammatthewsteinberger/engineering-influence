@@ -74,7 +74,9 @@ from engineering_influence.runtime.interfaces.publishing_controller_factory_inte
 from engineering_influence.runtime.serve_starter import ServeStarter
 from engineering_influence.services.cancel_run import CancelRun
 from engineering_influence.services.interfaces.cancel_run_interface import CancelRunInterface
+from engineering_influence.services.interfaces.create_run_interface import CreateRunInterface
 from engineering_influence.services.interfaces.export_run_interface import ExportRunInterface
+from engineering_influence.services.interfaces.list_runs_interface import ListRunsInterface
 from engineering_influence.services.interfaces.local_model_doctor_interface import (
     LocalModelDoctorInterface,
 )
@@ -150,7 +152,14 @@ class CliRuntime(CliRuntimeInterface):
             BookCli(self._publishing_controller),
             ServeCli(ServeStarter()),
             DbCli(self._schema_migrator, self._secret_provider),
-            RunCli(self._resume_run, self._cancel_run, self._run_status, self._export_run),
+            RunCli(
+                self._resume_run,
+                self._cancel_run,
+                self._run_status,
+                self._export_run,
+                self._create_run,
+                self._list_runs,
+            ),
             DoctorCli(
                 self._model_doctor, self._search_doctor, self._local_model_doctor, os.environ
             ),
@@ -396,19 +405,41 @@ class CliRuntime(CliRuntimeInterface):
         # A one-shot command keeps no pool, so no connection outlives it.
         return SqlModelRunRepository(url, pooled=False)
 
+    def _broker_queue(self) -> QueueInterface:
+        """The queue the worker reads, or the one a test injected."""
+        if self._queue is not None:
+            return self._queue
+        import os
+
+        from engineering_influence.infrastructure.rabbitmq_queue import RabbitMqQueueAdapter
+
+        return RabbitMqQueueAdapter(
+            self._secret_provider().require("EI_RABBITMQ_URL"),
+            os.environ.get("EI_QUEUE_NAME", "engineering-influence.jobs"),
+        )
+
     def _resume_run(self) -> ResumeRunInterface:
         """Build the resume service; it queues through the broker unless a queue was injected."""
-        queue = self._queue
-        if queue is None:
-            import os
+        return ResumeRun(self._run_repository(), self._broker_queue())
 
-            from engineering_influence.infrastructure.rabbitmq_queue import RabbitMqQueueAdapter
+    def _create_run(self) -> CreateRunInterface:
+        """Build the create service: it saves the run and queues its first stage on the broker."""
+        from engineering_influence.models.book_kind import BookKind
+        from engineering_influence.services.create_run import CreateRun
+        from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
+        from engineering_influence.services.novel_recipes import NovelRecipes
 
-            queue = RabbitMqQueueAdapter(
-                self._secret_provider().require("EI_RABBITMQ_URL"),
-                os.environ.get("EI_QUEUE_NAME", "engineering-influence.jobs"),
-            )
-        return ResumeRun(self._run_repository(), queue)
+        plans = {
+            BookKind.NONFICTION: NonfictionRecipes().plan(),
+            BookKind.NOVEL: NovelRecipes().plan(),
+        }
+        return CreateRun(self._run_repository(), self._broker_queue(), plans)
+
+    def _list_runs(self) -> ListRunsInterface:
+        """Build the list service; it needs only the database."""
+        from engineering_influence.services.list_runs import ListRuns
+
+        return ListRuns(self._run_repository())
 
     def _run_status(self) -> RunControllerInterface:
         """Build the read controller; it needs only the database."""
