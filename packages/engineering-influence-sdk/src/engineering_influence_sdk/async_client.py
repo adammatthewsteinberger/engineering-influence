@@ -44,6 +44,24 @@ class AsyncEngineeringInfluenceClient(AsyncEngineeringInfluenceClientInterface):
         response.raise_for_status()
         return cast(dict[str, Any], response.json())
 
+    async def list_runs(self) -> list[dict[str, Any]]:
+        """Every saved book run, as run summaries, asynchronously."""
+        response = await self._client.get("/v1/runs")
+        response.raise_for_status()
+        return cast(list[dict[str, Any]], response.json())
+
+    async def resume_run(self, run_id: str) -> dict[str, Any]:
+        """Un-park a parked run and queue its current stage, asynchronously."""
+        response = await self._client.post(f"/v1/runs/{run_id}/resume")
+        response.raise_for_status()
+        return cast(dict[str, Any], response.json())
+
+    async def cancel_run(self, run_id: str) -> dict[str, Any]:
+        """Stop a run for good, asynchronously."""
+        response = await self._client.post(f"/v1/runs/{run_id}/cancel")
+        response.raise_for_status()
+        return cast(dict[str, Any], response.json())
+
     async def close(self) -> None:
         """Close the underlying async HTTP connection pool."""
         await self._client.aclose()

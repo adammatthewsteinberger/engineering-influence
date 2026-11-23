@@ -20,6 +20,9 @@ from engineering_influence.interactions.api.interfaces.application_interface imp
 )
 from engineering_influence.interactions.api.prometheus_renderer import PrometheusRenderer
 from engineering_influence.services.interfaces.create_run_interface import CreateRunInterface
+from engineering_influence.services.interfaces.run_management_interface import (
+    RunManagementInterface,
+)
 
 if TYPE_CHECKING:
     from engineering_influence.interactions.api.api_guard import ApiGuard
@@ -40,10 +43,12 @@ class ApiApplication(ApiApplicationInterface):
         observability: ApiObservability | None = None,
         runs: RunControllerInterface | None = None,
         creator: CreateRunInterface | None = None,
+        manager: RunManagementInterface | None = None,
     ) -> None:
         self._controller = controller
         self._runs = runs
         self._creator = creator
+        self._manager = manager
         self._guard = guard
         self._observability = observability
         self._renderer = PrometheusRenderer()
@@ -70,6 +75,28 @@ class ApiApplication(ApiApplicationInterface):
                 methods=["POST"],
                 response_model=RunSummaryV1,
                 status_code=201,
+                dependencies=[Depends(self._guard)],
+            )
+        if self._manager is not None:
+            app.add_api_route(
+                "/v1/runs",
+                self._list_runs,
+                methods=["GET"],
+                response_model=list[RunSummaryV1],
+                dependencies=[Depends(self._guard)],
+            )
+            app.add_api_route(
+                "/v1/runs/{run_id}/resume",
+                self._resume_run,
+                methods=["POST"],
+                response_model=RunSummaryV1,
+                dependencies=[Depends(self._guard)],
+            )
+            app.add_api_route(
+                "/v1/runs/{run_id}/cancel",
+                self._cancel_run,
+                methods=["POST"],
+                response_model=RunSummaryV1,
                 dependencies=[Depends(self._guard)],
             )
         if self._observability is not None:
@@ -127,6 +154,16 @@ class ApiApplication(ApiApplicationInterface):
     def _create_run(self, brief: BookBriefV1) -> RunSummaryV1:
         run = cast(CreateRunInterface, self._creator).create(brief.to_model())
         return RunSummaryV1.from_run(run, [])
+
+    def _list_runs(self) -> list[RunSummaryV1]:
+        manager = cast(RunManagementInterface, self._manager)
+        return [RunSummaryV1.from_run(run, []) for run in manager.runs()]
+
+    def _resume_run(self, run_id: str) -> RunSummaryV1:
+        return RunSummaryV1.from_run(cast(RunManagementInterface, self._manager).resume(run_id), [])
+
+    def _cancel_run(self, run_id: str) -> RunSummaryV1:
+        return RunSummaryV1.from_run(cast(RunManagementInterface, self._manager).cancel(run_id), [])
 
     def _run_summary(self, run_id: str) -> RunSummaryV1:
         return cast(RunControllerInterface, self._runs).summary(run_id)

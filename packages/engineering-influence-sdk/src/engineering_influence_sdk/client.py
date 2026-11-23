@@ -44,6 +44,24 @@ class EngineeringInfluenceClient(EngineeringInfluenceClientInterface):
         response.raise_for_status()
         return cast(dict[str, Any], response.json())
 
+    def list_runs(self) -> list[dict[str, Any]]:
+        """Every saved book run, as run summaries."""
+        response = self._client.get("/v1/runs")
+        response.raise_for_status()
+        return cast(list[dict[str, Any]], response.json())
+
+    def resume_run(self, run_id: str) -> dict[str, Any]:
+        """Un-park a parked run and queue its current stage."""
+        response = self._client.post(f"/v1/runs/{run_id}/resume")
+        response.raise_for_status()
+        return cast(dict[str, Any], response.json())
+
+    def cancel_run(self, run_id: str) -> dict[str, Any]:
+        """Stop a run for good."""
+        response = self._client.post(f"/v1/runs/{run_id}/cancel")
+        response.raise_for_status()
+        return cast(dict[str, Any], response.json())
+
     def close(self) -> None:
         """Close the underlying HTTP connection pool."""
         self._client.close()

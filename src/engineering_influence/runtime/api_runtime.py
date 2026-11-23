@@ -37,9 +37,13 @@ from engineering_influence.repositories.sqlmodel_run_repository import SqlModelR
 from engineering_influence.runtime.app_settings import AppSettings
 from engineering_influence.runtime.endpoint_checks import EndpointChecks
 from engineering_influence.runtime.interfaces.api_runtime_interface import ApiRuntimeInterface
+from engineering_influence.services.cancel_run import CancelRun
 from engineering_influence.services.create_run import CreateRun
+from engineering_influence.services.list_runs import ListRuns
 from engineering_influence.services.read_run import ReadRun
 from engineering_influence.services.readiness_probe import ReadinessProbe
+from engineering_influence.services.resume_run import ResumeRun
+from engineering_influence.services.run_management import RunManagement
 from engineering_influence.services.start_pipeline import StartPipeline
 
 
@@ -92,7 +96,10 @@ class ApiRuntime(ApiRuntimeInterface):
         self._stores = [runs, artifacts]
         run_controller = RunController(ReadRun(runs, artifacts))
         creator = CreateRun(runs, queue)
-        return ApiApplication(controller, guard, observability, run_controller, creator).build()
+        manager = RunManagement(ListRuns(runs), ResumeRun(runs, queue), CancelRun(runs))
+        return ApiApplication(
+            controller, guard, observability, run_controller, creator, manager
+        ).build()
 
     def run(self) -> None:
         """Configure logging, build the app, and serve until stopped."""

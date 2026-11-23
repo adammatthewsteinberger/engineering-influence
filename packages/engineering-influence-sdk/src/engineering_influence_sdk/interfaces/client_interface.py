@@ -26,5 +26,17 @@ class EngineeringInfluenceClientInterface(ABC):
         """Start a book run from a brief (the brief contract v1); returns the new run."""
 
     @abstractmethod
+    def list_runs(self) -> list[dict[str, Any]]:
+        """Every saved book run, as run summaries."""
+
+    @abstractmethod
+    def resume_run(self, run_id: str) -> dict[str, Any]:
+        """Un-park a parked run and queue its current stage."""
+
+    @abstractmethod
+    def cancel_run(self, run_id: str) -> dict[str, Any]:
+        """Stop a run for good."""
+
+    @abstractmethod
     def close(self) -> None:
         """Close the underlying HTTP connection pool."""
