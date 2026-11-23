@@ -302,11 +302,30 @@ def assemble(tmp_path: Path, **extra: str) -> tuple[InMemoryArtifactStore, list[
         store = InMemoryArtifactStore()
         store.put("run-1", "outline.md", outline.encode())
         store.put("run-1", "metadata.md", LISTING.encode())
-        store.put("run-1", "chapter_01.md", b"Chapter 1: The Hive\n\nBees live in colonies.")
+        store.put("run-1", "copy_01.md", b"Chapter 1: The Hive\n\nBees live in colonies.")
         executor = rt.build(store, InMemoryJournal())
         asyncio.run(executor.execute(run_for("assemble"), 1))
         rt.close()
     return store, seen.seen
+
+
+def test_an_editing_stage_is_routed_to_the_reviser_and_stores_the_edited_chapter(
+    tmp_path: Path,
+) -> None:
+    outline = "## Chapter 1: The Hive\nPurpose: How a colony works.\nBeats:\n- The queen\n"
+    with provider("Words from the model.") as (url, seen):
+        rt = runtime(files(tmp_path, url=url))
+        store = InMemoryArtifactStore()
+        store.put("run-1", "outline.md", outline.encode())
+        store.put("run-1", "positioning.md", b"the calm guide")
+        store.put("run-1", "structure_01.md", b"Bees live in colonies.")
+        executor = rt.build(store, InMemoryJournal())
+        asyncio.run(executor.execute(run_for("revise_lines"), 1))
+        rt.close()
+    assert store.get("run-1", "lines_01.md") == b"Words from the model."
+    assert (store.get("run-1", "revise_lines.md") or b"").startswith(b"# Revision: revise_lines")
+    sent = json.dumps(seen.seen[-1][2])
+    assert "the calm guide" in sent and "Bees live in colonies." in sent and "untrusted" in sent
 
 
 def test_an_assembled_book_with_an_author_profile_passes_the_real_audit(tmp_path: Path) -> None:

@@ -157,3 +157,25 @@ A non-fiction plan now ends with `audit`, which makes no model call. `AuditStage
 - **Not done:** the PDF and EPUB build and the cover, which need the TeX toolchain, the cover design settings and cover art that are the
   author's. They are the next slice.
 
+## Amendment: the editing passes (2026-11-22)
+
+A non-fiction plan now has three editing stages between `draft` and `assemble`: `revise_structure`, `revise_lines` and `copy_edit`, each a
+`RevisionStageExecutor` run with one of the passes in `NonfictionRevisionPasses`. Each is one call with no tools for each chapter, in order.
+
+- **Each pass reads what the one before wrote.** The first reads `chapter_NN.md`; the files are `structure_NN.md`, `lines_NN.md` and
+  `copy_NN.md`; and `assemble` now reads `copy_NN.md`. Each pass is told only what it needs: structure sees the whole outline, a line
+  on every other chapter and this chapter's plan; lines sees the voice; copy sees nothing but the chapter. They have their own templates
+  rather than the drafting assembler, whose system text says "write the chapter" and has no place for text to be revised.
+- **A revision is kept only if it is plausible.** An answer that did not finish stops the stage, as in drafting. One that did finish but is blank, or whose
+  length in words is outside the pass's bounds of the chapter's (a fifth for structure, a tenth for lines, a twentieth for copy), is **not stored and
+  the chapter passes through unchanged**. A retry would replay the same answer, so stopping would only fail the run again. The stage
+  reports each unchanged chapter as a tolerated issue (`revision-unchanged`), worked out from the stored files so a redelivery says the same,
+  and `<stage>.md` lists every chapter's length before and after. This is a guard against an answer that is not an edit, not a judgment of
+  whether an edit is good.
+- **The window is checked, not assumed.** A chapter whose prompt (estimated at three characters a token) and answer would not fit the
+  model's window stops the stage before the call (`STAGE_MODEL_TOO_SMALL`); nothing is cut to make it fit.
+- **Cost:** every pass is one call per chapter, so a book with *n* chapters now makes about 5*n* model calls after the outline (a draft, a summary
+  and three edits for each chapter). Every call reserves against the run's budget, and a run whose cap cannot cover the next call stops there.
+- **Not known:** whether the edits improve the prose. Nothing here has run against a live model, and the length bounds only catch an answer
+  that is plainly not an edit.
+

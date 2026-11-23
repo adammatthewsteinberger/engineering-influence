@@ -6,7 +6,7 @@ in `src/engineering_influence/infrastructure/prompt_library/templates/`, one TOM
 is called `templates`, never `prompts`, because the `leak-scan` CI job rejects any path containing
 `prompts/`.
 
-Today eight templates ship. `stage_brief`, `stage_positioning`, `stage_research`, `stage_outline` and `stage_metadata` are the
+Today eleven templates ship. `stage_brief`, `stage_positioning`, `stage_research`, `stage_outline` and `stage_metadata` are the
 prompts for five of the non-fiction stages; every blank in them that is filled from outside (the author's idea, and what an earlier stage
 wrote) is declared untrusted. `context_pack` (version 2) is the layout of the prompt that drafts one chapter: its fixed system text and the
 labels the context assembler puts between the parts. **Where each part goes is a trust decision**: the system part
@@ -17,6 +17,11 @@ just written, which later chapters are given in place of the chapter itself; its
 `skill_guidance` frames the skills a person enabled for a stage ([SKILLS.md](SKILLS.md)); its
 one blank is not declared untrusted, because the text that fills it is built by the product from skills a person
 installed, defused and delimited, and is meant to instruct.
+
+`stage_revise_structure`, `stage_revise_lines` and `stage_copy_edit` (version 1 each) are the three editing passes over a drafted
+chapter, from the widest to the narrowest. Every blank in them is untrusted (the chapter, the outline, what the other chapters say and
+the voice), and each tells the model to return only the whole edited chapter and to stay within a stated length of the original; the
+executor enforces the bound (see ADR 0010).
 
 `stage_metadata` (version 1) writes the store listing (title, subtitle, description, seven keywords, up to three categories) in a
 format a program reads, like the outline: `MetadataParser` refuses an answer it cannot read (`METADATA_INVALID`), so a malformed

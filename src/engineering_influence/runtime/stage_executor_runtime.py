@@ -96,7 +96,9 @@ from engineering_influence.services.model_stage_executor import ModelStageExecut
 from engineering_influence.services.no_stage_guidance import NoStageGuidance
 from engineering_influence.services.nonfiction_output_checks import NonfictionOutputChecks
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
+from engineering_influence.services.nonfiction_revision_passes import NonfictionRevisionPasses
 from engineering_influence.services.outline_parser import OutlineParser
+from engineering_influence.services.revision_stage_executor import RevisionStageExecutor
 from engineering_influence.services.run_tool_loop import RunToolLoop
 from engineering_influence.services.skill_lock_verifier import SkillLockVerifier
 from engineering_influence.services.spend_guard import SpendGuard
@@ -181,6 +183,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         dashes = DashRewriter()
         metadata = MetadataParser(dashes)
         profile = self._author_profile()
+        revisions = NonfictionRevisionPasses()
         descriptor = model.describe()
         drafter = DraftStageExecutor(
             artifacts,
@@ -207,6 +210,20 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             ),
             {
                 DraftStageExecutor.STAGE: drafter,
+                **{
+                    editing.stage: RevisionStageExecutor(
+                        editing,
+                        artifacts,
+                        prompts,
+                        outlines,
+                        loop,
+                        guidance,
+                        SpendGuard,
+                        descriptor.context_window,
+                        descriptor.max_output_tokens,
+                    )
+                    for editing in revisions.passes()
+                },
                 AssembleStageExecutor.STAGE: AssembleStageExecutor(
                     artifacts,
                     outlines,
@@ -214,6 +231,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                     ChapterCleaner(dashes),
                     BookConfigWriter(),
                     profile,
+                    revisions.final(),
                 ),
                 AuditStageExecutor.STAGE: AuditStageExecutor(
                     artifacts, TempProjectManuscriptAuditor(self._pipeline)

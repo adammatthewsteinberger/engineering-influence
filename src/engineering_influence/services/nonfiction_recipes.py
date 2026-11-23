@@ -10,17 +10,18 @@ from engineering_influence.models.stage_recipe import StageRecipe
 
 
 class NonfictionRecipes(StageRecipesInterface):
-    """Brief, positioning, research, outline and metadata are one prompt each; ``draft``, ``assemble`` and ``audit`` follow.
+    """Brief, positioning, research, outline and metadata are one prompt each; the stages after them have their own executors.
 
-    Research is the one stage with tools (search and page reading); the others have none. ``draft``,
-    ``assemble`` and ``audit`` have no recipe because none is one prompt: ``draft`` loops over the chapters (see
-    ``DraftStageExecutor``), and ``assemble`` and ``audit`` make no model call (see ``AssembleStageExecutor`` and
-    ``AuditStageExecutor``). All three are named in the plan and routed to their own executors. The later
-    stages (revision, copy edit, the PDF and EPUB build) are added as each one is built, and the plan grows
-    with them.
+    Research is the one stage with tools (search and page reading); the others have none. ``draft`` loops over the
+    chapters (see ``DraftStageExecutor``); ``revise_structure``, ``revise_lines`` and ``copy_edit`` are editing
+    passes over every chapter (see ``RevisionStageExecutor`` and ``NonfictionRevisionPasses``); ``assemble`` and
+    ``audit`` make no model call (see ``AssembleStageExecutor`` and ``AuditStageExecutor``). None of them has a
+    recipe, because none is one prompt, so all are named in the plan and routed to their own executors. The
+    PDF and EPUB build is added as it is built, and the plan grows with it.
     """
 
     DRAFT_STAGE = "draft"
+    REVISION_STAGES = ("revise_structure", "revise_lines", "copy_edit")
     ASSEMBLE_STAGE = "assemble"
     AUDIT_STAGE = "audit"
 
@@ -43,6 +44,7 @@ class NonfictionRecipes(StageRecipesInterface):
         stages = (
             *(recipe.stage for recipe in self.RECIPES),
             self.DRAFT_STAGE,
+            *self.REVISION_STAGES,
             self.ASSEMBLE_STAGE,
             self.AUDIT_STAGE,
         )
