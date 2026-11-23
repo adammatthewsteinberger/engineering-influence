@@ -35,10 +35,15 @@ BIBLE = json.dumps({"premise": "A heist.", "characters": [{"name": "Ana"}]})
 OUTLINE = "## Chapter 1: The Job\nPurpose: Ana plans it.\nBeats:\n- Ana studies the vault\n"
 
 
-def test_a_novel_has_four_stages_in_order() -> None:
+def test_a_novel_has_five_stages_in_order_ending_at_the_draft() -> None:
     plan = NovelRecipes().plan()
     assert plan.kind is BookKind.NOVEL
-    assert plan.stages == ("brief", "story_bible", "beats", "outline")
+    assert plan.stages == ("brief", "story_bible", "beats", "outline", "draft")
+
+
+def test_the_draft_is_a_loop_and_has_no_recipe_of_its_own() -> None:
+    with pytest.raises(ValueError, match="a novel run has no recipe for stage 'draft'"):
+        NovelRecipes().recipe("draft")
 
 
 def test_it_is_a_set_of_recipes() -> None:

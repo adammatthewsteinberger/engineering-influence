@@ -5,19 +5,32 @@ from typing import ClassVar
 
 from engineering_influence.interfaces.stage_recipes_interface import StageRecipesInterface
 from engineering_influence.models.book_kind import BookKind
+from engineering_influence.models.draft_recipe import DraftRecipe
 from engineering_influence.models.stage_plan import StagePlan
 from engineering_influence.models.stage_recipe import StageRecipe
 
 
 class NovelRecipes(StageRecipesInterface):
-    """Brief, story bible, beats and chapter outline are one prompt each, none with tools.
+    """Brief, story bible, beats and chapter outline are one prompt each, none with tools; ``draft`` is the loop over the chapters.
 
     A novel is not argued from sources, so there is no research stage and no tool. The story bible is JSON that
     ``StoryBibleParser`` reads and the chapter outline is the same markdown ``OutlineParser`` reads, so the stages
     after them (drafting, which checks each chapter against the bible) walk the same chapters a non-fiction book has.
-    The plan grows as those stages are built.
+    The editing passes, assembly and the audit are not built, so the plan ends at the draft.
     """
 
+    DRAFT_STAGE = "draft"
+    DRAFT: ClassVar[DraftRecipe] = DraftRecipe(
+        ("brief", "story_bible", "beats", "outline"),
+        (("The author's brief", "brief"), ("The story bible", "story_bible")),
+        (("The whole outline", "outline"), ("The beats of the whole novel", "beats")),
+        "novel_context_pack",
+        "novel_summary",
+        "Write chapter {number} of {count} now, following the beats above, in about {words} words. "
+        "Begin with the chapter's heading line. Keep to the story bible's names, ages, places and order "
+        "of events. Content limits: violence {violence}, heat {heat}; never go above them, and not given "
+        "means mild violence and sweet heat.",
+    )
     RECIPES: ClassVar[tuple[StageRecipe, ...]] = (
         StageRecipe("brief", "novel_brief", (), 1_500),
         StageRecipe("story_bible", "novel_story_bible", ("brief",), 4_000),
@@ -27,7 +40,8 @@ class NovelRecipes(StageRecipesInterface):
 
     def plan(self) -> StagePlan:
         """The stages of a novel run, in order."""
-        return StagePlan(BookKind.NOVEL, tuple(recipe.stage for recipe in self.RECIPES))
+        stages = (*(recipe.stage for recipe in self.RECIPES), self.DRAFT_STAGE)
+        return StagePlan(BookKind.NOVEL, stages)
 
     def recipe(self, stage: str) -> StageRecipe:
         """The recipe for the stage, or a ValueError when a novel run has none for it."""
