@@ -127,6 +127,7 @@ def test_the_published_schema_lists_both_routes_and_the_summary_fields(
     assert sorted(schema["components"]["schemas"]["RunSummaryV1"]["properties"]) == [
         "artifacts",
         "budget",
+        "consent_requested_micro_usd",
         "issues",
         "kind",
         "run_id",

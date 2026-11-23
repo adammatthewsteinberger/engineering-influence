@@ -33,6 +33,8 @@ class RunSummaryV1(RunSummaryV1Interface, BaseModel):
     budget: RunBudgetV1
     issues: tuple[RunIssueV1, ...]
     artifacts: tuple[str, ...]
+    # How much more the run asks for, while it waits for consent; None at any other time.
+    consent_requested_micro_usd: int | None = None
 
     @classmethod
     def from_run(cls, run: BookRun, artifacts: list[str]) -> "RunSummaryV1":
@@ -59,4 +61,7 @@ class RunSummaryV1(RunSummaryV1Interface, BaseModel):
                 for issue in run.issues
             ),
             artifacts=tuple(artifacts),
+            consent_requested_micro_usd=(
+                None if run.consent is None else run.consent.requested_micro_usd
+            ),
         )
