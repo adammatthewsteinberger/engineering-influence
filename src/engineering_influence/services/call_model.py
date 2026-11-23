@@ -6,6 +6,8 @@ import json
 from typing import Any
 
 from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.errors.budget_exceeded_error import BudgetExceededError
+from engineering_influence.errors.spend_consent_needed_error import SpendConsentNeededError
 from engineering_influence.interfaces.journal_interface import JournalInterface
 from engineering_influence.interfaces.model_interface import ModelInterface
 from engineering_influence.models.journal_entry import JournalEntry
@@ -64,7 +66,10 @@ class CallModel(CallModelInterface):
         reserved = descriptor.worst_case_micro_usd(
             self._model.count_tokens(request), request.max_output_tokens
         )
-        guard.reserve(reserved)
+        try:
+            guard.reserve(reserved)
+        except BudgetExceededError as error:
+            raise SpendConsentNeededError(reserved) from error
         try:
             response = self._model.complete(request)
         except BaseException:

@@ -21,6 +21,7 @@ from engineering_influence.services.cancel_run import CancelRun
 from engineering_influence.services.create_run import CreateRun
 from engineering_influence.services.interfaces.cancel_run_interface import CancelRunInterface
 from engineering_influence.services.interfaces.create_run_interface import CreateRunInterface
+from engineering_influence.services.resolve_spend_consent import ResolveSpendConsent
 from engineering_influence.services.run_progress import RunProgress
 
 BRIEF_TOML = 'kind = "nonfiction"\nidea = "Windowsill herbs"\nbudget_micro_usd = 5000000\n'
@@ -64,6 +65,7 @@ def app(
         canceller or Canceller(),
         BriefReader(),
         RunProgress(InMemoryRunRepository()),
+        ResolveSpendConsent(InMemoryRunRepository(), InMemoryQueue()),
     )
 
 
@@ -143,6 +145,7 @@ def test_a_prompt_is_read_the_same_way_as_a_brief_file_would_be() -> None:
         CancelRun(acp_repository),
         BriefReader(),
         RunProgress(acp_repository),
+        ResolveSpendConsent(acp_repository, InMemoryQueue()),
     )
     session_id = new_session(agent)
     agent.handle(request("session/prompt", sessionId=session_id, prompt=prompt(BRIEF_TOML)))

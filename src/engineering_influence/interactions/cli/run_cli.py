@@ -18,6 +18,9 @@ from engineering_influence.services.interfaces.cancel_run_interface import Cance
 from engineering_influence.services.interfaces.create_run_interface import CreateRunInterface
 from engineering_influence.services.interfaces.export_run_interface import ExportRunInterface
 from engineering_influence.services.interfaces.list_runs_interface import ListRunsInterface
+from engineering_influence.services.interfaces.resolve_spend_consent_interface import (
+    ResolveSpendConsentInterface,
+)
 from engineering_influence.services.interfaces.resume_run_interface import ResumeRunInterface
 
 REFUSALS = frozenset(
@@ -28,6 +31,7 @@ REFUSALS = frozenset(
         "RUN_KIND_UNSUPPORTED",
         "RUN_FINISHED",
         "RUN_CHANGED",
+        "CONSENT_NOT_PENDING",
         "RUN_HAS_NO_ARTIFACTS",
         "EXPORT_TARGET_NOT_EMPTY",
     }
@@ -52,6 +56,7 @@ class RunCli(RunCliInterface):
         create: Callable[[], CreateRunInterface],
         listing: Callable[[], ListRunsInterface],
         briefs: BriefReaderInterface,
+        resolver: Callable[[], ResolveSpendConsentInterface],
     ) -> None:
         self._resume = resume
         self._cancel = cancel
@@ -60,6 +65,7 @@ class RunCli(RunCliInterface):
         self._create = create
         self._listing = listing
         self._briefs = briefs
+        self._resolver = resolver
 
     def register(self, subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]") -> None:
         """Add ``run status``, ``run resume``, ``run cancel`` and ``run export``."""
@@ -81,6 +87,14 @@ class RunCli(RunCliInterface):
         )
         create.add_argument("brief", type=Path, help="the brief, as TOML")
         commands.add_parser("runs", help="list the saved runs, one line each")
+        grant = commands.add_parser(
+            "grant",
+            help="give a run the budget it asked for, or --micro-usd for a parked run, and continue it",
+        )
+        grant.add_argument("run_id")
+        grant.add_argument("--micro-usd", type=int, default=None, help="how much more to allow")
+        deny = commands.add_parser("deny", help="refuse a run's request for more budget; it parks")
+        deny.add_argument("run_id")
 
     def _brief(self, path: Path) -> BookBrief:
         """Read a brief file and check it; a file that cannot be read is refused with one line."""
@@ -115,12 +129,28 @@ class RunCli(RunCliInterface):
                 )
             elif arguments.run_command == "runs":
                 for item in self._listing().runs():
-                    print(f"{item.run_id}  {item.status.value:<18} {item.stage}")
+                    waiting = (
+                        f"  needs {item.consent.requested_micro_usd} micro-USD more"
+                        if item.consent is not None
+                        else ""
+                    )
+                    print(f"{item.run_id}  {item.status.value:<18} {item.stage}{waiting}")
             elif arguments.run_command == "export":
                 done = self._export().export(arguments.run_id, arguments.directory)
                 print(
                     f"exported {done.files} files of run {arguments.run_id} to {arguments.directory}: "
                     f"{done.book_files} are the book (books/ and src/), the rest are under run/"
+                )
+            elif arguments.run_command == "grant":
+                granted = self._resolver().grant(arguments.run_id, arguments.micro_usd)
+                print(
+                    f"run {granted.run_id} is {granted.status.value} with a cap of "
+                    f"{granted.budget.cap} micro-USD; its stage is queued"
+                )
+            elif arguments.run_command == "deny":
+                denied = self._resolver().deny(arguments.run_id)
+                print(
+                    f"run {denied.run_id} is {denied.status.value}; grant it more budget to continue"
                 )
             else:
                 cancelled = self._cancel().cancel(arguments.run_id)

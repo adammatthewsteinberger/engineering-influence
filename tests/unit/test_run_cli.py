@@ -20,6 +20,7 @@ from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget import Budget
 from engineering_influence.models.export_summary import ExportSummary
 from engineering_influence.models.run_status import RunStatus
+from engineering_influence.models.spend_request import SpendRequest
 from engineering_influence.models.stage_plan import StagePlan
 from engineering_influence.repositories.sqlmodel_artifact_store import SqlModelArtifactStore
 from engineering_influence.repositories.sqlmodel_run_repository import SqlModelRunRepository
@@ -29,6 +30,9 @@ from engineering_influence.services.interfaces.cancel_run_interface import Cance
 from engineering_influence.services.interfaces.create_run_interface import CreateRunInterface
 from engineering_influence.services.interfaces.export_run_interface import ExportRunInterface
 from engineering_influence.services.interfaces.list_runs_interface import ListRunsInterface
+from engineering_influence.services.interfaces.resolve_spend_consent_interface import (
+    ResolveSpendConsentInterface,
+)
 from engineering_influence.services.interfaces.resume_run_interface import ResumeRunInterface
 
 
@@ -108,6 +112,24 @@ class Lister(ListRunsInterface):
         return self._runs
 
 
+class Resolver(ResolveSpendConsentInterface):
+    def __init__(self, failure: BaseException | None = None) -> None:
+        self.failure = failure
+        self.seen: list[tuple[str, str, int | None]] = []
+
+    def grant(self, run_id: str, micro_usd: int | None = None) -> BookRun:
+        if self.failure is not None:
+            raise self.failure
+        self.seen.append(("grant", run_id, micro_usd))
+        return a_run(RunStatus.RUNNING)
+
+    def deny(self, run_id: str) -> BookRun:
+        if self.failure is not None:
+            raise self.failure
+        self.seen.append(("deny", run_id, None))
+        return a_run(RunStatus.PARKED_CAPACITY)
+
+
 def cli(
     resumer: Resumer | None = None,
     canceller: Canceller | None = None,
@@ -115,6 +137,7 @@ def cli(
     exporter: Exporter | None = None,
     creator: Creator | None = None,
     lister: Lister | None = None,
+    resolver: Resolver | None = None,
 ) -> RunCli:
     return RunCli(
         lambda: resumer or Resumer(),
@@ -124,6 +147,7 @@ def cli(
         lambda: creator or Creator(),
         lambda: lister or Lister(),
         BriefReader(),
+        lambda: resolver or Resolver(),
     )
 
 
@@ -212,6 +236,7 @@ def test_a_missing_runtime_extra_says_how_to_install_it(capsys: pytest.CaptureFi
             lambda: Creator(),
             lambda: Lister(),
             BriefReader(),
+            lambda: Resolver(),
         ).run(resume_args())
         == 1
     )
@@ -546,3 +571,45 @@ def test_the_real_command_lists_the_saved_runs_from_the_database(
 
     assert CliRuntime().build().run(["run", "runs"]) == 0
     assert capsys.readouterr().out.split() == ["run-1", "parked_capacity", "outline"]
+
+
+def test_grant_queues_the_run_and_reports_its_new_cap(capsys: pytest.CaptureFixture[str]) -> None:
+    resolver = Resolver()
+    args = argparse.Namespace(run_command="grant", run_id="run-1", micro_usd=None)
+    assert cli(resolver=resolver).run(args) == 0
+    assert resolver.seen == [("grant", "run-1", None)]
+    assert "is running with a cap of 1000 micro-USD; its stage is queued" in capsys.readouterr().out
+
+
+def test_grant_passes_the_amount_a_parked_run_continues_with() -> None:
+    resolver = Resolver()
+    args = argparse.Namespace(run_command="grant", run_id="run-1", micro_usd=500)
+    assert cli(resolver=resolver).run(args) == 0
+    assert resolver.seen == [("grant", "run-1", 500)]
+
+
+def test_deny_parks_the_run_and_says_how_to_continue(capsys: pytest.CaptureFixture[str]) -> None:
+    resolver = Resolver()
+    assert cli(resolver=resolver).run(argparse.Namespace(run_command="deny", run_id="run-1")) == 0
+    assert resolver.seen == [("deny", "run-1", None)]
+    assert "is parked_capacity; grant it more budget to continue" in capsys.readouterr().out
+
+
+def test_a_refused_grant_is_one_line_and_exit_one(capsys: pytest.CaptureFixture[str]) -> None:
+    failure = ApplicationError(
+        code="CONSENT_NOT_PENDING",
+        message="run 'run-1' is not waiting for consent",
+        http_status=409,
+    )
+    args = argparse.Namespace(run_command="grant", run_id="run-1", micro_usd=None)
+    assert cli(resolver=Resolver(failure)).run(args) == 1
+    assert "is not waiting for consent" in capsys.readouterr().err
+
+
+def test_runs_says_how_much_a_run_waiting_for_consent_needs(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    waiting = a_run(RunStatus.RUNNING).await_consent(SpendRequest(700, "outline"))
+    assert cli(lister=Lister((waiting,))).run(argparse.Namespace(run_command="runs")) == 0
+    out = capsys.readouterr().out
+    assert "awaiting_consent" in out and "needs 700 micro-USD more" in out

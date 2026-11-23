@@ -7,7 +7,6 @@ from collections.abc import Mapping
 
 import pytest
 
-from engineering_influence.errors.budget_exceeded_error import BudgetExceededError
 from engineering_influence.infrastructure.in_memory_artifact_store import InMemoryArtifactStore
 from engineering_influence.infrastructure.in_memory_journal import InMemoryJournal
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
@@ -404,12 +403,14 @@ def test_a_refused_or_cut_off_answer_fails_the_run_and_builds_nothing_on_it(stop
     assert run.budget.spent > 0
 
 
-def test_a_cap_too_small_for_the_worst_case_stops_the_run_before_any_call() -> None:
+def test_a_cap_too_small_for_the_worst_case_waits_for_consent_before_any_call() -> None:
     world = World(Model(*GOOD), cap=10)
-    assert world.advance("brief") is AdvanceOutcome.FAILED
+    assert world.advance("brief") is AdvanceOutcome.AWAITING_CONSENT
     assert world.model.requests == []
     assert world.run().budget.spent == 0
-    assert BudgetExceededError.__name__ in world.run().issues[0].detail
+    assert world.run().status.value == "awaiting_consent"
+    assert world.run().consent is not None and world.run().consent.stage == "brief"
+    assert world.run().issues == ()
 
 
 def test_a_page_that_steers_the_model_to_an_address_with_the_brief_in_it_is_not_followed() -> None:

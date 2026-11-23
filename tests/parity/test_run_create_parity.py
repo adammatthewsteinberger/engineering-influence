@@ -22,6 +22,7 @@ from engineering_influence.models.run_status import RunStatus
 from engineering_influence.services.brief_reader import BriefReader
 from engineering_influence.services.cancel_run import CancelRun
 from engineering_influence.services.create_run import CreateRun
+from engineering_influence.services.resolve_spend_consent import ResolveSpendConsent
 from engineering_influence.services.run_progress import RunProgress
 from engineering_influence.services.start_pipeline import StartPipeline
 
@@ -109,7 +110,13 @@ def test_sdk_starts_the_same_run(api_guard: ApiGuard, api_key: str) -> None:
 
 def test_acp_prompt_starts_the_same_run() -> None:
     repo, queue = fresh()
-    agent = AcpApplication(creator(repo, queue), CancelRun(repo), BriefReader(), RunProgress(repo))
+    agent = AcpApplication(
+        creator(repo, queue),
+        CancelRun(repo),
+        BriefReader(),
+        RunProgress(repo),
+        ResolveSpendConsent(repo, queue),
+    )
     session = agent.handle(
         {"jsonrpc": "2.0", "id": 1, "method": "session/new", "params": {"cwd": "/work"}}
     )
@@ -130,7 +137,7 @@ def test_the_command_line_starts_the_same_run(tmp_path: Path) -> None:
     brief = tmp_path / "brief.toml"
     brief.write_text(BRIEF_TOML, encoding="utf-8")
     cli = RunCli(
-        unused, unused, unused, unused, lambda: creator(repo, queue), unused, BriefReader()
+        unused, unused, unused, unused, lambda: creator(repo, queue), unused, BriefReader(), unused
     )
     assert cli.run(argparse.Namespace(run_command="create", brief=brief)) == 0
     assert summary(repo) == expected()

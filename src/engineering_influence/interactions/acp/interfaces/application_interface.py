@@ -20,8 +20,8 @@ class AcpApplicationInterface(ABC):
         """The messages to send back for one incoming message: responses and notifications, in order."""
 
     @abstractmethod
-    def progress_notices(self) -> list[dict[str, Any]]:
-        """Notices for the runs whose status or stage changed since they were last reported."""
+    def follow_messages(self) -> list[dict[str, Any]]:
+        """Notices for runs whose status or stage changed, and permission requests for runs that need consent."""
 
     @abstractmethod
     def serve(self, reader: TextIO, writer: TextIO, poll_seconds: float = 1.0) -> None:

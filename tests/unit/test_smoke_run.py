@@ -204,14 +204,15 @@ def test_a_stage_the_provider_fails_once_is_retried_and_the_run_still_completes(
     assert (outline.attempts, outline.outcome) == (2, "advanced")
 
 
-def test_a_cap_too_small_for_the_first_call_stops_the_run_with_nothing_spent(
+def test_a_cap_too_small_for_the_first_call_waits_for_consent_with_nothing_spent(
     tmp_path: Path,
 ) -> None:
     report = run(tmp_path, cap=1)
-    assert not report.completed and report.status == "failed"
-    assert [(row.stage, row.outcome) for row in report.rows] == [("brief", "failed")]
+    assert not report.completed and report.status == "awaiting_consent"
+    # The first stage waits; the stages after it never start and are reported as skipped.
+    assert (report.rows[0].stage, report.rows[0].outcome) == ("brief", "awaiting_consent")
+    assert all(row.outcome == "skipped" for row in report.rows[1:])
     assert report.spent_micro_usd == 0
-    assert any("budget" in issue.lower() or "cap" in issue.lower() for issue in report.issues)
 
 
 def test_the_report_and_every_artifact_are_written_to_a_new_folder(tmp_path: Path) -> None:

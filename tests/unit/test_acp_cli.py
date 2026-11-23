@@ -7,6 +7,7 @@ import json
 import pytest
 
 from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
 from engineering_influence.infrastructure.in_memory_run_repository import InMemoryRunRepository
 from engineering_influence.interactions.acp.application import AcpApplication
 from engineering_influence.interactions.acp.interfaces.application_interface import (
@@ -18,6 +19,7 @@ from engineering_influence.models.book_run import BookRun
 from engineering_influence.services.brief_reader import BriefReader
 from engineering_influence.services.interfaces.cancel_run_interface import CancelRunInterface
 from engineering_influence.services.interfaces.create_run_interface import CreateRunInterface
+from engineering_influence.services.resolve_spend_consent import ResolveSpendConsent
 from engineering_influence.services.run_progress import RunProgress
 
 
@@ -32,7 +34,13 @@ class NoCancel(CancelRunInterface):
 
 
 def application() -> AcpApplicationInterface:
-    return AcpApplication(NoRuns(), NoCancel(), BriefReader(), RunProgress(InMemoryRunRepository()))
+    return AcpApplication(
+        NoRuns(),
+        NoCancel(),
+        BriefReader(),
+        RunProgress(InMemoryRunRepository()),
+        ResolveSpendConsent(InMemoryRunRepository(), InMemoryQueue()),
+    )
 
 
 def cli(

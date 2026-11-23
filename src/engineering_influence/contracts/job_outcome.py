@@ -14,6 +14,7 @@ class JobOutcome(StrEnum):
     RUN_COMPLETED = "run_completed"
     RUN_RETRYING = "run_retrying"
     RUN_PARKED = "run_parked"
+    RUN_AWAITING_CONSENT = "run_awaiting_consent"
     RUN_FAILED = "run_failed"
     RUN_SKIPPED = "run_skipped"
     RUN_REPAIRED = "run_repaired"

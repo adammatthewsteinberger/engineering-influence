@@ -11,6 +11,7 @@ class AdvanceOutcome(StrEnum):
     COMPLETED = "completed"
     RETRYING = "retrying"
     PARKED = "parked"
+    AWAITING_CONSENT = "awaiting_consent"
     FAILED = "failed"
     SKIPPED = "skipped"
     REPAIRED = "repaired"

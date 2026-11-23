@@ -15,6 +15,7 @@ from engineering_influence.services.brief_reader import BriefReader
 from engineering_influence.services.cancel_run import CancelRun
 from engineering_influence.services.create_run import CreateRun
 from engineering_influence.services.interfaces.run_progress_interface import RunProgressInterface
+from engineering_influence.services.resolve_spend_consent import ResolveSpendConsent
 from engineering_influence.services.run_progress import RunProgress
 
 BRIEF_TOML = 'kind = "nonfiction"\nidea = "Windowsill herbs"\nbudget_micro_usd = 5000000\n'
@@ -34,6 +35,7 @@ def stack(
         CancelRun(repo),
         BriefReader(),
         progress or RunProgress(repo),
+        ResolveSpendConsent(repo, InMemoryQueue()),
     )
 
 
@@ -66,7 +68,7 @@ def test_nothing_is_reported_while_the_run_is_unchanged() -> None:
     repo = InMemoryRunRepository()
     app = stack(repo)
     started(app)
-    assert app.progress_notices() == []
+    assert app.follow_messages() == []
 
 
 def test_a_change_is_reported_once_with_the_session_it_belongs_to() -> None:
@@ -76,11 +78,11 @@ def test_a_change_is_reported_once_with_the_session_it_belongs_to() -> None:
     running = repo.get("run-1").start()
     repo.save(running)
 
-    notices = app.progress_notices()
+    notices = app.follow_messages()
     assert texts(notices) == [says(running)]
     assert notices[0]["method"] == "session/update"
     assert notices[0]["params"]["sessionId"] == session_id
-    assert app.progress_notices() == []
+    assert app.follow_messages() == []
 
 
 def test_a_stage_change_is_reported_as_well_as_a_status_change() -> None:
@@ -89,11 +91,11 @@ def test_a_stage_change_is_reported_as_well_as_a_status_change() -> None:
     started(app)
     first = repo.get("run-1").start()
     repo.save(first)
-    app.progress_notices()
+    app.follow_messages()
 
     advanced = first.advance()
     repo.save(advanced)
-    assert texts(app.progress_notices()) == [says(advanced)]
+    assert texts(app.follow_messages()) == [says(advanced)]
 
 
 def test_a_parked_run_is_still_followed_and_a_failed_run_is_reported_once_then_dropped() -> None:
@@ -102,15 +104,15 @@ def test_a_parked_run_is_still_followed_and_a_failed_run_is_reported_once_then_d
     started(app)
     parked = repo.get("run-1").start().park()
     repo.save(parked)
-    assert texts(app.progress_notices()) == [says(parked)]
+    assert texts(app.follow_messages()) == [says(parked)]
 
     failed = parked.resume().fail()
     repo.save(failed)
-    assert texts(app.progress_notices()) == [says(failed)]
+    assert texts(app.follow_messages()) == [says(failed)]
 
     # Dropped: a later saved state is no longer reported.
     repo.save(parked)
-    assert app.progress_notices() == []
+    assert app.follow_messages() == []
 
 
 def test_a_cancelled_run_is_reported_when_the_session_cancels_it() -> None:
@@ -124,7 +126,7 @@ def test_a_cancelled_run_is_reported_when_the_session_cancels_it() -> None:
         == []
     )
 
-    notices = app.progress_notices()
+    notices = app.follow_messages()
     assert texts(notices) == [says(repo.get("run-1"))]
     assert "cancelled" in texts(notices)[0]
 
@@ -132,7 +134,7 @@ def test_a_cancelled_run_is_reported_when_the_session_cancels_it() -> None:
 def test_a_run_the_store_does_not_have_is_skipped_and_still_followed() -> None:
     app = stack(InMemoryRunRepository(), progress=RunProgress(InMemoryRunRepository()))
     started(app)
-    assert app.progress_notices() == []
+    assert app.follow_messages() == []
 
 
 def test_serve_writes_a_change_that_happened_before_it_started() -> None:
