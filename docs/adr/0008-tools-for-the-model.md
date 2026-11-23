@@ -269,3 +269,13 @@ Recorded on 2026-11-22 while building the second part of slice 6 ([PLUGINS.md](.
 - Limits, fixed in the code: a section 20,000 characters (the runner's result limit), 64 sections and 200,000 characters a skill, a skill file 256 KiB.
 - The skill guidance template is version 2, because the frame gained the reference note.
 
+## Amendments from M6.5: Claude Code plugin folder import (2026-11-22)
+
+- **`ei plugins import FOLDER`** reads a plugin folder's `.claude-plugin/plugin.json`, `.mcp.json` and `skills/*/SKILL.md`, and writes
+  an ordinary bundle for review. It opens only those files, follows no link, runs nothing, and never replaces a file. The bytes are
+  parsed again before they are written.
+- **Nothing widens.** Skills become reference skills enabled for no stage. A server is kept only when the tool lock's own rules accept
+  it (an absolute, non-launcher command, or an https address with no secret in it); `${...}` placeholders are not expanded; environment
+  values and headers are not copied, only environment *names* and a `Bearer ${NAME}` token as `bearer_env`. Commands, agents, hooks,
+  output styles, monitors and `.lsp.json` are named and set aside, never read or run. Every skipped piece is printed with its reason.
+- Decision 9 is unchanged: importing, like installing, starts nothing, contacts nothing, grants nothing and enables nothing.

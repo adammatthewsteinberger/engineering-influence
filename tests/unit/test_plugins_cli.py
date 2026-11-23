@@ -17,7 +17,9 @@ from engineering_influence.interfaces.skill_lock_store_interface import SkillLoc
 from engineering_influence.models.plugin import Plugin
 from engineering_influence.models.plugin_addition import PluginAddition
 from engineering_influence.models.plugin_bundle import PluginBundle
+from engineering_influence.models.plugin_conversion import PluginConversion
 from engineering_influence.models.plugin_download import PluginDownload
+from engineering_influence.models.plugin_import_result import PluginImportResult
 from engineering_influence.models.plugin_index import PluginIndex
 from engineering_influence.models.plugin_index_entry import PluginIndexEntry
 from engineering_influence.models.plugin_lock import PluginLock
@@ -27,6 +29,9 @@ from engineering_influence.models.plugin_server import PluginServer
 from engineering_influence.models.skill import Skill
 from engineering_influence.models.skill_lock import SkillLock
 from engineering_influence.models.skill_lock_entry import SkillLockEntry
+from engineering_influence.services.interfaces.plugin_importer_interface import (
+    PluginImporterInterface,
+)
 from engineering_influence.services.interfaces.plugin_installer_interface import (
     PluginInstallerInterface,
 )
@@ -127,6 +132,25 @@ class Marketplace(PluginMarketplaceInterface):
         return PluginDownload(entry, PluginBundle(plugin(), A), folder / f"{name}.toml")
 
 
+class Importer(PluginImporterInterface):
+    def __init__(
+        self,
+        fail: Exception | None = None,
+        conversion: PluginConversion | None = None,
+    ) -> None:
+        self.fail = fail
+        self.conversion = conversion or PluginConversion(plugin())
+        self.calls: list[tuple[object, ...]] = []
+
+    def import_plugin(
+        self, source: Path, name: str | None, version: int, target: Path | None
+    ) -> PluginImportResult:
+        self.calls.append((source, name, version, target))
+        if self.fail:
+            raise self.fail
+        return PluginImportResult(self.conversion, str(target or "research_pack.toml"))
+
+
 class Verifier(PluginLockVerifierInterface):
     def __init__(self, *problems: str) -> None:
         self.found = problems
@@ -175,6 +199,7 @@ def cli(
     store: Store | None = None,
     skills: SkillStore | None = None,
     installer: Installer | None = None,
+    importer: Importer | None = None,
     verifier: Verifier | None = None,
     environment: dict[str, str] | None = None,
     market: Marketplace | None = None,
@@ -187,7 +212,13 @@ def cli(
     )
     made[1].order = made[0].order
     return PluginsCli(
-        made[2], made[3], market or Marketplace(), made[0], made[1], environment or {}
+        made[2],
+        importer or Importer(),
+        made[3],
+        market or Marketplace(),
+        made[0],
+        made[1],
+        environment or {},
     ), *made
 
 
@@ -542,3 +573,65 @@ def test_a_marketplace_error_is_a_setup_error_for_both_commands(
     assert "error: not what the index promised" in capsys.readouterr().err
     assert run(plugins, "fetch", "/market/index.toml", "research_pack") == 2
     assert "error: not what the index promised" in capsys.readouterr().err
+
+
+# ---------------------------------------------------------------------------------- import
+def test_import_passes_everything_on_and_says_what_it_wrote_and_what_to_do_next(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    importer = Importer()
+    plugins, store, skills, _, _ = cli(importer=importer)
+    code = run(
+        plugins,
+        "import",
+        "downloads/research-pack",
+        "--name",
+        "mine",
+        "--version",
+        "3",
+        "--out",
+        "out/mine.toml",
+    )
+    assert code == 0
+    assert importer.calls == [(Path("downloads/research-pack"), "mine", 3, Path("out/mine.toml"))]
+    assert store.saved == [] and skills.saved == [] and store.loaded == []
+    out = capsys.readouterr().out
+    assert "wrote out/mine.toml: research_pack@1" in out
+    assert "  skill plain_style: 0 reference sections, 0 characters" in out
+    assert "  server docs: address" in out and "  server files: command" in out
+    assert "read the file before you install it" in out
+    assert "then: ei plugins show out/mine.toml" in out
+    assert "skipped" not in out and "note:" not in out and "set aside" not in out
+
+
+def test_import_defaults_are_no_name_version_one_and_the_default_file() -> None:
+    importer = Importer()
+    assert run(cli(importer=importer)[0], "import", "folder") == 0
+    assert importer.calls == [(Path("folder"), None, 1, None)]
+
+
+def test_import_says_what_it_skipped_noted_and_set_aside_and_shows_it_safely(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    conversion = PluginConversion(
+        plugin(),
+        (("server a\x1b[31m", "no \x07launcher"),),
+        ("server b: env not copied",),
+        ("hooks: nothing runs",),
+    )
+    assert run(cli(importer=Importer(conversion=conversion))[0], "import", "folder") == 0
+    out = capsys.readouterr().out
+    assert "  skipped server a [31m: no launcher" in out
+    assert "  note: server b: env not copied" in out
+    assert "  set aside: hooks: nothing runs" in out
+    assert "\x1b" not in out and "\x07" not in out
+
+
+def test_import_that_cannot_be_done_exits_2_with_one_line(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    failure = ApplicationError(
+        "PLUGIN_IMPORT_EMPTY", "nothing in the folder could be imported", 422
+    )
+    assert run(cli(importer=Importer(failure))[0], "import", "folder") == 2
+    assert capsys.readouterr().err.strip() == "error: nothing in the folder could be imported"
