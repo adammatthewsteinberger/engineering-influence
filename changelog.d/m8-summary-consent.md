@@ -1,0 +1,1 @@
+The run summary (`ei run status`, the run API) now says how much a run waiting for consent asks for, in `consent_requested_micro_usd`; it is null at any other time. The field is additive: existing readers are unaffected.

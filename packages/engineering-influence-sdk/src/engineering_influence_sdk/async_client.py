@@ -56,6 +56,20 @@ class AsyncEngineeringInfluenceClient(AsyncEngineeringInfluenceClientInterface):
         response.raise_for_status()
         return cast(dict[str, Any], response.json())
 
+    async def grant_run(self, run_id: str, micro_usd: int | None = None) -> dict[str, Any]:
+        """Give a run more budget and continue it, asynchronously."""
+        response = await self._client.post(
+            f"/v1/runs/{run_id}/grant", json={"micro_usd": micro_usd}
+        )
+        response.raise_for_status()
+        return cast(dict[str, Any], response.json())
+
+    async def deny_run(self, run_id: str) -> dict[str, Any]:
+        """Refuse a run's request for more budget, asynchronously."""
+        response = await self._client.post(f"/v1/runs/{run_id}/deny")
+        response.raise_for_status()
+        return cast(dict[str, Any], response.json())
+
     async def cancel_run(self, run_id: str) -> dict[str, Any]:
         """Stop a run for good, asynchronously."""
         response = await self._client.post(f"/v1/runs/{run_id}/cancel")

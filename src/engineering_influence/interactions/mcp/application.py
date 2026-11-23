@@ -85,6 +85,18 @@ class McpApplication(McpApplicationInterface):
                 """Stop a run for good."""
                 return RunSummaryV1.from_run(manager.cancel(run_id), []).model_dump(mode="json")
 
+            @server.tool()
+            def grant_run(run_id: str, micro_usd: int | None = None) -> dict[str, Any]:
+                """Give a run more budget and continue it: the amount it asked for, or micro_usd for a parked run."""
+                return RunSummaryV1.from_run(manager.grant(run_id, micro_usd), []).model_dump(
+                    mode="json"
+                )
+
+            @server.tool()
+            def deny_run(run_id: str) -> dict[str, Any]:
+                """Refuse a run's request for more budget; the run parks."""
+                return RunSummaryV1.from_run(manager.deny(run_id), []).model_dump(mode="json")
+
         return server
 
     async def run_stdio(self) -> None:

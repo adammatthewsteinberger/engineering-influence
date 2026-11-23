@@ -73,6 +73,7 @@ def test_a_summary_serialises_to_plain_json() -> None:
     assert sorted(document) == [
         "artifacts",
         "budget",
+        "consent_requested_micro_usd",
         "issues",
         "kind",
         "run_id",
@@ -99,3 +100,11 @@ def test_a_summary_of_another_version_is_refused() -> None:
     document = RunSummaryV1.from_run(a_run(), []).model_dump(mode="json")
     with pytest.raises(ValidationError):
         RunSummaryV1.model_validate({**document, "schema_version": 2})
+
+
+def test_a_summary_says_how_much_a_run_waiting_for_consent_asks_for() -> None:
+    from engineering_influence.models.spend_request import SpendRequest
+
+    waiting = a_run().await_consent(SpendRequest(700, "brief"))
+    assert RunSummaryV1.from_run(waiting, []).consent_requested_micro_usd == 700
+    assert RunSummaryV1.from_run(a_run(), []).consent_requested_micro_usd is None

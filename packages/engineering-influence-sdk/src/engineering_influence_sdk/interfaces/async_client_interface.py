@@ -24,6 +24,14 @@ class AsyncEngineeringInfluenceClientInterface(ABC):
         """Un-park a parked run and queue its current stage, asynchronously."""
 
     @abstractmethod
+    async def grant_run(self, run_id: str, micro_usd: int | None = None) -> dict[str, Any]:
+        """Give a run more budget and continue it, asynchronously."""
+
+    @abstractmethod
+    async def deny_run(self, run_id: str) -> dict[str, Any]:
+        """Refuse a run's request for more budget, asynchronously."""
+
+    @abstractmethod
     async def cancel_run(self, run_id: str) -> dict[str, Any]:
         """Stop a run for good, asynchronously."""
 

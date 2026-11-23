@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class RunManagementInterface(ABC):
-    """Lists, resumes and cancels book runs for the transports that reach them over the network."""
+    """Lists, resumes, cancels, grants and denies book runs."""
 
     __slots__ = ()
 
@@ -26,3 +26,11 @@ class RunManagementInterface(ABC):
     @abstractmethod
     def cancel(self, run_id: str) -> BookRun:
         """Stop a run for good."""
+
+    @abstractmethod
+    def grant(self, run_id: str, micro_usd: int | None = None) -> BookRun:
+        """Give a run more budget and continue it."""
+
+    @abstractmethod
+    def deny(self, run_id: str) -> BookRun:
+        """Refuse a run's request for more budget; it parks."""
