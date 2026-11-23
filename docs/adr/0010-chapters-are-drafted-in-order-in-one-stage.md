@@ -139,3 +139,21 @@ outline), and `assemble` reads its result.
   config, so no stage writes them. Pricing and the cover are still the author's to supply.
 - **The title is the listing's**, which is the title the brief asked for when it gave one, and the config's file name is its slug.
 
+## Amendment: the audit stage (2026-11-22)
+
+A non-fiction plan now ends with `audit`, which makes no model call. `AuditStageExecutor` reads the `manuscript/` files, gives them to a
+`ManuscriptAuditorInterface` as a project, and stores what comes back under `audit/` (`manuscript-audit.json`, `release-readiness.json`,
+`publication-report.json`) with a summary in `audit.md`.
+
+- **It runs the publishing pipeline's own audit-only gates**, the manuscript audit and the release readiness check, so there is one
+  definition of a book that is ready. They need no TeX toolchain and no cover. `TempProjectManuscriptAuditor` lays the files out as a project in a
+  private temporary folder, runs `PublishPipeline.publish(..., audit_only=True)`, reads the reports back and removes the folder; nothing of
+  the book is left on disk. The publishing libraries are imported only when an audit runs.
+- **Errors stop the run, warnings do not.** The reports are stored first, so a failed book can be read, then the run stops with `AUDIT_FAILED`
+  and every error. A book with no prices passes with a warning for each, because prices are the author's.
+- **Measured, not assumed:** an assembled book passes the real audit. Without an author profile the only extra finding is `missing-author`
+  (a warning); with one, the findings are the missing prices and their date and source. A runtime test runs the real gates on a book
+  that the assemble stage made.
+- **Not done:** the PDF and EPUB build and the cover, which need the TeX toolchain, the cover design settings and cover art that are the
+  author's. They are the next slice.
+

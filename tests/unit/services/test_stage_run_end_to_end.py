@@ -3,6 +3,7 @@
 """A non-fiction run through the real AdvanceRun, CallModel and AskModel, with a scripted model."""
 
 import asyncio
+from collections.abc import Mapping
 
 import pytest
 
@@ -14,6 +15,9 @@ from engineering_influence.infrastructure.in_memory_run_repository import InMemo
 from engineering_influence.infrastructure.prompt_library.toml_prompt_library import (
     TomlPromptLibrary,
 )
+from engineering_influence.interfaces.manuscript_auditor_interface import (
+    ManuscriptAuditorInterface,
+)
 from engineering_influence.interfaces.model_interface import ModelInterface
 from engineering_influence.interfaces.search_provider_interface import SearchProviderInterface
 from engineering_influence.interfaces.source_fetcher_interface import SourceFetcherInterface
@@ -23,6 +27,7 @@ from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget import Budget
 from engineering_influence.models.fetched_page import FetchedPage
+from engineering_influence.models.manuscript_audit import ManuscriptAudit
 from engineering_influence.models.model_availability import ModelAvailability
 from engineering_influence.models.model_request import ModelRequest
 from engineering_influence.models.model_response import ModelResponse
@@ -36,6 +41,7 @@ from engineering_influence.models.tool_loop_limits import ToolLoopLimits
 from engineering_influence.services.advance_run import AdvanceRun
 from engineering_influence.services.ask_model import AskModel
 from engineering_influence.services.assemble_stage_executor import AssembleStageExecutor
+from engineering_influence.services.audit_stage_executor import AuditStageExecutor
 from engineering_influence.services.book_config_writer import BookConfigWriter
 from engineering_influence.services.call_model import CallModel
 from engineering_influence.services.chapter_cleaner import ChapterCleaner
@@ -99,6 +105,19 @@ class Model(ModelInterface):
         return ModelResponse(step[0], ModelUsage(100, 50), "fake-1-snap", step[1], calls)
 
 
+class Auditor(ManuscriptAuditorInterface):
+    """Passes every book, with one warning, and keeps what it was given."""
+
+    def __init__(self) -> None:
+        self.seen: list[tuple[list[str], str]] = []
+
+    def audit(self, files: Mapping[str, bytes], slug: str) -> ManuscriptAudit:
+        self.seen.append((sorted(files), slug))
+        return ManuscriptAudit(
+            True, "pass", (), ("price: no price",), (("release-readiness.json", b"{}"),)
+        )
+
+
 class Search(SearchProviderInterface):
     def search(self, query: str, count: int) -> tuple[SearchHit, ...]:
         return (SearchHit("https://example.test/bees", "All about bees"),)
@@ -123,6 +142,7 @@ class World:
         self.store = InMemoryArtifactStore()
         self.queue = InMemoryQueue()
         self.fetcher = Fetcher()
+        self.auditor = Auditor()
         registry = ToolRegistry((WebSearchTool(Search()), FetchUrlTool(self.fetcher)))
         limits = ToolLoopLimits()
         loop = RunToolLoop(
@@ -163,6 +183,7 @@ class World:
                     BookConfigWriter(),
                     None,
                 ),
+                AuditStageExecutor.STAGE: AuditStageExecutor(self.store, self.auditor),
             },
         )
         self.service = AdvanceRun(
@@ -226,10 +247,12 @@ GOOD = (
 def test_a_run_goes_from_brief_to_draft_and_completes_with_each_answer_stored() -> None:
     world = World(Model(*GOOD))
     outcomes = [world.advance(stage) for stage in RECIPES.plan().stages]
-    assert outcomes == [AdvanceOutcome.ADVANCED] * 6 + [AdvanceOutcome.COMPLETED]
+    assert outcomes == [AdvanceOutcome.ADVANCED] * 7 + [AdvanceOutcome.COMPLETED]
     assert world.run().status is RunStatus.COMPLETED
     assert world.store.names(RUN_ID) == [
         "assemble.md",
+        "audit.md",
+        "audit/release-readiness.json",
         "brief.md",
         "chapter_01.md",
         "chapter_02.md",
@@ -484,3 +507,14 @@ def test_an_outline_the_drafter_cannot_read_fails_the_run_before_any_chapter_is_
     assert world.advance("draft") is AdvanceOutcome.FAILED
     assert len(world.model.requests) == asked
     assert world.run().issues[0].detail.startswith("ApplicationError: ")
+
+
+def test_the_audit_is_given_the_assembled_project_and_its_warnings_do_not_stop_the_run() -> None:
+    world = World(Model(*GOOD))
+    for stage in RECIPES.plan().stages:
+        world.advance(stage)
+    assert world.auditor.seen == [
+        (["books/hive-mind.toml", "src/chapter_01.md", "src/chapter_02.md"], "hive-mind")
+    ]
+    assert "- price: no price" in (world.store.get(RUN_ID, "audit.md") or b"").decode()
+    assert world.run().status is RunStatus.COMPLETED

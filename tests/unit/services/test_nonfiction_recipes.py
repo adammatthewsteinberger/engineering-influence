@@ -32,19 +32,19 @@ def test_the_plan_is_the_recipes_stages_in_order() -> None:
         "metadata",
         "draft",
         "assemble",
+        "audit",
     )
-    assert plan.stages[:-2] == tuple(recipe.stage for recipe in NonfictionRecipes.RECIPES)
+    assert plan.stages[:-3] == tuple(recipe.stage for recipe in NonfictionRecipes.RECIPES)
 
 
-def test_drafting_and_assembly_are_in_the_plan_but_have_no_recipe_because_they_are_not_one_prompt() -> (
-    None
-):
-    assert RECIPES.plan().stages[-2:] == ("draft", "assemble")
-    assert (NonfictionRecipes.DRAFT_STAGE, NonfictionRecipes.ASSEMBLE_STAGE) == (
-        "draft",
-        "assemble",
-    )
-    for stage in ("draft", "assemble"):
+def test_the_stages_that_are_not_one_prompt_are_in_the_plan_and_have_no_recipe() -> None:
+    assert RECIPES.plan().stages[-3:] == ("draft", "assemble", "audit")
+    assert (
+        NonfictionRecipes.DRAFT_STAGE,
+        NonfictionRecipes.ASSEMBLE_STAGE,
+        NonfictionRecipes.AUDIT_STAGE,
+    ) == ("draft", "assemble", "audit")
+    for stage in ("draft", "assemble", "audit"):
         with pytest.raises(ValueError, match=f"no recipe for stage '{stage}'"):
             RECIPES.recipe(stage)
 
