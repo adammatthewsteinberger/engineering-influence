@@ -316,6 +316,6 @@ def test_the_prompt_templates_are_installed_and_load_without_any_extra(
     )
 
     assert result.stdout.strip() == (
-        "['context_pack', 'skill_guidance', 'stage_brief', 'stage_outline', 'stage_positioning', "
-        "'stage_research', 'stage_summary'] context_pack@2"
+        "['context_pack', 'skill_guidance', 'stage_brief', 'stage_metadata', 'stage_outline', "
+        "'stage_positioning', 'stage_research', 'stage_summary'] context_pack@2"
     )

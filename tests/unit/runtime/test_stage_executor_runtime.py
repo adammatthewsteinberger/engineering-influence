@@ -282,21 +282,71 @@ def test_the_draft_stage_is_routed_to_the_drafter_and_writes_every_chapter(
     assert "Chapter 2: The Site" in sent[2] and "the positioning" in sent[2]
 
 
-def test_the_assemble_stage_is_routed_to_the_assembler_and_calls_no_model(tmp_path: Path) -> None:
+LISTING = (
+    "Title: Hive Mind\nSubtitle: A calm guide\nDescription:\n"
+    + " ".join(["Bees are easier to keep than most people think."] * 10)
+    + "\nKeywords:\n"
+    + "".join(f"- keyword {n}\n" for n in range(7))
+    + "Categories:\n- Books > Science & Math\n"
+)
+PROFILE_TOML = (
+    'author = "Ann Author"\npublisher = "Pub House"\nedition = "First Edition"\n'
+    'author_bio = "Ann writes."\nyear = 2031\n'
+)
+
+
+def assemble(tmp_path: Path, **extra: str) -> tuple[InMemoryArtifactStore, list[Any]]:
     outline = "## Chapter 1: The Hive\nPurpose: How a colony works.\nBeats:\n- The queen\n"
     with provider("unused") as (url, seen):
-        rt = runtime(files(tmp_path, url=url))
+        rt = runtime({**files(tmp_path, url=url), **extra})
         store = InMemoryArtifactStore()
         store.put("run-1", "outline.md", outline.encode())
+        store.put("run-1", "metadata.md", LISTING.encode())
         store.put("run-1", "chapter_01.md", b"Chapter 1: The Hive\n\nBees live in colonies.")
         executor = rt.build(store, InMemoryJournal())
         asyncio.run(executor.execute(run_for("assemble"), 1))
         rt.close()
+    return store, seen.seen
+
+
+def test_the_assemble_stage_is_routed_to_the_assembler_and_calls_no_model(tmp_path: Path) -> None:
+    store, requests = assemble(tmp_path)
     assert store.get("run-1", "manuscript/src/chapter_01.md") == (
         b"# The Hive\n\nBees live in colonies.\n"
     )
-    assert store.get("run-1", "manuscript/books/how-to-keep-bees.toml") is not None
-    assert seen.seen == []
+    config = store.get("run-1", "manuscript/books/hive-mind.toml")
+    assert config is not None and b'title = "Hive Mind"' in config and b"author" not in config
+    assert requests == []
+
+
+def test_the_author_profile_the_environment_names_goes_into_the_config(tmp_path: Path) -> None:
+    profile = tmp_path / "author.toml"
+    profile.write_text(PROFILE_TOML, encoding="utf-8")
+    store, requests = assemble(tmp_path, EI_AUTHOR_PROFILE=str(profile))
+    config = store.get("run-1", "manuscript/books/hive-mind.toml")
+    assert config is not None
+    assert b'author = "Ann Author"' in config and b"year = 2031" in config
+    assert requests == []
+
+
+def test_a_named_author_profile_that_is_missing_or_wrong_stops_the_process_at_start(
+    tmp_path: Path,
+) -> None:
+    missing = refused(
+        runtime({**files(tmp_path), "EI_AUTHOR_PROFILE": str(tmp_path / "none.toml")})
+    )
+    assert (missing.code, missing.http_status) == ("AUTHOR_PROFILE_MISSING", 503)
+    bad = tmp_path / "bad.toml"
+    bad.write_text('author = "A"\n', encoding="utf-8")
+    assert refused(runtime({**files(tmp_path), "EI_AUTHOR_PROFILE": str(bad)})).code == (
+        "AUTHOR_PROFILE_INVALID"
+    )
+
+
+def test_an_author_profile_nobody_named_is_not_looked_for(tmp_path: Path, monkeypatch: Any) -> None:
+    (tmp_path / "author.toml").write_text('author = "A"\n', encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    assert build(runtime(files(tmp_path))) is not None
 
 
 def test_an_anthropic_profile_runs_a_stage_and_sends_its_key_only_as_a_header(

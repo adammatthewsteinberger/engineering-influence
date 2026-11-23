@@ -8,6 +8,7 @@ import unicodedata
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interfaces.artifact_store_interface import ArtifactStoreInterface
 from engineering_influence.interfaces.stage_executor_interface import StageExecutorInterface
+from engineering_influence.models.author_profile import AuthorProfile
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.stage_report import StageReport
 from engineering_influence.services.interfaces.book_config_writer_interface import (
@@ -15,6 +16,9 @@ from engineering_influence.services.interfaces.book_config_writer_interface impo
 )
 from engineering_influence.services.interfaces.chapter_cleaner_interface import (
     ChapterCleanerInterface,
+)
+from engineering_influence.services.interfaces.metadata_parser_interface import (
+    MetadataParserInterface,
 )
 from engineering_influence.services.interfaces.outline_parser_interface import (
     OutlineParserInterface,
@@ -24,58 +28,65 @@ from engineering_influence.services.interfaces.outline_parser_interface import (
 class AssembleStageExecutor(StageExecutorInterface):
     """The ``assemble`` stage: no model call, only the files the typesetter reads.
 
-    From ``outline.md`` and the ``chapter_NN.md`` files it writes, under ``manuscript/``, the project
-    layout ``BookLoader`` expects: ``src/chapter_NN.md`` (each cleaned by ``ChapterCleaner`` and headed
-    with the outline's title) and ``books/<slug>.toml`` (from ``BookConfigWriter``). The slug comes from
-    the brief's title hint, or its idea, as lower-case letters, digits and hyphens. The title is the hint,
-    or the idea's first line cut at 120 characters until a later stage sets a real one, with control
-    characters taken out and runs of space made one (``Untitled`` if nothing is left). Nothing is written
-    until every chapter has been cleaned, so a chapter that is refused leaves no half manuscript behind.
+    From ``outline.md``, ``metadata.md`` and the ``chapter_NN.md`` files it writes, under ``manuscript/``, the
+    project layout ``BookLoader`` expects: ``src/chapter_NN.md`` (each cleaned by ``ChapterCleaner`` and
+    headed with the outline's title) and ``books/<slug>.toml`` (from ``BookConfigWriter``: the listing from the
+    metadata stage and, when ``EI_AUTHOR_PROFILE`` named one, the author's details). The slug is the
+    listing's title as lower-case letters, digits and hyphens. Nothing is written until every chapter has
+    been cleaned, so a chapter that is refused leaves no half manuscript behind.
 
     The stage's own artifact is ``assemble.md``, a list of the files it wrote.
 
-    The config has no author, publisher, edition, year or bio, which the author supplies, so the book is
-    ready to load but not yet ready to build; see ``BookConfigWriter``.
+    Without an author profile the config has no author, publisher, edition, year or bio, so the book loads
+    but does not build until they are added; see ``AuthorProfile``.
     """
 
     STAGE = "assemble"
     ROOT = "manuscript"
     MAX_SLUG = 60
-    MAX_TITLE = 120
 
     def __init__(
         self,
         artifacts: ArtifactStoreInterface,
         outlines: OutlineParserInterface,
+        metadata: MetadataParserInterface,
         cleaner: ChapterCleanerInterface,
         configs: BookConfigWriterInterface,
+        profile: AuthorProfile | None,
     ) -> None:
         self._artifacts = artifacts
         self._outlines = outlines
+        self._metadata = metadata
         self._cleaner = cleaner
         self._configs = configs
+        self._profile = profile
 
     async def execute(self, run: BookRun, attempt: int) -> StageReport:
         """Clean every chapter, then write the chapters, the config and the list of them."""
         outline_text = await self._read(run, "outline.md")
-        if outline_text is None:
-            raise self._missing(run, ["outline.md"])
+        metadata_text = await self._read(run, "metadata.md")
+        if outline_text is None or metadata_text is None:
+            absent = [
+                name
+                for name, text in (("outline.md", outline_text), ("metadata.md", metadata_text))
+                if text is None
+            ]
+            raise self._missing(run, absent)
         outline = self._outlines.parse(outline_text)
+        metadata = self._metadata.parse(metadata_text)
         names = [f"chapter_{chapter.number:02d}.md" for chapter in outline.chapters]
         texts = {name: await self._read(run, name) for name in names}
-        absent = [name for name, text in texts.items() if text is None]
-        if absent:
-            raise self._missing(run, absent)
+        lost = [name for name, text in texts.items() if text is None]
+        if lost:
+            raise self._missing(run, lost)
         brief = run.brief
         files: dict[str, str] = {}
         for chapter, name in zip(outline.chapters, names, strict=True):
             files[f"{self.ROOT}/src/{name}"] = self._cleaner.clean(
                 chapter.number, chapter.title, texts[name] or ""
             )
-        title = self._title(brief.title_hint, brief.idea)
-        slug = self._slug(brief.title_hint or brief.idea)
-        files[f"{self.ROOT}/books/{slug}.toml"] = self._configs.write(
-            brief.kind.value, title, brief.trim_size, tuple(names)
+        files[f"{self.ROOT}/books/{self._slug(metadata.title)}.toml"] = self._configs.write(
+            brief.kind.value, metadata, self._profile, brief.trim_size, tuple(names)
         )
         for path, text in files.items():
             await asyncio.to_thread(self._artifacts.put, run.run_id, path, text.encode("utf-8"))
@@ -84,15 +95,6 @@ class AssembleStageExecutor(StageExecutorInterface):
             self._artifacts.put, run.run_id, f"{self.STAGE}.md", listing.encode("utf-8")
         )
         return StageReport()
-
-    def _title(self, hint: str | None, idea: str) -> str:
-        for candidate in (hint or "", idea):
-            for line in candidate.splitlines():
-                visible = "".join(" " if unicodedata.category(c)[0] == "C" else c for c in line)
-                title = " ".join(visible.split())[: self.MAX_TITLE].rstrip()
-                if title:
-                    return title
-        return "Untitled"
 
     def _slug(self, text: str) -> str:
         ascii_text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()

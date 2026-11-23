@@ -4,24 +4,31 @@
 from engineering_influence.interfaces.stage_output_check_interface import (
     StageOutputCheckInterface,
 )
+from engineering_influence.services.interfaces.metadata_parser_interface import (
+    MetadataParserInterface,
+)
 from engineering_influence.services.interfaces.outline_parser_interface import (
     OutlineParserInterface,
 )
 
 
 class NonfictionOutputChecks(StageOutputCheckInterface):
-    """The outline must be readable as chapters, because the drafting stage walks it.
+    """The outline must be readable as chapters and the metadata as a listing, because later stages walk them.
 
-    Checking when the outline is written means a malformed outline stops the run right there, instead of
-    one stage later after drafting has been paid for. The other stages write prose that nothing parses.
+    Checking when each is written means a malformed one stops the run right there, instead of stages later
+    after drafting has been paid for. The other stages write prose that nothing parses.
     """
 
     OUTLINE = "outline"
+    METADATA = "metadata"
 
-    def __init__(self, outlines: OutlineParserInterface) -> None:
+    def __init__(self, outlines: OutlineParserInterface, metadata: MetadataParserInterface) -> None:
         self._outlines = outlines
+        self._metadata = metadata
 
     def check(self, stage: str, text: str) -> None:
         """Return when the answer is usable; raise an ApplicationError saying what is wrong when it is not."""
         if stage == self.OUTLINE:
             self._outlines.parse(text)
+        elif stage == self.METADATA:
+            self._metadata.parse(text)

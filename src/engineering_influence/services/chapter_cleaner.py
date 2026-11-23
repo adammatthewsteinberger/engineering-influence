@@ -8,6 +8,9 @@ from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.services.interfaces.chapter_cleaner_interface import (
     ChapterCleanerInterface,
 )
+from engineering_influence.services.interfaces.dash_rewriter_interface import (
+    DashRewriterInterface,
+)
 
 
 class ChapterCleaner(ChapterCleanerInterface):
@@ -16,8 +19,7 @@ class ChapterCleaner(ChapterCleanerInterface):
     The typesetter refuses a non-fiction book that has an em dash or an en dash, an unfinished marker such
     as ``[TODO]``, or the word ``Draft``. A model's prose has dashes in it all the time, so those are
     **rewritten**: a dash between two digits becomes a hyphen (``1990-1995``), and any other dash becomes a
-    comma, or nothing at the start or end of a line or before punctuation. That is a plain edit and not a good one; the copy edit stage
-    is where the sentences get reworked. A marker, or the word ``Draft``, is **refused**, with the chapter
+    comma, or nothing at the start or end of a line or before punctuation (see ``DashRewriter``). A marker, or the word ``Draft``, is **refused**, with the chapter
     and the line, because deleting one would hide that the chapter was not finished.
 
     The chapter's own title is the outline's, so a heading the model put at the top of its answer
@@ -32,14 +34,9 @@ class ChapterCleaner(ChapterCleanerInterface):
     DRAFT: ClassVar[re.Pattern[str]] = re.compile(r"\bDraft\b")
     HEADING: ClassVar[re.Pattern[str]] = re.compile(r"^\s*(?:#{1,6}\s+\S.*|Chapter\s+\d+\b.*)$")
     FENCE: ClassVar[re.Pattern[str]] = re.compile(r"^\s*(```|~~~)")
-    RANGE: ClassVar[re.Pattern[str]] = re.compile("(?<=\\d)\u2013(?=\\d)")
-    DASH: ClassVar[re.Pattern[str]] = re.compile("[ \\t]*[\u2013\u2014][ \\t]*")
-    LEADING_DASH: ClassVar[re.Pattern[str]] = re.compile(
-        "^[ \\t]*[\u2013\u2014][ \\t]*", re.MULTILINE
-    )
-    TRAILING_DASH: ClassVar[re.Pattern[str]] = re.compile(
-        "[ \\t]*[\u2013\u2014][ \\t]*(?=[.,;:!?)\\]]|$)", re.MULTILINE
-    )
+
+    def __init__(self, dashes: DashRewriterInterface) -> None:
+        self._dashes = dashes
 
     def clean(self, number: int, title: str, text: str) -> str:
         """The chapter as ``# Title`` and a clean body."""
@@ -48,7 +45,7 @@ class ChapterCleaner(ChapterCleanerInterface):
         first = next((index for index, line in enumerate(lines) if line.strip()), len(lines))
         if first < len(lines) and self.HEADING.match(lines[first]):
             lines = lines[first + 1 :]
-        body = self._dashes(self._demoted(lines)).strip("\n")
+        body = self._dashes.rewrite(self._demoted(lines)).strip("\n")
         if not body.strip():
             raise ApplicationError(
                 code="MANUSCRIPT_TEXT_REFUSED",
@@ -82,9 +79,3 @@ class ChapterCleaner(ChapterCleanerInterface):
                 line = "#" + line
             kept.append(line)
         return "\n".join(kept)
-
-    def _dashes(self, text: str) -> str:
-        text = self.RANGE.sub("-", text)
-        text = self.LEADING_DASH.sub("", text)
-        text = self.TRAILING_DASH.sub("", text)
-        return self.DASH.sub(", ", text)

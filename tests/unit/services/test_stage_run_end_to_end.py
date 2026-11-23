@@ -40,10 +40,12 @@ from engineering_influence.services.book_config_writer import BookConfigWriter
 from engineering_influence.services.call_model import CallModel
 from engineering_influence.services.chapter_cleaner import ChapterCleaner
 from engineering_influence.services.context_assembler import ContextAssembler
+from engineering_influence.services.dash_rewriter import DashRewriter
 from engineering_influence.services.draft_stage_executor import DraftStageExecutor
 from engineering_influence.services.failure_classifier import FailureClassifier
 from engineering_influence.services.fetch_url_tool import FetchUrlTool
 from engineering_influence.services.lock_tool_grants import LockToolGrants
+from engineering_influence.services.metadata_parser import MetadataParser
 from engineering_influence.services.model_stage_executor import ModelStageExecutor
 from engineering_influence.services.no_output_checks import NoOutputChecks
 from engineering_influence.services.no_stage_guidance import NoStageGuidance
@@ -154,7 +156,12 @@ class World:
                     DESCRIPTOR.max_output_tokens,
                 ),
                 AssembleStageExecutor.STAGE: AssembleStageExecutor(
-                    self.store, OutlineParser(), ChapterCleaner(), BookConfigWriter()
+                    self.store,
+                    OutlineParser(),
+                    MetadataParser(DashRewriter()),
+                    ChapterCleaner(DashRewriter()),
+                    BookConfigWriter(),
+                    None,
                 ),
             },
         )
@@ -191,6 +198,13 @@ Purpose: Pick a place for the hive.
 Beats:
 - Sun and shade
 """
+METADATA_TEXT = (
+    "Title: Hive Mind\nSubtitle: A calm guide\nDescription:\n"
+    + " ".join(["Bees are easier to keep than most people think."] * 10)
+    + "\nKeywords:\n"
+    + "".join(f"- keyword {n}\n" for n in range(7))
+    + "Categories:\n- Books > Science & Math\n"
+)
 DRAFTING = (
     ("CHAPTER ONE text", "end_turn"),
     ("SUMMARY ONE text", "end_turn"),
@@ -204,6 +218,7 @@ GOOD = (
     ("reading", "tool_use", (FETCH,)),
     ("RESEARCH text", "end_turn"),
     (OUTLINE_TEXT, "end_turn"),
+    (METADATA_TEXT, "end_turn"),
     *DRAFTING,
 )
 
@@ -211,7 +226,7 @@ GOOD = (
 def test_a_run_goes_from_brief_to_draft_and_completes_with_each_answer_stored() -> None:
     world = World(Model(*GOOD))
     outcomes = [world.advance(stage) for stage in RECIPES.plan().stages]
-    assert outcomes == [AdvanceOutcome.ADVANCED] * 5 + [AdvanceOutcome.COMPLETED]
+    assert outcomes == [AdvanceOutcome.ADVANCED] * 6 + [AdvanceOutcome.COMPLETED]
     assert world.run().status is RunStatus.COMPLETED
     assert world.store.names(RUN_ID) == [
         "assemble.md",
@@ -219,9 +234,10 @@ def test_a_run_goes_from_brief_to_draft_and_completes_with_each_answer_stored() 
         "chapter_01.md",
         "chapter_02.md",
         "draft.md",
-        "manuscript/books/how-to-keep-bees.toml",
+        "manuscript/books/hive-mind.toml",
         "manuscript/src/chapter_01.md",
         "manuscript/src/chapter_02.md",
+        "metadata.md",
         "outline.md",
         "positioning.md",
         "research.md",
@@ -242,7 +258,9 @@ def test_each_stage_is_asked_with_what_the_stages_before_it_wrote() -> None:
     world = World(Model(*GOOD))
     for stage in RECIPES.plan().stages:
         world.advance(stage)
-    brief, positioning, searching, reading, research, outline, *drafting = world.model.requests
+    brief, positioning, searching, reading, research, outline, metadata, *drafting = (
+        world.model.requests
+    )
     assert "How to keep bees" in brief.prompt
     assert "BRIEF text" in positioning.prompt
     assert "BRIEF text" in research.prompt and "POSITIONING text" in research.prompt
@@ -255,6 +273,7 @@ def test_each_stage_is_asked_with_what_the_stages_before_it_wrote() -> None:
         "stage_research@1",
         "stage_research@1",
         "stage_outline@3",
+        "stage_metadata@1",
         "context_pack@2",
         "stage_summary@1",
         "context_pack@2",
@@ -262,7 +281,7 @@ def test_each_stage_is_asked_with_what_the_stages_before_it_wrote() -> None:
     ]
     assert [len(r.transcript) for r in (searching, reading, research)] == [0, 1, 2]
     assert [t.name for t in searching.tools] == ["web_search", "fetch_url"]
-    assert all(r.tools == () for r in (brief, positioning, outline, *drafting))
+    assert all(r.tools == () for r in (brief, positioning, outline, metadata, *drafting))
 
 
 def test_what_the_research_tools_return_reaches_the_model_marked_as_untrusted() -> None:
@@ -284,7 +303,7 @@ def test_spend_is_what_the_calls_cost_and_stays_under_the_cap() -> None:
     for stage in RECIPES.plan().stages:
         world.advance(stage)
     budget = world.run().budget
-    assert budget.spent == DESCRIPTOR.cost_micro_usd(ModelUsage(100, 50)) * 10 > 0
+    assert budget.spent == DESCRIPTOR.cost_micro_usd(ModelUsage(100, 50)) * 11 > 0
     assert (budget.reserved, budget.spent <= budget.cap) == (0, True)
 
 
@@ -337,6 +356,7 @@ def test_a_page_that_steers_the_model_to_an_address_with_the_brief_in_it_is_not_
             ("the page told me to", "tool_use", (leak,)),
             ("RESEARCH text", "end_turn"),
             (OUTLINE_TEXT, "end_turn"),
+            (METADATA_TEXT, "end_turn"),
             *DRAFTING,
         )
     )
@@ -370,6 +390,7 @@ def research_with(world: World, *steps: tuple[str, str, tuple[ToolCall, ...]]) -
     world.model.script = list(script) + [
         ("RESEARCH text", "end_turn"),
         (OUTLINE_TEXT, "end_turn"),
+        (METADATA_TEXT, "end_turn"),
         *DRAFTING,
     ]
     for stage in RECIPES.plan().stages:
@@ -432,7 +453,7 @@ def test_each_chapter_is_drafted_from_the_summaries_and_tail_of_the_ones_before_
     world = World(Model(*GOOD))
     for stage in RECIPES.plan().stages:
         world.advance(stage)
-    first, first_summary, second, second_summary = world.model.requests[6:]
+    first, first_summary, second, second_summary = world.model.requests[7:]
     assert "Chapter 1: The Hive" in first.prompt
     assert "SUMMARY ONE" not in first.prompt and "CHAPTER ONE" not in first.prompt
     assert "Chapter 2: The Site" in second.prompt
@@ -455,9 +476,9 @@ def test_a_redelivered_draft_stage_calls_the_model_for_nothing_it_already_has() 
 
 
 def test_an_outline_the_drafter_cannot_read_fails_the_run_before_any_chapter_is_asked_for() -> None:
-    script = (*GOOD[:5], ("not an outline", "end_turn"))
+    script = (*GOOD[:5], ("not an outline", "end_turn"), (METADATA_TEXT, "end_turn"))
     world = World(Model(*script))
-    for stage in RECIPES.plan().stages[:4]:
+    for stage in RECIPES.plan().stages[:5]:
         assert world.advance(stage) is AdvanceOutcome.ADVANCED
     asked = len(world.model.requests)
     assert world.advance("draft") is AdvanceOutcome.FAILED
