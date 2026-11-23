@@ -146,3 +146,9 @@ def test_listed_runs_come_back_in_the_order_the_repository_lists_them() -> None:
     for name in ("a-run", "b-run"):
         repo.save(BookRun(name, brief(), plan, Budget(cap=5_000_000)))
     assert [run.run_id for run in ListRuns(repo).runs()] == ["b-run", "a-run"]
+
+
+def test_by_default_a_run_gets_the_plan_for_its_kind() -> None:
+    create = CreateRun(InMemoryRunRepository(), InMemoryQueue(), new_id=lambda: "run-d")
+    assert create.create(brief(BookKind.NONFICTION)).plan == NonfictionRecipes().plan()
+    assert create.create(brief(BookKind.NOVEL)).plan == NovelRecipes().plan()

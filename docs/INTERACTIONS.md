@@ -34,6 +34,7 @@ compose stack publishes it on `127.0.0.1:8000`.
 | Method and path | Auth | Purpose |
 |---|---|---|
 | `POST /v1/pipelines` | key | Start a pipeline. Body: a project. `200` with the result. |
+| `POST /v1/runs` | key | Start a book run from a brief (the brief contract v1, the same body `ei run create` reads as TOML). `201` with the new run, pending at its first stage; `422` when the body is not a brief or the kind is not one this build can start. Present only when the API is wired with run creation. |
 | `GET /v1/runs/{run_id}` | key | A book run: status, stage, plan, budget in micro-dollars, issues and the names of its artifacts. `200` with a `RunSummaryV1`. |
 | `GET /v1/runs/{run_id}/artifacts/{name}` | key | One stored artifact, byte for byte, as `application/octet-stream` with `nosniff` and `no-store`. Names may contain `/`. |
 | `GET /health/live` | none | `{"status":"alive"}` while the process runs. |
@@ -85,8 +86,9 @@ Full scripts: [`examples/api/start_pipeline.py`](../examples/api/start_pipeline.
 
 ## Python SDK
 
-`packages/engineering-influence-sdk` is a thin typed wrapper over `httpx` for the one
-operation the API has. It ships in this repository and in each release.
+`packages/engineering-influence-sdk` is a thin typed wrapper over `httpx` for the operations the API
+has: starting a pipeline and creating a book run from a brief (`create_run`). It ships in this repository
+and in each release.
 
 ```python
 from engineering_influence_sdk import EngineeringInfluenceClient
@@ -94,6 +96,14 @@ from engineering_influence_sdk import EngineeringInfluenceClient
 client = EngineeringInfluenceClient("http://127.0.0.1:8000", api_key)
 started = client.start_pipeline(
     "sample-essay", "A Sample Essay", ("Claims must be supported by evidence.",), ("thesis", "book")
+)
+run = client.create_run(
+    {
+        "schema_version": 1,
+        "kind": "nonfiction",
+        "idea": "Windowsill herbs",
+        "budget_micro_usd": 5000000,
+    }
 )
 client.close()
 ```
@@ -110,6 +120,7 @@ with one tool:
 | Tool | Arguments | Returns |
 |---|---|---|
 | `start_pipeline` | `slug`, `title`, `postulates` (list), `stages` (list) | `{"job_id", "project_slug"}` |
+| `create_run` | `brief` (an object: the brief contract v1) | the new run as a `RunSummaryV1`, pending at its first stage. Present only when the server is built with a run creator |
 
 Run it over stdio with [`examples/mcp/server.py`](../examples/mcp/server.py) and point an MCP host at
 that command (the file shows a Claude Desktop entry). [`examples/mcp/client.py`](../examples/mcp/client.py)

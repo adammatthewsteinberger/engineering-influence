@@ -2,12 +2,18 @@
 """Interface of the asynchronous engineering-influence client."""
 
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
+from typing import Any
 
 
 class AsyncEngineeringInfluenceClientInterface(ABC):
     """Async counterpart to the synchronous typed client."""
 
     __slots__ = ()
+
+    @abstractmethod
+    async def create_run(self, brief: Mapping[str, Any]) -> dict[str, Any]:
+        """Start a book run from a brief (the brief contract v1) asynchronously."""
 
     @abstractmethod
     async def start_pipeline(

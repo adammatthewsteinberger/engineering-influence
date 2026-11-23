@@ -1,6 +1,7 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Asynchronous engineering-influence API client."""
 
+from collections.abc import Mapping
 from typing import Any, cast
 
 import httpx
@@ -36,6 +37,12 @@ class AsyncEngineeringInfluenceClient(AsyncEngineeringInfluenceClientInterface):
         )
         response.raise_for_status()
         return cast(dict[str, str], response.json())
+
+    async def create_run(self, brief: Mapping[str, Any]) -> dict[str, Any]:
+        """Start a book run from a brief (the brief contract v1) asynchronously; returns the new run."""
+        response = await self._client.post("/v1/runs", json=dict(brief))
+        response.raise_for_status()
+        return cast(dict[str, Any], response.json())
 
     async def close(self) -> None:
         """Close the underlying async HTTP connection pool."""

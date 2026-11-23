@@ -3,6 +3,7 @@
 
 import uuid
 from collections.abc import Callable, Mapping
+from typing import ClassVar
 
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interfaces.queue_interface import QueueInterface
@@ -14,6 +15,8 @@ from engineering_influence.models.budget import Budget
 from engineering_influence.models.stage_plan import StagePlan
 from engineering_influence.services.advance_run import AdvanceRun
 from engineering_influence.services.interfaces.create_run_interface import CreateRunInterface
+from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
+from engineering_influence.services.novel_recipes import NovelRecipes
 
 
 class CreateRun(CreateRunInterface):
@@ -25,16 +28,21 @@ class CreateRun(CreateRunInterface):
     two briefs never share one.
     """
 
+    PLANS: ClassVar[Mapping[BookKind, StagePlan]] = {
+        BookKind.NONFICTION: NonfictionRecipes().plan(),
+        BookKind.NOVEL: NovelRecipes().plan(),
+    }
+
     def __init__(
         self,
         runs: RunRepositoryInterface,
         queue: QueueInterface,
-        plans: Mapping[BookKind, StagePlan],
+        plans: Mapping[BookKind, StagePlan] | None = None,
         new_id: Callable[[], str] = lambda: uuid.uuid4().hex,
     ) -> None:
         self._runs = runs
         self._queue = queue
-        self._plans = dict(plans)
+        self._plans = dict(self.PLANS if plans is None else plans)
         self._new_id = new_id
 
     def create(self, brief: BookBrief) -> BookRun:
