@@ -24,7 +24,15 @@ def test_it_is_a_set_of_recipes() -> None:
 def test_the_plan_is_the_recipes_stages_in_order() -> None:
     plan = RECIPES.plan()
     assert plan.kind is BookKind.NONFICTION
-    assert plan.stages == ("brief", "positioning", "research", "outline", "draft", "assemble")
+    assert plan.stages == (
+        "brief",
+        "positioning",
+        "research",
+        "outline",
+        "metadata",
+        "draft",
+        "assemble",
+    )
     assert plan.stages[:-2] == tuple(recipe.stage for recipe in NonfictionRecipes.RECIPES)
 
 
@@ -39,6 +47,15 @@ def test_drafting_and_assembly_are_in_the_plan_but_have_no_recipe_because_they_a
     for stage in ("draft", "assemble"):
         with pytest.raises(ValueError, match=f"no recipe for stage '{stage}'"):
             RECIPES.recipe(stage)
+
+
+def test_the_metadata_stage_reads_the_brief_the_positioning_and_the_outline() -> None:
+    recipe = RECIPES.recipe("metadata")
+    assert (recipe.template, recipe.inputs, recipe.tools) == (
+        "stage_metadata",
+        ("brief", "positioning", "outline"),
+        (),
+    )
 
 
 def test_a_recipe_is_found_by_stage() -> None:
@@ -60,6 +77,7 @@ def test_only_research_has_tools_and_they_are_search_and_page_reading() -> None:
         "positioning": (),
         "research": ("web_search", "fetch_url"),
         "outline": (),
+        "metadata": (),
     }
 
 

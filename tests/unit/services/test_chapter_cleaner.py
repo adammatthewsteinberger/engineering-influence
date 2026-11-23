@@ -8,13 +8,14 @@ from hypothesis import strategies as st
 
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.services.chapter_cleaner import ChapterCleaner
+from engineering_influence.services.dash_rewriter import DashRewriter
 from engineering_influence.services.interfaces.chapter_cleaner_interface import (
     ChapterCleanerInterface,
 )
 
 EM = chr(0x2014)
 EN = chr(0x2013)
-CLEANER = ChapterCleaner()
+CLEANER = ChapterCleaner(DashRewriter())
 
 
 def clean(text: str, number: int = 2, title: str = "The Site") -> str:

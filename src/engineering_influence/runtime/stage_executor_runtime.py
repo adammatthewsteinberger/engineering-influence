@@ -9,6 +9,9 @@ import httpx
 
 from engineering_influence import __version__
 from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.infrastructure.author.toml_author_profile_loader import (
+    TomlAuthorProfileLoader,
+)
 from engineering_influence.infrastructure.deterministic_stage_executor import (
     DeterministicStageExecutor,
 )
@@ -58,6 +61,7 @@ from engineering_influence.interfaces.secret_provider_interface import SecretPro
 from engineering_influence.interfaces.stage_executor_interface import StageExecutorInterface
 from engineering_influence.interfaces.stage_guidance_interface import StageGuidanceInterface
 from engineering_influence.interfaces.tool_interface import ToolInterface
+from engineering_influence.models.author_profile import AuthorProfile
 from engineering_influence.models.model_profile import ModelProfile
 from engineering_influence.models.provider_descriptor import ProviderDescriptor
 from engineering_influence.models.tool_limits import ToolLimits
@@ -72,6 +76,7 @@ from engineering_influence.services.book_config_writer import BookConfigWriter
 from engineering_influence.services.call_model import CallModel
 from engineering_influence.services.chapter_cleaner import ChapterCleaner
 from engineering_influence.services.context_assembler import ContextAssembler
+from engineering_influence.services.dash_rewriter import DashRewriter
 from engineering_influence.services.draft_stage_executor import DraftStageExecutor
 from engineering_influence.services.fallback_search_provider import FallbackSearchProvider
 from engineering_influence.services.fetch_url_tool import FetchUrlTool
@@ -80,6 +85,7 @@ from engineering_influence.services.lock_tool_grants import LockToolGrants
 from engineering_influence.services.mcp_client_factory import McpClientFactory
 from engineering_influence.services.mcp_server_launcher import McpServerLauncher
 from engineering_influence.services.mcp_tool_factory import McpToolFactory
+from engineering_influence.services.metadata_parser import MetadataParser
 from engineering_influence.services.model_stage_executor import ModelStageExecutor
 from engineering_influence.services.no_stage_guidance import NoStageGuidance
 from engineering_influence.services.nonfiction_output_checks import NonfictionOutputChecks
@@ -110,6 +116,9 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
     ``EI_TOOL_LOCK`` names a tool lock ([TOOL_LOCK.md](../../../docs/TOOL_LOCK.md)). Its servers are
     started and verified here, a changed one stops the process, and a stage is offered only the
     locked tools the lock grants it.
+
+    ``EI_AUTHOR_PROFILE`` names the author's own details ([BOOKS_AND_KDP.md](../../../docs/BOOKS_AND_KDP.md)),
+    which the assemble stage writes into the book's config; they are never sent to a model.
 
     ``EI_SKILL_LOCK`` names a skill lock ([SKILLS.md](../../../docs/SKILLS.md)). Each skill enabled for a
     stage is checked against its hash here, before any tool server is started, and a changed one stops the
@@ -163,6 +172,9 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         prompts = TomlPromptLibrary()
         loop = RunToolLoop(ask, runner, limits)
         outlines = OutlineParser()
+        dashes = DashRewriter()
+        metadata = MetadataParser(dashes)
+        profile = self._author_profile()
         descriptor = model.describe()
         drafter = DraftStageExecutor(
             artifacts,
@@ -184,13 +196,18 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                 tools,
                 LockToolGrants(lock),
                 guidance,
-                NonfictionOutputChecks(outlines),
+                NonfictionOutputChecks(outlines, metadata),
                 SpendGuard,
             ),
             {
                 DraftStageExecutor.STAGE: drafter,
                 AssembleStageExecutor.STAGE: AssembleStageExecutor(
-                    artifacts, outlines, ChapterCleaner(), BookConfigWriter()
+                    artifacts,
+                    outlines,
+                    metadata,
+                    ChapterCleaner(dashes),
+                    BookConfigWriter(),
+                    profile,
                 ),
             },
         )
@@ -208,6 +225,25 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                 client.close()
         self._client = None
         self._research_client = None
+
+    def _author_profile(self) -> AuthorProfile | None:
+        """The author's details from the file ``EI_AUTHOR_PROFILE`` names, if it names one.
+
+        A profile is read only when it is named, so a stray file in the working directory adds nothing to a
+        book. A named file that is missing, or is not a profile, stops the process at start, before any call
+        is made. The details go into the book's config and are never sent to a model.
+        """
+        named = self._environment.get("EI_AUTHOR_PROFILE", "").strip()
+        if not named:
+            return None
+        profile = TomlAuthorProfileLoader().load(Path(named))
+        if profile is None:
+            raise ApplicationError(
+                code="AUTHOR_PROFILE_MISSING",
+                message=f"EI_AUTHOR_PROFILE names {named}, which does not exist",
+                http_status=503,
+            )
+        return profile
 
     def _guidance(self) -> StageGuidanceInterface:
         """The skills in the lock that ``EI_SKILL_LOCK`` names, checked against their hashes.

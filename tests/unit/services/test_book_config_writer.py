@@ -1,29 +1,62 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 
-"""BookConfigWriter: the known fields as TOML a loader reads back exactly."""
+"""BookConfigWriter: the listing, the author's details and the chapters as TOML a loader reads back exactly."""
 
 import tomllib
 
-from hypothesis import given
+from hypothesis import assume, given
 from hypothesis import strategies as st
 
+from engineering_influence.models.author_profile import AuthorProfile
+from engineering_influence.models.book_metadata import BookMetadata
 from engineering_influence.services.book_config_writer import BookConfigWriter
 from engineering_influence.services.interfaces.book_config_writer_interface import (
     BookConfigWriterInterface,
 )
 
 WRITER = BookConfigWriter()
+DESCRIPTION = " ".join(["Bees are easier to keep than most people think."] * 10)
+KEYWORDS = tuple(f"keyword {n}" for n in range(7))
+
+
+def metadata(**changes: object) -> BookMetadata:
+    fields: dict[str, object] = {
+        "title": "Hive Mind",
+        "subtitle": "A calm guide",
+        "description": DESCRIPTION,
+        "keywords": KEYWORDS,
+        "categories": ("Books > Science & Math", "Books > Crafts > Bees"),
+    }
+    return BookMetadata(**{**fields, **changes})  # type: ignore[arg-type]
+
+
+def profile(**changes: object) -> AuthorProfile:
+    fields: dict[str, object] = {
+        "author": "Ann Author",
+        "publisher": "Pub House",
+        "edition": "First Edition",
+        "author_bio": "Ann writes.\n\nAnd more.",
+    }
+    return AuthorProfile(**{**fields, **changes})  # type: ignore[arg-type]
 
 
 def test_it_is_a_book_config_writer() -> None:
     assert isinstance(WRITER, BookConfigWriterInterface)
 
 
-def test_the_config_names_the_kind_title_source_and_one_part_of_chapters() -> None:
-    assert WRITER.write("nonfiction", "Hive Mind", None, ("chapter_01.md", "chapter_02.md")) == (
+def test_the_config_has_the_listing_the_release_contract_and_one_part_of_chapters() -> None:
+    assert WRITER.write(
+        "nonfiction", metadata(), None, None, ("chapter_01.md", "chapter_02.md")
+    ) == (
         'kind = "nonfiction"\n'
         'title = "Hive Mind"\n'
+        'subtitle = "A calm guide"\n'
+        f'description = "{DESCRIPTION}"\n'
         'source = "src"\n'
+        "\n"
+        "[release]\n"
+        'keywords = ["keyword 0", "keyword 1", "keyword 2", "keyword 3", "keyword 4", "keyword 5", "keyword 6"]\n'
+        'categories = ["Books > Science & Math", "Books > Crafts > Bees"]\n'
         "\n"
         "[[parts]]\n"
         'title = "Part One"\n'
@@ -34,34 +67,82 @@ def test_the_config_names_the_kind_title_source_and_one_part_of_chapters() -> No
     )
 
 
+def test_the_author_profile_is_written_between_the_source_and_the_release_table() -> None:
+    text = WRITER.write(
+        "nonfiction",
+        metadata(),
+        profile(year=2031, also_by=("Earlier Book", "Another")),
+        "5.5x8.5",
+        ("a.md",),
+    )
+    config = tomllib.loads(text)
+    assert (config["author"], config["publisher"], config["edition"]) == (
+        "Ann Author",
+        "Pub House",
+        "First Edition",
+    )
+    assert (config["year"], config["author_bio"]) == (2031, "Ann writes.\n\nAnd more.")
+    assert config["also_by"] == ["Earlier Book", "Another"]
+    assert config["trim_size"] == "5.5x8.5"
+    assert text.index('trim_size = "5.5x8.5"') < text.index("author = ") < text.index("[release]")
+
+
+def test_without_a_profile_it_does_not_invent_what_only_the_author_can_say() -> None:
+    config = tomllib.loads(WRITER.write("nonfiction", metadata(), None, None, ("a.md",)))
+    assert set(config) == {"kind", "title", "subtitle", "description", "source", "release", "parts"}
+    assert config["release"] == {
+        "keywords": list(KEYWORDS),
+        "categories": ["Books > Science & Math", "Books > Crafts > Bees"],
+    }
+
+
 def test_a_trim_size_is_written_only_when_there_is_one() -> None:
-    with_trim = WRITER.write("nonfiction", "T", "5.5x8.5", ("a.md",))
-    assert 'trim_size = "5.5x8.5"\n' in with_trim
-    assert "trim_size" not in WRITER.write("nonfiction", "T", None, ("a.md",))
-    assert "trim_size" not in WRITER.write("nonfiction", "T", "", ("a.md",))
+    assert 'trim_size = "5x8"\n' in WRITER.write("nonfiction", metadata(), None, "5x8", ("a.md",))
+    for none in (None, ""):
+        assert "trim_size" not in WRITER.write("nonfiction", metadata(), None, none, ("a.md",))
 
 
-def test_it_does_not_invent_what_only_the_author_can_say() -> None:
-    config = tomllib.loads(WRITER.write("nonfiction", "T", None, ("a.md",)))
-    assert set(config) == {"kind", "title", "source", "parts"}
+def test_a_value_with_quotes_backslashes_and_a_delete_character_reads_back_the_same() -> None:
+    title = 'The "Hive" \\ and a caf\u00e9 ' + chr(0x7F) + " end"
+    parts = tomllib.loads(
+        WRITER.write(
+            "nonfiction", metadata(title=title.replace(chr(0x7F), "x")), None, None, ("a.md",)
+        )
+    )
+    assert parts["title"] == title.replace(chr(0x7F), "x")
+    written = WRITER._text("a" + chr(0x7F) + "b")
+    assert tomllib.loads(f"v = {written}")["v"] == "a" + chr(0x7F) + "b"
 
 
-def test_a_title_with_a_delete_character_reads_back_the_same() -> None:
-    title = "before" + chr(0x7F) + "after"
-    assert tomllib.loads(WRITER.write("nonfiction", title, None, ("a.md",)))["title"] == title
-
-
-def test_a_title_with_quotes_and_backslashes_reads_back_the_same() -> None:
-    title = 'The "Hive" \\ and a caf\u00e9\ttab'
-    assert tomllib.loads(WRITER.write("nonfiction", title, None, ("a.md",)))["title"] == title
+line = st.text(
+    alphabet=st.characters(
+        codec="utf-8", blacklist_categories=("Cc", "Cf", "Zl", "Zp", "Co", "Cn")
+    ),
+    min_size=1,
+    max_size=40,
+).filter(lambda text: text == text.strip())
 
 
 @given(
-    st.text(min_size=1, max_size=120),
-    st.lists(st.from_regex(r"[a-z0-9_]{1,12}\.md", fullmatch=True), min_size=1, max_size=5),
+    author=line,
+    publisher=line,
+    bio=st.text(
+        alphabet=st.characters(
+            codec="utf-8", blacklist_categories=("Cc", "Cf", "Zl", "Zp", "Co", "Cn")
+        ),
+        min_size=1,
+        max_size=200,
+    ),
+    titles=st.lists(line, max_size=4),
+    year=st.none() | st.integers(1000, 9999),
 )
-def test_any_title_and_chapter_list_read_back_exactly(title: str, names: list[str]) -> None:
-    config = tomllib.loads(WRITER.write("novel", title, "6x9", tuple(names)))
-    assert config["title"] == title
-    assert config["parts"] == [{"title": "Part One", "chapters": names}]
-    assert (config["kind"], config["trim_size"], config["source"]) == ("novel", "6x9", "src")
+def test_any_valid_profile_reads_back_exactly(
+    author: str, publisher: str, bio: str, titles: list[str], year: int | None
+) -> None:
+    assume(bio.strip())
+    made = profile(
+        author=author, publisher=publisher, author_bio=bio, also_by=tuple(titles), year=year
+    )
+    config = tomllib.loads(WRITER.write("nonfiction", metadata(), made, None, ("a.md",)))
+    for key, value in made.entries().items():
+        assert config[key] == value

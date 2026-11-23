@@ -121,3 +121,21 @@ holds the contract: whatever a model wrote, the stage either refuses with `MANUS
   bio. Those are the author's, so the book loads but does not build until they are added. Setting them, and real parts,
   front and back matter belong to the front/back matter and metadata slice.
 
+## Amendment: the listing and the author's details (2026-11-22)
+
+A non-fiction plan now has a `metadata` stage after `outline` (before drafting, because it needs only the brief, the positioning and the
+outline), and `assemble` reads its result.
+
+- **`metadata` is one prompt**, so it has a recipe and goes through the same executor as the earlier stages. It writes the title, subtitle,
+  description, seven keywords and one to three categories in a fixed format. `MetadataParser` reads it strictly and
+  `NonfictionOutputChecks` refuses an unreadable one before it is stored (`METADATA_INVALID`). `BookMetadata` holds the release contract's rules
+  (an 80 word description of at most 4,000 characters, seven distinct keywords, one to three browse paths of two levels or more), so a
+  listing that is built cannot fail the contract for its shape.
+- **The author's details are not a stage.** They are the author's, so they come from a file the person names with `EI_AUTHOR_PROFILE`
+  (`AuthorProfile`, read by `TomlAuthorProfileLoader`), never from a model and never into a prompt. The assemble stage writes them into the
+  config with the listing, with the release contract's `[release]` keywords and categories. A book assembled with a profile
+  passes the release contract's metadata and category checks (a test runs them). Without one, it loads but does not build.
+- **Front and back matter are not Markdown files.** The title page, copyright page, dedication and about-the-author page are made by the typesetter from the
+  config, so no stage writes them. Pricing and the cover are still the author's to supply.
+- **The title is the listing's**, which is the title the brief asked for when it gave one, and the config's file name is its slug.
+

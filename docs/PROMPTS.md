@@ -6,8 +6,8 @@ in `src/engineering_influence/infrastructure/prompt_library/templates/`, one TOM
 is called `templates`, never `prompts`, because the `leak-scan` CI job rejects any path containing
 `prompts/`.
 
-Today seven templates ship. `stage_brief`, `stage_positioning`, `stage_research` and `stage_outline` are the prompts for the
-four non-fiction stages; every blank in them that is filled from outside (the author's idea, and what an earlier stage
+Today eight templates ship. `stage_brief`, `stage_positioning`, `stage_research`, `stage_outline` and `stage_metadata` are the
+prompts for five of the non-fiction stages; every blank in them that is filled from outside (the author's idea, and what an earlier stage
 wrote) is declared untrusted. `context_pack` (version 2) is the layout of the prompt that drafts one chapter: its fixed system text and the
 labels the context assembler puts between the parts. **Where each part goes is a trust decision**: the system part
 is fixed text, and the voice, the outline and research, the earlier chapters' summaries, the tail of the last chapter
@@ -17,6 +17,11 @@ just written, which later chapters are given in place of the chapter itself; its
 `skill_guidance` frames the skills a person enabled for a stage ([SKILLS.md](SKILLS.md)); its
 one blank is not declared untrusted, because the text that fills it is built by the product from skills a person
 installed, defused and delimited, and is meant to instruct.
+
+`stage_metadata` (version 1) writes the store listing (title, subtitle, description, seven keywords, up to three categories) in a
+format a program reads, like the outline: `MetadataParser` refuses an answer it cannot read (`METADATA_INVALID`), so a malformed
+listing stops the run where it is written. Its rules are the release contract's, so a listing that parses cannot fail that check for
+its shape (`BookMetadata`). Em and en dashes in it are rewritten before it is read.
 
 ## A template
 

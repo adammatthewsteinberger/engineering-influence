@@ -279,3 +279,30 @@ the only commands that can use a network, only for an `https://` address, with n
 credential. An index may be up to 512 KiB and list 500 plugins, a download is at most 512 KiB, and a request has 30
 seconds; these are fixed in the code. Downloading needs the `runtime` extra (`pip install 'engineering-influence[runtime]'`),
 which a local index file does not. A run never contacts a marketplace.
+
+## The author profile (your own details)
+
+A book's title page, copyright page and about-the-author page need things only the author can say. They go in a small TOML
+file you keep yourself, outside this repository, and **a run reads it only when `EI_AUTHOR_PROFILE` names it** (a file in
+the current directory is not read). The assemble stage writes it into the book's config; it is never sent to a model.
+
+```toml
+author = "Ann Author"            # required
+publisher = "Pub House"          # required
+edition = "First Edition"        # required; has to say "Edition"
+author_bio = "Ann writes."       # required; paragraphs allowed
+year = 2031                      # optional
+website = "https://pub.example"  # optional
+email = "ann@pub.example"        # optional
+isbn = "978-0-0000-0000-0"       # optional
+ebook_isbn = "978-0-0000-0001-7" # optional
+dedication = "For you."          # optional
+copyright_notes = "Notes."       # optional
+also_by = ["Earlier Book"]       # optional, at most 20
+```
+
+Any other key is refused, a missing file stops the process at start (`AUTHOR_PROFILE_MISSING`), and a bad one stops it with
+the reason (`AUTHOR_PROFILE_INVALID`). The file is at most 64 KiB; the limits on each field are fixed in the code. Without a
+profile the assembled book loads but does not build, and the build says which of these is missing. Em and en dashes are
+refused in non-fiction when the book is built, and the profile is not rewritten, so leave them out of your own text.
+

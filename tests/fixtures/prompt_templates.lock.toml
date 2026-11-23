@@ -13,6 +13,10 @@ fingerprint = "2be57e42e7f8e1669f4be1cb4da20006692a6efb6b01bfdf26ec037c571a5e5e"
 version = 1
 fingerprint = "ef5260c5d38559d6ed0f72bfbabf048b489ecb668e5ad5126512d749d606c361"
 
+[stage_metadata]
+version = 1
+fingerprint = "a5d4aac337b08a56252d013038c9a562dac86c38897f3c22c405fcef7d98b007"
+
 [stage_outline]
 version = 3
 fingerprint = "e8652162244153770d9babb900b30325f0027b56077c121d25e013d4e6865987"

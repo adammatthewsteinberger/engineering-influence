@@ -10,7 +10,7 @@ from engineering_influence.models.stage_recipe import StageRecipe
 
 
 class NonfictionRecipes(StageRecipesInterface):
-    """Brief, positioning, research and outline are one prompt each; ``draft`` and ``assemble`` follow them.
+    """Brief, positioning, research, outline and metadata are one prompt each; ``draft`` and ``assemble`` follow them.
 
     Research is the one stage with tools (search and page reading); the others have none. ``draft`` and
     ``assemble`` have no recipe because neither is one prompt: ``draft`` loops over the chapters (see
@@ -33,6 +33,7 @@ class NonfictionRecipes(StageRecipesInterface):
             ("web_search", "fetch_url"),
         ),
         StageRecipe("outline", "stage_outline", ("brief", "positioning", "research"), 4_000),
+        StageRecipe("metadata", "stage_metadata", ("brief", "positioning", "outline"), 2_500),
     )
 
     def plan(self) -> StagePlan:
