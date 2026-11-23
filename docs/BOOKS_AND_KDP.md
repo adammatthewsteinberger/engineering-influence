@@ -97,6 +97,21 @@ confirm the names when you upload. A book with no categories gets the warning
 release. The 4,000-character and three-category limits are KDP's published limits as I understand
 them; confirm them against KDP's current help pages.
 
+### The release bundle
+
+`ei book package SLUG` writes `build/SLUG/release/kdp/`, the folder you upload from:
+
+- `listing.md`: the title, subtitle, description, the seven keywords and the categories, the way you paste them into
+  KDP, then a table of the files with their sizes and SHA-256 hashes.
+- `MANIFEST.json`: the same files as data, with the release status the bundle was made under.
+- A copy of each finished file the release requires: the interior PDF, the EPUB, the cover images and the wraps.
+
+It refuses, and writes nothing, when the release check **fails**, when a required file is missing, or when the listing
+is outside the limits the release check applies (a message names the field). A book whose release check only warns is
+packaged, and its manifest says so. Nothing is uploaded: KDP has no publishing API, so you upload these files and paste
+the listing yourself, then check the hashes against what you uploaded. The command overwrites its own files and leaves
+any other file in the folder alone; a symbolic link is refused, so the bundle is only ever what was checked.
+
 ### The back cover and the barcode area
 
 The back cover carries the description and the author note, and KDP keeps a 2 x 1.2 in area clear

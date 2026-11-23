@@ -54,6 +54,12 @@ class BookCli(BookCliInterface):
         qa.add_argument("pdf", type=Path)
         qa.add_argument("--output", type=Path)
         qa.add_argument("--dpi", type=int, default=90)
+        self._slugs(
+            sub.add_parser(
+                "package",
+                help="write the release bundle (listing, manifest, finished files) for KDP",
+            )
+        )
         publish = self._slugs(sub.add_parser("publish", help="the full acceptance pipeline"))
         publish.add_argument("--audit-only", action="store_true")
         publish.add_argument("--no-render", action="store_true", help="skip all-page rendering")
@@ -102,6 +108,10 @@ class BookCli(BookCliInterface):
     def _slugs(self, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         parser.add_argument("slugs", nargs="*", help="book slugs (default: every configured book)")
         return parser
+
+    def _package(self, controller: PublishingController, slug: str, arguments: Any) -> bool:
+        print(controller.package(slug))
+        return True
 
     def _audit(self, controller: PublishingController, slug: str, arguments: Any) -> bool:
         reports, ok, text = controller.audit(slug, strict_release=arguments.strict_release)

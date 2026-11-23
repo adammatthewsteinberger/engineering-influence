@@ -124,7 +124,7 @@ ei pipeline start --slug S --title T --postulate P [--postulate P …] [--stage 
 ei serve api|worker
 ei db upgrade
 ei run status|resume|cancel RUN_ID
-ei book [--root DIR] audit|build|epub|covers|qa|publish …
+ei book [--root DIR] audit|build|epub|covers|qa|package|publish …
 ei tools add [--lock PATH] [--env VAR …] [--replace] NAME -- COMMAND [ARG …]
 ei tools add [--lock PATH] [--bearer-env VAR] [--replace] --url URL NAME
 ei tools list [--lock PATH]
@@ -152,7 +152,7 @@ ei plugins fetch INDEX NAME [--output DIR]
 | `ei run resume RUN_ID` | Moves a parked run back to running and queues its current stage; on a run that is already running it only queues the stage again, which repairs a resume that died half-way. Reads `EI_DATABASE_URL` and `EI_RABBITMQ_URL`. | `0`; `1` unknown run, finished run or a run that kept changing; `2` setup trouble |
 | `ei run cancel RUN_ID` | Stops a run for good; cancelling twice is fine, and a completed or failed run is refused. Needs only `EI_DATABASE_URL`. | same |
 | `ei run export RUN_ID DIRECTORY` | Writes what a run produced to a **new or empty** folder: the book as a project at the top (`books/<slug>.toml` and `src/chapter_NN.md`, as the book commands expect) and every other artifact under `run/` (the stage outputs and the `audit/` reports). It reads the run and changes nothing in it. Nothing is overwritten, and either every file is written or none is. A folder that holds anything is refused, as is a run that has stored nothing. Needs only `EI_DATABASE_URL`. | `0`; `1` unknown run, a run with nothing stored, or a folder that is not empty; `2` setup trouble |
-| `ei book …` | Audit, build and publish books (needs the `publishing` extra and, for PDFs, a TeX toolchain). Reads `engineering-influence.toml` in `--root`. | `0` ok; `1` a build or audit failure; `2` bad arguments |
+| `ei book …` | Audit, build and publish books (needs the `publishing` extra and, for PDFs, a TeX toolchain). `package SLUG` writes the KDP release bundle (`build/SLUG/release/kdp`, see [BOOKS_AND_KDP.md](BOOKS_AND_KDP.md#the-release-bundle)) and refuses a failing release. Reads `engineering-influence.toml` in `--root`. | `0` ok; `1` a build or audit failure; `2` bad arguments |
 | `ei tools add NAME -- COMMAND …` | **Runs** an MCP server once, under limits and with a bare environment, and records what it is in the tool lock: its files' hashes, the name and version it reported and a hash of its tools. Options go before `NAME`. Refuses a launcher (`npx`, `uvx`, `docker`, …) and a relative script path before anything is run. See [TOOL_LOCK.md](TOOL_LOCK.md). | `0`; `2` on a refusal or an unusable lock |
 | `ei tools add --url URL NAME` | **Contacts** a remote MCP server once and records its address, the name and version it reported and a hash of its tools. Only https to a public address is allowed; the token, if any, is the variable named by `--bearer-env`. The server's code is not locked, only what it advertises. See [TOOL_LOCK.md](TOOL_LOCK.md#remote-servers-http). | `0`; `2` on a refusal or an unusable lock |
 | `ei tools list` | Shows the locked servers. Starts nothing. | `0`; `2` an unusable lock |

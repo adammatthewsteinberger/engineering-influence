@@ -1,6 +1,7 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Transport-neutral publishing controller: audit, build, and publish a project's books."""
 
+import tomllib
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,9 @@ from engineering_influence.models.publishing.project_config import ProjectConfig
 from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.services.epub.epub_builder import EpubBuilder
 from engineering_influence.services.epub.epub_verifier import EpubVerifier
+from engineering_influence.services.interfaces.package_book_interface import (
+    PackageBookInterface,
+)
 from engineering_influence.services.publishing.audit_report_text import AuditReportText
 from engineering_influence.services.publishing.book_auditor import BookAuditor
 from engineering_influence.services.publishing.interfaces.pdf_verifier_interface import (
@@ -55,6 +59,7 @@ class PublishingController(PublishingControllerInterface):
         covers: CoverBuilderProviderInterface,
         qa: RenderQaInterface,
         publisher: PublishPipelineProviderInterface,
+        packager: PackageBookInterface,
     ) -> None:
         self._config = config
         self._files = files
@@ -68,6 +73,7 @@ class PublishingController(PublishingControllerInterface):
         self._covers = covers
         self._qa = qa
         self._publisher = publisher
+        self._packager = packager
 
     @property
     def layout(self) -> ProjectLayout:
@@ -144,6 +150,13 @@ class PublishingController(PublishingControllerInterface):
             report_path=report_path,
             strict_release=strict_release,
         )
+
+    def package(self, slug: str) -> str:
+        """Write the book's release bundle, after its release check; refuse a book whose check fails."""
+        config_path = self._book_config(slug)
+        reports, _, _ = self.audit(slug)
+        config = tomllib.loads(self._files.read_text(config_path))
+        return self._packager.package(slug, config, reports["release"]["status"])
 
     def book_slugs(self) -> list[str]:
         """Every book the project configures."""
