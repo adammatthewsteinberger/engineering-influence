@@ -11,6 +11,7 @@ from engineering_influence.controllers.interfaces.run_controller_interface impor
     RunControllerInterface,
 )
 from engineering_influence.controllers.project_controller import ProjectController
+from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
 from engineering_influence.infrastructure.plugins.directory_plugin_folder_reader import (
@@ -63,6 +64,7 @@ from engineering_influence.interfaces.model_probe_interface import ModelProbeInt
 from engineering_influence.interfaces.queue_interface import QueueInterface
 from engineering_influence.interfaces.run_repository_interface import RunRepositoryInterface
 from engineering_influence.interfaces.schema_migrator_interface import SchemaMigratorInterface
+from engineering_influence.interfaces.search_provider_interface import SearchProviderInterface
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
 from engineering_influence.models.tool_limits import ToolLimits
 from engineering_influence.runtime.interfaces.cli_runtime_interface import CliRuntimeInterface
@@ -77,6 +79,9 @@ from engineering_influence.services.interfaces.model_doctor_interface import (
     ModelDoctorInterface,
 )
 from engineering_influence.services.interfaces.resume_run_interface import ResumeRunInterface
+from engineering_influence.services.interfaces.search_doctor_interface import (
+    SearchDoctorInterface,
+)
 from engineering_influence.services.mcp_client_factory import McpClientFactory
 from engineering_influence.services.mcp_server_probe import McpServerProbe
 from engineering_influence.services.model_doctor import ModelDoctor
@@ -86,6 +91,7 @@ from engineering_influence.services.plugin_installer import PluginInstaller
 from engineering_influence.services.plugin_lock_verifier import PluginLockVerifier
 from engineering_influence.services.plugin_marketplace import PluginMarketplace
 from engineering_influence.services.resume_run import ResumeRun
+from engineering_influence.services.search_doctor import SearchDoctor
 from engineering_influence.services.skill_converter import SkillConverter
 from engineering_influence.services.skill_importer import SkillImporter
 from engineering_influence.services.skill_lock_editor import SkillLockEditor
@@ -106,7 +112,7 @@ class CliRuntime(CliRuntimeInterface):
     """Wire ``ei``: a local pipeline planner, the book, server and database commands.
 
     ``probe_timeout_seconds`` bounds each request of ``doctor --probe``. ``publishing`` replaces the factory that wires the book commands to the real file system and
-    toolchain, so a test can drive the whole command line over fakes.
+    toolchain, so a test can drive the whole command line over fakes. ``brave_base_url`` is where ``doctor --search`` finds Brave, so a test can point it at a local server.
     """
 
     TOOL_SESSION_SECONDS = 120.0
@@ -121,11 +127,13 @@ class CliRuntime(CliRuntimeInterface):
         queue: QueueInterface | None = None,
         probe_timeout_seconds: float = 10.0,
         bundles: BundleFetcherInterface | None = None,
+        brave_base_url: str = "https://api.search.brave.com",
     ) -> None:
         self._publishing = publishing
         self._queue = queue
         self._probe_timeout_seconds = probe_timeout_seconds
         self._bundles = bundles
+        self._brave_base_url = brave_base_url
 
     def build(self) -> CliApplicationInterface:
         """Wire the controller, the book commands and the server commands."""
@@ -136,7 +144,7 @@ class CliRuntime(CliRuntimeInterface):
             ServeCli(ServeStarter()),
             DbCli(self._schema_migrator, self._secret_provider),
             RunCli(self._resume_run, self._cancel_run, self._run_status, self._export_run),
-            DoctorCli(self._model_doctor, os.environ),
+            DoctorCli(self._model_doctor, self._search_doctor, os.environ),
             self._tools_cli(),
             self._skills_cli(),
             self._plugins_cli(),
@@ -269,6 +277,41 @@ class CliRuntime(CliRuntimeInterface):
         import httpx
 
         return httpx.Client(timeout=httpx.Timeout(self.TOOL_REQUEST_SECONDS, connect=10.0))
+
+    def _search_doctor(self) -> SearchDoctorInterface:
+        """Build the search doctor from the same settings the research stage reads, in the same order.
+
+        ``EI_SEARXNG_URL`` first, then Brave when ``BRAVE_SEARCH_API_KEY`` is set. The client is built here and lives until this one-shot
+        command exits.
+        """
+        import httpx
+
+        from engineering_influence.infrastructure.research.brave_search_provider import (
+            BraveSearchProvider,
+        )
+        from engineering_influence.infrastructure.research.searxng_search_provider import (
+            SearxngSearchProvider,
+        )
+
+        client = httpx.Client(timeout=self._probe_timeout_seconds)
+        providers: list[tuple[str, SearchProviderInterface]] = []
+        address = os.environ.get("EI_SEARXNG_URL", "").strip()
+        if address:
+            try:
+                providers.append(("searxng", SearxngSearchProvider(client, address)))
+            except ValueError as error:
+                raise ApplicationError(
+                    code="STAGE_SEARXNG_URL_INVALID",
+                    message=f"EI_SEARXNG_URL is not usable: {error}",
+                    http_status=503,
+                ) from error
+        try:
+            key = self._secret_provider().require("BRAVE_SEARCH_API_KEY")
+        except ApplicationError:
+            key = ""
+        if key:
+            providers.append(("brave", BraveSearchProvider(client, key, self._brave_base_url)))
+        return SearchDoctor(tuple(providers))
 
     def _model_doctor(self, probe: bool) -> ModelDoctorInterface:
         """Build the model doctor; the probe, and the HTTP client behind it, only if asked for.

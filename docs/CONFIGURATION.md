@@ -234,6 +234,8 @@ search works against it, then replace the digest in the compose file. SearXNG pa
 public search engines it is set to use, and those engines can throttle or block a local instance, which is
 what the Brave backup is for. The port is `EI_SEARXNG_PORT` (default 8888).
 
+Check that it answers with `ei doctor --search` (one real search per provider; see [RESEARCH.md](RESEARCH.md)).
+
 ## The tool lock (third-party tool servers)
 
 `ei tools add`, `list` and `verify` read and write one lock file: `--lock PATH`, else `EI_TOOL_LOCK`, else

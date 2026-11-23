@@ -27,7 +27,8 @@ environment that you mean to spend.
    [MODEL_CATALOG.md](MODEL_CATALOG.md)), and the key in the environment variable the profile names. Check them first, which
    sends nothing: `ei doctor --models`.
 2. A web search for the research stage: `EI_SEARXNG_URL` (a SearXNG instance) or `BRAVE_SEARCH_API_KEY`
-   ([CONFIGURATION.md](CONFIGURATION.md)). Without one the run stops at start with a clear message, before any call.
+   ([CONFIGURATION.md](CONFIGURATION.md), [RESEARCH.md](RESEARCH.md)). Without one the run stops at start with a clear message, before any
+   call. Check that it answers first, which sends one search per provider and asks no model anything: `ei doctor --search`.
 3. A dev install with the extras the audit and the runtime need: `uv sync --extra runtime --extra publishing`.
 
 ## Run it
