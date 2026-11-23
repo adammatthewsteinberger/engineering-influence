@@ -86,6 +86,7 @@ from engineering_influence.services.dash_rewriter import DashRewriter
 from engineering_influence.services.draft_stage_executor import DraftStageExecutor
 from engineering_influence.services.fallback_search_provider import FallbackSearchProvider
 from engineering_influence.services.fetch_url_tool import FetchUrlTool
+from engineering_influence.services.local_default_model import LocalDefaultModel
 from engineering_influence.services.lock_stage_guidance import LockStageGuidance
 from engineering_influence.services.lock_tool_grants import LockToolGrants
 from engineering_influence.services.mcp_client_factory import McpClientFactory
@@ -112,7 +113,13 @@ from engineering_influence.services.web_search_tool import WebSearchTool
 
 
 class StageExecutorRuntime(StageExecutorRuntimeInterface):
-    """``EI_STAGE_EXECUTOR`` picks ``deterministic`` (the default) or ``model``.
+    """``EI_STAGE_EXECUTOR`` picks ``local`` (the default), ``model`` or ``deterministic``.
+
+    ``local`` is free: ``LocalDefaultModel`` is an open-source model served on this machine, with a SearXNG on
+    ``http://127.0.0.1:8888`` for the research stage unless ``EI_SEARXNG_URL`` or ``BRAVE_SEARCH_API_KEY`` says
+    otherwise. It needs no profile or catalog file, and building it contacts nothing: a missing server shows when a
+    stage calls it (``ei doctor`` checks first). ``deterministic`` is the offline placeholder, for tests and
+    for trying the plumbing with no model at all.
 
     ``model`` spends money, so it is never inferred from a profile file being there. It needs
     ``EI_STAGE_MODEL_PROFILE`` (the profile's name), ``EI_MODEL_PROFILES`` and ``EI_MODEL_CATALOG``
@@ -140,6 +147,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
     SERVER_REQUEST_SECONDS = 30.0
     SERVER_MEMORY_BYTES = 2 * 1024**3
     SERVER_DISK_BYTES = 1024**3
+    LOCAL_SEARXNG = "http://127.0.0.1:8888"
 
     def __init__(
         self,
@@ -156,21 +164,23 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         self._research_client: httpx.Client | None = None
         self._runner: ToolRunner | None = None
         self._fleet: ToolServerFleet | None = None
+        self._free = False
 
     def build(
         self, artifacts: ArtifactStoreInterface, journal: JournalInterface
     ) -> StageExecutorInterface:
-        """The offline placeholder, or a model-backed executor when the environment opts in."""
-        kind = self._environment.get("EI_STAGE_EXECUTOR", "deterministic")
+        """The free local model by default, the offline placeholder, or a model of your own when the environment says so."""
+        kind = self._environment.get("EI_STAGE_EXECUTOR", "local")
         if kind == "deterministic":
             return DeterministicStageExecutor(artifacts, journal)
-        if kind != "model":
+        if kind not in ("local", "model"):
             raise ApplicationError(
                 code="STAGE_EXECUTOR_UNKNOWN",
-                message=f"EI_STAGE_EXECUTOR is {kind!r}; use 'deterministic' or 'model'",
+                message=f"EI_STAGE_EXECUTOR is {kind!r}; use 'local', 'model' or 'deterministic'",
                 http_status=503,
             )
-        model = self._model()
+        self._free = kind == "local"
+        model = self._local_model() if self._free else self._model()
         guidance, skill_tools = self._guidance()
         lock, locked_tools = self._locked_servers()
         tools = ToolRegistry((*self._tools(), *locked_tools, *skill_tools))
@@ -386,6 +396,8 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         brave_key = self._brave_key()
         if brave_key:
             providers.append(BraveSearchProvider(client, brave_key))
+        if not providers and self._free:
+            providers.append(SearxngSearchProvider(client, self.LOCAL_SEARXNG))
         if not providers:
             raise ApplicationError(
                 code="STAGE_SEARCH_NOT_CONFIGURED",
@@ -402,6 +414,15 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             return self._secrets.require("BRAVE_SEARCH_API_KEY").strip()
         except ApplicationError:
             return ""
+
+    def _local_model(self) -> ModelInterface:
+        free = LocalDefaultModel(self._environment)
+        profile = free.profile()
+        client = httpx.Client(
+            timeout=httpx.Timeout(self._timeout, connect=self.CONNECT_TIMEOUT_SECONDS)
+        )
+        self._client = client
+        return self._adapter(client, profile, "", free.descriptor())
 
     def _model(self) -> ModelInterface:
         name = self._required("EI_STAGE_MODEL_PROFILE")
@@ -446,6 +467,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             descriptor,
             profile.base_url,
             profile.output_cap_field,
+            profile.reasoning_effort,
         )
 
     def _required(self, name: str) -> str:

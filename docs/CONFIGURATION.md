@@ -176,9 +176,13 @@ and republish it by hand. Stopping the worker finishes the job in flight first.
 
 - **Nothing starts a run yet.** The worker can advance a run that exists, and `ei run` can
   resume or cancel one, but no command or endpoint creates one; `ei book create` arrives with the model-backed stages.
-- **The worker does a run's stages offline unless you opt in.** By default
-  `DeterministicStageExecutor` writes `<stage>.md` from the brief's idea, at no cost. With
-  `EI_STAGE_EXECUTOR=model` a model does the stages instead, and the worker refuses to start
+- **The worker's default is a free local model.** `EI_STAGE_EXECUTOR` is `local` unless set:
+  an open-source model (`gpt-oss:20b`, Apache 2.0) on this machine through Ollama, no key, no cost, and a SearXNG at
+  `http://127.0.0.1:8888` for research. Nothing is contacted when the worker starts; [LOCAL_MODEL.md](LOCAL_MODEL.md) says how to
+  set it up and how to point at another model (`EI_LOCAL_MODEL`, `EI_LOCAL_URL`). `deterministic` is the offline
+  placeholder, which writes `<stage>.md` from the brief's idea at no cost and calls no model; the example compose stack
+  uses it because a container cannot reach the host's `127.0.0.1`. With
+  `EI_STAGE_EXECUTOR=model` a model of your own does the stages instead, and the worker refuses to start
   unless `EI_STAGE_MODEL_PROFILE` (a profile's name), `EI_MODEL_PROFILES` and `EI_MODEL_CATALOG`
   (the files `ei doctor --models` checks, see [MODEL_PROFILES.md](MODEL_PROFILES.md)) are set,
   the profile exists, a price is in force today, and its key is available. A profile file being
