@@ -108,7 +108,7 @@ def request_for(
 
 def test_a_stage_with_no_guidance_sends_exactly_the_prompt_and_version_it_always_did() -> None:
     plain = request_for("brief", NoStageGuidance())
-    assert plain.prompt_version == "stage_brief@1"
+    assert plain.prompt_version == "stage_brief@2"
     assert "installed_guidance" not in plain.prompt and "installed_guidance" not in plain.system
 
 
@@ -116,7 +116,7 @@ def test_guidance_is_added_after_the_stages_own_prompt_and_the_version_names_it(
     plain = request_for("brief", NoStageGuidance())
     guided = request_for("brief", Guidances(GUIDANCE, "brief"))
     assert guided.prompt == f"{plain.prompt}\n\n{GUIDANCE.text}"
-    assert guided.prompt_version == "stage_brief@1+skill_guidance@1:abc"
+    assert guided.prompt_version == "stage_brief@2+skill_guidance@1:abc"
 
 
 def test_guidance_never_reaches_the_system_prompt_the_cap_or_the_offered_tools() -> None:

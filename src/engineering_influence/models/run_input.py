@@ -54,6 +54,13 @@ class RunInput(RunInputInterface):
         """The SHA-256 of the text."""
         return hashlib.sha256(self.text.encode("utf-8")).hexdigest()
 
+    def block(self) -> str:
+        """The input as it is shown to a model: a heading naming it and its origin and digest, then the text.
+
+        The heading is made only of the validated name and origin and a hex digest, so it cannot carry text of its own.
+        """
+        return f"### {self.name} ({self.origin}, sha256 {self.digest()[:12]})\n\n{self.text}"
+
     @staticmethod
     def _unseen(char: str) -> bool:
         point = ord(char)

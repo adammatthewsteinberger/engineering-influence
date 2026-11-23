@@ -30,6 +30,22 @@ reach a model as **evidence, never as instructions**, and it must not be able to
 ## Consequences
 
 - The surfaces that start a run (M8) pass inputs through the brief and need no new storage.
-- The prompts do not use inputs yet: that is the next change, and it bumps the version of every template it touches.
 - A large reference is limited to 50,000 characters an input. A longer text is a reference skill (`read_skill`), which is read on
   request, not carried in every prompt.
+
+## Amendment: inputs in the prompts
+
+- **Three stages carry the inputs**: `brief`, `research` and `outline`, through an `inputs` blank that is listed as untrusted, so it is
+  wrapped in `<untrusted name="inputs">` and any copy of that tag inside it is defused. Each input is shown under a heading made only
+  of its validated name, its origin and the first 12 digits of its SHA-256, then its text. With none, the block says `not given`.
+  The templates are now `stage_brief@2`, `stage_research@2` and `stage_outline@4`, so the journal never replays an answer written
+  for the old prompt.
+- **`positioning`, `metadata` and the editing stages do not carry them.** They read the brief and the outline, which were written from
+  the inputs. **Drafting does not either**: its grounding is the outline and the research, and the inputs would repeat in every chapter's
+  call. Drafting from a passage the author supplied is a separate decision.
+- **The research prompt says the material is not a source**: a fact still needs a page the model read, so an input can point the research
+  at something but cannot stand in for a citation.
+- **Inputs grant nothing.** The system part, the tools offered and the stage's grants are identical with and without inputs (tested).
+- **Known gap:** the model's context window is checked before drafting and editing, not before these three stages. Inputs of up to
+  200,000 characters (about 50,000 tokens) can overrun a small model, and the provider's error is what the run would show.
+

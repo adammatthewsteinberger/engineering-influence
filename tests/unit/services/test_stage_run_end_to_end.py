@@ -327,12 +327,12 @@ def test_each_stage_is_asked_with_what_the_stages_before_it_wrote() -> None:
     assert "BRIEF text" in outline.prompt and "POSITIONING text" in outline.prompt
     assert "RESEARCH text" in outline.prompt
     assert [r.prompt_version for r in world.model.requests] == [
-        "stage_brief@1",
+        "stage_brief@2",
         "stage_positioning@1",
-        "stage_research@1",
-        "stage_research@1",
-        "stage_research@1",
-        "stage_outline@3",
+        "stage_research@2",
+        "stage_research@2",
+        "stage_research@2",
+        "stage_outline@4",
         "stage_metadata@1",
         "context_pack@2",
         "stage_summary@1",

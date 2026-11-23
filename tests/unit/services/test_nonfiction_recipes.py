@@ -12,7 +12,7 @@ from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.stage_recipe import StageRecipe
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 
-FROM_THE_BRIEF = {"idea", "audience", "title_hint", "target_words", "language"}
+FROM_THE_BRIEF = {"idea", "audience", "title_hint", "target_words", "language", "inputs"}
 TRUSTED = {"target_words"}
 RECIPES = NonfictionRecipes()
 
@@ -122,4 +122,4 @@ def test_the_research_prompt_names_its_tools_and_says_what_comes_from_them_is_un
     assert "web_search" in system and "fetch_url" in system
     assert "<untrusted>" in system and "everything a tool returns" in system
     assert "SHA-256" in system and "never invent a source" in system
-    assert template.untrusted == frozenset({"brief", "positioning"})
+    assert template.untrusted == frozenset({"brief", "positioning", "inputs"})
