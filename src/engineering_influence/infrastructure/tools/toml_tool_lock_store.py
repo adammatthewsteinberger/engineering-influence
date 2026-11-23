@@ -64,7 +64,12 @@ class TomlToolLockStore(ToolLockStoreInterface):
             self._block(s) for s in servers
         ]
         temporary = path.with_name(f".{path.name}.tmp")
-        temporary.write_text("\n".join(blocks), encoding="utf-8")
+        # A stale file or link at the temporary name is removed, not written through. The flags then make
+        # the open fail rather than follow a link planted between the removal and the open.
+        temporary.unlink(missing_ok=True)
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
+        with os.fdopen(os.open(temporary, flags, 0o644), "w", encoding="utf-8") as handle:
+            handle.write("\n".join(blocks))
         os.replace(temporary, path)
 
     def _server(self, entry: Any, index: int) -> McpServerLock:
