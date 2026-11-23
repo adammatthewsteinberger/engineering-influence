@@ -1,6 +1,7 @@
 """A small MCP server over stdio, for the tests. Its first argument chooses how it behaves.
 
-It speaks just enough of the protocol (initialize, tools/list, tools/call) to be a real server on
+It speaks just enough of the protocol (initialize, tools/list, tools/call, and with the `resources` variant
+resources/list and resources/read) to be a real server on
 the other end of a pipe, and has modes that misbehave in the ways a hostile server might.
 """
 
@@ -143,7 +144,10 @@ def main() -> None:
                 ident,
                 {
                     "protocolVersion": "2025-06-18",
-                    "capabilities": {"tools": {}},
+                    "capabilities": {
+                        "tools": {},
+                        **({"resources": {}} if variant().get("resources") else {}),
+                    },
                     "serverInfo": {"name": "test-server", "version": "1.0.0"},
                 },
             )
@@ -178,6 +182,40 @@ def main() -> None:
                 sys.stdout.flush()
             else:
                 answer(ident, {"tools": tools()})
+        elif method == "resources/list":
+            answer(
+                ident,
+                {
+                    "resources": [
+                        {"uri": "notes://a", "name": "Notes A", "mimeType": "text/plain"},
+                        {"uri": "notes://blob", "name": "A picture", "mimeType": "image/png"},
+                    ]
+                },
+            )
+        elif method == "resources/read":
+            uri = message.get("params", {}).get("uri")
+            if uri == "notes://a":
+                answer(
+                    ident,
+                    {
+                        "contents": [
+                            {"uri": uri, "mimeType": "text/plain", "text": "Hives need two boxes."}
+                        ]
+                    },
+                )
+            elif uri == "notes://blob":
+                answer(
+                    ident,
+                    {"contents": [{"uri": uri, "mimeType": "image/png", "blob": "iVBORw0KGgo="}]},
+                )
+            else:
+                send(
+                    {
+                        "jsonrpc": "2.0",
+                        "id": ident,
+                        "error": {"code": -32002, "message": "resource not found"},
+                    }
+                )
         elif method == "tools/call":
             params = message.get("params", {})
             answer(ident, call(params.get("name", ""), params.get("arguments", {}), last_other))

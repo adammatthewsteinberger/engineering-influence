@@ -457,3 +457,71 @@ def test_fetch_url_through_the_runtime_refuses_an_address_on_this_machine(world:
         message for message in provider.bodies[1]["messages"] if message["role"] == "tool"
     )
     assert "localhost refused: non_public_address" in answer["content"]
+
+
+# ----------------------------------------------------------------------------- resources, for real
+def test_a_servers_resources_are_read_only_where_the_lock_grants_the_two_resource_tools(
+    world: World,
+) -> None:
+    world.variant(resources=True)
+    world.lock_server(grant=("research", "list_resources", "read_resource"))
+    with model(asks("files__read_resource", {"uri": "notes://a"}), says("RESEARCH notes")) as (
+        url,
+        provider,
+    ):
+        rt = world.runtime(url)
+        try:
+            world.execute(rt, "research")
+        finally:
+            rt.close()
+    first, second = provider.bodies
+    offered = tool_names(first)
+    assert "files__list_resources" in offered and "files__read_resource" in offered
+    assert "files__echo" not in offered
+    answer = next(message for message in second["messages"] if message["role"] == "tool")
+    assert answer["content"].startswith('<untrusted name="tool:files__read_resource">\n')
+    assert "Hives need two boxes." in answer["content"]
+    assert world.store.get("run-1", "research.md") == b"RESEARCH notes"
+
+
+def test_a_server_with_resources_offers_no_resource_tool_to_a_stage_the_lock_does_not_grant_them(
+    world: World,
+) -> None:
+    world.variant(resources=True)
+    world.lock_server()  # grants research only the echo tool
+    with model(asks("files__read_resource", {"uri": "notes://a"}), says("RESEARCH notes")) as (
+        url,
+        provider,
+    ):
+        rt = world.runtime(url)
+        try:
+            world.execute(rt, "research")
+        finally:
+            rt.close()
+    first, second = provider.bodies
+    assert "files__read_resource" not in tool_names(first)
+    answer = next(message for message in second["messages"] if message["role"] == "tool")
+    assert "Hives need two boxes" not in answer["content"]
+
+
+def test_a_resource_the_server_does_not_have_is_a_failed_call_the_model_can_read(
+    world: World,
+) -> None:
+    world.variant(resources=True)
+    world.lock_server(grant=("research", "read_resource"))
+    with model(
+        asks("files__read_resource", {"uri": "notes://missing"}), says("RESEARCH notes")
+    ) as (
+        url,
+        provider,
+    ):
+        rt = world.runtime(url)
+        try:
+            world.execute(rt, "research")
+        finally:
+            rt.close()
+    answer = next(
+        message for message in provider.bodies[1]["messages"] if message["role"] == "tool"
+    )
+    assert "resource not found" in answer["content"]
+    assert world.store.get("run-1", "research.md") == b"RESEARCH notes"
