@@ -101,7 +101,8 @@ class PluginsCli(PluginsCliInterface):
         add.add_argument("--skill-lock", type=Path, help=skills)
         add.add_argument("file", type=Path, help="the plugin file, for example research_pack.toml")
         search = commands.add_parser(
-            "search", help="list the plugins in a marketplace index (a file or an https address)"
+            "search",
+            help="list the plugins in a marketplace: an index (TOML) or a Claude Code marketplace.json, a file or an https address",
         )
         search.add_argument("index", help="a file on disk or an https:// address")
         search.add_argument(
@@ -240,7 +241,32 @@ class PluginsCli(PluginsCliInterface):
             for server in plugin.servers:
                 print("  " + shlex.join(("ei", *server.tools_add_arguments())))
 
+    def _listing(self, address: str, text: str) -> int:
+        listing = self._marketplace.listing(address)
+        found = listing.search(text)
+        shown = self._safe(address, 200)
+        for entry in found:
+            description = self._safe(entry.description, self.SHOWN)
+            print(
+                f"{self._safe(entry.identifier(), 150)}  [{entry.kind} {self._safe(entry.target, 150)}]"
+                + (f"  {description}" if description else "")
+            )
+            if entry.local:
+                print(f"    ei plugins import {shlex.quote(entry.local)}")
+        if not found:
+            print(f"no plugin in {shown} matches {self._safe(text, 60)!r}")
+        print(
+            f"{len(found)} of {len(listing.entries)} plugins in the marketplace {self._safe(listing.name, 100)!r}; "
+            "nothing is fetched or installed. Get a copy of a plugin yourself, read it, "
+            "then: ei plugins import FOLDER"
+        )
+        if listing.unreadable:
+            print(f"{listing.unreadable} entries could not be read and are not shown")
+        return 0
+
     def _search(self, address: str, text: str) -> int:
+        if address.lower().endswith(".json"):
+            return self._listing(address, text)
         index = self._marketplace.index(address)
         found = index.search(text)
         shown = self._safe(address, 200)

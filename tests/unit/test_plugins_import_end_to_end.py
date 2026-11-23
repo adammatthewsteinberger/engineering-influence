@@ -128,3 +128,43 @@ def test_a_folder_that_holds_nothing_importable_exits_2_and_writes_nothing(
     assert ei("import", str(empty), "--out", str(tmp_path / "empty.toml")) == 2
     assert "nothing in the folder could be imported" in capsys.readouterr().err
     assert not (tmp_path / "empty.toml").exists()
+
+
+def test_a_marketplace_json_is_searched_and_the_printed_command_imports_the_plugin(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    market = tmp_path / "team market"
+    (market / ".claude-plugin").mkdir(parents=True)
+    plugin = make_plugin(market / "plugins")
+    plugin.rename(market / "plugins" / "research-pack")
+    (market / ".claude-plugin" / "marketplace.json").write_text(
+        json.dumps(
+            {
+                "name": "Team",
+                "owner": {"name": "Someone"},
+                "plugins": [
+                    {
+                        "name": "research-pack",
+                        "source": "./plugins/research-pack",
+                        "description": "Sources",
+                        "version": "1.0.0",
+                    },
+                    {"name": "elsewhere", "source": {"source": "github", "repo": "o/r"}},
+                    {"name": "escape", "source": "./../outside"},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    assert ei("search", str(market / ".claude-plugin" / "marketplace.json")) == 0
+    said = capsys.readouterr().out
+    assert "research-pack@1.0.0  [path ./plugins/research-pack]  Sources" in said
+    assert "elsewhere  [github o/r]" in said and "escape  [other ./../outside]" in said
+    assert "nothing is fetched or installed" in said
+    command = next(line for line in said.splitlines() if "ei plugins import" in line).strip()
+    folder = command.removeprefix("ei plugins import ").strip("'")
+    assert folder == str(market / "plugins" / "research-pack")
+
+    out = tmp_path / "research_pack.toml"
+    assert ei("import", folder, "--out", str(out)) == 0
+    assert out.exists()

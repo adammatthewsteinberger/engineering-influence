@@ -16,6 +16,9 @@ from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
 from engineering_influence.infrastructure.plugins.directory_plugin_folder_reader import (
     DirectoryPluginFolderReader,
 )
+from engineering_influence.infrastructure.plugins.json_marketplace_parser import (
+    JsonMarketplaceParser,
+)
 from engineering_influence.infrastructure.plugins.lazy_bundle_fetcher import LazyBundleFetcher
 from engineering_influence.infrastructure.plugins.toml_plugin_index_parser import (
     TomlPluginIndexParser,
@@ -186,7 +189,12 @@ class CliRuntime(CliRuntimeInterface):
             ),
             PluginLockVerifier(bundle_files, parser),
             PluginMarketplace(
-                fetcher, bundle_files, TomlPluginIndexParser(), parser, self.PLUGIN_BUNDLE_BYTES
+                fetcher,
+                bundle_files,
+                TomlPluginIndexParser(),
+                parser,
+                JsonMarketplaceParser(),
+                self.PLUGIN_BUNDLE_BYTES,
             ),
             TomlPluginLockStore(),
             TomlSkillLockStore(),

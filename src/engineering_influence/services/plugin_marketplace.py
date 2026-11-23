@@ -2,15 +2,20 @@
 """Reads a marketplace index and downloads a plugin file from it, checking the hash before anything else."""
 
 import hashlib
+from dataclasses import replace
 from pathlib import Path
 
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interfaces.bundle_fetcher_interface import BundleFetcherInterface
+from engineering_influence.interfaces.marketplace_listing_parser_interface import (
+    MarketplaceListingParserInterface,
+)
 from engineering_influence.interfaces.plugin_index_parser_interface import (
     PluginIndexParserInterface,
 )
 from engineering_influence.interfaces.plugin_parser_interface import PluginParserInterface
 from engineering_influence.interfaces.skill_files_interface import SkillFilesInterface
+from engineering_influence.models.marketplace_listing import MarketplaceListing
 from engineering_influence.models.plugin_bundle import PluginBundle
 from engineering_influence.models.plugin_download import PluginDownload
 from engineering_influence.models.plugin_index import PluginIndex
@@ -37,17 +42,40 @@ class PluginMarketplace(PluginMarketplaceInterface):
         files: SkillFilesInterface,
         indexes: PluginIndexParserInterface,
         plugins: PluginParserInterface,
+        listings: MarketplaceListingParserInterface,
         max_bytes: int = 512 * 1024,
     ) -> None:
         self._fetcher = fetcher
         self._files = files
         self._indexes = indexes
         self._plugins = plugins
+        self._listings = listings
         self._max_bytes = max_bytes
 
     def index(self, address: str) -> PluginIndex:
         """The index at a file path or an https address, or an ApplicationError saying why it is not usable."""
         return self._indexes.parse(self._read(address))
+
+    def listing(self, address: str) -> MarketplaceListing:
+        """The Claude Code marketplace at a file path or an https address, read as a list and nothing more.
+
+        A ``path`` source in a marketplace on disk is resolved against the folder that holds ``.claude-plugin``, so the
+        listing can say where the plugin is on this machine. No plugin folder is opened, fetched or cloned.
+        """
+        listing = self._listings.parse(self._read(address))
+        if address.startswith("https://"):
+            return listing
+        root = Path(address).parent
+        if root.name == ".claude-plugin":
+            root = root.parent
+        return MarketplaceListing(
+            listing.name,
+            tuple(
+                replace(entry, local=str(root / entry.target)) if entry.kind == "path" else entry
+                for entry in listing.entries
+            ),
+            listing.unreadable,
+        )
 
     def download(self, address: str, name: str, folder: Path) -> PluginDownload:
         """Download the named plugin to ``folder``, checked against the index's hash; nothing is installed."""

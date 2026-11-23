@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from engineering_influence.models.marketplace_listing import MarketplaceListing
     from engineering_influence.models.plugin_download import PluginDownload
     from engineering_influence.models.plugin_index import PluginIndex
 
@@ -20,6 +21,10 @@ class PluginMarketplaceInterface(ABC):
     @abstractmethod
     def index(self, address: str) -> PluginIndex:
         """The index at a file path or an https address, or an ApplicationError saying why it is not usable."""
+
+    @abstractmethod
+    def listing(self, address: str) -> MarketplaceListing:
+        """The Claude Code marketplace at a file path or an https address as a list, or an ApplicationError."""
 
     @abstractmethod
     def download(self, address: str, name: str, folder: Path) -> PluginDownload:

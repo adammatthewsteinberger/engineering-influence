@@ -65,7 +65,7 @@ ei plugins add [--lock PATH] [--skill-lock PATH] FILE
 ei plugins list [--lock PATH]
 ei plugins verify [--lock PATH] [--skill-lock PATH]
 ei plugins remove [--lock PATH] [--skill-lock PATH] NAME
-ei plugins search INDEX [TEXT]
+ei plugins search INDEX_OR_MARKETPLACE_JSON [TEXT]
 ei plugins fetch INDEX NAME [--output DIR]
 ```
 
@@ -171,6 +171,21 @@ fragment, so nothing secret can be carried in one.
 are the only commands that can use a network, only when a person runs them, and only with the `runtime` extra for
 an `https://` address (a local index file needs nothing extra).
 
+### Claude Code marketplaces (`marketplace.json`)
+
+`ei plugins search FILE.json [TEXT]` (a path or an `https://` address ending in `.json`) reads a Claude Code
+`marketplace.json` and **lists** what it names. It reads four things from each plugin (`name`, `description`,
+`version`, `source`) and ignores every other key. A source is classified and printed, never followed:
+`./folder` is a `path` inside the marketplace, `{"source": "github"}` a repository, `{"source": "url"}` or `git` an
+address, anything else (or a `./` path that climbs out with `..`) `other`. For a marketplace on disk a `path`
+source also prints the exact `ei plugins import FOLDER` command for the folder on this machine.
+
+**Nothing is fetched, cloned or installed.** Unlike an index, a marketplace names folders and repositories, not one
+file with a hash, so there is nothing here to verify a download against: you get a copy yourself, read it, and
+`ei plugins import` it, which is where the bundle is checked. An entry that cannot be read is counted and left
+out, not hidden; a duplicate name keeps the first. `plugins fetch` still works only with this project's TOML
+indexes.
+
 ## What this does and does not give you
 
 - **It gives you one thing to review and one hash to pin** for a set of skills and server definitions, and a
@@ -193,7 +208,8 @@ an `https://` address (a local index file needs nothing extra).
 
 Whatever a Claude Code plugin does beyond skills and MCP servers: its commands, agents, hooks and output styles are not
 imported. Servers that need a launcher or a placeholder are not converted (they are named, so a person can install
-them by hand). `marketplace.json` is not read yet; an index is still this project's own TOML.
+them by hand). A `marketplace.json` is listed, not fetched: plugins named by a repository or an address are not downloaded, pinned
+by commit or hash-checked. An index is still this project's own TOML.
 
 Anything that vouches for a publisher: indexes and plugin files are not signed, so the hash is the only
 integrity check. Nothing updates itself or checks an index for newer versions, a plugin cannot name another
