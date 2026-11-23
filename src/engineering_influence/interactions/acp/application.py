@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import sys
+import threading
 import uuid
 from typing import TYPE_CHECKING, Any, ClassVar
 
@@ -13,12 +14,16 @@ from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interactions.acp.interfaces.application_interface import (
     AcpApplicationInterface,
 )
+from engineering_influence.models.run_status import RunStatus
 from engineering_influence.services.interfaces.brief_reader_interface import BriefReaderInterface
 from engineering_influence.services.interfaces.cancel_run_interface import CancelRunInterface
 from engineering_influence.services.interfaces.create_run_interface import CreateRunInterface
+from engineering_influence.services.interfaces.run_progress_interface import RunProgressInterface
 
 if TYPE_CHECKING:
     from typing import TextIO
+
+    from engineering_influence.models.book_run import BookRun
 
 
 class AcpApplication(AcpApplicationInterface):
@@ -48,23 +53,34 @@ class AcpApplication(AcpApplicationInterface):
         "RUN_KIND_UNSUPPORTED": -32602,
     }
     INTERNAL: ClassVar[int] = -32603
+    # A finished run is reported once and then no longer followed; a parked run can still be resumed.
+    FINISHED: ClassVar[frozenset[RunStatus]] = frozenset(
+        {RunStatus.COMPLETED, RunStatus.FAILED, RunStatus.CANCELLED}
+    )
 
     def __init__(
         self,
         creator: CreateRunInterface,
         canceller: CancelRunInterface,
         briefs: BriefReaderInterface,
+        progress: RunProgressInterface,
     ) -> None:
         self._creator = creator
         self._canceller = canceller
         self._briefs = briefs
+        self._progress = progress
+        # Guards the sessions and the reported states: the reader thread and the follower both use them.
+        self._lock = threading.Lock()
         self._sessions: dict[str, str | None] = {}
+        # For each session whose run is still followed: the run's id and the (status, stage) last reported.
+        self._reported: dict[str, tuple[str, tuple[str, str]]] = {}
 
     def handle(self, message: Any) -> list[dict[str, Any]]:
         """The messages to send back for one incoming message; a notification gets none unless it fails."""
         request_id = message.get("id") if isinstance(message, dict) else None
         try:
-            return self._dispatch(message)
+            with self._lock:
+                return self._dispatch(message)
         except ApplicationError as error:
             if request_id is None:
                 return []
@@ -77,24 +93,74 @@ class AcpApplication(AcpApplicationInterface):
                 return []
             return [self._error(request_id, self.INTERNAL, "internal error")]
 
-    def serve(self, reader: TextIO, writer: TextIO) -> None:
-        """Read messages until the input ends, and write each reply as one line, flushed at once."""
-        for line in reader:
-            text = line.strip()
-            if not text:
-                continue
-            try:
-                message = json.loads(text)
-            except json.JSONDecodeError:
-                messages = [
-                    self._error(None, self.JSONRPC_CODES["ACP_PARSE"], "the line is not JSON")
-                ]
-            else:
-                messages = self.handle(message)
-            writer.writelines(
-                json.dumps(outgoing, ensure_ascii=False) + "\n" for outgoing in messages
-            )
-            writer.flush()
+    def serve(self, reader: TextIO, writer: TextIO, poll_seconds: float = 1.0) -> None:
+        """Read messages until the input ends, writing each reply as one line, flushed at once.
+
+        A follower thread writes the progress notices every ``poll_seconds`` while the input is open. Each
+        line is written under one lock, so a notice never lands in the middle of a reply.
+        """
+        write_lock = threading.Lock()
+        stop = threading.Event()
+
+        def send(messages: list[dict[str, Any]]) -> None:
+            if not messages:
+                return
+            with write_lock:
+                writer.writelines(json.dumps(item, ensure_ascii=False) + "\n" for item in messages)
+                writer.flush()
+
+        def follow() -> None:
+            # The first pass runs before the stop flag is checked, so a run that changed is reported even
+            # when the input ends at once.
+            while True:
+                try:
+                    send(self.progress_notices())
+                except Exception as error:  # noqa: BLE001 - following must not end the reader's loop
+                    print(f"error: {type(error).__name__} while following a run", file=sys.stderr)
+                if stop.wait(poll_seconds):
+                    return
+
+        follower = threading.Thread(target=follow, daemon=True)
+        follower.start()
+        try:
+            for line in reader:
+                text = line.strip()
+                if not text:
+                    continue
+                try:
+                    message = json.loads(text)
+                except json.JSONDecodeError:
+                    messages = [
+                        self._error(None, self.JSONRPC_CODES["ACP_PARSE"], "the line is not JSON")
+                    ]
+                else:
+                    messages = self.handle(message)
+                send(messages)
+        finally:
+            stop.set()
+            follower.join()
+
+    def progress_notices(self) -> list[dict[str, Any]]:
+        """A notice for each followed run whose status or stage changed; a finished run is dropped after it."""
+        notices: list[dict[str, Any]] = []
+        with self._lock:
+            for session_id, (run_id, reported) in list(self._reported.items()):
+                run = self._progress.current(run_id)
+                if run is None:
+                    continue
+                state = (run.status.value, run.stage)
+                if state == reported:
+                    continue
+                notices.append(self._update(session_id, self._progress_text(run)))
+                if run.status in self.FINISHED:
+                    del self._reported[session_id]
+                else:
+                    self._reported[session_id] = (run_id, state)
+        return notices
+
+    @staticmethod
+    def _progress_text(run: BookRun) -> str:
+        return f"run {run.run_id} is {run.status.value} at stage {run.stage!r}"
 
     def _dispatch(self, message: Any) -> list[dict[str, Any]]:
         if (
@@ -149,6 +215,7 @@ class AcpApplication(AcpApplicationInterface):
         text = self._text(params.get("prompt"))
         run = self._creator.create(self._briefs.read_text(text, "the prompt"))
         self._sessions[session_id] = run.run_id
+        self._reported[session_id] = (run.run_id, (run.status.value, run.stage))
         notice = self._update(
             session_id,
             f"run {run.run_id} is {run.status.value} at stage {run.stage!r}; its first stage is queued",

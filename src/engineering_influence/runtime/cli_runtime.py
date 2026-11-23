@@ -104,6 +104,7 @@ from engineering_influence.services.plugin_installer import PluginInstaller
 from engineering_influence.services.plugin_lock_verifier import PluginLockVerifier
 from engineering_influence.services.plugin_marketplace import PluginMarketplace
 from engineering_influence.services.resume_run import ResumeRun
+from engineering_influence.services.run_progress import RunProgress
 from engineering_influence.services.search_doctor import SearchDoctor
 from engineering_influence.services.skill_converter import SkillConverter
 from engineering_influence.services.skill_importer import SkillImporter
@@ -492,7 +493,12 @@ class CliRuntime(CliRuntimeInterface):
         from engineering_influence.services.create_run import CreateRun
 
         runs = self._run_repository()
-        return AcpApplication(CreateRun(runs, self._broker_queue()), CancelRun(runs), BriefReader())
+        return AcpApplication(
+            CreateRun(runs, self._broker_queue()),
+            CancelRun(runs),
+            BriefReader(),
+            RunProgress(runs),
+        )
 
     def _cancel_run(self) -> CancelRunInterface:
         """Build the cancel service; it needs only the database."""
