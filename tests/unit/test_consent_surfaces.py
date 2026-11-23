@@ -1,9 +1,10 @@
 """Granting and denying a run's request for budget works through the API, MCP and the SDK, and refuses what the service refuses."""
 
+import asyncio
 from typing import Any
 
 import httpx
-from engineering_influence_sdk import EngineeringInfluenceClient
+from engineering_influence_sdk import AsyncEngineeringInfluenceClient, EngineeringInfluenceClient
 from fastapi.testclient import TestClient
 
 from engineering_influence.controllers.project_controller import ProjectController
@@ -138,3 +139,33 @@ def test_the_sdk_grants_and_denies_through_the_api(api_guard: ApiGuard, api_key:
     assert client.deny_run("run-1")["status"] == "parked_capacity"
     assert client.grant_run("run-1", 300)["status"] == "running"
     client.close()
+
+
+def test_the_async_sdk_grants_and_denies_through_the_api(api_guard: ApiGuard, api_key: str) -> None:
+    _, _, manager = waiting_store()
+    server = api_for(api_guard, manager)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        forwarded = server.request(
+            request.method,
+            request.url.path,
+            content=request.content,
+            headers={
+                "content-type": "application/json",
+                "authorization": request.headers["authorization"],
+            },
+        )
+        return httpx.Response(forwarded.status_code, json=forwarded.json(), request=request)
+
+    async def call() -> tuple[dict[str, Any], dict[str, Any]]:
+        client = AsyncEngineeringInfluenceClient(
+            "http://local", api_key, httpx.MockTransport(handler)
+        )
+        try:
+            return await client.deny_run("run-1"), await client.grant_run("run-1", 300)
+        finally:
+            await client.close()
+
+    denied, granted = asyncio.run(call())
+    assert denied["status"] == "parked_capacity"
+    assert granted["status"] == "running"
