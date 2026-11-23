@@ -13,6 +13,9 @@ from engineering_influence.interactions.cli.interfaces.skills_cli_interface impo
 from engineering_influence.interfaces.skill_lock_store_interface import SkillLockStoreInterface
 from engineering_influence.models.skill_lock import SkillLock
 from engineering_influence.models.skill_lock_addition import SkillLockAddition
+from engineering_influence.services.interfaces.skill_importer_interface import (
+    SkillImporterInterface,
+)
 from engineering_influence.services.interfaces.skill_lock_editor_interface import (
     SkillLockEditorInterface,
 )
@@ -40,14 +43,16 @@ class SkillsCli(SkillsCliInterface):
         verifier: SkillLockVerifierInterface,
         store: SkillLockStoreInterface,
         environment: Mapping[str, str],
+        importer: SkillImporterInterface,
     ) -> None:
         self._editor = editor
         self._verifier = verifier
         self._store = store
         self._environment = environment
+        self._importer = importer
 
     def register(self, subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]") -> None:
-        """Add ``skills add``, ``enable``, ``disable``, ``remove``, ``list`` and ``verify``."""
+        """Add ``skills import``, ``add``, ``enable``, ``disable``, ``remove``, ``list`` and ``verify``."""
         skills = subparsers.add_parser("skills", help="install, enable and check prompt skills")
         commands = skills.add_subparsers(dest="skills_command", required=True)
         where = "default: EI_SKILL_LOCK or ei-skills.lock.toml"
@@ -59,6 +64,22 @@ class SkillsCli(SkillsCliInterface):
             "--replace", action="store_true", help="lock a skill that is already locked again"
         )
         add.add_argument("file", type=Path, help="the skill file, for example plain_style.toml")
+        convert = commands.add_parser(
+            "import",
+            help="turn a SKILL.md into a skill file to review, then lock it with add (locks and enables nothing)",
+        )
+        convert.add_argument("source", type=Path, help="a SKILL.md, or the folder that holds one")
+        convert.add_argument(
+            "--stage", action="append", required=True, help="a stage the skill speaks to (repeat)"
+        )
+        convert.add_argument(
+            "--section", action="append", help="a section to keep, by title (repeat); default: all"
+        )
+        convert.add_argument("--name", help="the skill's name; default: the SKILL.md's, made safe")
+        convert.add_argument(
+            "--version", type=int, default=1, help="the skill's version, default 1"
+        )
+        convert.add_argument("--out", type=Path, help="where to write it; default NAME.toml here")
         for command, help_text in (
             ("enable", "let a stage's prompt carry a skill"),
             ("disable", "stop a stage's prompt carrying a skill"),
@@ -77,11 +98,13 @@ class SkillsCli(SkillsCliInterface):
 
     def run(self, arguments: argparse.Namespace) -> int:
         """Run the chosen subcommand and return the exit status."""
-        path = arguments.lock or Path(
-            self._environment.get("EI_SKILL_LOCK", "").strip() or self.DEFAULT_LOCK
-        )
         try:
             command = arguments.skills_command
+            if command == "import":
+                return self._import(arguments)
+            path = arguments.lock or Path(
+                self._environment.get("EI_SKILL_LOCK", "").strip() or self.DEFAULT_LOCK
+            )
             if command == "add":
                 return self._add(arguments, path)
             if command == "list":
@@ -101,6 +124,34 @@ class SkillsCli(SkillsCliInterface):
     @staticmethod
     def _folder(path: Path) -> Path:
         return path.parent / "skills"
+
+    def _import(self, arguments: argparse.Namespace) -> int:
+        done = self._importer.import_skill(
+            arguments.source,
+            arguments.name,
+            arguments.version,
+            tuple(arguments.stage),
+            tuple(arguments.section or ()),
+            arguments.out,
+        )
+        skill = done.skill
+        print(f"wrote {self._safe(done.path, 200)}: {skill.identifier()}")
+        print(f"  sections: {self._safe(', '.join(done.sections), 300)}")
+        for stage, text in skill.parts:
+            print(f"  {stage}: {len(text):,} characters")
+        if done.description_shortened:
+            print("  the description was shortened to fit its limit")
+        if done.ignored:
+            print(
+                "  set aside, because a skill grants nothing: "
+                + self._safe(", ".join(done.ignored), 200)
+            )
+        print(
+            "this text will be added to prompts, and it was written by whoever made the SKILL.md: "
+            "read the file before you lock it"
+        )
+        print(f"then lock it: ei skills add {self._safe(done.path, 200)}")
+        return 0
 
     def _add(self, arguments: argparse.Namespace, path: Path) -> int:
         lock = self._store.load(path) or SkillLock()

@@ -14,9 +14,13 @@ from engineering_influence.interactions.cli.interfaces.skills_cli_interface impo
 from engineering_influence.interactions.cli.skills_cli import SkillsCli
 from engineering_influence.interfaces.skill_lock_store_interface import SkillLockStoreInterface
 from engineering_influence.models.skill import Skill
+from engineering_influence.models.skill_import_result import SkillImportResult
 from engineering_influence.models.skill_lock import SkillLock
 from engineering_influence.models.skill_lock_addition import SkillLockAddition
 from engineering_influence.models.skill_lock_entry import SkillLockEntry
+from engineering_influence.services.interfaces.skill_importer_interface import (
+    SkillImporterInterface,
+)
 from engineering_influence.services.interfaces.skill_lock_editor_interface import (
     SkillLockEditorInterface,
 )
@@ -74,6 +78,34 @@ class Editor(SkillLockEditorInterface):
         return lock.without(name)
 
 
+class Importer(SkillImporterInterface):
+    def __init__(self, fail: Exception | None = None, **changes: object) -> None:
+        self.fail = fail
+        self.changes = changes
+        self.calls: list[tuple[object, ...]] = []
+
+    def import_skill(
+        self,
+        source: Path,
+        name: str | None,
+        version: int,
+        stages: tuple[str, ...],
+        titles: tuple[str, ...],
+        target: Path | None,
+    ) -> SkillImportResult:
+        self.calls.append((source, name, version, stages, titles, target))
+        if self.fail:
+            raise self.fail
+        fields: dict[str, object] = {
+            "skill": skill(name="research_methodology", parts=(("research", "## One\n\ntext"),)),
+            "path": "research_methodology.toml",
+            "sections": ("One", "Two"),
+            "ignored": (),
+            "description_shortened": False,
+        }
+        return SkillImportResult(**{**fields, **self.changes})  # type: ignore[arg-type]
+
+
 class Verifier(SkillLockVerifierInterface):
     def __init__(self, *problems: str) -> None:
         self.found = problems
@@ -112,9 +144,10 @@ def cli(
     editor: Editor | None = None,
     verifier: Verifier | None = None,
     environment: dict[str, str] | None = None,
+    importer: Importer | None = None,
 ) -> tuple[SkillsCli, Store, Editor, Verifier]:
     made = (store or Store(), editor or Editor(), verifier or Verifier())
-    return SkillsCli(made[1], made[2], made[0], environment or {}), *made
+    return SkillsCli(made[1], made[2], made[0], environment or {}, importer or Importer()), *made
 
 
 def run(skills: SkillsCli, *argv: str) -> int:
@@ -332,3 +365,94 @@ def test_a_problem_text_from_a_file_is_cleaned_and_cut_too(
     first = capsys.readouterr().out.splitlines()[0]
     assert "\x1b" not in first and first.startswith("skill 'a_one': line [31mred next")
     assert len(first) == 400 and first.endswith("…")
+
+
+# ----------------------------------------------------------------------------------- import
+def test_import_passes_everything_on_and_says_what_it_wrote_and_how_to_lock_it(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    importer = Importer()
+    skills = cli(importer=importer)[0]
+    code = run(
+        skills,
+        "import",
+        "refs/research-methodology",
+        "--stage",
+        "research",
+        "--stage",
+        "outline",
+        "--section",
+        "One",
+        "--section",
+        "Two",
+        "--name",
+        "mine",
+        "--version",
+        "3",
+        "--out",
+        "out/mine.toml",
+    )
+    assert code == 0
+    assert importer.calls == [
+        (
+            Path("refs/research-methodology"),
+            "mine",
+            3,
+            ("research", "outline"),
+            ("One", "Two"),
+            Path("out/mine.toml"),
+        )
+    ]
+    out = capsys.readouterr().out
+    assert "wrote research_methodology.toml: research_methodology@2" in out
+    assert "sections: One, Two" in out and "research: 12 characters" in out
+    assert "read the file before you lock it" in out
+    assert "then lock it: ei skills add research_methodology.toml" in out
+    assert "shortened" not in out and "set aside" not in out
+
+
+def test_import_defaults_are_no_name_version_one_every_section_and_the_default_file(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    importer = Importer()
+    assert run(cli(importer=importer)[0], "import", "SKILL.md", "--stage", "research") == 0
+    assert importer.calls == [(Path("SKILL.md"), None, 1, ("research",), (), None)]
+    capsys.readouterr()
+
+
+def test_import_says_when_it_shortened_the_description_and_what_it_set_aside(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    importer = Importer(ignored=("allowed-tools", "domains"), description_shortened=True)
+    run(cli(importer=importer)[0], "import", "SKILL.md", "--stage", "research")
+    out = capsys.readouterr().out
+    assert "the description was shortened to fit its limit" in out
+    assert "set aside, because a skill grants nothing: allowed-tools, domains" in out
+
+
+def test_import_shows_what_the_file_said_safely(capsys: pytest.CaptureFixture[str]) -> None:
+    importer = Importer(sections=("Bad\x1b[31m title",), ignored=("k\x07ey",))
+    run(cli(importer=importer)[0], "import", "SKILL.md", "--stage", "research")
+    out = capsys.readouterr().out
+    assert "\x1b" not in out and "\x07" not in out
+
+
+def test_import_that_cannot_be_done_exits_2_with_one_line(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    failure = ApplicationError("SKILL_IMPORT_TOO_LARGE", "choose sections with --section", 422)
+    assert run(cli(importer=Importer(failure))[0], "import", "SKILL.md", "--stage", "research") == 2
+    assert capsys.readouterr().err.strip() == "error: choose sections with --section"
+
+
+def test_import_needs_a_stage(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit) as raised:
+        run(cli()[0], "import", "SKILL.md")
+    assert raised.value.code == 2
+    assert "--stage" in capsys.readouterr().err
+
+
+def test_import_never_touches_the_lock() -> None:
+    skills, store, editor, _ = cli()
+    run(skills, "import", "SKILL.md", "--stage", "research")
+    assert store.loaded == [] and store.saved == [] and editor.calls == []
