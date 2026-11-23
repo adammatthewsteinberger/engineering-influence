@@ -23,7 +23,8 @@ class SkillImporter(SkillImporterInterface):
     """Read, parse, convert, write: and nothing more.
 
     The result is an ordinary skill file in the format ``ei skills add`` reads, written next to where you ran it (or
-    where you say) so that **the exact text a model will see can be read before anything is locked**. Importing never
+    where you say), and with ``reference`` the chosen sections are kept as separate reference sections to be read on
+    request instead of text for stages, so that **the exact text a model will see can be read before anything is locked**. Importing never
     locks, enables or runs anything, and never replaces a file. A skill file larger than the limit the lock reads is refused here, with the
     reason, instead of after you have committed to it.
     """
@@ -51,11 +52,12 @@ class SkillImporter(SkillImporterInterface):
         version: int,
         stages: tuple[str, ...],
         titles: tuple[str, ...],
+        reference: bool,
         target: Path | None,
     ) -> SkillImportResult:
         """Write the skill file and say what it holds."""
         document = self._parser.parse(self._source.read(source))
-        skill = self._converter.convert(document, name, version, stages, titles)
+        skill = self._converter.convert(document, name, version, stages, titles, reference)
         data = self._writer.render(skill)
         if len(data) > self._max_bytes:
             raise ApplicationError(

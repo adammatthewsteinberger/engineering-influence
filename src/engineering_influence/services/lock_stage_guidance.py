@@ -25,6 +25,8 @@ class LockStageGuidance(StageGuidanceInterface):
     and hash) that made the text, which is what a journal key needs to tell one prompt from another.
     """
 
+    READ_SKILL = "read_skill"
+
     def __init__(
         self, lock: SkillLock, skills: tuple[Skill, ...], template: PromptTemplate
     ) -> None:
@@ -36,25 +38,45 @@ class LockStageGuidance(StageGuidanceInterface):
         """The text and identity to add for the stage; empty guidance when no skill is enabled for it."""
         entries = self._lock.enabled(stage)
         blocks = []
+        reads = False
         for entry in entries:
             skill = self._skills.get(entry.name)
             text = skill.part(stage) if skill is not None else None
-            if skill is None or skill.version != entry.version or text is None:
+            if (
+                skill is None
+                or skill.version != entry.version
+                or (text is None and not skill.sections)
+            ):
                 raise ApplicationError(
                     code="SKILL_LOCK_MISMATCH",
                     message=f"skill {entry.name!r} was not loaded as the lock describes it",
                     http_status=503,
                 )
+            body = [self._defused(text)] if text is not None else []
+            if skill.sections:
+                reads = True
+                body.append(self._index(skill))
             blocks.append(
                 f'<skill name="{skill.name}" version="{skill.version}">\n'
-                f"{self._defused(text)}\n</skill>"
+                + "\n\n".join(body)
+                + "\n</skill>"
             )
         if not blocks:
             return Guidance()
         framed = self._template.render("frame", {"skills": "\n\n".join(blocks)})
         named = "\n".join(entry.identity() for entry in entries)
         digest = hashlib.sha256(named.encode("utf-8")).hexdigest()[:16]
-        return Guidance(framed, f"{self._template.identifier()}:{digest}")
+        tools = (self.READ_SKILL,) if reads else ()
+        return Guidance(framed, f"{self._template.identifier()}:{digest}", tools)
+
+    def _index(self, skill: Skill) -> str:
+        """The note and one line for each reference section, which is also what ``read_skill`` accepts."""
+        lines = [self._template.render("reference_note")]
+        lines += [
+            f"- {skill.name}: {self._defused(title)} ({len(text):,} characters)"
+            for title, text in skill.sections
+        ]
+        return "\n".join(lines)
 
     def _defused(self, text: str) -> str:
         return PromptTemplate.UNTRUSTED_TAG.sub(

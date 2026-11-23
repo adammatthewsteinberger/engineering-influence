@@ -18,7 +18,7 @@ class DirectorySkillFiles(SkillFilesInterface):
     temporary name and is renamed over the file, so a skill is never half written.
     """
 
-    MAX_BYTES = 64 * 1024
+    MAX_BYTES = 256 * 1024
 
     def __init__(self, max_bytes: int = MAX_BYTES) -> None:
         if max_bytes < 1:

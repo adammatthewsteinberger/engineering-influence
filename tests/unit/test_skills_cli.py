@@ -91,9 +91,10 @@ class Importer(SkillImporterInterface):
         version: int,
         stages: tuple[str, ...],
         titles: tuple[str, ...],
+        reference: bool,
         target: Path | None,
     ) -> SkillImportResult:
-        self.calls.append((source, name, version, stages, titles, target))
+        self.calls.append((source, name, version, stages, titles, reference, target))
         if self.fail:
             raise self.fail
         fields: dict[str, object] = {
@@ -170,7 +171,7 @@ def test_add_locks_the_file_keeps_a_copy_beside_the_lock_and_says_to_review(
     assert editor.calls == [("add", Path("/x/proj/skills"), Path("/tmp/plain_style.toml"), False)]
     assert store.saved[0][0] == Path("/x/proj/l.toml")
     assert store.saved[0][1].names() == ("plain_style",)
-    assert "locked plain_style@2: 2 parts" in out
+    assert "locked plain_style@2: 2 parts, 0 reference sections" in out
     assert "  Short, plain sentences." in out
     assert "read it before you commit this lock" in out
     assert "  outline (23 characters): Prefer short sentences." in out
@@ -199,7 +200,9 @@ def test_add_without_a_description_prints_no_blank_description_line(
 
     assert run(cli(editor=Plain())[0], "add", "--lock", "/p/l.toml", "x.toml") == 0
     lines = capsys.readouterr().out.splitlines()
-    assert lines[0] == "locked plain_style@2: 2 parts" and lines[1].startswith("this text will be")
+    assert lines[0] == "locked plain_style@2: 2 parts, 0 reference sections" and lines[
+        1
+    ].startswith("this text will be")
 
 
 def test_the_lock_is_the_flag_then_the_environment_then_the_default() -> None:
@@ -400,6 +403,7 @@ def test_import_passes_everything_on_and_says_what_it_wrote_and_how_to_lock_it(
             3,
             ("research", "outline"),
             ("One", "Two"),
+            False,
             Path("out/mine.toml"),
         )
     ]
@@ -416,7 +420,7 @@ def test_import_defaults_are_no_name_version_one_every_section_and_the_default_f
 ) -> None:
     importer = Importer()
     assert run(cli(importer=importer)[0], "import", "SKILL.md", "--stage", "research") == 0
-    assert importer.calls == [(Path("SKILL.md"), None, 1, ("research",), (), None)]
+    assert importer.calls == [(Path("SKILL.md"), None, 1, ("research",), (), False, None)]
     capsys.readouterr()
 
 
@@ -445,14 +449,59 @@ def test_import_that_cannot_be_done_exits_2_with_one_line(
     assert capsys.readouterr().err.strip() == "error: choose sections with --section"
 
 
-def test_import_needs_a_stage(capsys: pytest.CaptureFixture[str]) -> None:
-    with pytest.raises(SystemExit) as raised:
-        run(cli()[0], "import", "SKILL.md")
-    assert raised.value.code == 2
-    assert "--stage" in capsys.readouterr().err
+def test_import_without_a_stage_leaves_the_refusal_to_the_importer_and_shows_it(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    failure = ApplicationError("SKILL_IMPORT_INVALID", "name at least one stage", 422)
+    importer = Importer(failure)
+    assert run(cli(importer=importer)[0], "import", "SKILL.md") == 2
+    assert importer.calls == [(Path("SKILL.md"), None, 1, (), (), False, None)]
+    assert capsys.readouterr().err.strip() == "error: name at least one stage"
+
+
+def test_import_with_reference_passes_the_flag_and_shows_each_reference_section(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    reference = skill(
+        name="research_methodology",
+        parts=(),
+        sections=(("Source Evaluation", "Use SIFT."), ("Database Searching", "Use Boolean.")),
+    )
+    importer = Importer(skill=reference, sections=("Source Evaluation", "Database Searching"))
+    assert run(cli(importer=importer)[0], "import", "SKILL.md", "--reference") == 0
+    assert importer.calls == [(Path("SKILL.md"), None, 1, (), (), True, None)]
+    out = capsys.readouterr().out
+    assert "reference Source Evaluation: 9 characters" in out
+    assert "reference Database Searching: 12 characters" in out
 
 
 def test_import_never_touches_the_lock() -> None:
     skills, store, editor, _ = cli()
     run(skills, "import", "SKILL.md", "--stage", "research")
     assert store.loaded == [] and store.saved == [] and editor.calls == []
+
+
+def test_add_shows_each_reference_section_and_says_it_may_be_enabled_for_any_stage(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    reference = skill(
+        name="research_methodology",
+        parts=(),
+        sections=(("Source Evaluation", "Use SIFT."), ("Database Searching", "Use Boolean.")),
+    )
+
+    class ReferenceEditor(Editor):
+        def add(
+            self, lock: SkillLock, folder: Path, source: Path, replace: bool
+        ) -> SkillLockAddition:
+            return SkillLockAddition(
+                lock.with_entry(entry("research_methodology"), replace), reference
+            )
+
+    skills = cli(editor=ReferenceEditor())[0]
+    assert run(skills, "add", "--lock", "/x/l.toml", "/tmp/research_methodology.toml") == 0
+    out = capsys.readouterr().out
+    assert "locked research_methodology@2: 0 parts, 2 reference sections" in out
+    assert "reference Source Evaluation (9 characters): Use SIFT." in out
+    assert "reference Database Searching (12 characters): Use Boolean." in out
+    assert "(it has text for any stage)" in out

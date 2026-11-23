@@ -26,6 +26,33 @@ outline = "Prefer short chapters, each with one job."
 Each part is named for **the stage it speaks to** (`brief`, `positioning`, `research`, `outline`, `metadata`, `draft`, `revise_structure`, `revise_lines`, `copy_edit`; `assemble` and `audit` make no model call, so a skill for either does nothing) and
 holds the text for that stage. A skill with no text for a stage never reaches it.
 
+### Reference sections: read on request
+
+A long reference does not belong in every prompt. A skill may instead (or also) have a `[reference]` table of
+`"Section title" = "text"`:
+
+```toml
+name = "research_methodology"
+version = 1
+
+[reference]
+"Source Evaluation" = "Judge a source with SIFT: stop, investigate the source, find better coverage, trace the claim."
+"Database Searching" = "Use Boolean operators and note the date of every search."
+```
+
+A stage the skill is enabled for gets an **index** at the end of its prompt (one line for each section, with its length) and
+the read-only **`read_skill`** tool. The model asks for a section by naming the skill and the title, and gets that
+section's text back, as a tool result, which is wrapped as untrusted like any other. The sections themselves are never added to the prompt, so a
+skill costs a prompt a line for each section until the model reads one.
+
+- **A stage reaches only what its own prompt lists.** `read_skill` is shared by every stage that has a reference skill, so it
+  refuses a call for a skill or section the calling stage's prompt does not list (the same check `fetch_url` uses on addresses). A
+  skill enabled for `outline` cannot be read from `research`.
+- A reference skill can be enabled for **any** stage, because it has no per-stage text. Limits: a section is at most 20,000
+  characters (so it is never cut), a skill has at most 64 sections and 200,000 characters of them, and a title is one line of at most
+  100 characters with no angle brackets.
+- `read_skill` is offered in drafting and the editing passes as well as the earlier stages, and only when the skill is enabled for that stage.
+
 Reading is strict. Any other key (a misspelt one, `command`, `tools`, `url`, `untrusted`) is refused and
 named. The file must name itself the same as its file name. A file is at most 64 KiB, a skill at most 32
 parts, and a part at most 8,000 characters.
@@ -42,7 +69,7 @@ Most skills in the wild (the Vibey and Claude ones among them) are a `SKILL.md`:
 then markdown. `ei skills import` turns one into the skill file above, so it can be reviewed and locked like any other.
 
 ```text
-ei skills import SOURCE --stage STAGE [--stage STAGE ...] [--section TITLE ...] [--name NAME] [--version N] [--out FILE]
+ei skills import SOURCE (--stage STAGE [--stage STAGE ...] | --reference) [--section TITLE ...] [--name NAME] [--version N] [--out FILE]
 ```
 
 `SOURCE` is the `SKILL.md` or the folder that holds it. Nothing else in the folder is read. It writes
@@ -57,6 +84,10 @@ path and what it kept, and tells you to read the file before you lock it with `e
   12 KB, the largest 58 KB). When the chosen text is too long, the error lists every section with its length so you can
   pick, for example, just `Source Evaluation` and `Database Searching` out of a 26 KB methodology reference. A skill
   file larger than the lock reads (64 KiB) is refused here, with the reason, rather than after you have committed to it.
+- **`--reference` keeps the sections for on-demand reading** instead of as stage text (see "Reference sections" above): each chosen
+  section stays separate, without its heading, and `--stage` is not allowed with it. A reference section may be up to 20,000
+  characters, far past a part's 8,000, so a methodology reference usually imports whole. The skill is then enabled with
+  `ei skills enable NAME STAGE` for each stage that should be able to read it.
 - **The frontmatter must have a one-line `name` and `description`** (quoted or plain); a block scalar is refused rather than
   guessed at. **Every other key is read and set aside**, never used, and named in the output: `allowed-tools`, `domains`,
   a list under a key. A skill here is text and grants nothing, so a `SKILL.md` that asks for a tool gets no tool.
@@ -66,7 +97,15 @@ path and what it kept, and tells you to read the file before you lock it with `e
   output says it was. It is shown in lists and is never part of a prompt.
 - Text a reviewer could not see is refused with the character named, exactly as for any skill.
 
-Example, giving the research stage two sections of a methodology reference:
+Two ways to use a methodology reference. As **reference** (the model reads what it needs):
+
+```bash
+ei skills import ~/refs/research-methodology --reference
+ei skills add research_methodology.toml
+ei skills enable research_methodology research
+```
+
+Or as **stage text** (always in the prompt), giving the research stage two sections:
 
 ```bash
 ei skills import ~/refs/research-methodology --stage research \
@@ -150,11 +189,13 @@ Prefer short chapters, each with one job.
 - It goes at the **end of the user part**, never the system part, which stays exactly as the template wrote it.
 - A copy of a `<skill` or `<installed_guidance` tag inside a skill's text (any case, any spacing, opening or
   closing) is defused first, so a skill cannot close its block or open a second one.
-- **The prompt version records it.** A stage with skills sends `stage_outline@1+skill_guidance@1:<digest>`,
+- **The prompt version records it.** A stage with skills sends `stage_outline@1+skill_guidance@2:<digest>`,
   where the digest covers each skill's name, version and hash. A resumed run replays an answer only for the
   same text, and a stage with no skill enabled sends exactly the prompt and version it always did.
-- **Nothing else changes.** A skill does not add a tool, change which tools a stage is offered, change the
-  output cap or touch the system prompt. Tool grants stay in the tool lock and the recipe.
+- **Nothing else changes, with one exception.** A skill does not add a tool of its own, change the output cap or touch
+  the system prompt. Tool grants stay in the tool lock and the recipe. The exception is a skill with reference sections:
+  a stage it is enabled for is also offered the built-in, read-only `read_skill` tool, which can return only the sections that stage's
+  prompt lists. It cannot read a file, reach an address or run anything.
 
 ## What this does and does not give you
 
@@ -173,6 +214,6 @@ Prefer short chapters, each with one job.
 
 ## What is not built
 
-Marketplace indexes (slice 6b of the ADR). A plugin ([PLUGINS.md](PLUGINS.md)) is a bundle of skills and tool
-server definitions that a person installs from a file; its skills become ordinary skills here, enabled for no
-stage. Nothing fetches a skill from a network, and a run never contacts a marketplace.
+A plugin ([PLUGINS.md](PLUGINS.md)) is a bundle of skills and tool server definitions that a person installs from a
+file; its skills become ordinary skills here, enabled for no stage. Nothing fetches a skill from a network during a
+run, and a run never contacts a marketplace. Claude Code plugin folders and `marketplace.json` are not read yet (M6.5).

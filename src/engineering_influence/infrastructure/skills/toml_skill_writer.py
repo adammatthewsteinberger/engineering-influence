@@ -18,8 +18,14 @@ class TomlSkillWriter(SkillWriterInterface):
         lines = [f"name = {self._quote(skill.name)}", f"version = {skill.version}"]
         if skill.description:
             lines.append(f"description = {self._quote(skill.description)}")
-        lines += ["", "[parts]"]
-        lines += [f"{stage} = {self._quote(text)}" for stage, text in skill.parts]
+        if skill.parts:
+            lines += ["", "[parts]"]
+            lines += [f"{stage} = {self._quote(text)}" for stage, text in skill.parts]
+        if skill.sections:
+            lines += ["", "[reference]"]
+            lines += [
+                f"{self._quote(title)} = {self._quote(text)}" for title, text in skill.sections
+            ]
         return ("\n".join(lines) + "\n").encode("utf-8")
 
     @staticmethod

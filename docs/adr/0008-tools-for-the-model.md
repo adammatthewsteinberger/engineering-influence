@@ -250,3 +250,22 @@ Recorded on 2026-11-22 while building the second part of slice 6 ([PLUGINS.md](.
   nothing.
 - **The core install still works without `httpx`.** The downloader is built on first use, and a missing dependency
   becomes a message that names the `runtime` extra; a local index file needs no network code at all.
+
+## Amendments from M6.5: `SKILL.md` import and reference sections (2026-11-22)
+
+- **A skill may carry reference sections** (`[reference]`, `"title" = "text"`), read on request. This is the one place a skill
+  changes what a stage is offered, and it adds exactly one built-in, read-only tool: `read_skill`. It is offered to a stage only
+  when a reference skill is enabled for that stage, and the guidance says so (`Guidance.tools`), so the prompt never points at
+  a tool the model was not given. It can return the text of a section of a skill the lock approved, hash-checked at start, and nothing else:
+  no file, no address, no other state.
+- **The stage's prompt is the permission.** The tool is shared, so each call is checked against what the stage's own prompt lists,
+  through the same `refuses` hook `fetch_url` uses. A skill enabled for one stage cannot be read from another. A section's text is
+  returned as the tool's result, which the runner wraps as untrusted, and a section is never longer than the runner's result limit, so it is never cut.
+  A stored result carries a digest of every reference section as its revision, so a changed skill is not answered from an old result.
+- **Skills from the wild:** `ei skills import` reads a `SKILL.md` (frontmatter `name` and `description`, markdown body cut at its
+  `##` headings) into an ordinary skill file for review. It sets aside every other frontmatter key (`allowed-tools`, `domains`), because a
+  skill grants nothing, and it never locks, enables or overwrites. `--reference` keeps the sections for `read_skill`; without it they become
+  stage text and must fit a part (8,000 characters) or be chosen with `--section`.
+- Limits, fixed in the code: a section 20,000 characters (the runner's result limit), 64 sections and 200,000 characters a skill, a skill file 256 KiB.
+- The skill guidance template is version 2, because the frame gained the reference note.
+

@@ -21,7 +21,7 @@ class SkillLockVerifier(SkillLockVerifierInterface):
     The bytes that were hashed are the bytes that are parsed, so a file cannot pass the check and
     then be read as something else. The hash is checked before the file is parsed at all, a
     version that disagrees with the lock is refused, and so is a stage the lock enables that the
-    skill has no text for. A skill that is installed but enabled for no stage is not read by a run.
+    skill has no text for (a skill with reference sections may be read by any stage it is enabled for). A skill that is installed but enabled for no stage is not read by a run.
     """
 
     def __init__(self, files: SkillFilesInterface, parser: SkillParserInterface) -> None:
@@ -70,7 +70,7 @@ class SkillLockVerifier(SkillLockVerifierInterface):
         if skill.version != entry.version:
             return f"{label}: its file is version {skill.version}, but the lock has {entry.version}"
         missing = [stage for stage in entry.stages if skill.part(stage) is None]
-        if missing:
+        if missing and not skill.sections:
             return f"{label}: the lock enables it for {missing}, which it has no text for"
         return skill
 

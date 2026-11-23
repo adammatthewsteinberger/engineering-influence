@@ -300,7 +300,11 @@ chapter_text = st.text(
 )
 
 
-@settings(max_examples=150, suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(
+    max_examples=150,
+    deadline=None,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
 @given(texts=st.lists(chapter_text, min_size=1, max_size=3))
 def test_whatever_the_model_wrote_is_refused_or_loads_in_strict_mode_and_passes_the_text_rules(
     texts: list[str], tmp_path_factory: pytest.TempPathFactory

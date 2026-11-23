@@ -20,3 +20,11 @@ class SkillInterface(ABC):
     @abstractmethod
     def part(self, stage: str) -> str | None:
         """The text for the stage, or None when the skill says nothing about it."""
+
+    @abstractmethod
+    def section_titles(self) -> tuple[str, ...]:
+        """The titles of the reference sections a model may read on request, in order."""
+
+    @abstractmethod
+    def section(self, title: str) -> str | None:
+        """The text of the reference section with exactly this title, or None."""

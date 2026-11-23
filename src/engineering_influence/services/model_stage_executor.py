@@ -112,7 +112,7 @@ class ModelStageExecutor(StageExecutorInterface):
             prompt=prompt,
             max_output_tokens=recipe.max_output_tokens,
             prompt_version=version,
-            tools=self._definitions(recipe),
+            tools=self._definitions(recipe, guidance.tools),
         )
         outcome = await asyncio.to_thread(
             self._loop.run, self._guards(run.budget), run.run_id, run.stage, attempt, request
@@ -135,16 +135,19 @@ class ModelStageExecutor(StageExecutorInterface):
                 code="STAGE_HAS_NO_RECIPE", message=str(error), http_status=422
             ) from error
 
-    def _offered(self, recipe: StageRecipe) -> tuple[str, ...]:
-        """The recipe's own tools, then the locked-server tools the lock grants this stage."""
+    def _offered(self, recipe: StageRecipe, extra: tuple[str, ...]) -> tuple[str, ...]:
+        """The recipe's own tools, the locked-server tools the lock grants this stage, then the guidance's."""
         granted = tuple(
             name for name in self._grants.for_stage(recipe.stage) if name not in recipe.tools
         )
-        return recipe.tools + granted
+        own = recipe.tools + granted
+        return own + tuple(name for name in extra if name not in own)
 
-    def _definitions(self, recipe: StageRecipe) -> tuple[ToolDefinition, ...]:
+    def _definitions(
+        self, recipe: StageRecipe, extra: tuple[str, ...]
+    ) -> tuple[ToolDefinition, ...]:
         try:
-            return self._tools.definitions(self._offered(recipe))
+            return self._tools.definitions(self._offered(recipe, extra))
         except ValueError as error:
             raise ApplicationError(
                 code="STAGE_TOOL_UNKNOWN", message=str(error), http_status=500

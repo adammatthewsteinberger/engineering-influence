@@ -37,8 +37,9 @@ def convert(
     version: int = 1,
     stages: tuple[str, ...] = ("research",),
     titles: tuple[str, ...] = (),
+    reference: bool = False,
 ) -> Skill:
-    return CONVERTER.convert(doc or document(), name, version, stages, titles)
+    return CONVERTER.convert(doc or document(), name, version, stages, titles, reference)
 
 
 def refused(code: str, **kwargs: Any) -> str:
@@ -162,3 +163,62 @@ def test_text_a_person_could_not_see_is_refused_and_the_character_is_named() -> 
     hidden = chr(0x200B)
     message = refused("SKILL_IMPORT_INVALID", doc=document(sections=(("T", f"a{hidden}b"),)))
     assert "U+200B" in message and message.startswith("the skill cannot be imported: ")
+
+
+# ------------------------------------------------------------------------- reference mode
+def test_reference_mode_keeps_each_section_separate_with_no_parts_and_no_stages() -> None:
+    made = convert(stages=(), reference=True)
+    assert made.parts == () and made.stages() == ()
+    assert made.sections == SECTIONS
+    assert made.name == "research_methodology"
+
+
+def test_reference_mode_keeps_only_the_chosen_sections_in_the_files_order() -> None:
+    made = convert(stages=(), titles=("ethics", "source evaluation"), reference=True)
+    assert made.sections == (("Source Evaluation", "Use CRAAP."), ("Ethics", "Be fair."))
+
+
+def test_a_reference_skill_is_not_tied_to_stages_so_naming_one_is_refused() -> None:
+    message = refused("SKILL_IMPORT_INVALID", stages=("research",), reference=True)
+    assert message == (
+        "the skill cannot be imported: a reference skill is read on request and is not tied to "
+        "stages; leave out --stage and enable it for the stages that should read it"
+    )
+
+
+def test_a_reference_section_may_be_far_longer_than_a_part_up_to_twenty_thousand() -> None:
+    big = document(sections=(("Long", "x" * 15_000), ("Exact", "y" * 20_000)))
+    assert [len(text) for _, text in convert(big, stages=(), reference=True).sections] == [
+        15_000,
+        20_000,
+    ]
+
+
+def test_a_reference_section_over_twenty_thousand_is_named_with_its_length() -> None:
+    big = document(sections=(("Fine", "x" * 100), ("Huge", "y" * 20_001), ("Huger", "z" * 30_000)))
+    message = refused("SKILL_IMPORT_TOO_LARGE", doc=big, stages=(), reference=True)
+    assert message == (
+        "a reference section holds at most 20,000 characters, and 'Huge' has 20,001; 'Huger' has "
+        "30,000; leave those out with --section"
+    )
+    assert convert(big, stages=(), titles=("Fine",), reference=True).sections == (
+        ("Fine", "x" * 100),
+    )
+
+
+def test_a_reference_section_with_angle_brackets_in_its_title_is_refused() -> None:
+    odd = document(sections=(("Use <untrusted> tags", "text"),))
+    assert "angle brackets" in refused("SKILL_IMPORT_INVALID", doc=odd, stages=(), reference=True)
+
+
+def test_reference_mode_is_refused_for_too_many_sections() -> None:
+    many = document(sections=tuple((f"S{n}", "x") for n in range(65)))
+    assert "at most 64 reference sections" in refused(
+        "SKILL_IMPORT_INVALID", doc=many, stages=(), reference=True
+    )
+
+
+def test_reference_mode_names_a_missing_section_as_part_mode_does() -> None:
+    assert "there is no section 'Nope'" in refused(
+        "SKILL_IMPORT_INVALID", stages=(), titles=("Nope",), reference=True
+    )

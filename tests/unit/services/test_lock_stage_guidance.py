@@ -80,8 +80,8 @@ def test_the_identity_names_the_frame_and_the_exact_skills() -> None:
     made = guidance((entry(stages=("outline",)), skill()))
     identity = made.for_stage("outline").identity
     digest = hashlib.sha256(f"plain_style@2:{A}".encode()).hexdigest()[:16]
-    assert identity == f"skill_guidance@1:{digest}"
-    assert re.fullmatch(r"skill_guidance@1:[0-9a-f]{16}", identity)
+    assert identity == f"skill_guidance@2:{digest}"
+    assert re.fullmatch(r"skill_guidance@2:[0-9a-f]{16}", identity)
 
 
 def test_the_identity_changes_with_the_hash_the_version_the_name_and_the_set() -> None:
@@ -157,3 +157,93 @@ def test_a_skill_with_no_text_for_an_enabled_stage_is_a_mismatch() -> None:
 def test_no_stage_guidance_adds_nothing_to_any_stage() -> None:
     for stage in ("brief", "outline", "anything"):
         assert NoStageGuidance().for_stage(stage).empty()
+
+
+# ------------------------------------------------------------------------- reference sections
+def reference_skill(name: str = "research_methodology", **parts: str) -> Skill:
+    return Skill(
+        name,
+        1,
+        tuple(sorted(parts.items())),
+        sections=(("Source Evaluation", "Use SIFT."), ("Database Searching", "x" * 1234)),
+    )
+
+
+def test_a_reference_skill_adds_an_index_and_asks_for_the_read_skill_tool() -> None:
+    made = guidance((entry("research_methodology", 1, A, ("research",)), reference_skill()))
+    result = made.for_stage("research")
+    assert result.tools == ("read_skill",)
+    assert '<skill name="research_methodology" version="1">' in result.text
+    assert "Reference sections you can read with the read_skill tool" in result.text
+    assert "- research_methodology: Source Evaluation (9 characters)" in result.text
+    assert "- research_methodology: Database Searching (1,234 characters)" in result.text
+
+
+def test_the_text_of_a_reference_section_is_never_added_to_the_prompt() -> None:
+    made = guidance((entry("research_methodology", 1, A, ("research",)), reference_skill()))
+    text = made.for_stage("research").text
+    assert "Use SIFT." not in text and "x" * 50 not in text
+
+
+def test_a_reference_skill_may_be_enabled_for_a_stage_it_has_no_part_for() -> None:
+    made = guidance((entry("research_methodology", 1, A, ("draft",)), reference_skill()))
+    assert not made.for_stage("draft").empty()
+
+
+def test_a_skill_with_parts_and_sections_gives_its_text_then_its_index_in_one_block() -> None:
+    both = reference_skill(research="Say where you read it.")
+    made = guidance((entry("research_methodology", 1, A, ("research",)), both))
+    text = made.for_stage("research").text
+    assert text.count("<skill ") == 1
+    assert text.index("Say where you read it.") < text.index("Reference sections you can read")
+    assert text.index("- research_methodology: Source Evaluation") < text.index("</skill>")
+
+
+def test_a_skill_with_only_parts_asks_for_no_tool_and_has_no_index() -> None:
+    made = guidance((entry(stages=("outline",)), skill()))
+    result = made.for_stage("outline")
+    assert result.tools == () and "read_skill" not in result.text
+
+
+def test_two_reference_skills_ask_for_the_tool_once_and_each_has_its_own_index() -> None:
+    made = guidance(
+        (entry("alpha_one", 1, A, ("research",)), reference_skill("alpha_one")),
+        (entry("beta_one", 1, B, ("research",)), reference_skill("beta_one")),
+    )
+    result = made.for_stage("research")
+    assert result.tools == ("read_skill",)
+    assert "- alpha_one: Source Evaluation" in result.text
+    assert "- beta_one: Source Evaluation" in result.text
+
+
+def test_a_stage_the_reference_skill_is_not_enabled_for_gets_no_index_and_no_tool() -> None:
+    made = guidance((entry("research_methodology", 1, A, ("research",)), reference_skill()))
+    other = made.for_stage("outline")
+    assert other.empty() and other.tools == ()
+
+
+def test_a_skill_with_neither_text_for_the_stage_nor_sections_is_still_a_mismatch() -> None:
+    made = guidance((entry(stages=("brief",)), skill()))
+    with pytest.raises(ApplicationError) as error:
+        made.for_stage("brief")
+    assert error.value.code == "SKILL_LOCK_MISMATCH"
+
+
+def test_a_reference_only_skills_block_starts_with_the_index_and_has_no_blank_line_before_it() -> (
+    None
+):
+    made = guidance((entry("research_methodology", 1, A, ("research",)), reference_skill()))
+    text = made.for_stage("research").text
+    assert (
+        '<skill name="research_methodology" version="1">\nReference sections you can read' in text
+    )
+    assert "\n</skill>" in text and "\n\n</skill>" not in text
+
+
+def test_a_part_and_the_index_are_separated_by_exactly_one_blank_line() -> None:
+    both = reference_skill(research="Say where you read it.")
+    made = guidance((entry("research_methodology", 1, A, ("research",)), both))
+    assert (
+        "Say where you read it.\n\nReference sections you can read"
+        in made.for_stage("research").text
+    )

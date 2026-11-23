@@ -24,6 +24,7 @@ class SkillConverterInterface(ABC):
         version: int,
         stages: tuple[str, ...],
         titles: tuple[str, ...],
+        reference: bool,
     ) -> Skill:
         """The skill, or an ApplicationError (SKILL_IMPORT_INVALID, SKILL_IMPORT_TOO_LARGE) saying what to change."""
 

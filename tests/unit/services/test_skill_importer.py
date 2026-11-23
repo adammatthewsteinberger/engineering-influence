@@ -83,7 +83,7 @@ def test_it_is_a_skill_importer() -> None:
 
 def test_the_default_file_is_named_for_the_skill_and_the_result_says_what_it_holds() -> None:
     service, source, sink = importer()
-    done = service.import_skill(Path("some/SKILL.md"), None, 1, ("research",), (), None)
+    done = service.import_skill(Path("some/SKILL.md"), None, 1, ("research",), (), False, None)
     assert source.read_paths == [Path("some/SKILL.md")]
     assert list(sink.written) == [Path("research_methodology.toml")]
     assert done.path == "research_methodology.toml"
@@ -100,6 +100,7 @@ def test_a_target_and_a_name_and_chosen_sections_are_used() -> None:
         3,
         ("outline", "research"),
         ("source evaluation",),
+        False,
         Path("out/mine.toml"),
     )
     assert list(sink.written) == [Path("out/mine.toml")]
@@ -110,21 +111,23 @@ def test_a_target_and_a_name_and_chosen_sections_are_used() -> None:
 
 def test_what_is_written_reads_back_as_exactly_the_skill_that_was_made() -> None:
     service, _, sink = importer()
-    done = service.import_skill(Path("s.md"), None, 2, ("research",), (), None)
+    done = service.import_skill(Path("s.md"), None, 2, ("research",), (), False, None)
     reread = TomlSkillParser().parse(sink.written[Path(done.path)], done.skill.name)
     assert reread == done.skill
 
 
 def test_a_description_that_had_to_be_shortened_is_said_to_be() -> None:
     long = TEXT.replace("A short reference.", "word " * 100)
-    done = importer(Source(long))[0].import_skill(Path("s.md"), None, 1, ("research",), (), None)
+    done = importer(Source(long))[0].import_skill(
+        Path("s.md"), None, 1, ("research",), (), False, None
+    )
     assert done.description_shortened is True and done.skill.description.endswith("...")
 
 
 def test_a_file_larger_than_the_lock_reads_is_refused_before_anything_is_written() -> None:
     service, _, sink = importer(max_bytes=100)
     with pytest.raises(ApplicationError) as error:
-        service.import_skill(Path("s.md"), None, 1, ("research",), (), None)
+        service.import_skill(Path("s.md"), None, 1, ("research",), (), False, None)
     assert (error.value.code, error.value.http_status) == ("SKILL_IMPORT_TOO_LARGE", 422)
     assert "the lock reads at most 100" in error.value.message
     assert sink.written == {}
@@ -132,11 +135,13 @@ def test_a_file_larger_than_the_lock_reads_is_refused_before_anything_is_written
 
 def test_the_size_limit_is_inclusive() -> None:
     probe, _, sink = importer()
-    probe.import_skill(Path("s.md"), None, 1, ("research",), (), None)
+    probe.import_skill(Path("s.md"), None, 1, ("research",), (), False, None)
     size = len(next(iter(sink.written.values())))
-    importer(max_bytes=size)[0].import_skill(Path("s.md"), None, 1, ("research",), (), None)
+    importer(max_bytes=size)[0].import_skill(Path("s.md"), None, 1, ("research",), (), False, None)
     with pytest.raises(ApplicationError):
-        importer(max_bytes=size - 1)[0].import_skill(Path("s.md"), None, 1, ("research",), (), None)
+        importer(max_bytes=size - 1)[0].import_skill(
+            Path("s.md"), None, 1, ("research",), (), False, None
+        )
 
 
 @pytest.mark.parametrize(
@@ -147,6 +152,34 @@ def test_a_file_that_cannot_be_read_or_converted_writes_nothing(text: str, code:
     service, _, sink = importer(Source(text))
     stages = ("research",) if code == "SKILL_MARKDOWN_INVALID" else ()
     with pytest.raises(ApplicationError) as error:
-        service.import_skill(Path("s.md"), None, 1, stages, (), None)
+        service.import_skill(Path("s.md"), None, 1, stages, (), False, None)
     assert error.value.code == code
     assert sink.written == {}
+
+
+# ------------------------------------------------------------------------- reference mode
+def test_a_reference_import_writes_a_reference_table_that_reads_back_the_same() -> None:
+    service, _, sink = importer()
+    done = service.import_skill(Path("s.md"), None, 2, (), (), True, None)
+    assert done.skill.parts == () and done.skill.section_titles() == (
+        "Source Evaluation",
+        "Database Searching",
+    )
+    assert done.sections == ("Source Evaluation", "Database Searching")
+    text = sink.written[Path(done.path)].decode()
+    assert "[parts]" not in text and "[reference]" in text
+    assert TomlSkillParser().parse(sink.written[Path(done.path)], done.skill.name) == done.skill
+
+
+def test_a_reference_import_with_a_stage_writes_nothing() -> None:
+    service, _, sink = importer()
+    with pytest.raises(ApplicationError) as error:
+        service.import_skill(Path("s.md"), None, 1, ("research",), (), True, None)
+    assert error.value.code == "SKILL_IMPORT_INVALID" and sink.written == {}
+
+
+def test_a_reference_file_larger_than_the_lock_reads_is_refused_before_it_is_written() -> None:
+    service, _, sink = importer(max_bytes=100)
+    with pytest.raises(ApplicationError) as error:
+        service.import_skill(Path("s.md"), None, 1, (), (), True, None)
+    assert error.value.code == "SKILL_IMPORT_TOO_LARGE" and sink.written == {}

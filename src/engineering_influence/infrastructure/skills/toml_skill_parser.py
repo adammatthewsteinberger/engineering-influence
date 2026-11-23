@@ -19,7 +19,7 @@ class TomlSkillParser(SkillParserInterface):
     a model to be shown: no blanks, no tools, no commands.
     """
 
-    KEYS = frozenset({"name", "version", "description", "parts"})
+    KEYS = frozenset({"name", "version", "description", "parts", "reference"})
 
     def parse(self, data: bytes, name: str) -> Skill:
         """The skill, or an ApplicationError (SKILL_INVALID) saying why the file is not one."""
@@ -40,15 +40,21 @@ class TomlSkillParser(SkillParserInterface):
             raise self._invalid(name, f"it has unknown keys {unknown}")
         if raw.get("name") != name:
             raise self._invalid(name, f"it names itself {raw.get('name')!r}, not {name!r}")
-        parts = raw.get("parts")
+        parts = raw.get("parts", {})
         if not isinstance(parts, dict) or any(not isinstance(text, str) for text in parts.values()):
             raise self._invalid(name, "its parts are a table of stage = text")
+        reference = raw.get("reference", {})
+        if not isinstance(reference, dict) or any(
+            not isinstance(text, str) for text in reference.values()
+        ):
+            raise self._invalid(name, "its reference is a table of title = text")
         try:
             return Skill(
                 name=name,
                 version=raw["version"],
                 parts=tuple(sorted(parts.items())),
                 description=raw.get("description", ""),
+                sections=tuple(reference.items()),
             )
         except KeyError as error:
             raise self._invalid(name, f"it is missing {error.args[0]!r}") from error

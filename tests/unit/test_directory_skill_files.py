@@ -26,7 +26,7 @@ def refusal(action: object) -> ApplicationError:
 
 def test_it_is_a_skill_files_port() -> None:
     assert isinstance(files(), SkillFilesInterface)
-    assert LIMIT == 64 * 1024
+    assert LIMIT == 256 * 1024
 
 
 def test_a_missing_file_is_none_and_a_plain_file_is_its_bytes(tmp_path: Path) -> None:

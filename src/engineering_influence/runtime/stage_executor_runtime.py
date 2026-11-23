@@ -98,6 +98,7 @@ from engineering_influence.services.nonfiction_output_checks import NonfictionOu
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 from engineering_influence.services.nonfiction_revision_passes import NonfictionRevisionPasses
 from engineering_influence.services.outline_parser import OutlineParser
+from engineering_influence.services.read_skill_tool import ReadSkillTool
 from engineering_influence.services.revision_stage_executor import RevisionStageExecutor
 from engineering_influence.services.run_tool_loop import RunToolLoop
 from engineering_influence.services.skill_lock_verifier import SkillLockVerifier
@@ -170,9 +171,9 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                 http_status=503,
             )
         model = self._model()
-        guidance = self._guidance()
+        guidance, skill_tools = self._guidance()
         lock, locked_tools = self._locked_servers()
-        tools = ToolRegistry((*self._tools(), *locked_tools))
+        tools = ToolRegistry((*self._tools(), *locked_tools, *skill_tools))
         limits = ToolLoopLimits()
         runner = ToolRunner(tools, journal, limits)
         self._runner = runner
@@ -195,6 +196,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             SpendGuard,
             descriptor.context_window,
             descriptor.max_output_tokens,
+            tools,
         )
         return StageExecutorRouter(
             ModelStageExecutor(
@@ -221,6 +223,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                         SpendGuard,
                         descriptor.context_window,
                         descriptor.max_output_tokens,
+                        tools,
                     )
                     for editing in revisions.passes()
                 },
@@ -285,17 +288,18 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             )
         return profile
 
-    def _guidance(self) -> StageGuidanceInterface:
+    def _guidance(self) -> tuple[StageGuidanceInterface, tuple[ToolInterface, ...]]:
         """The skills in the lock that ``EI_SKILL_LOCK`` names, checked against their hashes.
 
         A lock is read only when it is named, so a stray file in the working directory adds nothing
         to a prompt. A skill that is not the text the lock approved stops the process at start, before
         any tool server is started or any call is made. The skills are read once, here, so every stage of
-        the run sees the same text.
+        the run sees the same text. The second thing returned is the read-only ``read_skill`` tool, which
+        serves the reference sections of those same verified skills to the stages that list them.
         """
         named = self._environment.get("EI_SKILL_LOCK", "").strip()
         if not named:
-            return NoStageGuidance()
+            return NoStageGuidance(), ()
         path = Path(named)
         lock = TomlSkillLockStore().load(path)
         if lock is None:
@@ -306,7 +310,8 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             )
         verifier = SkillLockVerifier(DirectorySkillFiles(), TomlSkillParser())
         skills = verifier.verified(lock, path.parent / "skills")
-        return LockStageGuidance(lock, skills, TomlPromptLibrary().get("skill_guidance"))
+        guidance = LockStageGuidance(lock, skills, TomlPromptLibrary().get("skill_guidance"))
+        return guidance, (ReadSkillTool(skills),)
 
     def _locked_servers(self) -> tuple[ToolLock, tuple[ToolInterface, ...]]:
         """The servers in the lock that ``EI_TOOL_LOCK`` names, started and verified, and their tools.
