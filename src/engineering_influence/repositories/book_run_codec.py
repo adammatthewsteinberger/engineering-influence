@@ -10,6 +10,7 @@ from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget import Budget
 from engineering_influence.models.quality_issue import QualityIssue
+from engineering_influence.models.run_input import RunInput
 from engineering_influence.models.run_status import RunStatus
 from engineering_influence.models.stage_plan import StagePlan
 from engineering_influence.repositories.interfaces.book_run_codec_interface import (
@@ -29,7 +30,13 @@ class BookRunCodec(BookRunCodecInterface):
         plan = document["plan"]
         return BookRun(
             run_id=document["run_id"],
-            brief=BookBrief(**{**brief, "kind": BookKind(brief["kind"])}),
+            brief=BookBrief(
+                **{
+                    **brief,
+                    "kind": BookKind(brief["kind"]),
+                    "inputs": tuple(RunInput(**item) for item in brief.get("inputs", ())),
+                }
+            ),
             plan=StagePlan(kind=BookKind(plan["kind"]), stages=tuple(plan["stages"])),
             budget=Budget(**document["budget"]),
             stage=document["stage"],
