@@ -9,6 +9,7 @@ import httpx
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.errors.capacity_exhausted_error import CapacityExhaustedError
 from engineering_influence.errors.transient_stage_error import TransientStageError
+from engineering_influence.infrastructure.models.model_reply import ModelReply
 from engineering_influence.interfaces.model_interface import ModelInterface
 from engineering_influence.models.model_availability import ModelAvailability
 from engineering_influence.models.model_request import ModelRequest
@@ -183,13 +184,7 @@ class OpenAICompatibleModel(ModelInterface):
             ) from error
         if response.status_code == 200:
             self._blocked = ModelAvailability.AVAILABLE
-            try:
-                data = response.json()
-            except ValueError as error:
-                raise self._unexpected("body") from error
-            if not isinstance(data, dict):
-                raise self._unexpected("body")
-            return data
+            return ModelReply.body(response, "the model server")
         raise self._failure(response)
 
     def _failure(self, response: httpx.Response) -> Exception:
@@ -222,8 +217,4 @@ class OpenAICompatibleModel(ModelInterface):
 
     @staticmethod
     def _unexpected(what: str) -> ApplicationError:
-        return ApplicationError(
-            code="MODEL_RESPONSE_UNEXPECTED",
-            message=f"the model server sent a {what} this adapter does not understand",
-            http_status=502,
-        )
+        return ModelReply.unexpected("the model server", what)
