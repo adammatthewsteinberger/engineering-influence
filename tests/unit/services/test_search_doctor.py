@@ -2,6 +2,8 @@
 
 """SearchDoctor asks each provider on its own and reports hosts and counts, never the web's own text."""
 
+import pytest
+
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.errors.capacity_exhausted_error import CapacityExhaustedError
 from engineering_influence.errors.transient_stage_error import TransientStageError
@@ -99,3 +101,52 @@ def test_a_success_line_is_cut_like_a_failure_line() -> None:
         and len(finding.detail) == 200
         and finding.detail.startswith("1 links, the first from aaaa")
     )
+
+
+@pytest.mark.parametrize(
+    "host",
+    [
+        "exa\x07mple.org",
+        "ex ample.org",
+        "exa\u202emple.org",
+        "exämple.org",
+    ],
+)
+def test_a_host_with_a_control_or_unusual_character_is_never_printed(host: str) -> None:
+    hostile = Provider((SearchHit(f"https://{host}/x", "t"),))
+    (finding,) = SearchDoctor((("a", hostile),)).check("q")
+    assert finding.passed
+    assert finding.detail == "1 links, the first from a host with unusual characters"
+    assert finding.line().isprintable()
+
+
+@pytest.mark.parametrize(
+    ("link_host", "shown"),
+    [
+        ("a.example", "a.example"),
+        ("xn--bcher-kva.example", "xn--bcher-kva.example"),
+        ("10.0.0.1", "10.0.0.1"),
+        ("[::1]", "::1"),
+        (
+            "[ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255]",
+            "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255",
+        ),
+        ("a-b.c-d.example", "a-b.c-d.example"),
+    ],
+)
+def test_an_ordinary_host_name_or_address_is_shown(link_host: str, shown: str) -> None:
+    ok = Provider((SearchHit(f"https://{link_host}/x", "t"),))
+    (finding,) = SearchDoctor((("a", ok),)).check("q")
+    assert finding.detail == f"1 links, the first from {shown}"
+
+
+def test_a_host_is_shown_up_to_253_characters_and_not_beyond() -> None:
+    labels = ["a" * 63] * 3
+    at_limit = ".".join([*labels, "a" * 61])
+    over = ".".join([*labels, "a" * 62])
+    assert (len(at_limit), len(over)) == (253, 254)
+    for host, expected in ((at_limit, at_limit), (over, "a host with unusual characters")):
+        (finding,) = SearchDoctor((("a", Provider((SearchHit(f"https://{host}/x", "t"),))),)).check(
+            "q"
+        )
+        assert finding.detail == f"1 links, the first from {expected}"[:200]
