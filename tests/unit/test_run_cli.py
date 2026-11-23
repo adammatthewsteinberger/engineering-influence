@@ -25,7 +25,9 @@ from engineering_influence.repositories.sqlmodel_artifact_store import SqlModelA
 from engineering_influence.repositories.sqlmodel_run_repository import SqlModelRunRepository
 from engineering_influence.runtime.cli_runtime import CliRuntime
 from engineering_influence.services.interfaces.cancel_run_interface import CancelRunInterface
+from engineering_influence.services.interfaces.create_run_interface import CreateRunInterface
 from engineering_influence.services.interfaces.export_run_interface import ExportRunInterface
+from engineering_influence.services.interfaces.list_runs_interface import ListRunsInterface
 from engineering_influence.services.interfaces.resume_run_interface import ResumeRunInterface
 
 
@@ -84,17 +86,42 @@ class Reader(RunControllerInterface):
         raise NotImplementedError
 
 
+class Creator(CreateRunInterface):
+    def __init__(self, failure: BaseException | None = None) -> None:
+        self.failure = failure
+        self.briefs: list[BookBrief] = []
+
+    def create(self, brief: BookBrief) -> BookRun:
+        if self.failure is not None:
+            raise self.failure
+        self.briefs.append(brief)
+        plan = StagePlan(kind=brief.kind, stages=("brief", "outline"))
+        return BookRun("run-1", brief, plan, Budget(cap=brief.budget_micro_usd))
+
+
+class Lister(ListRunsInterface):
+    def __init__(self, runs: tuple[BookRun, ...] = ()) -> None:
+        self._runs = runs
+
+    def runs(self) -> tuple[BookRun, ...]:
+        return self._runs
+
+
 def cli(
     resumer: Resumer | None = None,
     canceller: Canceller | None = None,
     reader: Reader | None = None,
     exporter: Exporter | None = None,
+    creator: Creator | None = None,
+    lister: Lister | None = None,
 ) -> RunCli:
     return RunCli(
         lambda: resumer or Resumer(),
         lambda: canceller or Canceller(),
         lambda: reader or Reader(),
         lambda: exporter or Exporter(),
+        lambda: creator or Creator(),
+        lambda: lister or Lister(),
     )
 
 
@@ -175,9 +202,14 @@ def test_a_missing_runtime_extra_says_how_to_install_it(capsys: pytest.CaptureFi
         raise ImportError("no alembic", name="alembic")
 
     assert (
-        RunCli(missing, lambda: Canceller(), lambda: Reader(), lambda: Exporter()).run(
-            resume_args()
-        )
+        RunCli(
+            missing,
+            lambda: Canceller(),
+            lambda: Reader(),
+            lambda: Exporter(),
+            lambda: Creator(),
+            lambda: Lister(),
+        ).run(resume_args())
         == 1
     )
     err = capsys.readouterr().err
@@ -390,3 +422,124 @@ def test_the_real_export_of_an_unknown_run_exits_1_and_creates_nothing(
     assert CliRuntime().build().run(["run", "export", "nope", str(target)]) == 1
     assert "no run 'nope'" in capsys.readouterr().err
     assert not target.exists()
+
+
+def write_brief(tmp_path: Path, text: str) -> Path:
+    path = tmp_path / "brief.toml"
+    path.write_text(text, encoding="utf-8")
+    return path
+
+
+GOOD_BRIEF = 'kind = "nonfiction"\nidea = "sourdough at home"\nbudget_micro_usd = 5000000\n'
+
+
+def test_a_brief_file_starts_a_run_and_says_so(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    creator = Creator()
+    args = argparse.Namespace(run_command="create", brief=write_brief(tmp_path, GOOD_BRIEF))
+    assert cli(creator=creator).run(args) == 0
+    (brief,) = creator.briefs
+    assert (brief.kind, brief.idea, brief.budget_micro_usd) == (
+        BookKind.NONFICTION,
+        "sourdough at home",
+        5_000_000,
+    )
+    assert (
+        capsys.readouterr().out
+        == "run run-1 is pending at stage 'brief'; its first stage is queued\n"
+    )
+
+
+def test_a_brief_that_is_not_toml_is_refused_on_one_line(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    args = argparse.Namespace(run_command="create", brief=write_brief(tmp_path, "kind = "))
+    assert cli().run(args) == 1
+    err = capsys.readouterr().err
+    assert err.startswith("error: ") and "is not valid TOML" in err and err.count("\n") == 1
+
+
+def test_a_brief_the_contract_refuses_names_the_problem(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    text = GOOD_BRIEF.replace("sourdough at home", "   ")
+    args = argparse.Namespace(run_command="create", brief=write_brief(tmp_path, text))
+    assert cli().run(args) == 1
+    err = capsys.readouterr().err
+    assert "is not a brief: idea" in err and err.count("\n") == 1
+
+
+def test_a_brief_with_an_unknown_key_is_refused(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    args = argparse.Namespace(
+        run_command="create", brief=write_brief(tmp_path, GOOD_BRIEF + "mood = 'grim'\n")
+    )
+    assert cli().run(args) == 1
+    assert "is not a brief:" in capsys.readouterr().err
+
+
+def test_a_missing_brief_file_is_refused_on_one_line(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    args = argparse.Namespace(run_command="create", brief=tmp_path / "absent.toml")
+    assert cli().run(args) == 1
+    assert "cannot read" in capsys.readouterr().err
+
+
+def test_a_run_refused_for_its_kind_exits_one_with_the_reason(
+    capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    refused = ApplicationError(
+        code="RUN_KIND_UNSUPPORTED", message="this build cannot start a novel book", http_status=422
+    )
+    args = argparse.Namespace(run_command="create", brief=write_brief(tmp_path, GOOD_BRIEF))
+    assert cli(creator=Creator(refused)).run(args) == 1
+    assert capsys.readouterr().err == "error: this build cannot start a novel book\n"
+
+
+def test_runs_lists_one_line_each_with_status_and_stage(capsys: pytest.CaptureFixture[str]) -> None:
+    runs = (a_run(RunStatus.RUNNING), a_run(RunStatus.PARKED_CAPACITY))
+    assert cli(lister=Lister(runs)).run(argparse.Namespace(run_command="runs")) == 0
+    lines = capsys.readouterr().out.splitlines()
+    assert lines[0] == "run-1  " + f"{'running':<18} outline"
+    assert [line.split()[1:] for line in lines] == [
+        ["running", "outline"],
+        ["parked_capacity", "outline"],
+    ]
+
+
+def test_runs_with_nothing_saved_prints_nothing(capsys: pytest.CaptureFixture[str]) -> None:
+    assert cli().run(argparse.Namespace(run_command="runs")) == 0
+    assert capsys.readouterr().out == ""
+
+
+def test_the_real_command_creates_a_run_on_the_database_and_queues_its_first_stage(
+    database_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("EI_DATABASE_URL", database_url)
+    queue = InMemoryQueue()
+    brief = write_brief(tmp_path, GOOD_BRIEF)
+
+    assert CliRuntime(queue=queue).build().run(["run", "create", str(brief)]) == 0
+
+    (kind, payload) = queue.jobs[0]
+    assert kind == "run.advance" and payload["stage"] == "brief" and payload["attempt"] == 1
+    stored = SqlModelRunRepository(database_url).get(str(payload["run_id"]))
+    assert stored is not None and stored.status is RunStatus.PENDING
+    assert stored.budget.cap == 5_000_000
+    assert "is pending at stage 'brief'" in capsys.readouterr().out
+
+
+def test_the_real_command_lists_the_saved_runs_from_the_database(
+    database_url: str, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setenv("EI_DATABASE_URL", database_url)
+    seeded(database_url, RunStatus.PARKED_CAPACITY)
+
+    assert CliRuntime().build().run(["run", "runs"]) == 0
+    assert capsys.readouterr().out.split() == ["run-1", "parked_capacity", "outline"]

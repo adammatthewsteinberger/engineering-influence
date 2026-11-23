@@ -123,7 +123,9 @@ ei --version
 ei pipeline start --slug S --title T --postulate P [--postulate P …] [--stage STAGE …]
 ei serve api|worker
 ei db upgrade
-ei run status|resume|cancel RUN_ID
+ei run status|resume|cancel|export RUN_ID
+ei run create BRIEF.TOML
+ei run runs
 ei book [--root DIR] audit|build|epub|covers|qa|package|publish …
 ei tools add [--lock PATH] [--env VAR …] [--replace] NAME -- COMMAND [ARG …]
 ei tools add [--lock PATH] [--bearer-env VAR] [--replace] --url URL NAME
@@ -149,6 +151,8 @@ ei plugins fetch INDEX NAME [--output DIR]
 | `ei serve api` / `worker` | Runs the API or the worker from `EI_*` settings. | `2` and one line naming the bad variable; never a traceback |
 | `ei db upgrade` | Applies the database migrations to `EI_DATABASE_URL` and prints the revision reached. Needs the `runtime` extra. | `0`; `1` extra missing; `2` and one line for a missing setting or an unreachable database |
 | `ei run status RUN_ID` | Prints the run as one line of JSON (the same `RunSummaryV1` the API returns). Needs only `EI_DATABASE_URL`. | `0`; `1` unknown run; `2` setup trouble |
+| `ei run create BRIEF.TOML` | Starts a book run from a brief file (TOML, the brief contract v1: `kind`, `idea`, `budget_micro_usd` and the optional keys). The run is saved pending with the brief's cap as its budget and its first stage is queued for the worker; a file that is not a brief, or a kind this build cannot start, is refused on one line and nothing is saved. Needs the database and the broker, like `resume`. |
+| `ei run runs` | Lists every saved run, one line each: its id, status and current stage. Needs only the database. |
 | `ei run resume RUN_ID` | Moves a parked run back to running and queues its current stage; on a run that is already running it only queues the stage again, which repairs a resume that died half-way. Reads `EI_DATABASE_URL` and `EI_RABBITMQ_URL`. | `0`; `1` unknown run, finished run or a run that kept changing; `2` setup trouble |
 | `ei run cancel RUN_ID` | Stops a run for good; cancelling twice is fine, and a completed or failed run is refused. Needs only `EI_DATABASE_URL`. | same |
 | `ei run export RUN_ID DIRECTORY` | Writes what a run produced to a **new or empty** folder: the book as a project at the top (`books/<slug>.toml` and `src/chapter_NN.md`, as the book commands expect) and every other artifact under `run/` (the stage outputs and the `audit/` reports). It reads the run and changes nothing in it. Nothing is overwritten, and either every file is written or none is. A folder that holds anything is refused, as is a run that has stored nothing. Needs only `EI_DATABASE_URL`. | `0`; `1` unknown run, a run with nothing stored, or a folder that is not empty; `2` setup trouble |
