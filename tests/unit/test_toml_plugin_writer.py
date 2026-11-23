@@ -92,4 +92,5 @@ def test_an_address_server_is_written_with_no_command_or_env_line() -> None:
     text = WRITER.render(
         Plugin("pack", 1, servers=(PluginServer("s", url="https://x.example/mcp", bearer_env="T"),))
     ).decode()
-    assert "command" not in text and "env =" not in text
+    keys = {line.split(" = ")[0] for line in text.splitlines() if " = " in line}
+    assert keys == {"name", "version", "url", "bearer_env"}
