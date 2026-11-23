@@ -58,6 +58,25 @@ long_context_input_percent = 200
 long_context_output_percent = 150
 ```
 
+## Content levels
+
+A novel's brief may set `violence` (`none`, `mild`, `moderate`, `graphic`) and `heat` (`none`, `sweet`, `steamy`,
+`explicit`), mildest first. This project does not know any provider's usage policy and does not claim to, so the
+ceiling for a model is something **you** record, after reading the `usage_policy_url` you already give it:
+
+```toml
+[[model]]
+# ...the keys above...
+max_violence = "moderate"
+max_heat = "sweet"
+```
+
+A model with no ceiling recorded is held to `mild` violence and `sweet` heat, so a brief that asks for more is refused
+before anything is spent, with a message that names the setting to change. A brief that sets no level is never
+refused. A model on your own machine is the same: you record what you are willing to ask of it. The check is the
+`ContentPolicy` service; the novel stages (M7.3) call it before their first paid call. It is a guard against asking a
+model for what its provider has said it will not write, not a content filter and not legal advice.
+
 ## What goes wrong
 
 - `MODEL_CATALOG_INVALID` names the entry (`model #2 (example/example-model) is missing 'family'`).

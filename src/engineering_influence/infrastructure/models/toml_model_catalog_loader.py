@@ -57,6 +57,8 @@ class TomlModelCatalogLoader(ModelCatalogLoaderInterface):
                     batch_discount_percent=price["batch_discount_percent"],
                     price_effective=price["effective"],
                     usage_policy_url=entry["usage_policy_url"],
+                    max_violence=entry.get("max_violence"),
+                    max_heat=entry.get("max_heat"),
                     long_context_threshold_tokens=price.get("long_context_threshold_tokens", 0),
                     long_context_input_percent=price.get("long_context_input_percent", 100),
                     long_context_output_percent=price.get("long_context_output_percent", 100),
