@@ -12,3 +12,7 @@ class RunInputInterface(ABC):
     @abstractmethod
     def digest(self) -> str:
         """The SHA-256 of the text, as 64 lowercase hex digits."""
+
+    @abstractmethod
+    def block(self) -> str:
+        """The input as it is shown to a model: a heading, then the text."""

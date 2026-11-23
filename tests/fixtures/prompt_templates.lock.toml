@@ -10,8 +10,8 @@ version = 2
 fingerprint = "a4201ec270b5535eadbad3b7fa5df2ad493f34e1036f55f10a04da2dd13ea9aa"
 
 [stage_brief]
-version = 1
-fingerprint = "ef5260c5d38559d6ed0f72bfbabf048b489ecb668e5ad5126512d749d606c361"
+version = 2
+fingerprint = "0c8a89733fbb2f3ed2d11958cafcc15ba4b7be615130a9194448fcba65a2ae3b"
 
 [stage_copy_edit]
 version = 1
@@ -22,16 +22,16 @@ version = 1
 fingerprint = "a5d4aac337b08a56252d013038c9a562dac86c38897f3c22c405fcef7d98b007"
 
 [stage_outline]
-version = 3
-fingerprint = "e8652162244153770d9babb900b30325f0027b56077c121d25e013d4e6865987"
+version = 4
+fingerprint = "be5718fd75e583d7556771122330c56eb871d35fb213d721cbbc781435a5262e"
 
 [stage_positioning]
 version = 1
 fingerprint = "c83751d07fb0aba9077b044b7252ba91176aaa3213d1230abf61fecb80cc85b2"
 
 [stage_research]
-version = 1
-fingerprint = "b83f96ec8493c6c70c96a9ea7af5cecb3268b63e62e183e4d98e3712be2a5825"
+version = 2
+fingerprint = "a3bae15acc01c5bd769e60a75bbbe6e473dbff3bcfb58edfdecda8e4b2d5e4e8"
 
 [stage_revise_lines]
 version = 1

@@ -202,7 +202,7 @@ def test_an_enabled_skill_reaches_the_stages_prompt_and_its_version_but_not_the_
     assert user.rstrip().endswith("</installed_guidance>")
     assert "installed_guidance" not in system and "plain_style" not in system
     assert "Prefer short chapters." not in user
-    assert version_of(journal).startswith("stage_brief@1+skill_guidance@2:")
+    assert version_of(journal).startswith("stage_brief@2+skill_guidance@2:")
 
 
 def test_a_skill_is_not_shown_without_a_lock_being_named_even_if_one_is_in_the_folder(
@@ -212,7 +212,7 @@ def test_a_skill_is_not_shown_without_a_lock_being_named_even_if_one_is_in_the_f
     with model(says("A brief.")) as (url, provider):
         journal = world.run_stage("brief", url)
     assert "installed_guidance" not in json.dumps(provider.bodies[0])
-    assert version_of(journal) == "stage_brief@1"
+    assert version_of(journal) == "stage_brief@2"
 
 
 def test_a_skill_enabled_for_another_stage_is_not_shown_to_this_one(world: World) -> None:
@@ -220,7 +220,7 @@ def test_a_skill_enabled_for_another_stage_is_not_shown_to_this_one(world: World
     with model(says("A brief.")) as (url, provider):
         journal = world.run_stage("brief", url, **world.named())
     assert "plain_style" not in json.dumps(provider.bodies[0])
-    assert version_of(journal) == "stage_brief@1"
+    assert version_of(journal) == "stage_brief@2"
 
 
 def test_different_skill_text_is_a_different_prompt_version_so_a_replay_cannot_cross(

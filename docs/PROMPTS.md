@@ -68,6 +68,13 @@ blanks but no `system` part that mentions how to treat them. This is rule 1 of t
 to 7 there (no tools, the budget cap, escaping the output, checking claims against sources) are what bound
 the damage if it does not. Nothing renders text from a real source yet.
 
+## The author's material
+
+A brief may carry up to eight blocks of text the author supplied (ADR 0011). The `brief`, `research` and `outline` templates have an
+`inputs` blank, listed as untrusted, so the material arrives as `<untrusted name="inputs">`, each input under a heading of its name,
+origin and short SHA-256. With none the block says `not given`. It is evidence for the stage, never instructions, and the research prompt
+says it is not a source for a fact. No other template has the blank.
+
 ## Versions are part of the journal key
 
 A model call's journal key contains the prompt version, so a resumed run reuses an answer only for the same

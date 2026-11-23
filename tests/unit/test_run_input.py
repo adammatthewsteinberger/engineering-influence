@@ -33,6 +33,12 @@ def test_a_safe_name_is_accepted(name: str) -> None:
     assert RunInput(name, "text").name == name
 
 
+def test_a_block_is_a_heading_naming_the_input_its_origin_and_digest_then_the_text() -> None:
+    made = RunInput("notes", "Line one\nLine two", "file")
+    assert made.block() == f"### notes (file, sha256 {made.digest()[:12]})\n\nLine one\nLine two"
+    assert len(made.digest()[:12]) == 12
+
+
 def test_an_unknown_origin_is_refused() -> None:
     with pytest.raises(ValueError, match="comes from one of"):
         RunInput("notes", "text", "email")
