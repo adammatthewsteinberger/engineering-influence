@@ -28,7 +28,8 @@ from engineering_influence.services.interfaces.outline_parser_interface import (
 class AssembleStageExecutor(StageExecutorInterface):
     """The ``assemble`` stage: no model call, only the files the typesetter reads.
 
-    From ``outline.md``, ``metadata.md`` and the ``chapter_NN.md`` files it writes, under ``manuscript/``, the
+    From ``outline.md``, ``metadata.md`` and the chapter files of the last editing pass (``<source>_NN.md``, where the
+    source prefix is the one the runtime names) it writes, under ``manuscript/``, the
     project layout ``BookLoader`` expects: ``src/chapter_NN.md`` (each cleaned by ``ChapterCleaner`` and
     headed with the outline's title) and ``books/<slug>.toml`` (from ``BookConfigWriter``: the listing from the
     metadata stage and, when ``EI_AUTHOR_PROFILE`` named one, the author's details). The slug is the
@@ -53,6 +54,7 @@ class AssembleStageExecutor(StageExecutorInterface):
         cleaner: ChapterCleanerInterface,
         configs: BookConfigWriterInterface,
         profile: AuthorProfile | None,
+        source: str,
     ) -> None:
         self._artifacts = artifacts
         self._outlines = outlines
@@ -60,6 +62,7 @@ class AssembleStageExecutor(StageExecutorInterface):
         self._cleaner = cleaner
         self._configs = configs
         self._profile = profile
+        self._source = source
 
     async def execute(self, run: BookRun, attempt: int) -> StageReport:
         """Clean every chapter, then write the chapters, the config and the list of them."""
@@ -75,8 +78,12 @@ class AssembleStageExecutor(StageExecutorInterface):
         outline = self._outlines.parse(outline_text)
         metadata = self._metadata.parse(metadata_text)
         names = [f"chapter_{chapter.number:02d}.md" for chapter in outline.chapters]
-        texts = {name: await self._read(run, name) for name in names}
-        lost = [name for name, text in texts.items() if text is None]
+        sources = {
+            name: f"{self._source}_{chapter.number:02d}.md"
+            for name, chapter in zip(names, outline.chapters, strict=True)
+        }
+        texts = {name: await self._read(run, source) for name, source in sources.items()}
+        lost = [sources[name] for name, text in texts.items() if text is None]
         if lost:
             raise self._missing(run, lost)
         brief = run.brief

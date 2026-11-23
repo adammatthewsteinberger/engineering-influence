@@ -58,8 +58,8 @@ METADATA = (
     + "Categories:\n- Books > Science & Math > Biology\n- Books > Crafts > Bees\n"
 )
 CHAPTERS = {
-    "chapter_01.md": f"Chapter 1: The Hive\n\nA colony {EM} tens of thousands of bees {EM} works as one.",
-    "chapter_02.md": "## Chapter 2: The Site\n\nPut it in the sun.\n\n# Shade\n\nBut not all day.",
+    "copy_01.md": f"Chapter 1: The Hive\n\nA colony {EM} tens of thousands of bees {EM} works as one.",
+    "copy_02.md": "## Chapter 2: The Site\n\nPut it in the sun.\n\n# Shade\n\nBut not all day.",
 }
 PROFILE = AuthorProfile(
     author="Ann Author",
@@ -92,6 +92,7 @@ class World:
             ChapterCleaner(dashes),
             BookConfigWriter(),
             profile,
+            "copy",
         )
         self.run = BookRun(
             run_id="run-1",
@@ -235,10 +236,10 @@ def test_a_missing_input_names_what_is_missing() -> None:
     only_metadata = World(stored={"outline.md": OUTLINE, **CHAPTERS}).refused()
     assert "metadata.md" in only_metadata.message and "outline.md" not in only_metadata.message
     partial = World(
-        stored={"outline.md": OUTLINE, "metadata.md": METADATA, "chapter_02.md": "Text."}
+        stored={"outline.md": OUTLINE, "metadata.md": METADATA, "copy_02.md": "Text."}
     ).refused()
     assert partial.code == "STAGE_INPUT_MISSING"
-    assert "chapter_01.md" in partial.message and "chapter_02.md" not in partial.message
+    assert "copy_01.md" in partial.message and "copy_02.md" not in partial.message
 
 
 def test_an_unreadable_outline_or_listing_stops_the_stage_with_the_parsers_reason() -> None:
@@ -258,7 +259,7 @@ def test_a_refused_chapter_leaves_no_half_manuscript_behind() -> None:
             "outline.md": OUTLINE,
             "metadata.md": METADATA,
             **CHAPTERS,
-            "chapter_02.md": "Fine.\n[TODO]",
+            "copy_02.md": "Fine.\n[TODO]",
         }
     )
     error = world.refused()
@@ -309,7 +310,7 @@ def test_whatever_the_model_wrote_is_refused_or_loads_in_strict_mode_and_passes_
         for n in range(1, len(texts) + 1)
     )
     stored = {"outline.md": outline, "metadata.md": METADATA}
-    stored.update({f"chapter_{n:02d}.md": text for n, text in enumerate(texts, 1)})
+    stored.update({f"copy_{n:02d}.md": text for n, text in enumerate(texts, 1)})
     world = World(stored=stored, profile=PROFILE)
     try:
         world.execute()

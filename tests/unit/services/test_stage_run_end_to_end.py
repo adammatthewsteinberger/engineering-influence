@@ -56,7 +56,9 @@ from engineering_influence.services.model_stage_executor import ModelStageExecut
 from engineering_influence.services.no_output_checks import NoOutputChecks
 from engineering_influence.services.no_stage_guidance import NoStageGuidance
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
+from engineering_influence.services.nonfiction_revision_passes import NonfictionRevisionPasses
 from engineering_influence.services.outline_parser import OutlineParser
+from engineering_influence.services.revision_stage_executor import RevisionStageExecutor
 from engineering_influence.services.run_tool_loop import RunToolLoop
 from engineering_influence.services.spend_guard import SpendGuard
 from engineering_influence.services.stage_executor_router import StageExecutorRouter
@@ -182,7 +184,22 @@ class World:
                     ChapterCleaner(DashRewriter()),
                     BookConfigWriter(),
                     None,
+                    NonfictionRevisionPasses().final(),
                 ),
+                **{
+                    editing.stage: RevisionStageExecutor(
+                        editing,
+                        self.store,
+                        prompts,
+                        OutlineParser(),
+                        loop,
+                        NoStageGuidance(),
+                        SpendGuard,
+                        DESCRIPTOR.context_window,
+                        DESCRIPTOR.max_output_tokens,
+                    )
+                    for editing in NonfictionRevisionPasses().passes()
+                },
                 AuditStageExecutor.STAGE: AuditStageExecutor(self.store, self.auditor),
             },
         )
@@ -232,6 +249,14 @@ DRAFTING = (
     ("CHAPTER TWO text", "end_turn"),
     ("SUMMARY TWO text", "end_turn"),
 )
+REVISING = (
+    ("CHAPTER ONE revised", "end_turn"),
+    ("CHAPTER TWO revised", "end_turn"),
+    ("CHAPTER ONE polished", "end_turn"),
+    ("CHAPTER TWO polished", "end_turn"),
+    ("CHAPTER ONE final", "end_turn"),
+    ("CHAPTER TWO final", "end_turn"),
+)
 GOOD = (
     ("BRIEF text", "end_turn"),
     ("POSITIONING text", "end_turn"),
@@ -241,13 +266,14 @@ GOOD = (
     (OUTLINE_TEXT, "end_turn"),
     (METADATA_TEXT, "end_turn"),
     *DRAFTING,
+    *REVISING,
 )
 
 
 def test_a_run_goes_from_brief_to_draft_and_completes_with_each_answer_stored() -> None:
     world = World(Model(*GOOD))
     outcomes = [world.advance(stage) for stage in RECIPES.plan().stages]
-    assert outcomes == [AdvanceOutcome.ADVANCED] * 7 + [AdvanceOutcome.COMPLETED]
+    assert outcomes == [AdvanceOutcome.ADVANCED] * 10 + [AdvanceOutcome.COMPLETED]
     assert world.run().status is RunStatus.COMPLETED
     assert world.store.names(RUN_ID) == [
         "assemble.md",
@@ -256,7 +282,12 @@ def test_a_run_goes_from_brief_to_draft_and_completes_with_each_answer_stored() 
         "brief.md",
         "chapter_01.md",
         "chapter_02.md",
+        "copy_01.md",
+        "copy_02.md",
+        "copy_edit.md",
         "draft.md",
+        "lines_01.md",
+        "lines_02.md",
         "manuscript/books/hive-mind.toml",
         "manuscript/src/chapter_01.md",
         "manuscript/src/chapter_02.md",
@@ -264,12 +295,16 @@ def test_a_run_goes_from_brief_to_draft_and_completes_with_each_answer_stored() 
         "outline.md",
         "positioning.md",
         "research.md",
+        "revise_lines.md",
+        "revise_structure.md",
+        "structure_01.md",
+        "structure_02.md",
         "summary_01.md",
         "summary_02.md",
     ]
     assert (
         world.store.get(RUN_ID, "manuscript/src/chapter_02.md")
-        == b"# The Site\n\nCHAPTER TWO text\n"
+        == b"# The Site\n\nCHAPTER TWO final\n"
     )
     assert world.store.get(RUN_ID, "research.md") == b"RESEARCH text"
     assert world.store.get(RUN_ID, "outline.md") == OUTLINE_TEXT.encode()
@@ -281,7 +316,7 @@ def test_each_stage_is_asked_with_what_the_stages_before_it_wrote() -> None:
     world = World(Model(*GOOD))
     for stage in RECIPES.plan().stages:
         world.advance(stage)
-    brief, positioning, searching, reading, research, outline, metadata, *drafting = (
+    brief, positioning, searching, reading, research, outline, metadata, *rest = (
         world.model.requests
     )
     assert "How to keep bees" in brief.prompt
@@ -301,10 +336,16 @@ def test_each_stage_is_asked_with_what_the_stages_before_it_wrote() -> None:
         "stage_summary@1",
         "context_pack@2",
         "stage_summary@1",
+        "stage_revise_structure@1",
+        "stage_revise_structure@1",
+        "stage_revise_lines@1",
+        "stage_revise_lines@1",
+        "stage_copy_edit@1",
+        "stage_copy_edit@1",
     ]
     assert [len(r.transcript) for r in (searching, reading, research)] == [0, 1, 2]
     assert [t.name for t in searching.tools] == ["web_search", "fetch_url"]
-    assert all(r.tools == () for r in (brief, positioning, outline, metadata, *drafting))
+    assert all(r.tools == () for r in (brief, positioning, outline, metadata, *rest))
 
 
 def test_what_the_research_tools_return_reaches_the_model_marked_as_untrusted() -> None:
@@ -326,7 +367,7 @@ def test_spend_is_what_the_calls_cost_and_stays_under_the_cap() -> None:
     for stage in RECIPES.plan().stages:
         world.advance(stage)
     budget = world.run().budget
-    assert budget.spent == DESCRIPTOR.cost_micro_usd(ModelUsage(100, 50)) * 11 > 0
+    assert budget.spent == DESCRIPTOR.cost_micro_usd(ModelUsage(100, 50)) * 17 > 0
     assert (budget.reserved, budget.spent <= budget.cap) == (0, True)
 
 
@@ -381,6 +422,7 @@ def test_a_page_that_steers_the_model_to_an_address_with_the_brief_in_it_is_not_
             (OUTLINE_TEXT, "end_turn"),
             (METADATA_TEXT, "end_turn"),
             *DRAFTING,
+            *REVISING,
         )
     )
     for stage in RECIPES.plan().stages:
@@ -415,6 +457,7 @@ def research_with(world: World, *steps: tuple[str, str, tuple[ToolCall, ...]]) -
         (OUTLINE_TEXT, "end_turn"),
         (METADATA_TEXT, "end_turn"),
         *DRAFTING,
+        *REVISING,
     ]
     for stage in RECIPES.plan().stages:
         world.advance(stage)
@@ -476,7 +519,7 @@ def test_each_chapter_is_drafted_from_the_summaries_and_tail_of_the_ones_before_
     world = World(Model(*GOOD))
     for stage in RECIPES.plan().stages:
         world.advance(stage)
-    first, first_summary, second, second_summary = world.model.requests[7:]
+    first, first_summary, second, second_summary = world.model.requests[7:11]
     assert "Chapter 1: The Hive" in first.prompt
     assert "SUMMARY ONE" not in first.prompt and "CHAPTER ONE" not in first.prompt
     assert "Chapter 2: The Site" in second.prompt
@@ -518,3 +561,22 @@ def test_the_audit_is_given_the_assembled_project_and_its_warnings_do_not_stop_t
     ]
     assert "- price: no price" in (world.store.get(RUN_ID, "audit.md") or b"").decode()
     assert world.run().status is RunStatus.COMPLETED
+
+
+def test_each_editing_pass_is_given_what_the_pass_before_it_wrote() -> None:
+    world = World(Model(*GOOD))
+    for stage in RECIPES.plan().stages:
+        world.advance(stage)
+    structure_one, _, lines_one, lines_two, copy_one, copy_two = world.model.requests[11:]
+    assert "CHAPTER ONE text" in structure_one.prompt
+    assert "Chapter 2: SUMMARY TWO text" in structure_one.prompt
+    assert "SUMMARY ONE text" not in structure_one.prompt
+    assert "CHAPTER ONE revised" in lines_one.prompt and "POSITIONING text" in lines_one.prompt
+    assert "CHAPTER TWO revised" in lines_two.prompt
+    assert "CHAPTER ONE polished" in copy_one.prompt and "POSITIONING" not in copy_one.prompt
+    assert "CHAPTER TWO polished" in copy_two.prompt
+    assert world.store.get(RUN_ID, "copy_edit.md") == (
+        b"# Revision: copy_edit\n\n"
+        b"- Chapter 1: The Hive (3 to 3 words)\n"
+        b"- Chapter 2: The Site (3 to 3 words)\n"
+    )
