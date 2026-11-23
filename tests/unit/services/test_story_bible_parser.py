@@ -97,7 +97,7 @@ def test_a_premise_is_needed_and_is_text() -> None:
 
 
 def test_a_text_is_collapsed_to_one_line_and_cleaned() -> None:
-    text = "  A \n heist\t in a   harbour" + chr(0x200B) + chr(0x7) + chr(0x202E) + "  town  "
+    text = "  A \n heist\t in\u00a0a   harbour" + chr(0x200B) + chr(0x7) + chr(0x202E) + "  town  "
     assert parse({"premise": text}).premise == "A heist in a harbour town"
 
 

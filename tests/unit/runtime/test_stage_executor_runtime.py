@@ -694,3 +694,42 @@ def test_a_nonfiction_run_still_uses_the_nonfiction_prompts_by_default() -> None
     sent = json.dumps(seen.seen[-1][2])
     assert "editor in chief of a non-fiction publishing project" in sent
     assert "fiction imprint" not in sent
+
+
+def test_a_novel_draft_goes_to_the_novel_drafter_and_records_continuity_findings() -> None:
+    outline = "## Chapter 1: The Car Park\nPurpose: They meet.\nBeats:\n- Mara leaves\n"
+    bible = json.dumps({"premise": "A reunion.", "characters": [{"name": "Katherine"}]})
+    with provider("Katharine waited in the car park.") as (url, seen):
+        store = InMemoryArtifactStore()
+        for name, text in (
+            ("brief.md", "the brief"),
+            ("story_bible.md", bible),
+            ("beats.md", "the beats"),
+            ("outline.md", outline),
+        ):
+            store.put("run-1", name, text.encode())
+        rt = runtime(local_environment(url))
+        report = asyncio.run(
+            rt.build(store, InMemoryJournal()).execute(novel_run("draft", violence="mild"), 1)
+        )
+        rt.close()
+    assert store.get("run-1", "chapter_01.md") == b"Katharine waited in the car park."
+    assert [item.code for item in report.issues] == ["CONTINUITY_NAME"]
+    assert not report.issues[0].blocking
+    first = json.dumps(seen.seen[0][2])
+    assert "novelist drafting one chapter" in first and "violence mild, heat not given" in first
+    assert "the beats" in first and "Katherine" in first
+
+
+def test_a_novel_draft_the_model_is_not_recorded_as_allowing_is_refused_before_any_call() -> None:
+    with provider("never sent") as (url, seen):
+        rt = runtime(local_environment(url))
+        with pytest.raises(ApplicationError) as caught:
+            asyncio.run(
+                rt.build(InMemoryArtifactStore(), InMemoryJournal()).execute(
+                    novel_run("draft", heat="explicit"), 1
+                )
+            )
+        rt.close()
+    assert caught.value.code == "CONTENT_LEVEL_NOT_ALLOWED"
+    assert seen.seen == []

@@ -6,6 +6,7 @@ from collections.abc import Callable
 
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interfaces.artifact_store_interface import ArtifactStoreInterface
+from engineering_influence.interfaces.draft_checks_interface import DraftChecksInterface
 from engineering_influence.interfaces.prompt_library_interface import PromptLibraryInterface
 from engineering_influence.interfaces.stage_executor_interface import StageExecutorInterface
 from engineering_influence.interfaces.stage_guidance_interface import StageGuidanceInterface
@@ -14,8 +15,10 @@ from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget import Budget
 from engineering_influence.models.chapter_outline import ChapterOutline
 from engineering_influence.models.context_plan import ContextPlan
+from engineering_influence.models.draft_recipe import DraftRecipe
 from engineering_influence.models.model_request import ModelRequest
 from engineering_influence.models.outline import Outline
+from engineering_influence.models.quality_issue import QualityIssue
 from engineering_influence.models.stage_report import StageReport
 from engineering_influence.models.tool_definition import ToolDefinition
 from engineering_influence.models.tool_loop_result import ToolLoopResult
@@ -29,6 +32,7 @@ from engineering_influence.services.interfaces.run_tool_loop_interface import (
     RunToolLoopInterface,
 )
 from engineering_influence.services.interfaces.spend_guard_interface import SpendGuardInterface
+from engineering_influence.services.no_draft_checks import NoDraftChecks
 
 
 class DraftStageExecutor(StageExecutorInterface):
@@ -58,7 +62,18 @@ class DraftStageExecutor(StageExecutorInterface):
     """
 
     STAGE = "draft"
-    INPUTS = ("brief", "positioning", "research", "outline")
+    NONFICTION = DraftRecipe(
+        ("brief", "positioning", "research", "outline"),
+        (("The author's brief", "brief"), ("The positioning", "positioning")),
+        (("The whole outline", "outline"), ("The research notes", "research")),
+        "context_pack",
+        "stage_summary",
+        "Write chapter {number} of {count} now, following the beats above, in about {words} words. "
+        "Begin with the chapter's heading line.",
+    )
+    NO_CHECKS = NoDraftChecks()
+    REPORTED_ISSUES = 50
+    CONTINUITY = "continuity.md"
     DEFAULT_WORDS = 2_500
     MIN_WORDS = 300
     MAX_WORDS = 6_000
@@ -80,6 +95,8 @@ class DraftStageExecutor(StageExecutorInterface):
         context_window: int,
         max_output_tokens: int,
         tools: ToolRegistryInterface,
+        recipe: DraftRecipe = NONFICTION,
+        checks: DraftChecksInterface = NO_CHECKS,
     ) -> None:
         if context_window < 1 or max_output_tokens < 1:
             raise ValueError("a model has a window and an output limit")
@@ -93,18 +110,20 @@ class DraftStageExecutor(StageExecutorInterface):
         self._window = context_window
         self._max_output = max_output_tokens
         self._tools = tools
+        self._recipe = recipe
+        self._checks = checks
 
     async def execute(self, run: BookRun, attempt: int) -> StageReport:
         """Draft the chapters that are not done, then write the index."""
         stored = await asyncio.to_thread(self._artifacts.names, run.run_id)
-        missing = [f"{name}.md" for name in self.INPUTS if f"{name}.md" not in stored]
+        missing = [f"{name}.md" for name in self._recipe.inputs if f"{name}.md" not in stored]
         if missing:
             raise ApplicationError(
                 code="STAGE_INPUT_MISSING",
                 message=f"stage {run.stage!r} needs {', '.join(missing)}, which this run has not stored",
                 http_status=409,
             )
-        texts = {name: await self._text(run, f"{name}.md") for name in self.INPUTS}
+        texts = {name: await self._text(run, f"{name}.md") for name in self._recipe.inputs}
         outline = self._outlines.parse(texts["outline"])
         guidance = self._guidance.for_stage(run.stage)
         words = self._words(run.brief.target_words, outline.count())
@@ -130,8 +149,9 @@ class DraftStageExecutor(StageExecutorInterface):
             await self._chapter(
                 run, attempt, guard, outline, chapter, texts, words, output_cap, input_cap
             )
-        await self._index(run, outline)
-        return StageReport()
+        issues = await self._issues(run, outline, texts)
+        await self._index(run, outline, issues)
+        return StageReport(issues=issues[: self.REPORTED_ISSUES])
 
     async def _chapter(
         self,
@@ -187,19 +207,22 @@ class DraftStageExecutor(StageExecutorInterface):
         )
         tail = self._stored(run, self._chapter_name(number - 1)) if number > 1 else ""
         plan = ContextPlan(
-            style=f"The author's brief:\n{texts['brief']}\n\nThe positioning:\n{texts['positioning']}",
-            grounding=f"The whole outline:\n{texts['outline']}\n\nThe research notes:\n{texts['research']}",
+            style=self._recipe.style_text(texts),
+            grounding=self._recipe.grounding_text(texts),
             beats=chapter.render(),
-            instruction=(
-                f"Write chapter {number} of {outline.count()} now, following the beats above, in about "
-                f"{words} words. Begin with the chapter's heading line."
+            instruction=self._recipe.instruction_text(
+                number,
+                outline.count(),
+                words,
+                run.brief.violence or "not given",
+                run.brief.heat or "not given",
             ),
             prior_summaries=summaries,
             previous_tail=tail,
         )
         assembled = self._contexts.assemble(plan, input_cap)
         guidance = self._guidance.for_stage(run.stage)
-        version = self._prompts.get("context_pack").identifier()
+        version = self._prompts.get(self._recipe.context_template).identifier()
         prompt = assembled.prompt
         if not guidance.empty():
             prompt = f"{prompt}\n\n{guidance.text}"
@@ -221,7 +244,7 @@ class DraftStageExecutor(StageExecutorInterface):
             ) from error
 
     def _summary_request(self, chapter_text: str) -> ModelRequest:
-        template = self._prompts.get("stage_summary")
+        template = self._prompts.get(self._recipe.summary_template)
         return ModelRequest(
             system=template.render("system"),
             prompt=template.render("user", {"chapter": chapter_text}),
@@ -233,7 +256,21 @@ class DraftStageExecutor(StageExecutorInterface):
         shared = target // chapters if target else self.DEFAULT_WORDS
         return max(self.MIN_WORDS, min(self.MAX_WORDS, shared))
 
-    async def _index(self, run: BookRun, outline: Outline) -> None:
+    async def _issues(
+        self, run: BookRun, outline: Outline, texts: dict[str, str]
+    ) -> tuple[QualityIssue, ...]:
+        chapters = tuple(
+            [await self._text(run, self._chapter_name(item.number)) for item in outline.chapters]
+        )
+        found = self._checks.issues(texts, chapters)
+        if found:
+            lines = ["# Continuity", ""] + [f"- {item.detail}" for item in found]
+            await self._store(run, self.CONTINUITY, "\n".join(lines) + "\n")
+        return found
+
+    async def _index(
+        self, run: BookRun, outline: Outline, issues: tuple[QualityIssue, ...]
+    ) -> None:
         lines = ["# Draft", ""]
         total = 0
         for chapter in outline.chapters:
@@ -241,6 +278,8 @@ class DraftStageExecutor(StageExecutorInterface):
             total += length
             lines.append(f"- {chapter.heading()} ({length:,} words)")
         lines += ["", f"Total: {total:,} words"]
+        if issues:
+            lines.append(f"Continuity: {len(issues):,} findings, in {self.CONTINUITY}")
         await self._store(run, f"{self.STAGE}.md", "\n".join(lines) + "\n")
 
     def _usable(self, outcome: ToolLoopResult, what: str) -> str:

@@ -87,6 +87,7 @@ from engineering_influence.services.content_policy_stage_executor import (
     ContentPolicyStageExecutor,
 )
 from engineering_influence.services.context_assembler import ContextAssembler
+from engineering_influence.services.continuity_checker import ContinuityChecker
 from engineering_influence.services.dash_rewriter import DashRewriter
 from engineering_influence.services.draft_stage_executor import DraftStageExecutor
 from engineering_influence.services.fallback_search_provider import FallbackSearchProvider
@@ -104,6 +105,7 @@ from engineering_influence.services.no_stage_guidance import NoStageGuidance
 from engineering_influence.services.nonfiction_output_checks import NonfictionOutputChecks
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 from engineering_influence.services.nonfiction_revision_passes import NonfictionRevisionPasses
+from engineering_influence.services.novel_draft_checks import NovelDraftChecks
 from engineering_influence.services.novel_output_checks import NovelOutputChecks
 from engineering_influence.services.novel_recipes import NovelRecipes
 from engineering_influence.services.outline_parser import OutlineParser
@@ -217,6 +219,24 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             descriptor.max_output_tokens,
             tools,
         )
+        novel_drafter = ContentPolicyStageExecutor(
+            DraftStageExecutor(
+                artifacts,
+                prompts,
+                outlines,
+                ContextAssembler(model, prompts.get("novel_context_pack")),
+                loop,
+                guidance,
+                SpendGuard,
+                descriptor.context_window,
+                descriptor.max_output_tokens,
+                tools,
+                NovelRecipes.DRAFT,
+                NovelDraftChecks(StoryBibleParser(), ContinuityChecker()),
+            ),
+            ContentPolicy(),
+            descriptor,
+        )
         grants = LockToolGrants(lock)
         nonfiction = ModelStageExecutor(
             NonfictionRecipes(),
@@ -247,7 +267,9 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         return StageExecutorRouter(
             KindStageExecutor({BookKind.NONFICTION: nonfiction, BookKind.NOVEL: novel}),
             {
-                DraftStageExecutor.STAGE: drafter,
+                DraftStageExecutor.STAGE: KindStageExecutor(
+                    {BookKind.NONFICTION: drafter, BookKind.NOVEL: novel_drafter}
+                ),
                 **{
                     editing.stage: RevisionStageExecutor(
                         editing,
