@@ -363,3 +363,22 @@ def test_an_address_that_is_not_text_is_refused(tmp_path: Path) -> None:
 def test_a_local_entry_with_a_bearer_variable_is_refused(tmp_path: Path) -> None:
     message = refused(write(tmp_path, "version = 1\n" + good_entry('bearer_env = "TOKEN"')))
     assert "only a remote server has a bearer variable" in message
+
+
+def test_a_stale_temporary_link_is_never_written_through(tmp_path: Path) -> None:
+    elsewhere = tmp_path / "elsewhere.txt"
+    elsewhere.write_text("untouched", encoding="utf-8")
+    (tmp_path / ".lock.toml.tmp").symlink_to(elsewhere)
+    store().save(tmp_path / "lock.toml", ToolLock((server("a"),)))
+    assert elsewhere.read_text(encoding="utf-8") == "untouched"
+    loaded = store().load(tmp_path / "lock.toml")
+    assert loaded is not None and [s.name for s in loaded.servers] == ["a"]
+    assert sorted(item.name for item in tmp_path.iterdir()) == ["elsewhere.txt", "lock.toml"]
+
+
+def test_a_stale_temporary_file_is_replaced_not_appended_to(tmp_path: Path) -> None:
+    (tmp_path / ".lock.toml.tmp").write_text("leftover from a crash" * 100, encoding="utf-8")
+    store().save(tmp_path / "lock.toml", ToolLock((server("a"),)))
+    loaded = store().load(tmp_path / "lock.toml")
+    assert loaded is not None and [s.name for s in loaded.servers] == ["a"]
+    assert not (tmp_path / ".lock.toml.tmp").exists()
