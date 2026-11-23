@@ -282,6 +282,23 @@ def test_the_draft_stage_is_routed_to_the_drafter_and_writes_every_chapter(
     assert "Chapter 2: The Site" in sent[2] and "the positioning" in sent[2]
 
 
+def test_the_assemble_stage_is_routed_to_the_assembler_and_calls_no_model(tmp_path: Path) -> None:
+    outline = "## Chapter 1: The Hive\nPurpose: How a colony works.\nBeats:\n- The queen\n"
+    with provider("unused") as (url, seen):
+        rt = runtime(files(tmp_path, url=url))
+        store = InMemoryArtifactStore()
+        store.put("run-1", "outline.md", outline.encode())
+        store.put("run-1", "chapter_01.md", b"Chapter 1: The Hive\n\nBees live in colonies.")
+        executor = rt.build(store, InMemoryJournal())
+        asyncio.run(executor.execute(run_for("assemble"), 1))
+        rt.close()
+    assert store.get("run-1", "manuscript/src/chapter_01.md") == (
+        b"# The Hive\n\nBees live in colonies.\n"
+    )
+    assert store.get("run-1", "manuscript/books/how-to-keep-bees.toml") is not None
+    assert seen.seen == []
+
+
 def test_an_anthropic_profile_runs_a_stage_and_sends_its_key_only_as_a_header(
     tmp_path: Path,
 ) -> None:

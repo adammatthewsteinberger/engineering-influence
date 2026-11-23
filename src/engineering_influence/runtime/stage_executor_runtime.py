@@ -67,7 +67,10 @@ from engineering_influence.runtime.interfaces.stage_executor_runtime_interface i
     StageExecutorRuntimeInterface,
 )
 from engineering_influence.services.ask_model import AskModel
+from engineering_influence.services.assemble_stage_executor import AssembleStageExecutor
+from engineering_influence.services.book_config_writer import BookConfigWriter
 from engineering_influence.services.call_model import CallModel
+from engineering_influence.services.chapter_cleaner import ChapterCleaner
 from engineering_influence.services.context_assembler import ContextAssembler
 from engineering_influence.services.draft_stage_executor import DraftStageExecutor
 from engineering_influence.services.fallback_search_provider import FallbackSearchProvider
@@ -184,7 +187,12 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                 NonfictionOutputChecks(outlines),
                 SpendGuard,
             ),
-            {DraftStageExecutor.STAGE: drafter},
+            {
+                DraftStageExecutor.STAGE: drafter,
+                AssembleStageExecutor.STAGE: AssembleStageExecutor(
+                    artifacts, outlines, ChapterCleaner(), BookConfigWriter()
+                ),
+            },
         )
 
     def close(self) -> None:

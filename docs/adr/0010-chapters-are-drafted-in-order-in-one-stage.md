@@ -99,3 +99,25 @@ prompt. What the code does where this decision left room:
   one on one line as `Chapter k: ...`, oldest dropped first when the window is short.
 - **Not yet checked:** that a chapter keeps to its beats or its length. That belongs to revision. Nothing here has run
   against a live model.
+
+## Amendment: the assemble stage (2026-11-22)
+
+A non-fiction plan now ends with `assemble`, which makes no model call. `AssembleStageExecutor` reads `outline.md` and the
+`chapter_NN.md` files and writes, in the run's artifacts, the project layout `BookLoader` reads:
+`manuscript/src/chapter_NN.md` and `manuscript/books/<slug>.toml`, plus `assemble.md` listing them. A property test
+holds the contract: whatever a model wrote, the stage either refuses with `MANUSCRIPT_TEXT_REFUSED` or writes a manuscript that
+`BookLoader` loads in strict mode and the forbidden-content check passes.
+
+- **Dashes are rewritten, unfinished work is refused.** The typesetter refuses an em or en dash in non-fiction, and a
+  model's prose is full of them, so a dash between digits becomes a hyphen and any other dash becomes a comma (or nothing
+  at the start or end of a line or before punctuation). A marker such as `[TODO]`, or the word `Draft`, is refused with
+  the chapter and line, because deleting it would hide an unfinished chapter. The rewrite is a plain edit; the copy edit
+  stage is where the sentences get reworked.
+- **The outline's title heads the chapter.** A heading the model put at the top of its answer is dropped, and any other
+  level-1 heading in the body becomes level 2.
+- **Nothing is written until every chapter has been cleaned**, so a refused chapter leaves no half manuscript.
+- **The config holds only what is known:** the kind, the title (the brief's hint, or its idea's first line), `src`, the trim
+  size when the brief set one, and one part, `Part One`, holding every chapter. It has no author, publisher, edition, year or
+  bio. Those are the author's, so the book loads but does not build until they are added. Setting them, and real parts,
+  front and back matter belong to the front/back matter and metadata slice.
+
