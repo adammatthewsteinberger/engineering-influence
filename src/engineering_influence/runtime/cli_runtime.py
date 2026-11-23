@@ -63,6 +63,7 @@ from engineering_influence.runtime.interfaces.publishing_controller_factory_inte
 from engineering_influence.runtime.serve_starter import ServeStarter
 from engineering_influence.services.cancel_run import CancelRun
 from engineering_influence.services.interfaces.cancel_run_interface import CancelRunInterface
+from engineering_influence.services.interfaces.export_run_interface import ExportRunInterface
 from engineering_influence.services.interfaces.model_doctor_interface import (
     ModelDoctorInterface,
 )
@@ -120,7 +121,7 @@ class CliRuntime(CliRuntimeInterface):
             BookCli(self._publishing_controller),
             ServeCli(ServeStarter()),
             DbCli(self._schema_migrator, self._secret_provider),
-            RunCli(self._resume_run, self._cancel_run, self._run_status),
+            RunCli(self._resume_run, self._cancel_run, self._run_status, self._export_run),
             DoctorCli(self._model_doctor, os.environ),
             self._tools_cli(),
             self._skills_cli(),
@@ -303,6 +304,30 @@ class CliRuntime(CliRuntimeInterface):
                 SqlModelRunRepository(url, pooled=False),
                 SqlModelArtifactStore(url, pooled=False),
             )
+        )
+
+    def _export_run(self) -> ExportRunInterface:
+        """Build the export service; it reads the database and writes the folder it is given."""
+        from engineering_influence.infrastructure.export.directory_project_files_writer import (
+            DirectoryProjectFilesWriter,
+        )
+        from engineering_influence.repositories.sqlmodel_artifact_store import (
+            SqlModelArtifactStore,
+        )
+        from engineering_influence.repositories.sqlmodel_run_repository import (
+            SqlModelRunRepository,
+        )
+        from engineering_influence.services.export_run import ExportRun
+        from engineering_influence.services.read_run import ReadRun
+
+        url = self._secret_provider().require("EI_DATABASE_URL")
+        self._schema_migrator().check(url)
+        return ExportRun(
+            ReadRun(
+                SqlModelRunRepository(url, pooled=False),
+                SqlModelArtifactStore(url, pooled=False),
+            ),
+            DirectoryProjectFilesWriter(),
         )
 
     def _cancel_run(self) -> CancelRunInterface:

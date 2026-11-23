@@ -18,12 +18,14 @@ from engineering_influence.models.book_brief import BookBrief
 from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget import Budget
+from engineering_influence.models.export_summary import ExportSummary
 from engineering_influence.models.run_status import RunStatus
 from engineering_influence.models.stage_plan import StagePlan
 from engineering_influence.repositories.sqlmodel_artifact_store import SqlModelArtifactStore
 from engineering_influence.repositories.sqlmodel_run_repository import SqlModelRunRepository
 from engineering_influence.runtime.cli_runtime import CliRuntime
 from engineering_influence.services.interfaces.cancel_run_interface import CancelRunInterface
+from engineering_influence.services.interfaces.export_run_interface import ExportRunInterface
 from engineering_influence.services.interfaces.resume_run_interface import ResumeRunInterface
 
 
@@ -57,6 +59,18 @@ class Canceller(CancelRunInterface):
         return a_run(RunStatus.CANCELLED)
 
 
+class Exporter(ExportRunInterface):
+    def __init__(self, failure: BaseException | None = None) -> None:
+        self.failure = failure
+        self.seen: list[tuple[str, Path]] = []
+
+    def export(self, run_id: str, target: Path) -> ExportSummary:
+        if self.failure is not None:
+            raise self.failure
+        self.seen.append((run_id, target))
+        return ExportSummary(5, 3)
+
+
 class Reader(RunControllerInterface):
     def __init__(self, failure: BaseException | None = None) -> None:
         self.failure = failure
@@ -74,11 +88,13 @@ def cli(
     resumer: Resumer | None = None,
     canceller: Canceller | None = None,
     reader: Reader | None = None,
+    exporter: Exporter | None = None,
 ) -> RunCli:
     return RunCli(
         lambda: resumer or Resumer(),
         lambda: canceller or Canceller(),
         lambda: reader or Reader(),
+        lambda: exporter or Exporter(),
     )
 
 
@@ -101,6 +117,33 @@ def test_resuming_reports_the_run_and_exits_0(capsys: pytest.CaptureFixture[str]
     assert capsys.readouterr().out.strip() == (
         "run run-1 is running at stage 'outline'; its next stage is queued"
     )
+
+
+def export_args(directory: str = "out") -> argparse.Namespace:
+    return argparse.Namespace(run_command="export", run_id="run-1", directory=Path(directory))
+
+
+def test_exporting_writes_to_the_folder_and_says_what_is_where(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    exporter = Exporter()
+    assert cli(exporter=exporter).run(export_args("my-book")) == 0
+    assert exporter.seen == [("run-1", Path("my-book"))]
+    assert capsys.readouterr().out.strip() == (
+        "exported 5 files of run run-1 to my-book: 3 are the book (books/ and src/), "
+        "the rest are under run/"
+    )
+
+
+@pytest.mark.parametrize(
+    "code", ["RUN_NOT_FOUND", "RUN_HAS_NO_ARTIFACTS", "EXPORT_TARGET_NOT_EMPTY"]
+)
+def test_an_export_that_cannot_be_done_exits_1_with_one_line(
+    code: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    failure = ApplicationError(code, "nothing to do here")
+    assert cli(exporter=Exporter(failure)).run(export_args()) == 1
+    assert capsys.readouterr().err.strip() == "error: nothing to do here"
 
 
 def test_cancelling_reports_the_run_and_exits_0(capsys: pytest.CaptureFixture[str]) -> None:
@@ -131,7 +174,12 @@ def test_a_missing_runtime_extra_says_how_to_install_it(capsys: pytest.CaptureFi
     def missing() -> ResumeRunInterface:
         raise ImportError("no alembic", name="alembic")
 
-    assert RunCli(missing, lambda: Canceller(), lambda: Reader()).run(resume_args()) == 1
+    assert (
+        RunCli(missing, lambda: Canceller(), lambda: Reader(), lambda: Exporter()).run(
+            resume_args()
+        )
+        == 1
+    )
     err = capsys.readouterr().err
     assert "pip install 'engineering-influence[runtime]'" in err
     assert "alembic is missing" in err
@@ -303,3 +351,42 @@ def test_the_real_status_command_stops_on_a_database_that_was_never_migrated(
     monkeypatch.setenv("EI_DATABASE_URL", f"sqlite:///{tmp_path / 'fresh.db'}")
     assert CliRuntime().build().run(["run", "status", "run-1"]) == 2
     assert "ei db upgrade" in capsys.readouterr().err
+
+
+def test_the_real_command_exports_a_runs_book_and_outputs_to_a_new_folder(
+    database_url: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setenv("EI_DATABASE_URL", database_url)
+    runs = seeded(database_url, RunStatus.RUNNING)
+    artifacts = SqlModelArtifactStore(database_url)
+    artifacts.put("run-1", "brief.md", b"the brief")
+    artifacts.put("run-1", "manuscript/books/hive.toml", b"title = 'x'")
+    artifacts.put("run-1", "manuscript/src/chapter_01.md", b"# One\n")
+    target = tmp_path / "my-book"
+
+    assert CliRuntime().build().run(["run", "export", "run-1", str(target)]) == 0
+
+    assert (target / "books" / "hive.toml").read_bytes() == b"title = 'x'"
+    assert (target / "src" / "chapter_01.md").read_bytes() == b"# One\n"
+    assert (target / "run" / "brief.md").read_bytes() == b"the brief"
+    assert "exported 3 files of run run-1" in capsys.readouterr().out
+    assert CliRuntime().build().run(["run", "export", "run-1", str(target)]) == 1
+    assert "not an empty folder" in capsys.readouterr().err
+    runs.close()
+    artifacts.close()
+
+
+def test_the_real_export_of_an_unknown_run_exits_1_and_creates_nothing(
+    database_url: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setenv("EI_DATABASE_URL", database_url)
+    target = tmp_path / "my-book"
+    assert CliRuntime().build().run(["run", "export", "nope", str(target)]) == 1
+    assert "no run 'nope'" in capsys.readouterr().err
+    assert not target.exists()
