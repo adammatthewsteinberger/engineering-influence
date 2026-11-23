@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 
 from engineering_influence.contracts.run.v1.run_summary_v1 import RunSummaryV1
 from engineering_influence.controllers.project_controller import ProjectController
+from engineering_influence.infrastructure.in_memory_acp_session_store import InMemoryAcpSessionStore
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
 from engineering_influence.infrastructure.in_memory_run_repository import InMemoryRunRepository
@@ -116,6 +117,7 @@ def test_acp_prompt_starts_the_same_run() -> None:
         BriefReader(),
         RunProgress(repo),
         ResolveSpendConsent(repo, queue),
+        InMemoryAcpSessionStore(),
     )
     session = agent.handle(
         {"jsonrpc": "2.0", "id": 1, "method": "session/new", "params": {"cwd": "/work"}}

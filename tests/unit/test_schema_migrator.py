@@ -11,14 +11,22 @@ from sqlmodel import Session, SQLModel, select
 
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.infrastructure.schema_migrator import SchemaMigrator
+from engineering_influence.repositories.acp_session_record import AcpSessionRecord
 from engineering_influence.repositories.artifact_record import ArtifactRecord
 from engineering_influence.repositories.book_run_record import BookRunRecord
 from engineering_influence.repositories.journal_record import JournalRecord
 from engineering_influence.repositories.ledger_event_record import LedgerEventRecord
 from engineering_influence.repositories.outbox_record import OutboxRecord
 
-TABLES = {"artifactrecord", "bookrunrecord", "journalrecord", "ledgereventrecord", "outboxrecord"}
-HEAD = "0001"
+TABLES = {
+    "acpsessionrecord",
+    "artifactrecord",
+    "bookrunrecord",
+    "journalrecord",
+    "ledgereventrecord",
+    "outboxrecord",
+}
+HEAD = "0002"
 
 
 def fresh_url(tmp_path: Path) -> str:
@@ -51,6 +59,7 @@ def test_the_migrations_build_exactly_what_the_models_describe(tmp_path: Path) -
         BookRunRecord.__tablename__,
         JournalRecord.__tablename__,
         ArtifactRecord.__tablename__,
+        AcpSessionRecord.__tablename__,
     } == TABLES
     engine = create_engine(url)
     try:

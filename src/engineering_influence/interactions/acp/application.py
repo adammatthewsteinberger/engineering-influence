@@ -14,6 +14,8 @@ from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interactions.acp.interfaces.application_interface import (
     AcpApplicationInterface,
 )
+from engineering_influence.interfaces.acp_session_store_interface import AcpSessionStoreInterface
+from engineering_influence.models.acp_session import AcpSession
 from engineering_influence.models.run_status import RunStatus
 from engineering_influence.services.interfaces.brief_reader_interface import BriefReaderInterface
 from engineering_influence.services.interfaces.cancel_run_interface import CancelRunInterface
@@ -44,7 +46,7 @@ class AcpApplication(AcpApplicationInterface):
 
     PROTOCOL_VERSION: ClassVar[int] = 1
     SUPPORTED: ClassVar[frozenset[str]] = frozenset(
-        {"initialize", "session/new", "session/prompt", "session/cancel"}
+        {"initialize", "session/new", "session/load", "session/prompt", "session/cancel"}
     )
     # JSON-RPC 2.0 error codes, by the code a refusal carries.
     JSONRPC_CODES: ClassVar[dict[str, int]] = {
@@ -68,12 +70,15 @@ class AcpApplication(AcpApplicationInterface):
         briefs: BriefReaderInterface,
         progress: RunProgressInterface,
         resolver: ResolveSpendConsentInterface,
+        sessions: AcpSessionStoreInterface,
     ) -> None:
         self._creator = creator
         self._canceller = canceller
         self._briefs = briefs
         self._progress = progress
         self._resolver = resolver
+        self._store = sessions
+        self._cwds: dict[str, str] = {}
         # Permission requests sent and not yet answered: request id -> (session id, run id).
         self._open_requests: dict[str, tuple[str, str]] = {}
         # Guards the sessions and the reported states: the reader thread and the follower both use them.
@@ -257,6 +262,8 @@ class AcpApplication(AcpApplicationInterface):
             return self._reply(request_id, self._initialize())
         if method == "session/new":
             return self._reply(request_id, self._new_session(params))
+        if method == "session/load":
+            return self._load(request_id, params)
         if method == "session/prompt":
             return self._prompt(request_id, params)
         self._cancel(params)
@@ -265,7 +272,7 @@ class AcpApplication(AcpApplicationInterface):
     def _initialize(self) -> dict[str, Any]:
         return {
             "protocolVersion": self.PROTOCOL_VERSION,
-            "agentCapabilities": {"loadSession": False},
+            "agentCapabilities": {"loadSession": True},
             "agentInfo": {"name": "engineering-influence", "version": __version__},
             "authMethods": [],
         }
@@ -278,6 +285,8 @@ class AcpApplication(AcpApplicationInterface):
             raise self._refusal("ACP_INVALID_PARAMS", "this agent does not connect MCP servers yet")
         session_id = f"sess_{uuid.uuid4().hex}"
         self._sessions[session_id] = None
+        self._cwds[session_id] = cwd
+        self._store.save(AcpSession(session_id, cwd, None))
         return {"sessionId": session_id}
 
     def _prompt(self, request_id: Any, params: dict[str, Any]) -> list[dict[str, Any]]:
@@ -290,12 +299,37 @@ class AcpApplication(AcpApplicationInterface):
         text = self._text(params.get("prompt"))
         run = self._creator.create(self._briefs.read_text(text, "the prompt"))
         self._sessions[session_id] = run.run_id
+        self._store.save(AcpSession(session_id, self._cwds[session_id], run.run_id))
         self._reported[session_id] = (run.run_id, (run.status.value, run.stage))
         notice = self._update(
             session_id,
             f"run {run.run_id} is {run.status.value} at stage {run.stage!r}; its first stage is queued",
         )
         return [notice, *self._reply(request_id, {"stopReason": "end_turn"})]
+
+    def _load(self, request_id: Any, params: dict[str, Any]) -> list[dict[str, Any]]:
+        """Re-attach a stored session and replay where its run stands; the reply has no result."""
+        session_id = params.get("sessionId")
+        cwd = params.get("cwd")
+        if not isinstance(session_id, str) or not isinstance(cwd, str) or not cwd.startswith("/"):
+            raise self._refusal(
+                "ACP_INVALID_PARAMS", "sessionId names a session; cwd is an absolute path"
+            )
+        stored = self._store.get(session_id)
+        if stored is None:
+            raise self._refusal(
+                "ACP_INVALID_PARAMS", "sessionId names a session this agent started"
+            )
+        self._sessions[session_id] = stored.run_id
+        self._cwds[session_id] = stored.cwd
+        messages: list[dict[str, Any]] = []
+        if stored.run_id is not None:
+            run = self._progress.current(stored.run_id)
+            if run is not None:
+                messages.append(self._update(session_id, self._progress_text(run)))
+                if run.status not in self.FINISHED:
+                    self._reported[session_id] = (stored.run_id, (run.status.value, run.stage))
+        return [*messages, {"jsonrpc": "2.0", "id": request_id, "result": None}]
 
     def _cancel(self, params: dict[str, Any]) -> None:
         session_id = self._session(params)

@@ -12,6 +12,7 @@ from sqlmodel import Session, SQLModel, select
 
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.infrastructure.schema_migrator import SchemaMigrator
+from engineering_influence.repositories.acp_session_record import AcpSessionRecord
 from engineering_influence.repositories.artifact_record import ArtifactRecord
 from engineering_influence.repositories.book_run_record import BookRunRecord
 from engineering_influence.repositories.journal_record import JournalRecord
@@ -20,8 +21,22 @@ from engineering_influence.repositories.outbox_record import OutboxRecord
 
 pytestmark = pytest.mark.integration
 
-TABLES = {"artifactrecord", "bookrunrecord", "journalrecord", "ledgereventrecord", "outboxrecord"}
-MODELS = (ArtifactRecord, BookRunRecord, JournalRecord, LedgerEventRecord, OutboxRecord)
+TABLES = {
+    "acpsessionrecord",
+    "artifactrecord",
+    "bookrunrecord",
+    "journalrecord",
+    "ledgereventrecord",
+    "outboxrecord",
+}
+MODELS = (
+    AcpSessionRecord,
+    ArtifactRecord,
+    BookRunRecord,
+    JournalRecord,
+    LedgerEventRecord,
+    OutboxRecord,
+)
 
 
 def tables_in(url: str) -> set[str]:
@@ -36,7 +51,7 @@ def test_a_new_schema_is_brought_to_the_latest_revision(postgres_url: str) -> No
     migrator = SchemaMigrator()
     assert migrator.current(postgres_url) is None
     migrator.upgrade(postgres_url)
-    assert migrator.current(postgres_url) == "0001"
+    assert migrator.current(postgres_url) == "0002"
     assert tables_in(postgres_url) == TABLES
     assert {model.__tablename__ for model in MODELS} == TABLES
 
@@ -60,7 +75,7 @@ def test_upgrading_twice_changes_nothing(postgres_url: str) -> None:
     migrator = SchemaMigrator()
     migrator.upgrade(postgres_url)
     migrator.upgrade(postgres_url)
-    assert migrator.current(postgres_url) == "0001"
+    assert migrator.current(postgres_url) == "0002"
     assert tables_in(postgres_url) == TABLES
 
 
@@ -75,7 +90,7 @@ def test_a_database_made_by_create_all_is_adopted_with_its_rows_intact(postgres_
     assert migrator.current(postgres_url) is None
     migrator.upgrade(postgres_url)
 
-    assert migrator.current(postgres_url) == "0001"
+    assert migrator.current(postgres_url) == "0002"
     with Session(engine) as session:
         rows = session.exec(select(LedgerEventRecord)).all()
     engine.dispose()
