@@ -10,17 +10,19 @@ from engineering_influence.models.stage_recipe import StageRecipe
 
 
 class NonfictionRecipes(StageRecipesInterface):
-    """Brief, positioning, research, outline and metadata are one prompt each; ``draft`` and ``assemble`` follow them.
+    """Brief, positioning, research, outline and metadata are one prompt each; ``draft``, ``assemble`` and ``audit`` follow.
 
-    Research is the one stage with tools (search and page reading); the others have none. ``draft`` and
-    ``assemble`` have no recipe because neither is one prompt: ``draft`` loops over the chapters (see
-    ``DraftStageExecutor``) and ``assemble`` makes no model call (see ``AssembleStageExecutor``), so both are
-    named in the plan and routed to their own executors. The later stages (revision, copy edit, front and back
-    matter) are added as each one is built, and the plan grows with them.
+    Research is the one stage with tools (search and page reading); the others have none. ``draft``,
+    ``assemble`` and ``audit`` have no recipe because none is one prompt: ``draft`` loops over the chapters (see
+    ``DraftStageExecutor``), and ``assemble`` and ``audit`` make no model call (see ``AssembleStageExecutor`` and
+    ``AuditStageExecutor``). All three are named in the plan and routed to their own executors. The later
+    stages (revision, copy edit, the PDF and EPUB build) are added as each one is built, and the plan grows
+    with them.
     """
 
     DRAFT_STAGE = "draft"
     ASSEMBLE_STAGE = "assemble"
+    AUDIT_STAGE = "audit"
 
     RECIPES: ClassVar[tuple[StageRecipe, ...]] = (
         StageRecipe("brief", "stage_brief", (), 1_500),
@@ -42,6 +44,7 @@ class NonfictionRecipes(StageRecipesInterface):
             *(recipe.stage for recipe in self.RECIPES),
             self.DRAFT_STAGE,
             self.ASSEMBLE_STAGE,
+            self.AUDIT_STAGE,
         )
         return StagePlan(BookKind.NONFICTION, stages)
 

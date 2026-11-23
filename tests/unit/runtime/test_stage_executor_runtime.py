@@ -309,6 +309,31 @@ def assemble(tmp_path: Path, **extra: str) -> tuple[InMemoryArtifactStore, list[
     return store, seen.seen
 
 
+def test_an_assembled_book_with_an_author_profile_passes_the_real_audit(tmp_path: Path) -> None:
+    profile = tmp_path / "author.toml"
+    profile.write_text(PROFILE_TOML, encoding="utf-8")
+    environment = {**files(tmp_path), "EI_AUTHOR_PROFILE": str(profile)}
+    store, _ = assemble(tmp_path, EI_AUTHOR_PROFILE=str(profile))
+    rt = runtime(environment)
+    asyncio.run(rt.build(store, InMemoryJournal()).execute(run_for("audit"), 1))
+    rt.close()
+    summary = (store.get("run-1", "audit.md") or b"").decode()
+    assert summary.startswith("# Audit\n\nStatus: pass\n\n## Errors\n\nNone.")
+    assert "ebook-price-missing" in summary
+    for name in ("manuscript-audit.json", "release-readiness.json", "publication-report.json"):
+        assert store.get("run-1", f"audit/{name}") is not None
+
+
+def test_an_assembled_book_without_an_author_profile_still_passes_with_a_warning(
+    tmp_path: Path,
+) -> None:
+    store, _ = assemble(tmp_path)
+    rt = runtime(files(tmp_path))
+    asyncio.run(rt.build(store, InMemoryJournal()).execute(run_for("audit"), 1))
+    rt.close()
+    assert "missing-author" in (store.get("run-1", "audit.md") or b"").decode()
+
+
 def test_the_assemble_stage_is_routed_to_the_assembler_and_calls_no_model(tmp_path: Path) -> None:
     store, requests = assemble(tmp_path)
     assert store.get("run-1", "manuscript/src/chapter_01.md") == (

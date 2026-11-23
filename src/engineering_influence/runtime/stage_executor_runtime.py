@@ -9,6 +9,9 @@ import httpx
 
 from engineering_influence import __version__
 from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.infrastructure.audit.temp_project_manuscript_auditor import (
+    TempProjectManuscriptAuditor,
+)
 from engineering_influence.infrastructure.author.toml_author_profile_loader import (
     TomlAuthorProfileLoader,
 )
@@ -56,6 +59,7 @@ from engineering_influence.infrastructure.tools.toml_tool_lock_store import Toml
 from engineering_influence.interfaces.artifact_store_interface import ArtifactStoreInterface
 from engineering_influence.interfaces.journal_interface import JournalInterface
 from engineering_influence.interfaces.model_interface import ModelInterface
+from engineering_influence.interfaces.publish_pipeline_interface import PublishPipelineInterface
 from engineering_influence.interfaces.search_provider_interface import SearchProviderInterface
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
 from engineering_influence.interfaces.stage_executor_interface import StageExecutorInterface
@@ -67,11 +71,13 @@ from engineering_influence.models.provider_descriptor import ProviderDescriptor
 from engineering_influence.models.tool_limits import ToolLimits
 from engineering_influence.models.tool_lock import ToolLock
 from engineering_influence.models.tool_loop_limits import ToolLoopLimits
+from engineering_influence.runtime.controller_publish_pipeline import ControllerPublishPipeline
 from engineering_influence.runtime.interfaces.stage_executor_runtime_interface import (
     StageExecutorRuntimeInterface,
 )
 from engineering_influence.services.ask_model import AskModel
 from engineering_influence.services.assemble_stage_executor import AssembleStageExecutor
+from engineering_influence.services.audit_stage_executor import AuditStageExecutor
 from engineering_influence.services.book_config_writer import BookConfigWriter
 from engineering_influence.services.call_model import CallModel
 from engineering_influence.services.chapter_cleaner import ChapterCleaner
@@ -209,6 +215,9 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                     BookConfigWriter(),
                     profile,
                 ),
+                AuditStageExecutor.STAGE: AuditStageExecutor(
+                    artifacts, TempProjectManuscriptAuditor(self._pipeline)
+                ),
             },
         )
 
@@ -225,6 +234,19 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                 client.close()
         self._client = None
         self._research_client = None
+
+    @staticmethod
+    def _pipeline(root: Path) -> PublishPipelineInterface:
+        """The acceptance pipeline for the project at ``root``.
+
+        The publishing libraries (Pillow, numpy, the PDF readers) are imported here, when an audit runs, so a
+        process that never audits a book does not need the ``publishing`` extra.
+        """
+        from engineering_influence.runtime.publishing_controller_factory import (
+            PublishingControllerFactory,
+        )
+
+        return ControllerPublishPipeline(PublishingControllerFactory().create(root))
 
     def _author_profile(self) -> AuthorProfile | None:
         """The author's details from the file ``EI_AUTHOR_PROFILE`` names, if it names one.
