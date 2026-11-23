@@ -24,7 +24,7 @@ class OpenAICompatibleModel(ModelInterface):
     The client is injected. ``api_key`` may be blank for a local server, and then no
     ``Authorization`` header is sent. ``output_cap_field`` names the body field that caps the
     reply: servers expect ``max_tokens``, while current OpenAI models want
-    ``max_completion_tokens``. The adapter never retries; the run decides from the exception type.
+    ``max_completion_tokens``. ``reasoning_effort``, when not blank, is sent as is. The adapter never retries; the run decides from the exception type.
     """
 
     FINISH_REASONS: ClassVar[dict[str, str]] = {
@@ -42,12 +42,14 @@ class OpenAICompatibleModel(ModelInterface):
         descriptor: ProviderDescriptor,
         base_url: str = "https://api.openai.com",
         output_cap_field: str = "max_tokens",
+        reasoning_effort: str = "",
     ) -> None:
         self._client = client
         self._api_key = api_key.strip()
         self._descriptor = descriptor
         self._base_url = base_url.rstrip("/")
         self._output_cap_field = output_cap_field
+        self._reasoning_effort = reasoning_effort
         self._blocked = ModelAvailability.AVAILABLE
 
     def describe(self) -> ProviderDescriptor:
@@ -84,6 +86,8 @@ class OpenAICompatibleModel(ModelInterface):
             "messages": self._messages(request),
             self._output_cap_field: request.max_output_tokens,
         }
+        if self._reasoning_effort:
+            body["reasoning_effort"] = self._reasoning_effort
         if request.tools:
             body["tools"] = self._tools(request)
         data = self._post("/v1/chat/completions", body)

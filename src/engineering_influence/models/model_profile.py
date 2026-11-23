@@ -11,6 +11,7 @@ from engineering_influence.models.interfaces.model_profile_interface import (
 
 ADAPTERS = ("anthropic", "openai_compatible")
 OUTPUT_CAP_FIELDS = ("max_tokens", "max_completion_tokens")
+REASONING_EFFORTS = ("low", "medium", "high")
 LOOPBACK_HOSTS = ("localhost", "127.0.0.1", "::1")
 ENV_NAME = re.compile(r"[A-Z_][A-Z0-9_]*")
 
@@ -23,7 +24,9 @@ class ModelProfile(ModelProfileInterface):
     shaped like a variable name is refused, without being repeated, so a pasted key cannot be
     saved in a file that gets committed. It may be blank only for an OpenAI-compatible server,
     which is how a local model is described. ``provider`` and ``model`` pick the price in the
-    catalog.
+    catalog. ``reasoning_effort`` (``low``, ``medium`` or ``high``) is sent to an openai_compatible server for a model
+    that reasons before it answers; the reasoning counts against the reply's token cap, so a model that reasons
+    at length can spend a whole stage's cap before writing a word. Blank sends nothing.
     """
 
     name: str
@@ -33,6 +36,7 @@ class ModelProfile(ModelProfileInterface):
     base_url: str
     api_key_env: str = ""
     output_cap_field: str = "max_tokens"
+    reasoning_effort: str = ""
 
     def __post_init__(self) -> None:
         if not self.name.strip() or not self.provider.strip() or not self.model.strip():
@@ -41,6 +45,10 @@ class ModelProfile(ModelProfileInterface):
             raise ValueError(f"adapter must be one of {', '.join(ADAPTERS)}")
         if self.output_cap_field not in OUTPUT_CAP_FIELDS:
             raise ValueError(f"output_cap_field must be one of {', '.join(OUTPUT_CAP_FIELDS)}")
+        if self.reasoning_effort and self.reasoning_effort not in REASONING_EFFORTS:
+            raise ValueError(f"reasoning_effort must be one of {', '.join(REASONING_EFFORTS)}")
+        if self.reasoning_effort and self.adapter != "openai_compatible":
+            raise ValueError("reasoning_effort applies to an openai_compatible profile")
         parts = urlsplit(self.base_url)
         if parts.scheme not in ("http", "https") or not parts.hostname:
             raise ValueError("base_url must be an http or https URL with a host")

@@ -12,7 +12,16 @@ from engineering_influence.interfaces.model_profile_loader_interface import (
 from engineering_influence.models.model_profile import ModelProfile
 
 KEYS = frozenset(
-    {"name", "adapter", "provider", "model", "base_url", "api_key_env", "output_cap_field"}
+    {
+        "name",
+        "adapter",
+        "provider",
+        "model",
+        "base_url",
+        "api_key_env",
+        "output_cap_field",
+        "reasoning_effort",
+    }
 )
 DEFAULT_BASE_URLS = {"anthropic": "https://api.anthropic.com"}
 

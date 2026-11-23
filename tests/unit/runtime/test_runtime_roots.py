@@ -7,6 +7,7 @@ import os
 import signal
 import sys
 from collections.abc import Iterator, Mapping
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +22,7 @@ from engineering_influence.infrastructure.deterministic_stage_executor import (
 from engineering_influence.infrastructure.observability.process_crash_hooks import ProcessCrashHooks
 from engineering_influence.infrastructure.observability.worker_heartbeat import WorkerHeartbeat
 from engineering_influence.infrastructure.rabbitmq_job_consumer import RabbitMqJobConsumer
+from engineering_influence.infrastructure.security.env_secret_provider import EnvSecretProvider
 from engineering_influence.interfaces.queue_interface import QueueInterface
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
 from engineering_influence.models.book_brief import BookBrief
@@ -38,6 +40,7 @@ from engineering_influence.runtime.app_settings import AppSettings
 from engineering_influence.runtime.interfaces.stage_executor_runtime_interface import (
     StageExecutorRuntimeInterface,
 )
+from engineering_influence.runtime.stage_executor_runtime import StageExecutorRuntime
 from engineering_influence.runtime.worker_runtime import WorkerRuntime
 
 KEY = "a-valid-api-key-0123456789"  # gitleaks:allow
@@ -379,7 +382,10 @@ def test_the_built_worker_runs_a_run_advance_job_against_the_database(tmp_path: 
     brief = BookBrief(kind=BookKind.NONFICTION, idea="sourdough", budget_micro_usd=1_000)
     plan = StagePlan(kind=BookKind.NONFICTION, stages=("brief",))
     runs.save(BookRun("run-1", brief, plan, Budget(cap=1_000)))
-    worker = WorkerRuntime(settings)
+    placeholder = StageExecutorRuntime(
+        {"EI_STAGE_EXECUTOR": "deterministic"}, EnvSecretProvider(), date(2026, 11, 23)
+    )
+    worker = WorkerRuntime(settings, executors=placeholder)
     consumer, _ = worker.build()
     delivery = Delivery(
         {

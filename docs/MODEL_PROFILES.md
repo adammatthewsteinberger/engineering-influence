@@ -20,6 +20,7 @@ would otherwise leave the key blank and the profile would call a server with no 
 | `base_url` | where the server is. Optional for `anthropic` (`https://api.anthropic.com`), required otherwise |
 | `api_key_env` | the NAME of the environment variable that holds the key, never the key. Blank only for `openai_compatible`: that is how a local model is described |
 | `output_cap_field` | `max_tokens` (the default, what local servers expect) or `max_completion_tokens` (current OpenAI models) |
+| `reasoning_effort` | `low`, `medium` or `high`, sent to an `openai_compatible` server for a model that reasons before it answers. The reasoning counts against the reply's token cap, so a model that reasons at length can use a whole stage's cap before writing a word; `low` avoids that. Blank sends nothing |
 
 A value in `api_key_env` that is not shaped like a variable name (capitals, digits and
 underscores) is refused, and the error does not repeat it, so a pasted key cannot be saved in a

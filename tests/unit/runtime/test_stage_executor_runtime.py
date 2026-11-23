@@ -168,23 +168,36 @@ def refused(rt: StageExecutorRuntime) -> ApplicationError:
     return error.value
 
 
-def test_the_offline_placeholder_is_the_default() -> None:
-    assert isinstance(build(runtime({})), DeterministicStageExecutor)
+def test_the_free_local_model_is_the_default() -> None:
+    rt = runtime({})
+    assert isinstance(build(rt), StageExecutorRouter)
+    rt.close()
+    assert isinstance(build(runtime({"EI_STAGE_EXECUTOR": "local"})), StageExecutorRouter)
+
+
+def test_the_offline_placeholder_is_there_when_asked_for() -> None:
     assert isinstance(
         build(runtime({"EI_STAGE_EXECUTOR": "deterministic"})), DeterministicStageExecutor
     )
 
 
-def test_a_profile_file_alone_does_not_switch_to_a_model(tmp_path: Path) -> None:
-    environment = files(tmp_path)
-    del environment["EI_STAGE_EXECUTOR"]
-    assert isinstance(build(runtime(environment)), DeterministicStageExecutor)
+def test_a_profile_file_alone_does_not_switch_to_your_own_model(tmp_path: Path) -> None:
+    with provider("The brief.") as (url, seen):
+        environment = files(tmp_path, url=url)
+        del environment["EI_STAGE_EXECUTOR"]
+        environment["EI_LOCAL_URL"] = url
+        rt = runtime(environment)
+        executor = build(rt)
+        asyncio.run(executor.execute(run_for("brief"), 1))
+        rt.close()
+    assert seen.seen[-1][2]["model"] == "gpt-oss:20b"
 
 
 def test_an_unknown_executor_name_is_refused() -> None:
     error = refused(runtime({"EI_STAGE_EXECUTOR": "Model"}))
     assert (error.code, error.http_status) == ("STAGE_EXECUTOR_UNKNOWN", 503)
     assert "'Model'" in error.message
+    assert "use 'local', 'model' or 'deterministic'" in error.message
 
 
 @pytest.mark.parametrize(
@@ -511,3 +524,72 @@ def test_the_research_client_is_closed_with_the_runtime(tmp_path: Path) -> None:
         assert research is not None and not research.is_closed
         rt.close()
         assert research.is_closed and rt._research_client is None
+
+
+def local_environment(url: str, **extra: str) -> dict[str, str]:
+    return {"EI_LOCAL_URL": url, "EI_SEARXNG_URL": "http://127.0.0.1:1", **extra}
+
+
+def test_the_local_default_runs_a_stage_free_with_no_key_and_low_reasoning() -> None:
+    with provider("The brief, written locally.") as (url, seen):
+        rt = runtime(local_environment(url))
+        store = InMemoryArtifactStore()
+        asyncio.run(rt.build(store, InMemoryJournal()).execute(run_for("brief"), 1))
+        rt.close()
+    assert store.get("run-1", "brief.md") == b"The brief, written locally."
+    path, headers, body = seen.seen[-1]
+    assert path == "/v1/chat/completions"
+    assert "authorization" not in headers
+    assert (body["model"], body["reasoning_effort"]) == ("gpt-oss:20b", "low")
+
+
+def test_another_model_may_be_named_for_the_local_default() -> None:
+    with provider("Written.") as (url, seen):
+        rt = runtime(local_environment(url, EI_LOCAL_MODEL="  qwen3:14b  "))
+        asyncio.run(
+            rt.build(InMemoryArtifactStore(), InMemoryJournal()).execute(run_for("brief"), 1)
+        )
+        rt.close()
+    assert seen.seen[-1][2]["model"] == "qwen3:14b"
+
+
+def test_a_blank_local_setting_means_the_default() -> None:
+    with provider("Written.") as (url, seen):
+        rt = runtime(local_environment(url, EI_LOCAL_MODEL="  "))
+        asyncio.run(
+            rt.build(InMemoryArtifactStore(), InMemoryJournal()).execute(run_for("brief"), 1)
+        )
+        rt.close()
+    assert seen.seen[-1][2]["model"] == "gpt-oss:20b"
+
+
+def test_an_unusable_local_address_stops_the_process_at_start() -> None:
+    error = refused(runtime({"EI_LOCAL_URL": "ftp://example.test"}))
+    assert (error.code, error.http_status) == ("STAGE_LOCAL_MODEL_INVALID", 503)
+    assert "EI_LOCAL_URL" in error.message
+
+
+def test_the_local_default_needs_no_search_setting() -> None:
+    rt = runtime({})
+    build(rt)
+    rt.close()
+    assert StageExecutorRuntime.LOCAL_SEARXNG == "http://127.0.0.1:8888"
+
+
+def search_for(environment: dict[str, str], **secrets: str) -> Any:
+    rt = runtime(environment, **secrets)
+    build(rt)
+    client = httpx.Client()
+    try:
+        return rt._search(client)
+    finally:
+        client.close()
+        rt.close()
+
+
+def test_the_local_default_searches_the_local_searxng_only_when_nothing_else_is_set() -> None:
+    assert isinstance(search_for({"EI_STAGE_EXECUTOR": "local"}), SearxngSearchProvider)
+    assert isinstance(search_for({"EI_SEARXNG_URL": "http://127.0.0.1:1"}), SearxngSearchProvider)
+    assert isinstance(search_for({}, BRAVE_SEARCH_API_KEY="brave-key"), BraveSearchProvider)
+    both = search_for({"EI_SEARXNG_URL": "http://127.0.0.1:1"}, BRAVE_SEARCH_API_KEY="brave-key")
+    assert isinstance(both, FallbackSearchProvider)

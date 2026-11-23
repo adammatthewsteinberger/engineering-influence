@@ -56,7 +56,7 @@ class WorkerRuntime(WorkerRuntimeInterface):
     """Build the worker from settings and consume until a stop signal.
 
     The pipeline runner and gate are deterministic placeholders. A run's stages are done by the
-    offline placeholder too, unless ``EI_STAGE_EXECUTOR=model`` opts in (``StageExecutorRuntime``).
+    free local model unless ``EI_STAGE_EXECUTOR`` says ``model`` (your own) or ``deterministic`` (the offline placeholder); see ``StageExecutorRuntime``.
     """
 
     def __init__(

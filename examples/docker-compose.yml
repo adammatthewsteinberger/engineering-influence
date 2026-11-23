@@ -23,6 +23,13 @@ x-app: &app
     EI_DATABASE_URL: postgresql+psycopg://ei:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in examples/.env}@postgres:5432/ei
     EI_RABBITMQ_URL: amqp://ei:${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD in examples/.env}@rabbitmq:5672/
     EI_LOG_LEVEL: ${EI_LOG_LEVEL:-INFO}
+    # The worker's default is the free local model, which a container cannot reach at 127.0.0.1, so this stack
+    # runs the offline placeholder until you say otherwise. For Ollama on the host, set in examples/.env:
+    #   EI_STAGE_EXECUTOR=local  EI_LOCAL_URL=http://host.docker.internal:11434  EI_SEARXNG_URL=<your SearXNG>
+    EI_STAGE_EXECUTOR: ${EI_STAGE_EXECUTOR:-deterministic}
+    EI_LOCAL_URL: ${EI_LOCAL_URL:-}
+    EI_LOCAL_MODEL: ${EI_LOCAL_MODEL:-}
+    EI_SEARXNG_URL: ${EI_SEARXNG_URL:-}
 
 services:
   postgres:
