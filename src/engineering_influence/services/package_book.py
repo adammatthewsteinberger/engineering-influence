@@ -12,6 +12,7 @@ from engineering_influence.interfaces.publisher_interface import PublisherInterf
 from engineering_influence.models.book_metadata import BookMetadata
 from engineering_influence.models.kdp_bundle_file import KdpBundleFile
 from engineering_influence.models.kdp_listing import KdpListing
+from engineering_influence.models.publishing.path_relativizer import PathRelativizer
 from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.models.typesetting.trim_size import TrimSize
 from engineering_influence.services.interfaces.package_book_interface import PackageBookInterface
@@ -33,6 +34,7 @@ class PackageBook(PackageBookInterface):
         publisher: PublisherInterface,
     ) -> None:
         self._layout = layout
+        self._relativizer = PathRelativizer(layout.root)
         self._inventory = inventory
         self._publisher = publisher
 
@@ -68,9 +70,7 @@ class PackageBook(PackageBookInterface):
         self._publisher.publish(
             directory, listing, manifest + "\n", {f.name: f.source for f in files}
         )
-        return (
-            f"[{slug}] packaged {len(files)} files and the listing in {self._relative(directory)}"
-        )
+        return f"[{slug}] packaged {len(files)} files and the listing in {self._relativizer.relative(directory)}"
 
     def _metadata(self, slug: str, config: Mapping[str, Any]) -> BookMetadata:
         release = config.get("release")
@@ -100,9 +100,3 @@ class PackageBook(PackageBookInterface):
             size=int(item["bytes"]),
             sha256=str(item["sha256"]),
         )
-
-    def _relative(self, path: Path) -> str:
-        try:
-            return str(path.relative_to(self._layout.root))
-        except ValueError:
-            return str(path)
