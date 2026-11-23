@@ -11,6 +11,7 @@ from engineering_influence.models.run_status import RunStatus
 from engineering_influence.models.source_record import SourceRecord
 from engineering_influence.models.stage_plan import StagePlan
 from engineering_influence.models.story_bible import StoryBible
+from engineering_influence.models.story_character import StoryCharacter
 
 STAGES = ("brief", "outline", "draft", "package")
 
@@ -118,13 +119,13 @@ def test_verifying_a_source_returns_a_new_one() -> None:
 
 
 def test_a_story_bible_needs_a_premise() -> None:
-    with pytest.raises(ValueError, match="needs a premise"):
+    with pytest.raises(ValueError, match="the premise needs text"):
         StoryBible(premise=" ")
 
 
 def test_a_story_bible_refuses_two_characters_with_one_name() -> None:
     with pytest.raises(ValueError, match="character names must be distinct"):
-        StoryBible(premise="a heist", characters=("Ana", "Ana"))
+        StoryBible(premise="a heist", characters=(StoryCharacter("Ana"), StoryCharacter("Ana")))
 
 
 def test_a_story_bible_defaults_to_nothing_but_the_premise() -> None:
