@@ -10,6 +10,7 @@ class RunStatus(StrEnum):
     PENDING = "pending"
     RUNNING = "running"
     PARKED_CAPACITY = "parked_capacity"
+    AWAITING_CONSENT = "awaiting_consent"
     COMPLETED = "completed"
     FAILED = "failed"
     CANCELLED = "cancelled"

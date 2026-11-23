@@ -18,6 +18,9 @@ from engineering_influence.models.run_status import RunStatus
 from engineering_influence.services.interfaces.brief_reader_interface import BriefReaderInterface
 from engineering_influence.services.interfaces.cancel_run_interface import CancelRunInterface
 from engineering_influence.services.interfaces.create_run_interface import CreateRunInterface
+from engineering_influence.services.interfaces.resolve_spend_consent_interface import (
+    ResolveSpendConsentInterface,
+)
 from engineering_influence.services.interfaces.run_progress_interface import RunProgressInterface
 
 if TYPE_CHECKING:
@@ -64,11 +67,15 @@ class AcpApplication(AcpApplicationInterface):
         canceller: CancelRunInterface,
         briefs: BriefReaderInterface,
         progress: RunProgressInterface,
+        resolver: ResolveSpendConsentInterface,
     ) -> None:
         self._creator = creator
         self._canceller = canceller
         self._briefs = briefs
         self._progress = progress
+        self._resolver = resolver
+        # Permission requests sent and not yet answered: request id -> (session id, run id).
+        self._open_requests: dict[str, tuple[str, str]] = {}
         # Guards the sessions and the reported states: the reader thread and the follower both use them.
         self._lock = threading.Lock()
         self._sessions: dict[str, str | None] = {}
@@ -114,7 +121,7 @@ class AcpApplication(AcpApplicationInterface):
             # when the input ends at once.
             while True:
                 try:
-                    send(self.progress_notices())
+                    send(self.follow_messages())
                 except Exception as error:  # noqa: BLE001 - following must not end the reader's loop
                     print(f"error: {type(error).__name__} while following a run", file=sys.stderr)
                 if stop.wait(poll_seconds):
@@ -140,9 +147,14 @@ class AcpApplication(AcpApplicationInterface):
             stop.set()
             follower.join()
 
-    def progress_notices(self) -> list[dict[str, Any]]:
-        """A notice for each followed run whose status or stage changed; a finished run is dropped after it."""
-        notices: list[dict[str, Any]] = []
+    def follow_messages(self) -> list[dict[str, Any]]:
+        """The messages the follower writes now: a notice for each change in a followed run, and a permission
+        request when a run starts waiting for consent.
+
+        A finished run is reported once and then dropped. A run is asked about once per state it enters, so a
+        request is not repeated while the run keeps waiting.
+        """
+        messages: list[dict[str, Any]] = []
         with self._lock:
             for session_id, (run_id, reported) in list(self._reported.items()):
                 run = self._progress.current(run_id)
@@ -151,18 +163,81 @@ class AcpApplication(AcpApplicationInterface):
                 state = (run.status.value, run.stage)
                 if state == reported:
                     continue
-                notices.append(self._update(session_id, self._progress_text(run)))
+                messages.append(self._update(session_id, self._progress_text(run)))
+                consent = run.consent
+                if run.status is RunStatus.AWAITING_CONSENT and consent is not None:
+                    messages.append(
+                        self._consent_request(session_id, run_id, consent.requested_micro_usd)
+                    )
                 if run.status in self.FINISHED:
                     del self._reported[session_id]
                 else:
                     self._reported[session_id] = (run_id, state)
-        return notices
+        return messages
+
+    def _consent_request(self, session_id: str, run_id: str, requested: int) -> dict[str, Any]:
+        """Ask the client whether the run may spend more; the answer returns as a response with this id."""
+        request_id = f"consent-{uuid.uuid4().hex}"
+        self._open_requests[request_id] = (session_id, run_id)
+        return {
+            "jsonrpc": "2.0",
+            "id": request_id,
+            "method": "session/request_permission",
+            "params": {
+                "sessionId": session_id,
+                "toolCall": {
+                    "toolCallId": f"spend-{run_id}-{requested}",
+                    "title": f"Spend {requested} micro-USD more on run {run_id}",
+                    "status": "pending",
+                },
+                "options": [
+                    {
+                        "optionId": "grant",
+                        "name": f"Allow {requested} micro-USD more",
+                        "kind": "allow_once",
+                    },
+                    {"optionId": "deny", "name": "Refuse; the run parks", "kind": "reject_once"},
+                ],
+            },
+        }
+
+    def _answer(self, message: dict[str, Any]) -> list[dict[str, Any]]:
+        """The client's answer to a permission request: grant or deny the run, or keep it waiting."""
+        request_id = message["id"]
+        opened = self._open_requests.get(request_id) if isinstance(request_id, str) else None
+        if opened is None:
+            return []
+        run_id = opened[1]
+        result = message.get("result")
+        outcome = result.get("outcome") if isinstance(result, dict) else None
+        if not isinstance(outcome, dict) or outcome.get("outcome") != "selected":
+            return []  # the request was cancelled or not answered: the run keeps waiting
+        choice = outcome.get("optionId")
+        if choice not in ("grant", "deny"):
+            return []
+        del self._open_requests[request_id]
+        try:
+            if choice == "grant":
+                self._resolver.grant(run_id)
+            else:
+                self._resolver.deny(run_id)
+        except ApplicationError as error:
+            # The run moved on before the answer arrived; there is nothing left to decide.
+            print(f"error: {error.code} while answering a consent request", file=sys.stderr)
+        return []
 
     @staticmethod
     def _progress_text(run: BookRun) -> str:
         return f"run {run.run_id} is {run.status.value} at stage {run.stage!r}"
 
     def _dispatch(self, message: Any) -> list[dict[str, Any]]:
+        if (
+            isinstance(message, dict)
+            and message.get("jsonrpc") == "2.0"
+            and "method" not in message
+            and "id" in message
+        ):
+            return self._answer(message)
         if (
             not isinstance(message, dict)
             or message.get("jsonrpc") != "2.0"

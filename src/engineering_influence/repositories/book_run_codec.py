@@ -12,6 +12,7 @@ from engineering_influence.models.budget import Budget
 from engineering_influence.models.quality_issue import QualityIssue
 from engineering_influence.models.run_input import RunInput
 from engineering_influence.models.run_status import RunStatus
+from engineering_influence.models.spend_request import SpendRequest
 from engineering_influence.models.stage_plan import StagePlan
 from engineering_influence.repositories.interfaces.book_run_codec_interface import (
     BookRunCodecInterface,
@@ -42,4 +43,7 @@ class BookRunCodec(BookRunCodecInterface):
             stage=document["stage"],
             status=RunStatus(document["status"]),
             issues=tuple(QualityIssue(**issue) for issue in document["issues"]),
+            consent=(
+                None if document.get("consent") is None else SpendRequest(**document["consent"])
+            ),
         )

@@ -103,6 +103,7 @@ from engineering_influence.services.plugin_importer import PluginImporter
 from engineering_influence.services.plugin_installer import PluginInstaller
 from engineering_influence.services.plugin_lock_verifier import PluginLockVerifier
 from engineering_influence.services.plugin_marketplace import PluginMarketplace
+from engineering_influence.services.resolve_spend_consent import ResolveSpendConsent
 from engineering_influence.services.resume_run import ResumeRun
 from engineering_influence.services.run_progress import RunProgress
 from engineering_influence.services.search_doctor import SearchDoctor
@@ -167,6 +168,7 @@ class CliRuntime(CliRuntimeInterface):
                 self._create_run,
                 self._list_runs,
                 BriefReader(),
+                lambda: ResolveSpendConsent(self._run_repository(), self._broker_queue()),
             ),
             DoctorCli(
                 self._model_doctor, self._search_doctor, self._local_model_doctor, os.environ
@@ -498,6 +500,7 @@ class CliRuntime(CliRuntimeInterface):
             CancelRun(runs),
             BriefReader(),
             RunProgress(runs),
+            ResolveSpendConsent(runs, self._broker_queue()),
         )
 
     def _cancel_run(self) -> CancelRunInterface:

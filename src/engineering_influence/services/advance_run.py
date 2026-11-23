@@ -5,6 +5,7 @@ import asyncio
 
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.errors.budget_exceeded_error import BudgetExceededError
+from engineering_influence.errors.spend_consent_needed_error import SpendConsentNeededError
 from engineering_influence.interfaces.journal_interface import JournalInterface
 from engineering_influence.interfaces.queue_interface import QueueInterface
 from engineering_influence.interfaces.run_repository_interface import RunRepositoryInterface
@@ -15,12 +16,15 @@ from engineering_influence.models.budget import Budget
 from engineering_influence.models.failure_kind import FailureKind
 from engineering_influence.models.quality_issue import QualityIssue
 from engineering_influence.models.run_status import RunStatus
+from engineering_influence.models.spend_request import SpendRequest
 from engineering_influence.services.interfaces.advance_run_interface import AdvanceRunInterface
 from engineering_influence.services.interfaces.failure_classifier_interface import (
     FailureClassifierInterface,
 )
 
 DETAIL_LIMIT = 200
+# Runs that wait for a person or for credit: an advance message leaves them alone.
+WAITING = frozenset({RunStatus.PARKED_CAPACITY, RunStatus.AWAITING_CONSENT})
 
 
 class AdvanceRun(AdvanceRunInterface):
@@ -106,7 +110,7 @@ class AdvanceRun(AdvanceRunInterface):
         return outcome
 
     async def _already_handled(self, run: BookRun, stage: str) -> AdvanceOutcome | None:
-        if run.status in FINISHED or run.status is RunStatus.PARKED_CAPACITY:
+        if run.status in FINISHED or run.status in WAITING:
             return AdvanceOutcome.SKIPPED
         stages = run.plan.stages
         current, requested = stages.index(run.stage), stages.index(stage)
@@ -124,6 +128,8 @@ class AdvanceRun(AdvanceRunInterface):
         return AdvanceOutcome.SKIPPED
 
     async def _failed(self, run: BookRun, attempt: int, error: Exception) -> AdvanceOutcome:
+        if isinstance(error, SpendConsentNeededError):
+            return await self._awaiting_consent(run, error)
         kind = self._classifier.classify(error)
         try:
             settled = await self._settled(run)
@@ -140,6 +146,19 @@ class AdvanceRun(AdvanceRunInterface):
         detail = f"{type(error).__name__}: {error}"[:DETAIL_LIMIT]
         issue = QualityIssue(stage=run.stage, code=code, detail=detail, blocking=True)
         return await self._commit(run, settled.with_issue(issue).fail(), AdvanceOutcome.FAILED)
+
+    async def _awaiting_consent(
+        self, run: BookRun, error: SpendConsentNeededError
+    ) -> AdvanceOutcome:
+        """Park the run for a decision: the stage stops here, and the calls it made stay journaled."""
+        try:
+            settled = await self._settled(run)
+        except BudgetExceededError:
+            return await self._overspent(run)
+        request = SpendRequest(error.requested_micro_usd, run.stage)
+        return await self._commit(
+            run, settled.await_consent(request), AdvanceOutcome.AWAITING_CONSENT
+        )
 
     async def _overspent(self, run: BookRun) -> AdvanceOutcome:
         issue = QualityIssue(
