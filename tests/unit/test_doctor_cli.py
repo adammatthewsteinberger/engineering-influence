@@ -3,12 +3,14 @@
 """``ei doctor --models``: what it prints, what it exits with, and that it sends nothing by default."""
 
 import argparse
+import json
 import threading
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -16,6 +18,9 @@ from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interactions.cli.doctor_cli import DoctorCli
 from engineering_influence.models.doctor_finding import DoctorFinding
 from engineering_influence.runtime.cli_runtime import CliRuntime
+from engineering_influence.services.interfaces.local_model_doctor_interface import (
+    LocalModelDoctorInterface,
+)
 from engineering_influence.services.interfaces.model_doctor_interface import (
     ModelDoctorInterface,
 )
@@ -56,6 +61,10 @@ def NO_SEARCH() -> SearchDoctorInterface:
     raise AssertionError("a models check never builds the search doctor")
 
 
+def NO_LOCAL() -> LocalModelDoctorInterface:
+    raise AssertionError("a models or search check never builds the local model doctor")
+
+
 class Doctor(ModelDoctorInterface):
     def __init__(self, findings: tuple[DoctorFinding, ...] = ()) -> None:
         self.findings = findings
@@ -70,6 +79,7 @@ def arguments(**changes: object) -> argparse.Namespace:
     values: dict[str, object] = {
         "models": True,
         "search": False,
+        "local": False,
         "query": None,
         "catalog": Path("c.toml"),
         "profiles": Path("p.toml"),
@@ -81,7 +91,7 @@ def arguments(**changes: object) -> argparse.Namespace:
 
 def test_a_clean_report_prints_each_line_and_exits_0(capsys: pytest.CaptureFixture[str]) -> None:
     doctor = Doctor((DoctorFinding("a", "price", True, "ok"), DoctorFinding("a", "key", True, "k")))
-    assert DoctorCli(lambda probe: doctor, NO_SEARCH, {}).run(arguments()) == 0
+    assert DoctorCli(lambda probe: doctor, NO_SEARCH, NO_LOCAL, {}).run(arguments()) == 0
     assert capsys.readouterr().out == (
         "ok   a: price: ok\nok   a: key: k\nall 2 checks passed; sent: nothing\n"
     )
@@ -94,7 +104,7 @@ def test_a_failed_check_exits_1_and_counts_the_failures(
     doctor = Doctor(
         (DoctorFinding("a", "price", True, "ok"), DoctorFinding("a", "key", False, "no"))
     )
-    assert DoctorCli(lambda probe: doctor, NO_SEARCH, {}).run(arguments()) == 1
+    assert DoctorCli(lambda probe: doctor, NO_SEARCH, NO_LOCAL, {}).run(arguments()) == 1
     out = capsys.readouterr().out
     assert "FAIL a: key: no" in out
     assert out.endswith("1 of 2 checks failed\n")
@@ -109,7 +119,7 @@ def test_the_probe_flag_is_passed_to_the_builder_and_named_in_the_summary(
         asked.append(probe)
         return Doctor((DoctorFinding("a", "probe", True, "available"),))
 
-    assert DoctorCli(build, NO_SEARCH, {}).run(arguments(probe=True)) == 0
+    assert DoctorCli(build, NO_SEARCH, NO_LOCAL, {}).run(arguments(probe=True)) == 0
     assert asked == [True]
     assert "sent: one model-list request per profile" in capsys.readouterr().out
 
@@ -117,7 +127,7 @@ def test_the_probe_flag_is_passed_to_the_builder_and_named_in_the_summary(
 def test_the_files_default_to_the_environment() -> None:
     doctor = Doctor()
     environment = {"EI_MODEL_CATALOG": "env-c.toml", "EI_MODEL_PROFILES": "env-p.toml"}
-    DoctorCli(lambda probe: doctor, NO_SEARCH, environment).run(
+    DoctorCli(lambda probe: doctor, NO_SEARCH, NO_LOCAL, environment).run(
         arguments(catalog=None, profiles=None)
     )
     assert doctor.calls == [(Path("env-c.toml"), Path("env-p.toml"))]
@@ -126,7 +136,7 @@ def test_the_files_default_to_the_environment() -> None:
 def test_a_flag_wins_over_the_environment() -> None:
     doctor = Doctor()
     environment = {"EI_MODEL_CATALOG": "env-c.toml", "EI_MODEL_PROFILES": "env-p.toml"}
-    DoctorCli(lambda probe: doctor, NO_SEARCH, environment).run(
+    DoctorCli(lambda probe: doctor, NO_SEARCH, NO_LOCAL, environment).run(
         arguments(catalog=Path("flag.toml"), profiles=None)
     )
     assert doctor.calls == [(Path("flag.toml"), Path("env-p.toml"))]
@@ -136,7 +146,7 @@ def test_a_flag_wins_over_the_environment() -> None:
 def test_a_file_that_is_not_named_anywhere_exits_2(
     capsys: pytest.CaptureFixture[str], missing: str
 ) -> None:
-    code = DoctorCli(lambda probe: Doctor(), NO_SEARCH, {"EI_MODEL_CATALOG": "  "}).run(
+    code = DoctorCli(lambda probe: Doctor(), NO_SEARCH, NO_LOCAL, {"EI_MODEL_CATALOG": "  "}).run(
         arguments(**{missing: None})
     )
     assert code == 2
@@ -147,7 +157,7 @@ def test_an_invalid_file_prints_one_line_and_exits_2(capsys: pytest.CaptureFixtu
     def build(probe: bool) -> ModelDoctorInterface:
         raise ApplicationError("MODEL_PROFILE_INVALID", "profile #1 (x) is missing 'adapter'")
 
-    assert DoctorCli(build, NO_SEARCH, {}).run(arguments()) == 2
+    assert DoctorCli(build, NO_SEARCH, NO_LOCAL, {}).run(arguments()) == 2
     assert capsys.readouterr().err == "error: profile #1 (x) is missing 'adapter'\n"
 
 
@@ -155,7 +165,7 @@ def test_a_missing_extra_is_named_and_exits_1(capsys: pytest.CaptureFixture[str]
     def build(probe: bool) -> ModelDoctorInterface:
         raise ImportError("no httpx", name="httpx")
 
-    assert DoctorCli(build, NO_SEARCH, {}).run(arguments(probe=True)) == 1
+    assert DoctorCli(build, NO_SEARCH, NO_LOCAL, {}).run(arguments(probe=True)) == 1
     err = capsys.readouterr().err
     assert "doctor needs the runtime extra" in err
     assert "httpx is missing" in err
@@ -328,7 +338,7 @@ def test_a_clean_search_check_prints_each_line_and_says_what_was_sent(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     fake = SearchDoctorFake(GOOD)
-    assert DoctorCli(never_models, lambda: fake, {}).run(searching()) == 0
+    assert DoctorCli(never_models, lambda: fake, NO_LOCAL, {}).run(searching()) == 0
     assert capsys.readouterr().out == (
         "ok   searxng: search: 5 links, the first from example.org\n"
         "all 1 checks passed; sent: one search request per provider\n"
@@ -338,19 +348,22 @@ def test_a_clean_search_check_prints_each_line_and_says_what_was_sent(
 
 def test_the_query_can_be_chosen() -> None:
     fake = SearchDoctorFake(GOOD)
-    DoctorCli(never_models, lambda: fake, {}).run(searching(query="beekeeping manuals"))
+    DoctorCli(never_models, lambda: fake, NO_LOCAL, {}).run(searching(query="beekeeping manuals"))
     assert fake.queries == ["beekeeping manuals"]
 
 
 def test_a_failed_search_check_exits_1_and_counts_the_failures(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    assert DoctorCli(never_models, lambda: SearchDoctorFake(BAD + GOOD), {}).run(searching()) == 1
+    assert (
+        DoctorCli(never_models, lambda: SearchDoctorFake(BAD + GOOD), NO_LOCAL, {}).run(searching())
+        == 1
+    )
     assert "1 of 2 checks failed" in capsys.readouterr().out
 
 
 def test_a_search_check_needs_no_model_files(capsys: pytest.CaptureFixture[str]) -> None:
-    code = DoctorCli(never_models, lambda: SearchDoctorFake(GOOD), {}).run(
+    code = DoctorCli(never_models, lambda: SearchDoctorFake(GOOD), NO_LOCAL, {}).run(
         searching(catalog=None, profiles=None)
     )
     assert code == 0
@@ -365,7 +378,7 @@ def test_an_unusable_search_setting_prints_one_line_and_exits_2(
             "STAGE_SEARXNG_URL_INVALID", "EI_SEARXNG_URL is not usable: no host", 503
         )
 
-    assert DoctorCli(never_models, build, {}).run(searching()) == 2
+    assert DoctorCli(never_models, build, NO_LOCAL, {}).run(searching()) == 2
     assert capsys.readouterr().err == "error: EI_SEARXNG_URL is not usable: no host\n"
 
 
@@ -375,7 +388,7 @@ def test_a_missing_extra_is_named_for_the_search_check_too(
     def build() -> SearchDoctorInterface:
         raise ImportError("no httpx", name="httpx")
 
-    assert DoctorCli(never_models, build, {}).run(searching()) == 1
+    assert DoctorCli(never_models, build, NO_LOCAL, {}).run(searching()) == 1
     assert "httpx is missing" in capsys.readouterr().err
 
 
@@ -585,3 +598,194 @@ def test_brave_is_found_at_its_real_address_unless_a_test_says_otherwise() -> No
 
     default = inspect.signature(CliRuntime.__init__).parameters["brave_base_url"].default
     assert default == "https://api.search.brave.com"
+
+
+# --------------------------------------------------------------------------- doctor --local
+class LocalDoctorFake(LocalModelDoctorInterface):
+    def __init__(self, findings: tuple[DoctorFinding, ...] = ()) -> None:
+        self.findings = findings
+        self.calls = 0
+
+    def check(self) -> tuple[DoctorFinding, ...]:
+        self.calls += 1
+        return self.findings
+
+
+def local_args(**changes: object) -> argparse.Namespace:
+    return arguments(models=False, local=True, **changes)
+
+
+def never_search() -> SearchDoctorInterface:
+    raise AssertionError("a local check never builds the search doctor")
+
+
+LOCAL_GOOD = (
+    DoctorFinding("local", "server", True, "Ollama answers"),
+    DoctorFinding("local", "context", True, "32768 tokens"),
+)
+LOCAL_BAD = (
+    DoctorFinding(
+        "local", "model", False, "gpt-oss:20b is not pulled; run: ollama pull gpt-oss:20b"
+    ),
+)
+
+
+def test_a_clean_local_check_prints_each_line_and_says_what_was_sent(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    fake = LocalDoctorFake(LOCAL_GOOD)
+    assert DoctorCli(never_models, never_search, lambda: fake, {}).run(local_args()) == 0
+    assert capsys.readouterr().out == (
+        "ok   local: server: Ollama answers\n"
+        "ok   local: context: 32768 tokens\n"
+        "all 2 checks passed; sent: one tiny completion to the local model; it stays on this machine\n"
+    )
+    assert fake.calls == 1
+
+
+def test_a_failed_local_check_exits_1_and_counts_what_failed(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    code = DoctorCli(never_models, never_search, lambda: LocalDoctorFake(LOCAL_BAD), {}).run(
+        local_args()
+    )
+    assert code == 1
+    out = capsys.readouterr().out
+    assert "FAIL local: model: gpt-oss:20b is not pulled" in out
+    assert out.endswith("1 of 1 checks failed\n")
+
+
+def test_a_local_setting_that_cannot_be_used_exits_2_with_one_line(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    def build() -> LocalModelDoctorInterface:
+        raise ApplicationError(
+            code="STAGE_LOCAL_MODEL_INVALID", message="EI_LOCAL_URL is not usable"
+        )
+
+    assert DoctorCli(never_models, never_search, build, {}).run(local_args()) == 2
+    assert capsys.readouterr().err == "error: EI_LOCAL_URL is not usable\n"
+
+
+def test_a_missing_extra_exits_1_with_the_fix_for_the_local_check(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    def build() -> LocalModelDoctorInterface:
+        raise ImportError("no httpx", name="httpx")
+
+    assert DoctorCli(never_models, never_search, build, {}).run(local_args()) == 1
+    assert "engineering-influence[runtime]" in capsys.readouterr().err
+
+
+def test_the_local_check_is_one_of_the_three_ways_to_run_the_doctor() -> None:
+    with pytest.raises(SystemExit):
+        CliRuntime().build().run(["doctor", "--local", "--models"])
+    with pytest.raises(SystemExit):
+        CliRuntime().build().run(["doctor"])
+
+
+@contextmanager
+def ollama(
+    models: list[str], loaded: list[dict[str, object]], text: str = "ready"
+) -> Iterator[tuple[str, list[str], list[tuple[dict[str, str], dict[str, Any]]]]]:
+    """A local Ollama: its model list, what is loaded, and an OpenAI-shaped chat answer; it keeps the paths it was asked."""
+    seen: list[str] = []
+    posts: list[tuple[dict[str, str], dict[str, Any]]] = []
+
+    class Handler(BaseHTTPRequestHandler):
+        def _send(self, body: object) -> None:
+            data = json.dumps(body).encode()
+            self.send_response(200)
+            self.send_header("content-type", "application/json")
+            self.send_header("content-length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+
+        def do_GET(self) -> None:
+            seen.append(self.path)
+            self._send(
+                {"models": [{"name": n} for n in models]}
+                if self.path == "/api/tags"
+                else {"models": loaded}
+            )
+
+        def do_POST(self) -> None:
+            body = json.loads(self.rfile.read(int(self.headers["content-length"])))
+            posts.append(({k.lower(): v for k, v in self.headers.items()}, body))
+            seen.append(self.path)
+            self._send(
+                {
+                    "model": "gpt-oss:20b",
+                    "choices": [{"message": {"content": text}, "finish_reason": "stop"}],
+                    "usage": {"prompt_tokens": 9, "completion_tokens": 2},
+                }
+            )
+
+        def log_message(self, format: str, *args: object) -> None:
+            return
+
+    httpd = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{httpd.server_port}", seen, posts
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+        thread.join()
+
+
+def test_the_local_check_runs_against_a_real_server_and_reads_the_settings(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    with ollama(["gpt-oss:20b"], [{"name": "gpt-oss:20b", "context_length": 32768}]) as (
+        url,
+        seen,
+        posts,
+    ):
+        monkeypatch.setenv("EI_LOCAL_URL", url)
+        code = CliRuntime().build().run(["doctor", "--local"])
+    assert code == 0
+    out = capsys.readouterr().out
+    assert f"ok   local: server: Ollama answers at {url}" in out
+    assert "ok   local: answers: gpt-oss:20b replied in 2 tokens" in out
+    assert "ok   local: context: 32768 tokens" in out
+    assert seen == ["/api/tags", "/v1/chat/completions", "/api/ps"]
+    ((headers, body),) = posts
+    assert "authorization" not in headers
+    assert (body["model"], body["reasoning_effort"], body["max_tokens"]) == (
+        "gpt-oss:20b",
+        "low",
+        256,
+    )
+
+
+def test_the_local_check_gives_the_first_load_time_to_come() -> None:
+    assert CliRuntime.LOCAL_MODEL_WAIT_SECONDS == 300.0
+
+
+def test_the_local_check_fails_with_the_fix_when_ollama_loaded_a_small_context(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    with ollama(["gpt-oss:20b"], [{"name": "gpt-oss:20b", "context_length": 4096}]) as (url, _, _):
+        monkeypatch.setenv("EI_LOCAL_URL", url)
+        monkeypatch.setenv("EI_LOCAL_MODEL", "gpt-oss:20b")
+        code = CliRuntime().build().run(["doctor", "--local"])
+    assert code == 1
+    assert "OLLAMA_CONTEXT_LENGTH=32768" in capsys.readouterr().out
+
+
+def test_the_local_check_says_so_when_nothing_answers(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setenv("EI_LOCAL_URL", "http://127.0.0.1:1")
+    assert CliRuntime().build().run(["doctor", "--local"]) == 1
+    assert "nothing answers at http://127.0.0.1:1" in capsys.readouterr().out
+
+
+def test_an_unusable_local_address_is_reported_before_anything_is_sent(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setenv("EI_LOCAL_URL", "ftp://example.test")
+    assert CliRuntime().build().run(["doctor", "--local"]) == 2
+    assert capsys.readouterr().err.startswith("error: EI_LOCAL_MODEL or EI_LOCAL_URL is not usable")
