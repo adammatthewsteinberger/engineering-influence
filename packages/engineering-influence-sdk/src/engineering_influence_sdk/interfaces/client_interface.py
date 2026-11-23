@@ -34,6 +34,14 @@ class EngineeringInfluenceClientInterface(ABC):
         """Un-park a parked run and queue its current stage."""
 
     @abstractmethod
+    def grant_run(self, run_id: str, micro_usd: int | None = None) -> dict[str, Any]:
+        """Give a run more budget and continue it."""
+
+    @abstractmethod
+    def deny_run(self, run_id: str) -> dict[str, Any]:
+        """Refuse a run's request for more budget; it parks."""
+
+    @abstractmethod
     def cancel_run(self, run_id: str) -> dict[str, Any]:
         """Stop a run for good."""
 

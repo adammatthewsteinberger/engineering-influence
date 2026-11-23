@@ -23,6 +23,7 @@ from engineering_influence.models.budget import Budget
 from engineering_influence.services.cancel_run import CancelRun
 from engineering_influence.services.list_runs import ListRuns
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
+from engineering_influence.services.resolve_spend_consent import ResolveSpendConsent
 from engineering_influence.services.resume_run import ResumeRun
 from engineering_influence.services.run_management import RunManagement
 from engineering_influence.services.start_pipeline import StartPipeline
@@ -38,7 +39,9 @@ def seeded() -> tuple[InMemoryRunRepository, InMemoryQueue, RunManagement]:
     repo.save(BookRun("running", brief, plan, Budget(cap=5_000_000)).start())
     last = plan.stages[-1]
     repo.save(BookRun("done", brief, plan, Budget(cap=5_000_000), stage=last).start().advance())
-    manager = RunManagement(ListRuns(repo), ResumeRun(repo, queue), CancelRun(repo))
+    manager = RunManagement(
+        ListRuns(repo), ResumeRun(repo, queue), CancelRun(repo), ResolveSpendConsent(repo, queue)
+    )
     return repo, queue, manager
 
 

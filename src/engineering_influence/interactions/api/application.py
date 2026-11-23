@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, cast
 from engineering_influence import __version__
 from engineering_influence.contracts.brief.v1.book_brief_v1 import BookBriefV1
 from engineering_influence.contracts.project_request import ProjectRequest
+from engineering_influence.contracts.run.v1.run_grant_v1 import RunGrantV1
 from engineering_influence.contracts.run.v1.run_summary_v1 import RunSummaryV1
 from engineering_influence.controllers.interfaces.project_controller_interface import (
     ProjectControllerInterface,
@@ -99,6 +100,20 @@ class ApiApplication(ApiApplicationInterface):
                 response_model=RunSummaryV1,
                 dependencies=[Depends(self._guard)],
             )
+            app.add_api_route(
+                "/v1/runs/{run_id}/grant",
+                self._grant_run,
+                methods=["POST"],
+                response_model=RunSummaryV1,
+                dependencies=[Depends(self._guard)],
+            )
+            app.add_api_route(
+                "/v1/runs/{run_id}/deny",
+                self._deny_run,
+                methods=["POST"],
+                response_model=RunSummaryV1,
+                dependencies=[Depends(self._guard)],
+            )
         if self._observability is not None:
             self._add_observability(app, self._observability)
         return app
@@ -164,6 +179,15 @@ class ApiApplication(ApiApplicationInterface):
 
     def _cancel_run(self, run_id: str) -> RunSummaryV1:
         return RunSummaryV1.from_run(cast(RunManagementInterface, self._manager).cancel(run_id), [])
+
+    def _grant_run(self, run_id: str, grant: RunGrantV1 | None = None) -> RunSummaryV1:
+        micro_usd = None if grant is None else grant.micro_usd
+        return RunSummaryV1.from_run(
+            cast(RunManagementInterface, self._manager).grant(run_id, micro_usd), []
+        )
+
+    def _deny_run(self, run_id: str) -> RunSummaryV1:
+        return RunSummaryV1.from_run(cast(RunManagementInterface, self._manager).deny(run_id), [])
 
     def _run_summary(self, run_id: str) -> RunSummaryV1:
         return cast(RunControllerInterface, self._runs).summary(run_id)
