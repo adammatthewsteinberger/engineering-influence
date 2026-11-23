@@ -8,6 +8,7 @@ import httpx
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.errors.capacity_exhausted_error import CapacityExhaustedError
 from engineering_influence.errors.transient_stage_error import TransientStageError
+from engineering_influence.infrastructure.research.search_results import SearchResults
 from engineering_influence.interfaces.search_provider_interface import SearchProviderInterface
 from engineering_influence.models.search_hit import SearchHit
 
@@ -42,14 +43,7 @@ class BraveSearchProvider(SearchProviderInterface):
 
     def search(self, query: str, count: int) -> tuple[SearchHit, ...]:
         """Up to ``count`` distinct links for the query, best first, or none."""
-        text = " ".join(query.split())
-        if not text or len(text) > self.MAX_QUERY_CHARACTERS:
-            raise self._error(
-                "SEARCH_QUERY_INVALID",
-                f"a search query is 1 to {self.MAX_QUERY_CHARACTERS} characters",
-            )
-        if not 1 <= count <= self.MAX_COUNT:
-            raise self._error("SEARCH_QUERY_INVALID", f"count is 1 to {self.MAX_COUNT}")
+        text = SearchResults.check_query(query, count, self.MAX_QUERY_CHARACTERS, self.MAX_COUNT)
         try:
             response = self._client.get(
                 f"{self._base_url}/res/v1/web/search",
@@ -79,24 +73,7 @@ class BraveSearchProvider(SearchProviderInterface):
         results = (data.get("web") or {}).get("results") or []
         if not isinstance(results, list):
             raise self._unexpected()
-        seen: dict[str, SearchHit] = {}
-        for entry in results:
-            hit = self._hit(entry)
-            if hit is not None and hit.url not in seen:
-                seen[hit.url] = hit
-        return tuple(seen.values())[:count]
-
-    @staticmethod
-    def _hit(entry: Any) -> SearchHit | None:
-        if not isinstance(entry, dict):
-            return None
-        url, title = entry.get("url"), entry.get("title")
-        if not isinstance(url, str):
-            return None
-        try:
-            return SearchHit(url, title if isinstance(title, str) else "")
-        except ValueError:
-            return None
+        return SearchResults.hits(results, count)
 
     def _unexpected(self) -> ApplicationError:
         return self._error(
@@ -106,4 +83,4 @@ class BraveSearchProvider(SearchProviderInterface):
 
     @staticmethod
     def _error(code: str, message: str) -> ApplicationError:
-        return ApplicationError(code=code, message=message, http_status=502)
+        return SearchResults.error(code, message)
