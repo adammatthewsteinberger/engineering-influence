@@ -10,6 +10,10 @@ from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interactions.cli.interfaces.doctor_cli_interface import (
     DoctorCliInterface,
 )
+from engineering_influence.models.doctor_finding import DoctorFinding
+from engineering_influence.services.interfaces.local_model_doctor_interface import (
+    LocalModelDoctorInterface,
+)
 from engineering_influence.services.interfaces.model_doctor_interface import (
     ModelDoctorInterface,
 )
@@ -29,6 +33,9 @@ class DoctorCli(DoctorCliInterface):
     ``doctor --search`` sends **one real search request to each configured provider** (SearXNG, then Brave if its key is set),
     with a fixed harmless query unless ``--query`` gives one, and prints one line each. It checks nothing else and runs
     on its own, not with ``--models``.
+
+    ``doctor --local`` checks the free local model (docs/LOCAL_MODEL.md): the server, the model, one tiny real
+    completion (free, and on this machine) and the context size Ollama loaded it with.
     """
 
     DEFAULT_QUERY = "open source book publishing"
@@ -37,14 +44,16 @@ class DoctorCli(DoctorCliInterface):
         self,
         doctor: Callable[[bool], ModelDoctorInterface],
         search: Callable[[], SearchDoctorInterface],
+        local: Callable[[], LocalModelDoctorInterface],
         environment: Mapping[str, str],
     ) -> None:
         self._doctor = doctor
         self._search = search
+        self._local = local
         self._environment = environment
 
     def register(self, subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]") -> None:
-        """Add ``doctor --models`` and ``doctor --search``."""
+        """Add ``doctor --models``, ``doctor --search`` and ``doctor --local``."""
         doctor = subparsers.add_parser("doctor", help="check that this installation is ready")
         what = doctor.add_mutually_exclusive_group(required=True)
         what.add_argument("--models", action="store_true", help="check profiles")
@@ -52,6 +61,11 @@ class DoctorCli(DoctorCliInterface):
             "--search",
             action="store_true",
             help="run one real search through each configured provider (SearXNG, Brave)",
+        )
+        what.add_argument(
+            "--local",
+            action="store_true",
+            help="check the free local model: the server, the model, one tiny answer, the context size",
         )
         doctor.add_argument(
             "--query",
@@ -68,7 +82,15 @@ class DoctorCli(DoctorCliInterface):
     def run(self, arguments: argparse.Namespace) -> int:
         """Run the checks, print them, and return the process status."""
         if arguments.search:
-            return self._run_search(arguments.query or self.DEFAULT_QUERY)
+            return self._report(
+                lambda: self._search().check(arguments.query or self.DEFAULT_QUERY),
+                "one search request per provider",
+            )
+        if arguments.local:
+            return self._report(
+                lambda: self._local().check(),
+                "one tiny completion to the local model; it stays on this machine",
+            )
         catalog = arguments.catalog or self._from_environment("EI_MODEL_CATALOG")
         profiles = arguments.profiles or self._from_environment("EI_MODEL_PROFILES")
         if catalog is None or profiles is None:
@@ -100,9 +122,9 @@ class DoctorCli(DoctorCliInterface):
         print(f"all {len(findings)} checks passed; sent: {sent}")
         return 0
 
-    def _run_search(self, query: str) -> int:
+    def _report(self, check: Callable[[], tuple[DoctorFinding, ...]], sent: str) -> int:
         try:
-            findings = self._search().check(query)
+            findings = check()
         except ImportError as error:
             print(
                 "error: doctor needs the runtime extra: "
@@ -119,7 +141,7 @@ class DoctorCli(DoctorCliInterface):
         if failed:
             print(f"{failed} of {len(findings)} checks failed")
             return 1
-        print(f"all {len(findings)} checks passed; sent: one search request per provider")
+        print(f"all {len(findings)} checks passed; sent: {sent}")
         return 0
 
     def _from_environment(self, name: str) -> Path | None:

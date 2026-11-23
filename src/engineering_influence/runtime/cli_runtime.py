@@ -75,6 +75,9 @@ from engineering_influence.runtime.serve_starter import ServeStarter
 from engineering_influence.services.cancel_run import CancelRun
 from engineering_influence.services.interfaces.cancel_run_interface import CancelRunInterface
 from engineering_influence.services.interfaces.export_run_interface import ExportRunInterface
+from engineering_influence.services.interfaces.local_model_doctor_interface import (
+    LocalModelDoctorInterface,
+)
 from engineering_influence.services.interfaces.model_doctor_interface import (
     ModelDoctorInterface,
 )
@@ -82,6 +85,8 @@ from engineering_influence.services.interfaces.resume_run_interface import Resum
 from engineering_influence.services.interfaces.search_doctor_interface import (
     SearchDoctorInterface,
 )
+from engineering_influence.services.local_default_model import LocalDefaultModel
+from engineering_influence.services.local_model_doctor import LocalModelDoctor
 from engineering_influence.services.mcp_client_factory import McpClientFactory
 from engineering_influence.services.mcp_server_probe import McpServerProbe
 from engineering_influence.services.model_doctor import ModelDoctor
@@ -115,6 +120,8 @@ class CliRuntime(CliRuntimeInterface):
     toolchain, so a test can drive the whole command line over fakes. ``brave_base_url`` is where ``doctor --search`` finds Brave, so a test can point it at a local server.
     """
 
+    LOCAL_MODEL_WAIT_SECONDS = 300.0
+
     TOOL_SESSION_SECONDS = 120.0
     TOOL_REQUEST_SECONDS = 30.0
     TOOL_MEMORY_BYTES = 2 * 1024**3
@@ -144,7 +151,9 @@ class CliRuntime(CliRuntimeInterface):
             ServeCli(ServeStarter()),
             DbCli(self._schema_migrator, self._secret_provider),
             RunCli(self._resume_run, self._cancel_run, self._run_status, self._export_run),
-            DoctorCli(self._model_doctor, self._search_doctor, os.environ),
+            DoctorCli(
+                self._model_doctor, self._search_doctor, self._local_model_doctor, os.environ
+            ),
             self._tools_cli(),
             self._skills_cli(),
             self._plugins_cli(),
@@ -312,6 +321,39 @@ class CliRuntime(CliRuntimeInterface):
         if key:
             providers.append(("brave", BraveSearchProvider(client, key, self._brave_base_url)))
         return SearchDoctor(tuple(providers))
+
+    def _local_model_doctor(self) -> LocalModelDoctorInterface:
+        """Build the local model doctor from the same settings the worker reads (``EI_LOCAL_MODEL``, ``EI_LOCAL_URL``).
+
+        The completion's client waits up to ``LOCAL_MODEL_WAIT_SECONDS``, because the first call loads a model of
+        about 13 GB into memory; the server probe's client uses the usual probe timeout.
+        """
+        import httpx
+
+        from engineering_influence.infrastructure.models.http_ollama_server import HttpOllamaServer
+        from engineering_influence.infrastructure.models.openai_compatible_model import (
+            OpenAICompatibleModel,
+        )
+
+        free = LocalDefaultModel(os.environ)
+        profile = free.profile()
+        client = httpx.Client(
+            timeout=httpx.Timeout(
+                self.LOCAL_MODEL_WAIT_SECONDS, connect=self._probe_timeout_seconds
+            )
+        )
+        model = OpenAICompatibleModel(
+            client,
+            "",
+            free.descriptor(),
+            profile.base_url,
+            profile.output_cap_field,
+            profile.reasoning_effort,
+        )
+        server = HttpOllamaServer(
+            httpx.Client(timeout=self._probe_timeout_seconds), profile.base_url
+        )
+        return LocalModelDoctor(free, model, server)
 
     def _model_doctor(self, probe: bool) -> ModelDoctorInterface:
         """Build the model doctor; the probe, and the HTTP client behind it, only if asked for.
