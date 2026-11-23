@@ -13,6 +13,9 @@ from engineering_influence.controllers.interfaces.run_controller_interface impor
 from engineering_influence.controllers.project_controller import ProjectController
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
+from engineering_influence.infrastructure.plugins.directory_plugin_folder_reader import (
+    DirectoryPluginFolderReader,
+)
 from engineering_influence.infrastructure.plugins.lazy_bundle_fetcher import LazyBundleFetcher
 from engineering_influence.infrastructure.plugins.toml_plugin_index_parser import (
     TomlPluginIndexParser,
@@ -21,6 +24,7 @@ from engineering_influence.infrastructure.plugins.toml_plugin_lock_store import 
     TomlPluginLockStore,
 )
 from engineering_influence.infrastructure.plugins.toml_plugin_parser import TomlPluginParser
+from engineering_influence.infrastructure.plugins.toml_plugin_writer import TomlPluginWriter
 from engineering_influence.infrastructure.skills.directory_skill_files import DirectorySkillFiles
 from engineering_influence.infrastructure.skills.file_skill_source import FileSkillSource
 from engineering_influence.infrastructure.skills.new_file_skill_sink import NewFileSkillSink
@@ -73,6 +77,8 @@ from engineering_influence.services.interfaces.resume_run_interface import Resum
 from engineering_influence.services.mcp_client_factory import McpClientFactory
 from engineering_influence.services.mcp_server_probe import McpServerProbe
 from engineering_influence.services.model_doctor import ModelDoctor
+from engineering_influence.services.plugin_folder_converter import PluginFolderConverter
+from engineering_influence.services.plugin_importer import PluginImporter
 from engineering_influence.services.plugin_installer import PluginInstaller
 from engineering_influence.services.plugin_lock_verifier import PluginLockVerifier
 from engineering_influence.services.plugin_marketplace import PluginMarketplace
@@ -170,6 +176,14 @@ class CliRuntime(CliRuntimeInterface):
         fetcher = self._bundles or LazyBundleFetcher(self._bundle_fetcher)
         return PluginsCli(
             PluginInstaller(bundle_files, parser, TomlSkillWriter(), skills),
+            PluginImporter(
+                DirectoryPluginFolderReader(FileSkillSource()),
+                PluginFolderConverter(SkillMarkdownParser(), SkillConverter()),
+                TomlPluginWriter(),
+                parser,
+                NewFileSkillSink(),
+                self.PLUGIN_BUNDLE_BYTES,
+            ),
             PluginLockVerifier(bundle_files, parser),
             PluginMarketplace(
                 fetcher, bundle_files, TomlPluginIndexParser(), parser, self.PLUGIN_BUNDLE_BYTES

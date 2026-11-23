@@ -17,6 +17,9 @@ from engineering_influence.interfaces.skill_lock_store_interface import SkillLoc
 from engineering_influence.models.plugin_bundle import PluginBundle
 from engineering_influence.models.plugin_lock import PluginLock
 from engineering_influence.models.skill_lock import SkillLock
+from engineering_influence.services.interfaces.plugin_importer_interface import (
+    PluginImporterInterface,
+)
 from engineering_influence.services.interfaces.plugin_installer_interface import (
     PluginInstallerInterface,
 )
@@ -54,6 +57,7 @@ class PluginsCli(PluginsCliInterface):
     def __init__(
         self,
         installer: PluginInstallerInterface,
+        importer: PluginImporterInterface,
         verifier: PluginLockVerifierInterface,
         marketplace: PluginMarketplaceInterface,
         store: PluginLockStoreInterface,
@@ -61,6 +65,7 @@ class PluginsCli(PluginsCliInterface):
         environment: Mapping[str, str],
     ) -> None:
         self._installer = installer
+        self._importer = importer
         self._verifier = verifier
         self._marketplace = marketplace
         self._store = store
@@ -79,6 +84,16 @@ class PluginsCli(PluginsCliInterface):
             "show", help="read a plugin file and say what installing it would do"
         )
         show.add_argument("file", type=Path, help="the plugin file, for example research_pack.toml")
+        convert = commands.add_parser(
+            "import",
+            help="turn a Claude Code plugin folder into a bundle to review, then install it with add (installs and runs nothing)",
+        )
+        convert.add_argument("source", type=Path, help="the plugin's folder")
+        convert.add_argument("--name", help="the bundle's name; default: the plugin's, made safe")
+        convert.add_argument(
+            "--version", type=int, default=1, help="the bundle's version, default 1"
+        )
+        convert.add_argument("--out", type=Path, help="where to write it; default NAME.toml here")
         add = commands.add_parser(
             "add", help="lock a plugin's skills and record its hash (runs and contacts nothing)"
         )
@@ -123,6 +138,8 @@ class PluginsCli(PluginsCliInterface):
             if command == "show":
                 self._describe(self._installer.inspect(arguments.file), "")
                 return 0
+            if command == "import":
+                return self._import(arguments)
             if command == "search":
                 return self._search(arguments.index, arguments.text)
             if command == "fetch":
@@ -156,6 +173,34 @@ class PluginsCli(PluginsCliInterface):
     @staticmethod
     def _skill_folder(path: Path) -> Path:
         return path.parent / "skills"
+
+    def _import(self, arguments: argparse.Namespace) -> int:
+        done = self._importer.import_plugin(
+            arguments.source, arguments.name, arguments.version, arguments.out
+        )
+        conversion = done.conversion
+        plugin = conversion.plugin
+        print(f"wrote {self._safe(done.path, 200)}: {plugin.identifier()}")
+        for skill in plugin.skills:
+            print(
+                f"  skill {skill.name}: {len(skill.sections)} reference sections, "
+                f"{sum(len(text) for _, text in skill.sections):,} characters"
+            )
+        for server in plugin.servers:
+            how = "address" if server.remote() else "command"
+            print(f"  server {server.name}: {how}")
+        for what, why in conversion.skipped:
+            print(f"  skipped {self._safe(what, 100)}: {self._safe(why, 300)}")
+        for note in conversion.notes:
+            print(f"  note: {self._safe(note, 300)}")
+        for line in conversion.set_aside:
+            print(f"  set aside: {self._safe(line, 200)}")
+        print(
+            "this bundle's text will be added to prompts and its servers would be started, "
+            "and it was written by whoever made the plugin: read the file before you install it"
+        )
+        print(f"then: ei plugins show {self._safe(done.path, 200)}")
+        return 0
 
     def _add(self, arguments: argparse.Namespace, path: Path, skill_path: Path) -> int:
         plugins = self._store.load(path) or PluginLock()

@@ -59,6 +59,7 @@ outline = "Prefer short chapters."
 ## Commands
 
 ```text
+ei plugins import FOLDER [--name NAME] [--version N] [--out FILE]
 ei plugins show FILE
 ei plugins add [--lock PATH] [--skill-lock PATH] FILE
 ei plugins list [--lock PATH]
@@ -71,6 +72,7 @@ ei plugins fetch INDEX NAME [--output DIR]
 The plugin lock is `--lock`, else `EI_PLUGIN_LOCK`, else `ei-plugins.lock.toml`; the skill lock is
 `--skill-lock`, else `EI_SKILL_LOCK`, else `ei-skills.lock.toml`.
 
+- **`import`** reads a Claude Code plugin folder and writes a bundle to review (see below). It installs nothing.
 - **`show`** reads a bundle and says what installing it would do, changing nothing. Read this first.
 - **`add`** reads the file once, hashes those bytes and checks them strictly. Each skill goes into the skill lock
   through the same code `ei skills add` uses, enabled for no stage. A copy of the bundle is kept in `plugins/`
@@ -85,6 +87,30 @@ The plugin lock is `--lock`, else `EI_PLUGIN_LOCK`, else `ei-plugins.lock.toml`;
 - **`remove`** deletes the bundle's copy and the skills it installed that are **still exactly what it installed**. A
   skill locked again with other text since belongs to the person now and is left, and named. A server it
   described stays in the tool lock if you locked it.
+
+## Importing a Claude Code plugin
+
+`ei plugins import FOLDER` turns a plugin folder written for Claude Code into the bundle format above, so it can be
+read and then installed with `show` and `add`. It reads three things and lists the rest:
+
+- `.claude-plugin/plugin.json` for the name and description (the folder's name if there is none);
+- `.mcp.json` (or an `mcpServers` table inside `plugin.json`) for servers;
+- `skills/*/SKILL.md`, each converted exactly as `ei skills import --reference` converts one: the sections become
+  reference read through `read_skill`, and a skill is enabled for no stage.
+
+Commands, agents, hooks, output styles, monitors and `.lsp.json` are **set aside and named**: a bundle grants
+nothing and runs nothing, so none of them is read or executed. A server is carried over only if the tool lock would
+accept it: a command with an absolute path that is not a launcher (`npx`, `uvx`, `docker` and the like are skipped,
+because what they fetch cannot be hashed; install the server and write its real path), or a streamable-HTTP address
+over https. A `${...}` placeholder in a command is never expanded, so that server is skipped. **Environment values
+and headers are never copied**: only the *names* of environment variables are kept (you export them yourself), and
+a header `Authorization: Bearer ${NAME}` becomes `bearer_env = "NAME"`; any other header skips the server. Every
+skipped server or skill is printed with the reason, and an import that leaves nothing is refused.
+
+The file is written new beside where you ran it (`NAME.toml`) and never replaces one; a bundle's name is its file's
+name, so `--out` must end in `NAME.toml` (use `--name` to change the name). The bytes are parsed again before they
+are written, so a file this command writes is a file `show` accepts. Read it: its text will be added to prompts
+and its servers would be started, and it was written by whoever made the plugin.
 
 ## The plugin lock
 
@@ -164,6 +190,10 @@ an `https://` address (a local index file needs nothing extra).
   the folder from changing a file; the hash is what turns that into a failure of `verify`.
 
 ## What is not built
+
+Whatever a Claude Code plugin does beyond skills and MCP servers: its commands, agents, hooks and output styles are not
+imported. Servers that need a launcher or a placeholder are not converted (they are named, so a person can install
+them by hand). `marketplace.json` is not read yet; an index is still this project's own TOML.
 
 Anything that vouches for a publisher: indexes and plugin files are not signed, so the hash is the only
 integrity check. Nothing updates itself or checks an index for newer versions, a plugin cannot name another
