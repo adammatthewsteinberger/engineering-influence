@@ -4,6 +4,7 @@
 from typing import TYPE_CHECKING, Any, cast
 
 from engineering_influence import __version__
+from engineering_influence.contracts.brief.v1.book_brief_v1 import BookBriefV1
 from engineering_influence.contracts.project_request import ProjectRequest
 from engineering_influence.contracts.run.v1.run_summary_v1 import RunSummaryV1
 from engineering_influence.controllers.interfaces.project_controller_interface import (
@@ -18,6 +19,7 @@ from engineering_influence.interactions.api.interfaces.application_interface imp
     ApiApplicationInterface,
 )
 from engineering_influence.interactions.api.prometheus_renderer import PrometheusRenderer
+from engineering_influence.services.interfaces.create_run_interface import CreateRunInterface
 
 if TYPE_CHECKING:
     from engineering_influence.interactions.api.api_guard import ApiGuard
@@ -37,9 +39,11 @@ class ApiApplication(ApiApplicationInterface):
         guard: "ApiGuard",
         observability: ApiObservability | None = None,
         runs: RunControllerInterface | None = None,
+        creator: CreateRunInterface | None = None,
     ) -> None:
         self._controller = controller
         self._runs = runs
+        self._creator = creator
         self._guard = guard
         self._observability = observability
         self._renderer = PrometheusRenderer()
@@ -59,6 +63,15 @@ class ApiApplication(ApiApplicationInterface):
         )
         if self._runs is not None:
             self._add_run_routes(app)
+        if self._creator is not None:
+            app.add_api_route(
+                "/v1/runs",
+                self._create_run,
+                methods=["POST"],
+                response_model=RunSummaryV1,
+                status_code=201,
+                dependencies=[Depends(self._guard)],
+            )
         if self._observability is not None:
             self._add_observability(app, self._observability)
         return app
@@ -110,6 +123,10 @@ class ApiApplication(ApiApplicationInterface):
     def _start(self, request: ProjectRequest) -> dict[str, str]:
         response = self._controller.start(request)
         return response.model_dump()
+
+    def _create_run(self, brief: BookBriefV1) -> RunSummaryV1:
+        run = cast(CreateRunInterface, self._creator).create(brief.to_model())
+        return RunSummaryV1.from_run(run, [])
 
     def _run_summary(self, run_id: str) -> RunSummaryV1:
         return cast(RunControllerInterface, self._runs).summary(run_id)

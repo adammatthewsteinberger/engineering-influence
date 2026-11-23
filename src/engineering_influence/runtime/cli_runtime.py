@@ -424,16 +424,9 @@ class CliRuntime(CliRuntimeInterface):
 
     def _create_run(self) -> CreateRunInterface:
         """Build the create service: it saves the run and queues its first stage on the broker."""
-        from engineering_influence.models.book_kind import BookKind
         from engineering_influence.services.create_run import CreateRun
-        from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
-        from engineering_influence.services.novel_recipes import NovelRecipes
 
-        plans = {
-            BookKind.NONFICTION: NonfictionRecipes().plan(),
-            BookKind.NOVEL: NovelRecipes().plan(),
-        }
-        return CreateRun(self._run_repository(), self._broker_queue(), plans)
+        return CreateRun(self._run_repository(), self._broker_queue())
 
     def _list_runs(self) -> ListRunsInterface:
         """Build the list service; it needs only the database."""
