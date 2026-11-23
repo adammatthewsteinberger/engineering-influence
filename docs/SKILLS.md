@@ -36,6 +36,47 @@ it is held to what a person can read: control characters, zero-width and bidirec
 all errors, and the error names the character. Newline and tab are the only controls allowed. These are
 the usual way to hide an instruction in text that looks harmless in review.
 
+## Importing a `SKILL.md`
+
+Most skills in the wild (the Vibey and Claude ones among them) are a `SKILL.md`: a `---` block of `key: value` lines,
+then markdown. `ei skills import` turns one into the skill file above, so it can be reviewed and locked like any other.
+
+```text
+ei skills import SOURCE --stage STAGE [--stage STAGE ...] [--section TITLE ...] [--name NAME] [--version N] [--out FILE]
+```
+
+`SOURCE` is the `SKILL.md` or the folder that holds it. Nothing else in the folder is read. It writes
+`NAME.toml` here (or `--out`), **never replaces a file**, and **locks and enables nothing**. It prints the file's
+path and what it kept, and tells you to read the file before you lock it with `ei skills add`.
+
+- **You choose which sections go to which stages.** The body is cut at its `##` headings (a `##` line inside a
+  code fence is not a heading), and text before the first one is the section `Overview`. `--section "Source
+  Evaluation"` (repeat it) keeps only those, by title, ignoring case; with none, every section is kept. Each
+  stage you name gets the same text, with the headings kept.
+- **Nothing is cut to fit.** A part holds 8,000 characters and a `SKILL.md` is usually longer (the median Vibey skill is
+  12 KB, the largest 58 KB). When the chosen text is too long, the error lists every section with its length so you can
+  pick, for example, just `Source Evaluation` and `Database Searching` out of a 26 KB methodology reference. A skill
+  file larger than the lock reads (64 KiB) is refused here, with the reason, rather than after you have committed to it.
+- **The frontmatter must have a one-line `name` and `description`** (quoted or plain); a block scalar is refused rather than
+  guessed at. **Every other key is read and set aside**, never used, and named in the output: `allowed-tools`, `domains`,
+  a list under a key. A skill here is text and grants nothing, so a `SKILL.md` that asks for a tool gets no tool.
+- **The name** is the file's, lower-cased with hyphens and spaces made underscores (`research-methodology` becomes
+  `research_methodology`), unless you give `--name`. A name that cannot be made safe says so.
+- **The description** is cut at a word to 300 characters with `...` when it is longer (real ones run past 1,000), and the
+  output says it was. It is shown in lists and is never part of a prompt.
+- Text a reviewer could not see is refused with the character named, exactly as for any skill.
+
+Example, giving the research stage two sections of a methodology reference:
+
+```bash
+ei skills import ~/refs/research-methodology --stage research \
+  --section "Source Evaluation" --section "Database Searching"
+ei skills add research_methodology.toml
+ei skills enable research_methodology research
+```
+
+The skills themselves are not part of this repository; you install them from your own copy.
+
 ## The lock
 
 Installed skills are recorded in `ei-skills.lock.toml`, which you review like any other commit:
@@ -60,6 +101,7 @@ stages = ["outline", "research"]
 ## Commands
 
 ```text
+ei skills import SOURCE --stage STAGE [--section TITLE] [--name NAME] [--version N] [--out FILE]
 ei skills add [--lock PATH] [--replace] FILE
 ei skills enable [--lock PATH] NAME STAGE
 ei skills disable [--lock PATH] NAME STAGE

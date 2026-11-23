@@ -22,6 +22,8 @@ from engineering_influence.infrastructure.plugins.toml_plugin_lock_store import 
 )
 from engineering_influence.infrastructure.plugins.toml_plugin_parser import TomlPluginParser
 from engineering_influence.infrastructure.skills.directory_skill_files import DirectorySkillFiles
+from engineering_influence.infrastructure.skills.file_skill_source import FileSkillSource
+from engineering_influence.infrastructure.skills.new_file_skill_sink import NewFileSkillSink
 from engineering_influence.infrastructure.skills.toml_skill_lock_store import TomlSkillLockStore
 from engineering_influence.infrastructure.skills.toml_skill_parser import TomlSkillParser
 from engineering_influence.infrastructure.skills.toml_skill_writer import TomlSkillWriter
@@ -75,8 +77,11 @@ from engineering_influence.services.plugin_installer import PluginInstaller
 from engineering_influence.services.plugin_lock_verifier import PluginLockVerifier
 from engineering_influence.services.plugin_marketplace import PluginMarketplace
 from engineering_influence.services.resume_run import ResumeRun
+from engineering_influence.services.skill_converter import SkillConverter
+from engineering_influence.services.skill_importer import SkillImporter
 from engineering_influence.services.skill_lock_editor import SkillLockEditor
 from engineering_influence.services.skill_lock_verifier import SkillLockVerifier
+from engineering_influence.services.skill_markdown_parser import SkillMarkdownParser
 from engineering_influence.services.start_pipeline import StartPipeline
 from engineering_influence.services.tool_lock_auditor import ToolLockAuditor
 from engineering_influence.services.tool_lock_editor import ToolLockEditor
@@ -133,8 +138,20 @@ class CliRuntime(CliRuntimeInterface):
         files = DirectorySkillFiles()
         parser = TomlSkillParser()
         verifier = SkillLockVerifier(files, parser)
+        importer = SkillImporter(
+            FileSkillSource(),
+            SkillMarkdownParser(),
+            SkillConverter(),
+            TomlSkillWriter(),
+            NewFileSkillSink(),
+            DirectorySkillFiles.MAX_BYTES,
+        )
         return SkillsCli(
-            SkillLockEditor(files, parser, verifier), verifier, TomlSkillLockStore(), os.environ
+            SkillLockEditor(files, parser, verifier),
+            verifier,
+            TomlSkillLockStore(),
+            os.environ,
+            importer,
         )
 
     def _plugins_cli(self) -> PluginsCli:
