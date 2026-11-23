@@ -96,8 +96,8 @@ missing name proves nothing). A redirect is reported and not followed, because f
 would send your key to a host you did not configure. A profile whose key would go over plain
 `http` to another machine is not probed at all (the `transport` check already fails it).
 
-There is no check that bills. A real completion test would belong behind the `paid` marker, with
-your approval.
+There is no check that bills. A real run, capped by a budget you set, is the `paid` smoke test in
+[LIVE_SMOKE_TEST.md](LIVE_SMOKE_TEST.md).
 
 Exit status: `0` every check held, `1` a check failed (or the `runtime` extra is missing), `2` a
 file could not be read or is invalid.
