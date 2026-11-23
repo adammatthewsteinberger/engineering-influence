@@ -20,5 +20,13 @@ class AcpApplicationInterface(ABC):
         """The messages to send back for one incoming message: responses and notifications, in order."""
 
     @abstractmethod
-    def serve(self, reader: TextIO, writer: TextIO) -> None:
-        """Read messages until the input ends, and write each reply as one line."""
+    def progress_notices(self) -> list[dict[str, Any]]:
+        """Notices for the runs whose status or stage changed since they were last reported."""
+
+    @abstractmethod
+    def serve(self, reader: TextIO, writer: TextIO, poll_seconds: float = 1.0) -> None:
+        """Read messages until the input ends, and write each reply as one line.
+
+        While the input is open, the runs of the sessions are followed every ``poll_seconds``, and their
+        changes are written as notices between the replies.
+        """

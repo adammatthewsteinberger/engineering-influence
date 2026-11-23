@@ -1,0 +1,1 @@
+`ei acp` now follows the run of each session and sends a `session/update` notice whenever its status or stage changes, once per change, until the run finishes. The client sees the run move through its stages without polling `ei run status`. Notices are written between replies, never inside one. See [INTERACTIONS.md](docs/INTERACTIONS.md#agent-client-protocol).
