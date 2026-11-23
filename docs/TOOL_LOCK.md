@@ -235,9 +235,30 @@ temporary name and renamed, with servers in name order, so two saves of one lock
   What a server's tools return is untrusted text like any other tool's, and the stage's tool allowlist
   still decides which tools a stage can call.
 
+## Resources
+
+A server that declares the MCP `resources` capability gets **two tools added by this client**, `list_resources` and
+`read_resource`. Their descriptions and schemas are fixed in this project's code and are not the server's, so a server
+cannot put instructions in them. They are in the tool list, which means everything above applies to them unchanged:
+they are pinned by the lock's tools hash, appear in `ei tools list` and `verify`, are offered to **no stage unless
+granted by name** (`ei tools grant files research list_resources read_resource`), and their results are wrapped as
+untrusted tool output like any other.
+
+- `list_resources` sends `resources/list` and returns one line per resource (uri, then name and type), at most 200, with the
+  rest counted. `read_resource` takes a `uri` of one line and at most 2,000 characters and sends `resources/read`, and
+  returns the **text** of what comes back; a binary resource is noted as left out and its bytes are never passed on.
+- A server that already has a tool named `list_resources` or `read_resource` gets neither of ours, and its own tool is
+  called as any tool.
+- **Nothing is subscribed to**, and no resource is read unless a granted stage's model asks for it by uri. A resource's
+  content can change between reads, so unlike the tool list it is not pinned.
+- **A server that declares resources and was locked before this change no longer matches its lock**, because its tool
+  list now has two more tools: `ei tools verify` names them, and `ei tools add --replace` locks it again.
+- This is the way a model reads a server's resources; it is not yet a way to give a run a resource as an input.
+
 ## The MCP client
 
-`McpClient` speaks JSON-RPC 2.0 for `initialize`, `tools/list` and `tools/call`, written from the
+`McpClient` speaks JSON-RPC 2.0 for `initialize`, `tools/list`, `tools/call` and, for the two resource tools above,
+`resources/list` and `resources/read`, written from the
 protocol's published shape. It has been run against a small server written for the tests, over a real
 process and pipes. **It has not been run against third-party MCP servers.**
 

@@ -10,6 +10,7 @@ import pytest
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.errors.transient_stage_error import TransientStageError
 from engineering_influence.interfaces.mcp_transport_interface import McpTransportInterface
+from engineering_influence.models.mcp_call_result import McpCallResult
 from engineering_influence.models.mcp_server_info import McpServerInfo
 from engineering_influence.models.mcp_tool_set import McpToolSet
 from engineering_influence.services.interfaces.mcp_client_interface import McpClientInterface
@@ -403,3 +404,318 @@ def test_a_block_that_is_not_text_cannot_smuggle_text_in_a_text_field() -> None:
     blocks = [{"type": "image", "text": "smuggled instructions"}, {"type": "resource", "text": "x"}]
     result = client(answer(1, {"content": blocks}))[0].call_tool("t", {})
     assert result.text == "[image content omitted]\n[resource content omitted]"
+
+
+# ------------------------------------------------------------------------------- resources
+def resourceful(*incoming: Any, capabilities: Any = None) -> tuple[McpClient, Wire]:
+    """A client that has initialized against a server declaring ``capabilities`` (resources by default)."""
+    declared = {"resources": {}} if capabilities is None else capabilities
+    return client(answer(1, hello(capabilities=declared)), *incoming)
+
+
+def listed(mcp: McpClient, wire: Wire, tools: list[Any] | None = None) -> McpToolSet:
+    mcp.initialize()
+    wire.incoming.insert(0, answer(2, {"tools": [TOOL] if tools is None else tools}))
+    return mcp.list_tools()
+
+
+def read_text(value: str) -> dict[str, Any]:
+    return {"contents": [{"uri": "x://a", "text": value}]}
+
+
+def test_a_server_that_declares_resources_gets_two_fixed_tools_after_its_own() -> None:
+    mcp, wire = resourceful()
+    tools = listed(mcp, wire)
+    assert tools.names() == ("list_resources", "read", "read_resource")  # names() is sorted
+    assert [tool.name for tool in tools.tools] == ["read", "list_resources", "read_resource"]
+    by_name = {tool.name: tool for tool in tools.tools}
+    listing, reading = by_name["list_resources"], by_name["read_resource"]
+    assert listing.input_schema == {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": False,
+    }
+    assert reading.input_schema["required"] == ["uri"]
+    assert reading.input_schema["properties"]["uri"] == {"type": "string", "maxLength": 2000}
+    assert "uri" in listing.description and "list_resources" in reading.description
+    assert all(tool.offerable("files") for tool in (listing, reading))
+
+
+@pytest.mark.parametrize(
+    "capabilities",
+    [
+        {},
+        {"tools": {}},
+        {"resources": True},
+        {"resources": None},
+        {"resources": ["x"]},
+        "resources",
+        ["resources"],
+    ],
+)
+def test_a_server_that_does_not_declare_resources_gets_no_resource_tool(capabilities: Any) -> None:
+    mcp, wire = resourceful(capabilities=capabilities)
+    assert listed(mcp, wire).names() == ("read",)
+
+
+def test_a_server_that_sent_no_capabilities_at_all_gets_none() -> None:
+    mcp, wire = client(answer(1, hello()))
+    assert listed(mcp, wire).names() == ("read",)
+
+
+@pytest.mark.parametrize("taken", ["list_resources", "read_resource"])
+def test_a_server_with_a_tool_of_a_reserved_name_gets_neither_and_that_tool_is_called_as_a_tool(
+    taken: str,
+) -> None:
+    mcp, wire = resourceful()
+    tools = listed(mcp, wire, [{**TOOL, "name": taken}])
+    assert tools.names() == (taken,)
+    wire.incoming.append(answer(3, {"content": [text("its own answer")]}))
+    assert mcp.call_tool(taken, {"uri": "x://a"}).text == "its own answer"
+    assert wire.sent[-1]["method"] == "tools/call"
+
+
+def test_the_resource_tools_are_part_of_the_hash_so_a_server_that_stops_declaring_them_changes_it() -> (
+    None
+):
+    with_resources = listed(*resourceful())
+    without = listed(*resourceful(capabilities={}))
+    assert with_resources.digest() != without.digest()
+    again = listed(*resourceful())
+    assert again.digest() == with_resources.digest()
+
+
+def test_a_name_is_only_a_resource_tool_after_the_tools_were_listed_and_the_server_declared_them() -> (
+    None
+):
+    mcp, wire = client(
+        answer(1, hello(capabilities={"resources": {}})), answer(2, {"content": [text("tool")]})
+    )
+    mcp.initialize()
+    assert mcp.call_tool("read_resource", {"uri": "x://a"}).text == "tool"
+    assert wire.sent[-1]["method"] == "tools/call"
+
+
+def test_a_non_resource_tool_is_still_called_as_a_tool_when_resources_are_declared() -> None:
+    mcp, wire = resourceful()
+    listed(mcp, wire)
+    wire.incoming.append(answer(3, {"content": [text("done")]}))
+    assert mcp.call_tool("read", {"path": "a"}).text == "done"
+    assert wire.sent[-1] == {
+        "jsonrpc": "2.0",
+        "id": 3,
+        "method": "tools/call",
+        "params": {"name": "read", "arguments": {"path": "a"}},
+    }
+
+
+# ---- list_resources
+def call_list(*pages: Any) -> tuple[McpClient, Wire]:
+    mcp, wire = resourceful()
+    listed(mcp, wire)
+    wire.incoming.extend(pages)
+    return mcp, wire
+
+
+def test_listing_resources_sends_resources_list_and_gives_one_line_each() -> None:
+    mcp, wire = call_list(
+        answer(
+            3,
+            {
+                "resources": [
+                    {"uri": "notes://a", "name": "Notes A", "mimeType": "text/plain"},
+                    {"uri": "notes://b"},
+                    {"uri": "notes://c", "name": "Only a name"},
+                    {"uri": "notes://d", "mimeType": "image/png"},
+                ]
+            },
+        )
+    )
+    result = mcp.call_tool("list_resources", {})
+    assert wire.sent[-1] == {"jsonrpc": "2.0", "id": 3, "method": "resources/list", "params": {}}
+    assert (result.text, result.is_error) == (
+        "notes://a - Notes A (text/plain)\nnotes://b\nnotes://c - Only a name\nnotes://d (image/png)",
+        False,
+    )
+
+
+def test_a_name_and_type_are_made_one_line_and_cut() -> None:
+    mcp, _ = call_list(
+        answer(
+            3,
+            {
+                "resources": [
+                    {"uri": "x://a", "name": "Bad\x1b[31m\nname  here", "mimeType": "t" * 80},
+                    {"uri": "x://b", "name": "n" * 150, "mimeType": 5},
+                    {"uri": "x://c", "name": ["no"], "mimeType": None},
+                ]
+            },
+        )
+    )
+    lines = mcp.call_tool("list_resources", {}).text.splitlines()
+    assert lines[0] == "x://a - Bad [31m name here (" + "t" * 60 + ")"
+    assert lines[1] == "x://b - " + "n" * 100
+    assert lines[2] == "x://c"
+
+
+def test_pages_of_resources_are_followed() -> None:
+    mcp, wire = call_list(
+        answer(3, {"resources": [{"uri": "x://a"}], "nextCursor": "p2"}),
+        answer(4, {"resources": [{"uri": "x://b"}]}),
+    )
+    assert mcp.call_tool("list_resources", {}).text == "x://a\nx://b"
+    assert [m["params"] for m in wire.sent[-2:]] == [{}, {"cursor": "p2"}]
+
+
+def test_exactly_200_resources_are_all_shown_and_more_are_counted_not_listed() -> None:
+    names = [{"uri": f"x://{n:03d}"} for n in range(200)]
+    mcp, _ = call_list(answer(3, {"resources": names}))
+    assert len(mcp.call_tool("list_resources", {}).text.splitlines()) == 200
+    mcp, _ = call_list(answer(3, {"resources": [*names, {"uri": "x://200"}, {"uri": "x://201"}]}))
+    shown = mcp.call_tool("list_resources", {}).text.splitlines()
+    assert len(shown) == 201 and shown[-1] == "[2 more resources not shown]"
+    assert "x://200" not in "\n".join(shown)
+
+
+def test_a_server_with_no_resources_says_so() -> None:
+    mcp, _ = call_list(answer(3, {"resources": []}))
+    assert mcp.call_tool("list_resources", {}).text == "the server lists no resources"
+
+
+@pytest.mark.parametrize(
+    "page",
+    [
+        {"resources": "x"},
+        {},
+        {"resources": ["x://a"]},
+        {"resources": [{}]},
+        {"resources": [{"uri": ""}]},
+        {"resources": [{"uri": 3}]},
+        {"resources": [{"uri": "x" * 2001}]},
+        {"resources": [{"uri": "a\nb"}]},
+        {"resources": [{"uri": "x://a"}], "nextCursor": 7},
+    ],
+)
+def test_a_resource_list_that_is_not_what_it_should_be_is_refused_whole(page: Any) -> None:
+    mcp, _ = call_list(answer(3, page))
+    with pytest.raises(ApplicationError) as error:
+        mcp.call_tool("list_resources", {})
+    assert error.value.code == "MCP_REPLY_INVALID"
+
+
+def test_a_uri_of_exactly_2000_characters_is_listed() -> None:
+    mcp, _ = call_list(answer(3, {"resources": [{"uri": "x" * 2000}]}))
+    assert mcp.call_tool("list_resources", {}).text == "x" * 2000
+
+
+def test_twenty_pages_of_resources_are_followed_and_a_twenty_first_is_not() -> None:
+    pages = [answer(3 + n, {"resources": [], "nextCursor": f"p{n}"}) for n in range(20)]
+    mcp, _ = call_list(*pages)
+    with pytest.raises(ApplicationError, match="runs past 20 pages"):
+        mcp.call_tool("list_resources", {})
+    last = [answer(3 + n, {"resources": [], "nextCursor": f"p{n}"}) for n in range(19)]
+    mcp, _ = call_list(*last, answer(22, {"resources": [{"uri": "x://z"}]}))
+    assert mcp.call_tool("list_resources", {}).text == "x://z"
+
+
+# ---- read_resource
+def call_read(reply: Any) -> tuple[McpClient, Wire]:
+    mcp, wire = resourceful()
+    listed(mcp, wire)
+    wire.incoming.append(reply)
+    return mcp, wire
+
+
+def test_reading_a_resource_sends_its_uri_and_returns_its_text() -> None:
+    mcp, wire = call_read(
+        answer(3, {"contents": [{"uri": "x://a", "text": "one"}, {"text": "two"}]})
+    )
+    result = mcp.call_tool("read_resource", {"uri": "x://a"})
+    assert wire.sent[-1] == {
+        "jsonrpc": "2.0",
+        "id": 3,
+        "method": "resources/read",
+        "params": {"uri": "x://a"},
+    }
+    assert (result.text, result.is_error) == ("one\ntwo", False)
+
+
+def test_a_binary_resource_is_noted_as_left_out_and_never_passed_on() -> None:
+    mcp, _ = call_read(
+        answer(
+            3,
+            {
+                "contents": [
+                    {"uri": "x://a", "blob": "iVBORw0KGgo="},
+                    "plain string",
+                    {"uri": "x://b", "text": 5},
+                    {"text": "kept"},
+                ]
+            },
+        )
+    )
+    text_ = mcp.call_tool("read_resource", {"uri": "x://a"}).text
+    assert (
+        text_
+        == "[binary content omitted]\n[binary content omitted]\n[binary content omitted]\nkept"
+    )
+    assert "iVBOR" not in text_
+
+
+def test_a_resource_with_no_contents_reads_as_empty_text() -> None:
+    mcp, _ = call_read(answer(3, {"contents": []}))
+    assert mcp.call_tool("read_resource", {"uri": "x://a"}) == McpCallResult("", False)
+
+
+@pytest.mark.parametrize("reply", [{"contents": "x"}, {}, {"contents": {"text": "x"}}])
+def test_contents_that_are_not_a_list_are_refused(reply: Any) -> None:
+    mcp, _ = call_read(answer(3, reply))
+    with pytest.raises(ApplicationError) as error:
+        mcp.call_tool("read_resource", {"uri": "x://a"})
+    assert error.value.code == "MCP_REPLY_INVALID"
+
+
+@pytest.mark.parametrize(
+    "uri", [None, "", 3, ["x://a"], "x" * 2001, "x://a\nsecond", "x://\x1b[0m"]
+)
+def test_a_uri_that_is_not_one_line_of_text_is_a_failed_call_and_nothing_is_sent(uri: Any) -> None:
+    mcp, wire = resourceful()
+    listed(mcp, wire)
+    sent = len(wire.sent)
+    result = mcp.call_tool("read_resource", {"uri": uri})
+    assert result.is_error and "one line of text" in result.text
+    assert len(wire.sent) == sent
+
+
+def test_a_missing_uri_argument_is_a_failed_call_too() -> None:
+    mcp, wire = resourceful()
+    listed(mcp, wire)
+    assert mcp.call_tool("read_resource", {}).is_error
+
+
+def test_a_uri_of_exactly_2000_characters_is_sent() -> None:
+    mcp, wire = call_read(answer(3, read_text("ok")))
+    assert mcp.call_tool("read_resource", {"uri": "x" * 2000}).text == "ok"
+    assert wire.sent[-1]["params"] == {"uri": "x" * 2000}
+
+
+def test_a_server_error_for_a_resource_is_the_servers_failure_with_its_message_quoted() -> None:
+    mcp, _ = call_read(fail(3, "resource not found", -32002))
+    with pytest.raises(ApplicationError) as error:
+        mcp.call_tool("read_resource", {"uri": "x://missing"})
+    assert error.value.code == "MCP_SERVER_ERROR"
+    assert "resources/read failed: 'resource not found'" in error.value.message
+
+
+def test_a_server_that_gains_a_tool_of_a_reserved_name_between_two_listings_loses_ours() -> None:
+    mcp, wire = resourceful()
+    assert listed(mcp, wire).names() == ("list_resources", "read", "read_resource")
+    wire.incoming.extend(
+        [
+            answer(3, {"tools": [{**TOOL, "name": "read_resource"}]}),
+            answer(4, {"content": [text("the server's own")]}),
+        ]
+    )
+    assert mcp.list_tools().names() == ("read_resource",)
+    assert mcp.call_tool("read_resource", {"uri": "x://a"}).text == "the server's own"
+    assert wire.sent[-1]["method"] == "tools/call"

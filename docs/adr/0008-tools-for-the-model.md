@@ -284,3 +284,17 @@ Recorded on 2026-11-22 while building the second part of slice 6 ([PLUGINS.md](.
   marketplace names folders and repositories rather than hashable files; a `path` source in a local marketplace prints the
   `ei plugins import` command for it. The import is where the bundle is read and checked. Pinning a source by commit and hash-checking
   a fetched folder is not built.
+
+## Amendments from M6.5: MCP resources (2026-11-23)
+
+- **Resources are reached as two tools the client adds**, `list_resources` and `read_resource`, when a server declares the `resources`
+  capability and has no tool of those names. Their descriptions and schemas are fixed in this project's code, not the server's.
+  Because they are in the tool list they are pinned by the tools hash, granted to a stage only by name, offered to no stage by
+  default, and returned as untrusted tool output. No new lock field, grant kind or code path in the runner.
+- **A resource is read only on request**, by a stage the lock grants it, by the uri the model names: text only (a binary resource is noted
+  as left out), a uri of one line and at most 2,000 characters, a listing of at most 200 entries. Nothing is subscribed to, and the client
+  still announces no capabilities. A resource's content is not pinned, because it changes; the *ability* to read is pinned.
+- **Consequence:** a server that declares resources and was locked earlier no longer matches its lock until it is locked again, which is the
+  conservative result of a changed tool list.
+- Not decided here: giving a run a resource as an *input* (a person's choice at the start of a run), and MCP prompts and OAuth.
+

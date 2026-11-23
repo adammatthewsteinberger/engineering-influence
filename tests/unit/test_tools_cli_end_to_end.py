@@ -254,3 +254,28 @@ def test_a_locked_remote_server_is_listed_and_a_verify_that_cannot_reach_it_says
     out = capsys.readouterr().out
     assert "the server could not be checked: localhost refused: non_public_address" in out
     assert "1 of 1 servers no longer match the lock" in out
+
+
+def test_a_server_that_declares_resources_is_locked_with_the_two_resource_tools_and_verified(
+    world: World, capsys: pytest.CaptureFixture[str]
+) -> None:
+    world.variant(resources=True)
+    assert world.add() == 0
+    out = capsys.readouterr().out
+    assert "locked files: test-server 1.0.0, 7 tools" in out
+    assert "  list_resources: Lists the resources this server offers" in out
+    assert "  read_resource: Reads the text of one resource of this server" in out
+    assert world.ei("tools", "verify", "--lock", str(world.lock)) == 0
+    capsys.readouterr()
+
+
+def test_a_server_that_stops_declaring_resources_is_no_longer_started_for_it(
+    world: World, capsys: pytest.CaptureFixture[str]
+) -> None:
+    world.variant(resources=True)
+    assert world.add() == 0
+    world.variant(resources=False)
+    capsys.readouterr()
+    assert world.ei("tools", "verify", "--lock", str(world.lock)) == 1
+    said = capsys.readouterr()
+    assert "list_resources" in said.out + said.err
