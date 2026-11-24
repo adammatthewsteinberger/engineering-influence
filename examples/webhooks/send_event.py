@@ -30,7 +30,12 @@ URL = os.environ.get("EI_RECEIVER_URL", "http://127.0.0.1:9000/")
 def delivery(secret: bytes, event_id: str, sent_at: int) -> tuple[bytes, dict[str, str]]:
     """Build the body and headers exactly as WebhookDelivery does."""
     body = json.dumps(
-        {"id": event_id, "type": "phase.completed", "data": {"slug": "sample-essay"}},
+        {
+            "schema_version": 1,
+            "id": event_id,
+            "type": "phase.completed",
+            "data": {"slug": "sample-essay"},
+        },
         separators=(",", ":"),
         sort_keys=True,
     ).encode()

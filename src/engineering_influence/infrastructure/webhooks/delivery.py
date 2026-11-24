@@ -7,6 +7,7 @@ from collections.abc import Callable
 
 import httpx
 
+from engineering_influence.contracts.webhook.v1.webhook_event_v1 import WebhookEventV1
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.infrastructure.webhooks.signer import WebhookSigner
 from engineering_influence.interfaces.correlation_interface import CorrelationInterface
@@ -49,10 +50,9 @@ class WebhookDelivery(WebhookDeliveryInterface):
                 code="WEBHOOK_TARGET_REJECTED",
                 message=f"webhook destination refused: {verdict.reason}",
             )
+        event = WebhookEventV1(id=event_id, type=event_name, data=payload)
         body = json.dumps(
-            {"id": event_id, "type": event_name, "data": payload},
-            separators=(",", ":"),
-            sort_keys=True,
+            event.model_dump(mode="json"), separators=(",", ":"), sort_keys=True
         ).encode("utf-8")
         timestamp = int(self._clock())
         signature = WebhookSigner(secret).sign_at(body, timestamp)

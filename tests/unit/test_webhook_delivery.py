@@ -41,6 +41,7 @@ def test_webhook_delivery_posts_signed_event() -> None:
     assert json.loads(body) == {
         "data": {"project_slug": "demo"},
         "id": "evt-1",
+        "schema_version": 1,
         "type": "pipeline.started",
     }
     assert observed["timestamp"] == "1700000000"

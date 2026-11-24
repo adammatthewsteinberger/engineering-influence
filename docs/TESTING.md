@@ -96,6 +96,10 @@ Two things the machinery does not do. It has not been run against a live provide
 spends money. And nothing in the product composes it yet: the runtime will use the replay
 transport when a cassette-backed run is added.
 
+## Contract snapshots
+
+`tests/contracts/` freezes every public contract (the schemas, the OpenAPI document, the CLI tree, the SDK, the MCP tools, the error codes and the webhook catalogue) against a committed copy in `tests/contracts/snapshots/`. A failing test there means a public contract moved. If it moved on purpose, run `EI_UPDATE_CONTRACTS=1 uv run pytest tests/contracts`, read the diff, and follow [COMPATIBILITY.md](COMPATIBILITY.md). They run in the normal suite and need no extras beyond the dev install.
+
 ## The toolchain test
 
 `tests/fixtures/fixture_book/` is a small synthetic non-fiction book at the default 6x9 trim,

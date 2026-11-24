@@ -1,0 +1,1876 @@
+{
+  "arguments": [
+    {
+      "choices": null,
+      "default": "==SUPPRESS==",
+      "dest": "version",
+      "flags": [
+        "--version"
+      ],
+      "name": "--version",
+      "nargs": 0,
+      "positional": false,
+      "repeatable": false,
+      "required": false,
+      "takes_value": false,
+      "type": null
+    }
+  ],
+  "command_required": false,
+  "commands": {
+    "acp": {
+      "arguments": []
+    },
+    "book": {
+      "arguments": [
+        {
+          "choices": null,
+          "default": ".",
+          "dest": "root",
+          "flags": [
+            "--root"
+          ],
+          "name": "--root",
+          "nargs": null,
+          "positional": false,
+          "repeatable": false,
+          "required": false,
+          "takes_value": true,
+          "type": "Path"
+        }
+      ],
+      "command_required": true,
+      "commands": {
+        "audit": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": false,
+              "dest": "json",
+              "flags": [
+                "--json"
+              ],
+              "name": "--json",
+              "nargs": 0,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": false,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": false,
+              "dest": "strict_release",
+              "flags": [
+                "--strict-release"
+              ],
+              "name": "--strict-release",
+              "nargs": 0,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": false,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "slugs",
+              "flags": [],
+              "name": "slugs",
+              "nargs": "*",
+              "positional": true,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            }
+          ]
+        },
+        "build": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": false,
+              "dest": "hardcover",
+              "flags": [
+                "--hardcover"
+              ],
+              "name": "--hardcover",
+              "nargs": 0,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": false,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": false,
+              "dest": "no_verify",
+              "flags": [
+                "--no-verify"
+              ],
+              "name": "--no-verify",
+              "nargs": 0,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": false,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": false,
+              "dest": "tex_only",
+              "flags": [
+                "--tex-only"
+              ],
+              "name": "--tex-only",
+              "nargs": 0,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": false,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "slugs",
+              "flags": [],
+              "name": "slugs",
+              "nargs": "*",
+              "positional": true,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            }
+          ]
+        },
+        "covers": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "hardcover_pdf",
+              "flags": [
+                "--hardcover-pdf"
+              ],
+              "name": "--hardcover-pdf",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": false,
+              "dest": "preview",
+              "flags": [
+                "--preview"
+              ],
+              "name": "--preview",
+              "nargs": 0,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": false,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "slugs",
+              "flags": [],
+              "name": "slugs",
+              "nargs": "*",
+              "positional": true,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            }
+          ]
+        },
+        "create": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": false,
+              "dest": "approve_spend",
+              "flags": [
+                "--approve-spend"
+              ],
+              "name": "--approve-spend",
+              "nargs": 0,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": false,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "audience",
+              "flags": [
+                "--audience"
+              ],
+              "name": "--audience",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "budget_usd",
+              "flags": [
+                "--budget-usd"
+              ],
+              "name": "--budget-usd",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": [
+                "nonfiction",
+                "novel"
+              ],
+              "default": null,
+              "dest": "kind",
+              "flags": [
+                "--kind"
+              ],
+              "name": "--kind",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "out",
+              "flags": [
+                "--out"
+              ],
+              "name": "--out",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "profile",
+              "flags": [
+                "--profile"
+              ],
+              "name": "--profile",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": false,
+              "dest": "resume",
+              "flags": [
+                "--resume"
+              ],
+              "name": "--resume",
+              "nargs": 0,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": false,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "state_dir",
+              "flags": [
+                "--state-dir"
+              ],
+              "name": "--state-dir",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": false,
+              "dest": "strict_release",
+              "flags": [
+                "--strict-release"
+              ],
+              "name": "--strict-release",
+              "nargs": 0,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": false,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "target_words",
+              "flags": [
+                "--target-words"
+              ],
+              "name": "--target-words",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "int"
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "title",
+              "flags": [
+                "--title"
+              ],
+              "name": "--title",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "trim_size",
+              "flags": [
+                "--trim-size"
+              ],
+              "name": "--trim-size",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "idea",
+              "flags": [],
+              "name": "idea",
+              "nargs": "?",
+              "positional": true,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            }
+          ]
+        },
+        "epub": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": false,
+              "dest": "no_verify",
+              "flags": [
+                "--no-verify"
+              ],
+              "name": "--no-verify",
+              "nargs": 0,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": false,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": false,
+              "dest": "tex_only",
+              "flags": [
+                "--tex-only"
+              ],
+              "name": "--tex-only",
+              "nargs": 0,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": false,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "slugs",
+              "flags": [],
+              "name": "slugs",
+              "nargs": "*",
+              "positional": true,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            }
+          ]
+        },
+        "package": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "slugs",
+              "flags": [],
+              "name": "slugs",
+              "nargs": "*",
+              "positional": true,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            }
+          ]
+        },
+        "publish": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": false,
+              "dest": "audit_only",
+              "flags": [
+                "--audit-only"
+              ],
+              "name": "--audit-only",
+              "nargs": 0,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": false,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": 90,
+              "dest": "dpi",
+              "flags": [
+                "--dpi"
+              ],
+              "name": "--dpi",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "int"
+            },
+            {
+              "choices": null,
+              "default": false,
+              "dest": "no_render",
+              "flags": [
+                "--no-render"
+              ],
+              "name": "--no-render",
+              "nargs": 0,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": false,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "report_dir",
+              "flags": [
+                "--report-dir"
+              ],
+              "name": "--report-dir",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": false,
+              "dest": "strict_release",
+              "flags": [
+                "--strict-release"
+              ],
+              "name": "--strict-release",
+              "nargs": 0,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": false,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "slugs",
+              "flags": [],
+              "name": "slugs",
+              "nargs": "*",
+              "positional": true,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            }
+          ]
+        },
+        "qa": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": 90,
+              "dest": "dpi",
+              "flags": [
+                "--dpi"
+              ],
+              "name": "--dpi",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "int"
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "output",
+              "flags": [
+                "--output"
+              ],
+              "name": "--output",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "pdf",
+              "flags": [],
+              "name": "pdf",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": "Path"
+            }
+          ]
+        }
+      }
+    },
+    "db": {
+      "arguments": [],
+      "command_required": true,
+      "commands": {
+        "upgrade": {
+          "arguments": []
+        }
+      }
+    },
+    "doctor": {
+      "arguments": [
+        {
+          "choices": null,
+          "default": null,
+          "dest": "catalog",
+          "flags": [
+            "--catalog"
+          ],
+          "name": "--catalog",
+          "nargs": null,
+          "positional": false,
+          "repeatable": false,
+          "required": false,
+          "takes_value": true,
+          "type": "Path"
+        },
+        {
+          "choices": null,
+          "default": false,
+          "dest": "local",
+          "flags": [
+            "--local"
+          ],
+          "name": "--local",
+          "nargs": 0,
+          "positional": false,
+          "repeatable": false,
+          "required": false,
+          "takes_value": false,
+          "type": null
+        },
+        {
+          "choices": null,
+          "default": false,
+          "dest": "models",
+          "flags": [
+            "--models"
+          ],
+          "name": "--models",
+          "nargs": 0,
+          "positional": false,
+          "repeatable": false,
+          "required": false,
+          "takes_value": false,
+          "type": null
+        },
+        {
+          "choices": null,
+          "default": false,
+          "dest": "probe",
+          "flags": [
+            "--probe"
+          ],
+          "name": "--probe",
+          "nargs": 0,
+          "positional": false,
+          "repeatable": false,
+          "required": false,
+          "takes_value": false,
+          "type": null
+        },
+        {
+          "choices": null,
+          "default": null,
+          "dest": "profiles",
+          "flags": [
+            "--profiles"
+          ],
+          "name": "--profiles",
+          "nargs": null,
+          "positional": false,
+          "repeatable": false,
+          "required": false,
+          "takes_value": true,
+          "type": "Path"
+        },
+        {
+          "choices": null,
+          "default": null,
+          "dest": "query",
+          "flags": [
+            "--query"
+          ],
+          "name": "--query",
+          "nargs": null,
+          "positional": false,
+          "repeatable": false,
+          "required": false,
+          "takes_value": true,
+          "type": null
+        },
+        {
+          "choices": null,
+          "default": false,
+          "dest": "search",
+          "flags": [
+            "--search"
+          ],
+          "name": "--search",
+          "nargs": 0,
+          "positional": false,
+          "repeatable": false,
+          "required": false,
+          "takes_value": false,
+          "type": null
+        }
+      ]
+    },
+    "pipeline": {
+      "arguments": [],
+      "command_required": true,
+      "commands": {
+        "start": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "postulate",
+              "flags": [
+                "--postulate"
+              ],
+              "name": "--postulate",
+              "nargs": null,
+              "positional": false,
+              "repeatable": true,
+              "required": true,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "slug",
+              "flags": [
+                "--slug"
+              ],
+              "name": "--slug",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "stage",
+              "flags": [
+                "--stage"
+              ],
+              "name": "--stage",
+              "nargs": null,
+              "positional": false,
+              "repeatable": true,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "title",
+              "flags": [
+                "--title"
+              ],
+              "name": "--title",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": null
+            }
+          ]
+        }
+      }
+    },
+    "plugins": {
+      "arguments": [],
+      "command_required": true,
+      "commands": {
+        "add": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "lock",
+              "flags": [
+                "--lock"
+              ],
+              "name": "--lock",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "skill_lock",
+              "flags": [
+                "--skill-lock"
+              ],
+              "name": "--skill-lock",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "file",
+              "flags": [],
+              "name": "file",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": "Path"
+            }
+          ]
+        },
+        "fetch": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": ".",
+              "dest": "output",
+              "flags": [
+                "--output"
+              ],
+              "name": "--output",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "index",
+              "flags": [],
+              "name": "index",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "name",
+              "flags": [],
+              "name": "name",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": null
+            }
+          ]
+        },
+        "import": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "name",
+              "flags": [
+                "--name"
+              ],
+              "name": "--name",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "out",
+              "flags": [
+                "--out"
+              ],
+              "name": "--out",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": 1,
+              "dest": "version",
+              "flags": [
+                "--version"
+              ],
+              "name": "--version",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "int"
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "source",
+              "flags": [],
+              "name": "source",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": "Path"
+            }
+          ]
+        },
+        "list": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "lock",
+              "flags": [
+                "--lock"
+              ],
+              "name": "--lock",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            }
+          ]
+        },
+        "remove": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "lock",
+              "flags": [
+                "--lock"
+              ],
+              "name": "--lock",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "skill_lock",
+              "flags": [
+                "--skill-lock"
+              ],
+              "name": "--skill-lock",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "name",
+              "flags": [],
+              "name": "name",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": null
+            }
+          ]
+        },
+        "search": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "index",
+              "flags": [],
+              "name": "index",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": "",
+              "dest": "text",
+              "flags": [],
+              "name": "text",
+              "nargs": "?",
+              "positional": true,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            }
+          ]
+        },
+        "show": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "file",
+              "flags": [],
+              "name": "file",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": "Path"
+            }
+          ]
+        },
+        "verify": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "lock",
+              "flags": [
+                "--lock"
+              ],
+              "name": "--lock",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "skill_lock",
+              "flags": [
+                "--skill-lock"
+              ],
+              "name": "--skill-lock",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            }
+          ]
+        }
+      }
+    },
+    "run": {
+      "arguments": [],
+      "command_required": true,
+      "commands": {
+        "cancel": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "run_id",
+              "flags": [],
+              "name": "run_id",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": null
+            }
+          ]
+        },
+        "create": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "brief",
+              "flags": [],
+              "name": "brief",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": "Path"
+            }
+          ]
+        },
+        "deny": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "run_id",
+              "flags": [],
+              "name": "run_id",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": null
+            }
+          ]
+        },
+        "export": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "directory",
+              "flags": [],
+              "name": "directory",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "run_id",
+              "flags": [],
+              "name": "run_id",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": null
+            }
+          ]
+        },
+        "grant": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "micro_usd",
+              "flags": [
+                "--micro-usd"
+              ],
+              "name": "--micro-usd",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "int"
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "run_id",
+              "flags": [],
+              "name": "run_id",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": null
+            }
+          ]
+        },
+        "resume": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "run_id",
+              "flags": [],
+              "name": "run_id",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": null
+            }
+          ]
+        },
+        "runs": {
+          "arguments": []
+        },
+        "status": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "run_id",
+              "flags": [],
+              "name": "run_id",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": null
+            }
+          ]
+        }
+      }
+    },
+    "serve": {
+      "arguments": [
+        {
+          "choices": [
+            "api",
+            "mcp",
+            "worker"
+          ],
+          "default": null,
+          "dest": "target",
+          "flags": [],
+          "name": "target",
+          "nargs": null,
+          "positional": true,
+          "repeatable": false,
+          "required": true,
+          "takes_value": true,
+          "type": null
+        }
+      ]
+    },
+    "skills": {
+      "arguments": [],
+      "command_required": true,
+      "commands": {
+        "add": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "lock",
+              "flags": [
+                "--lock"
+              ],
+              "name": "--lock",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": false,
+              "dest": "replace",
+              "flags": [
+                "--replace"
+              ],
+              "name": "--replace",
+              "nargs": 0,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": false,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "file",
+              "flags": [],
+              "name": "file",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": "Path"
+            }
+          ]
+        },
+        "disable": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "lock",
+              "flags": [
+                "--lock"
+              ],
+              "name": "--lock",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "name",
+              "flags": [],
+              "name": "name",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "stage",
+              "flags": [],
+              "name": "stage",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": null
+            }
+          ]
+        },
+        "enable": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "lock",
+              "flags": [
+                "--lock"
+              ],
+              "name": "--lock",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "name",
+              "flags": [],
+              "name": "name",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "stage",
+              "flags": [],
+              "name": "stage",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": null
+            }
+          ]
+        },
+        "import": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "name",
+              "flags": [
+                "--name"
+              ],
+              "name": "--name",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "out",
+              "flags": [
+                "--out"
+              ],
+              "name": "--out",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": false,
+              "dest": "reference",
+              "flags": [
+                "--reference"
+              ],
+              "name": "--reference",
+              "nargs": 0,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": false,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "section",
+              "flags": [
+                "--section"
+              ],
+              "name": "--section",
+              "nargs": null,
+              "positional": false,
+              "repeatable": true,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "stage",
+              "flags": [
+                "--stage"
+              ],
+              "name": "--stage",
+              "nargs": null,
+              "positional": false,
+              "repeatable": true,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": 1,
+              "dest": "version",
+              "flags": [
+                "--version"
+              ],
+              "name": "--version",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "int"
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "source",
+              "flags": [],
+              "name": "source",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": "Path"
+            }
+          ]
+        },
+        "list": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "lock",
+              "flags": [
+                "--lock"
+              ],
+              "name": "--lock",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            }
+          ]
+        },
+        "remove": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "lock",
+              "flags": [
+                "--lock"
+              ],
+              "name": "--lock",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "name",
+              "flags": [],
+              "name": "name",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": null
+            }
+          ]
+        },
+        "verify": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "lock",
+              "flags": [
+                "--lock"
+              ],
+              "name": "--lock",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            }
+          ]
+        }
+      }
+    },
+    "tools": {
+      "arguments": [],
+      "command_required": true,
+      "commands": {
+        "add": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": "",
+              "dest": "bearer_env",
+              "flags": [
+                "--bearer-env"
+              ],
+              "name": "--bearer-env",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": [],
+              "dest": "env",
+              "flags": [
+                "--env"
+              ],
+              "name": "--env",
+              "nargs": null,
+              "positional": false,
+              "repeatable": true,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "lock",
+              "flags": [
+                "--lock"
+              ],
+              "name": "--lock",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": false,
+              "dest": "replace",
+              "flags": [
+                "--replace"
+              ],
+              "name": "--replace",
+              "nargs": 0,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": false,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "url",
+              "flags": [
+                "--url"
+              ],
+              "name": "--url",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "name",
+              "flags": [],
+              "name": "name",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "server_command",
+              "flags": [],
+              "name": "server_command",
+              "nargs": "...",
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": null
+            }
+          ]
+        },
+        "grant": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "lock",
+              "flags": [
+                "--lock"
+              ],
+              "name": "--lock",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "name",
+              "flags": [],
+              "name": "name",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "stage",
+              "flags": [],
+              "name": "stage",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "tool_names",
+              "flags": [],
+              "name": "tool_names",
+              "nargs": "+",
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": null
+            }
+          ]
+        },
+        "list": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "lock",
+              "flags": [
+                "--lock"
+              ],
+              "name": "--lock",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            }
+          ]
+        },
+        "revoke": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "lock",
+              "flags": [
+                "--lock"
+              ],
+              "name": "--lock",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "name",
+              "flags": [],
+              "name": "name",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "stage",
+              "flags": [],
+              "name": "stage",
+              "nargs": null,
+              "positional": true,
+              "repeatable": false,
+              "required": true,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "tool_names",
+              "flags": [],
+              "name": "tool_names",
+              "nargs": "*",
+              "positional": true,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            }
+          ]
+        },
+        "verify": {
+          "arguments": [
+            {
+              "choices": null,
+              "default": null,
+              "dest": "lock",
+              "flags": [
+                "--lock"
+              ],
+              "name": "--lock",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "names",
+              "flags": [],
+              "name": "names",
+              "nargs": "*",
+              "positional": true,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,175 @@
+{
+  "$defs": {
+    "BookKind": {
+      "enum": [
+        "nonfiction",
+        "novel"
+      ],
+      "title": "BookKind",
+      "type": "string"
+    },
+    "RunInputV1": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "origin": {
+          "default": "pasted",
+          "enum": [
+            "pasted",
+            "file"
+          ],
+          "title": "Origin",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "text"
+      ],
+      "title": "RunInputV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "audience": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Audience"
+    },
+    "budget_micro_usd": {
+      "exclusiveMinimum": 0,
+      "title": "Budget Micro Usd",
+      "type": "integer"
+    },
+    "heat": {
+      "anyOf": [
+        {
+          "enum": [
+            "none",
+            "sweet",
+            "steamy",
+            "explicit"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Heat"
+    },
+    "idea": {
+      "minLength": 1,
+      "title": "Idea",
+      "type": "string"
+    },
+    "inputs": {
+      "items": {
+        "$ref": "#/$defs/RunInputV1"
+      },
+      "maxItems": 8,
+      "title": "Inputs",
+      "type": "array"
+    },
+    "kind": {
+      "$ref": "#/$defs/BookKind"
+    },
+    "language": {
+      "default": "en",
+      "minLength": 1,
+      "title": "Language",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "target_words": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Target Words"
+    },
+    "title_hint": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Title Hint"
+    },
+    "trim_size": {
+      "anyOf": [
+        {
+          "enum": [
+            "5x8",
+            "5.5x8.5",
+            "6x9"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Trim Size"
+    },
+    "violence": {
+      "anyOf": [
+        {
+          "enum": [
+            "none",
+            "mild",
+            "moderate",
+            "graphic"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Violence"
+    }
+  },
+  "required": [
+    "kind",
+    "idea",
+    "budget_micro_usd"
+  ],
+  "title": "BookBriefV1",
+  "type": "object"
+}

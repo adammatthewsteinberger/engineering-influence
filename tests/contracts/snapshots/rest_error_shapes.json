@@ -1,0 +1,32 @@
+{
+  "bad_brief": {
+    "keys": [
+      "detail"
+    ],
+    "status": 422
+  },
+  "no_key": {
+    "keys": [
+      "code",
+      "message",
+      "retryable"
+    ],
+    "status": 401
+  },
+  "unknown_artifact": {
+    "keys": [
+      "code",
+      "message",
+      "retryable"
+    ],
+    "status": 404
+  },
+  "unknown_run": {
+    "keys": [
+      "code",
+      "message",
+      "retryable"
+    ],
+    "status": 404
+  }
+}

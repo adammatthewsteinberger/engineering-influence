@@ -59,8 +59,8 @@ class CliApplication(CliApplicationInterface):
         self._plugins_cli = plugins_cli
         self._acp_cli = acp_cli
 
-    def run(self, argv: list[str] | None = None) -> int:
-        """Parse the command line and return its process status."""
+    def parser(self) -> argparse.ArgumentParser:
+        """The whole command tree as a parser: every command, option and choice of ``ei``."""
         parser = argparse.ArgumentParser(prog="ei")
         parser.add_argument(
             "--version", action="version", version=f"engineering-influence {__version__}"
@@ -82,7 +82,11 @@ class CliApplication(CliApplicationInterface):
         self._skills_cli.register(subparsers)
         self._plugins_cli.register(subparsers)
         self._acp_cli.register(subparsers)
-        arguments = parser.parse_args(argv)
+        return parser
+
+    def run(self, argv: list[str] | None = None) -> int:
+        """Parse the command line and return its process status."""
+        arguments = self.parser().parse_args(argv)
         if arguments.command == "book":
             return self._book_cli.run(arguments)
         if arguments.command == "serve":

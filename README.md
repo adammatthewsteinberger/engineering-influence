@@ -68,6 +68,7 @@ Optional extras: `api`, `runtime`, `cli`, `mcp`, `publishing`.
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Layers, request flow, the worker, and the extension points |
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Symptoms, causes and fixes |
 | [docs/TESTING.md](docs/TESTING.md) | The gates CI enforces and how to run them |
+| [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) | What is promised to callers, and the snapshots that catch a change to it |
 | [docs/RELEASING.md](docs/RELEASING.md) | Cutting and verifying a release |
 | [docs/adr/](docs/adr) | Architecture decisions |
 | [CHANGELOG.md](CHANGELOG.md) | What changed |
