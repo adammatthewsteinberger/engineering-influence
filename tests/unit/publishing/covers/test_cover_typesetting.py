@@ -189,6 +189,18 @@ def test_spine_shrinks_a_title_that_is_too_long(
     SpineTypesetter(typography(fonts)).typeset(layer_for(ebookish), ebookish, style, meta)
 
 
+def test_placement_check_allows_a_glyph_to_overhang_the_safe_area_a_little_but_not_a_lot() -> None:
+    layout = FACTORY.paperback(249)
+    box = layout.box_px(layout.back_safe)  # type: ignore[arg-type]
+    middle = (box[1] + box[3]) // 2
+    layer = layer_for(layout)
+    layer.putpixel((box[0] - round(0.05 * layout.ppi), middle), (255, 255, 255, 255))
+    assert TextPlacementCheck().run(layer, layout) == []
+    layer = layer_for(layout)
+    layer.putpixel((box[0] - round(0.09 * layout.ppi), middle), (255, 255, 255, 255))
+    assert "text pixels outside the safe areas" in TextPlacementCheck().run(layer, layout)[0]
+
+
 def test_placement_check_flags_stray_text_and_barcode_overlap() -> None:
     layout = FACTORY.paperback(249)
     layer = layer_for(layout)

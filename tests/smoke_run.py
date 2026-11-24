@@ -36,6 +36,7 @@ from engineering_influence.runtime.stage_executor_runtime import StageExecutorRu
 from engineering_influence.services.advance_run import AdvanceRun
 from engineering_influence.services.failure_classifier import FailureClassifier
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
+from engineering_influence.services.novel_recipes import NovelRecipes
 
 RUN_ID = "smoke-1"
 DEFAULT_IDEA = "How to keep culinary herbs alive on a sunny windowsill"
@@ -185,13 +186,15 @@ class SmokeRun:
         self._brief = brief
 
     def run(self) -> SmokeReport:
-        """Run every stage of the non-fiction plan, or as many as advance."""
+        """Run every stage of the plan for the brief's kind of book, or as many as advance."""
         store, journal = InMemoryArtifactStore(), InMemoryJournal()
         runs = InMemoryRunRepository()
         executor = self._runtime.build(store, journal)
         try:
             service = AdvanceRun(runs, journal, executor, InMemoryQueue(), FailureClassifier())
-            plan = NonfictionRecipes().plan()
+            plan = (
+                NovelRecipes() if self._brief.kind is BookKind.NOVEL else NonfictionRecipes()
+            ).plan()
             cap = self._brief.budget_micro_usd
             runs.save(BookRun(RUN_ID, self._brief, plan, Budget(cap=cap)))
             rows: list[StageRow] = []

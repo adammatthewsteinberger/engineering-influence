@@ -17,6 +17,10 @@ fingerprint = "1467a7838d0bd3ba6b4ab29472c2d332ed8b77eac715a4916d7505a256a24397"
 version = 1
 fingerprint = "9c52e5ff3c5a73975bb4acc3fa575e61fb787d2be55c650f7a4beffbea1b87f5"
 
+[novel_metadata]
+version = 1
+fingerprint = "7fcfbaa16e3d3d2b7f4bde3d4f69779ad433bdbdd482cc80b7193c9a5c8cd1a5"
+
 [novel_outline]
 version = 1
 fingerprint = "ddeaf38eff9a41cc49fc44a1c26f3e41fde5d81e94d17c4111b09139f03f9f7d"

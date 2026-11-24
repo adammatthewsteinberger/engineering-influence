@@ -23,8 +23,10 @@ from engineering_influence.services.content_policy import ContentPolicy
 from engineering_influence.services.content_policy_stage_executor import (
     ContentPolicyStageExecutor,
 )
+from engineering_influence.services.dash_rewriter import DashRewriter
 from engineering_influence.services.kind_stage_executor import KindStageExecutor
 from engineering_influence.services.local_default_model import LocalDefaultModel
+from engineering_influence.services.metadata_parser import MetadataParser
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 from engineering_influence.services.novel_output_checks import NovelOutputChecks
 from engineering_influence.services.novel_recipes import NovelRecipes
@@ -35,10 +37,20 @@ BIBLE = json.dumps({"premise": "A heist.", "characters": [{"name": "Ana"}]})
 OUTLINE = "## Chapter 1: The Job\nPurpose: Ana plans it.\nBeats:\n- Ana studies the vault\n"
 
 
-def test_a_novel_has_five_stages_in_order_ending_at_the_draft() -> None:
+def test_a_novel_runs_from_the_brief_to_a_built_book() -> None:
     plan = NovelRecipes().plan()
     assert plan.kind is BookKind.NOVEL
-    assert plan.stages == ("brief", "story_bible", "beats", "outline", "draft")
+    assert plan.stages == (
+        "brief",
+        "story_bible",
+        "beats",
+        "outline",
+        "metadata",
+        "draft",
+        "assemble",
+        "audit",
+        "build",
+    )
 
 
 def test_the_draft_is_a_loop_and_has_no_recipe_of_its_own() -> None:
@@ -57,6 +69,7 @@ def test_it_is_a_set_of_recipes() -> None:
         ("story_bible", "novel_story_bible", ("brief",), 4_000),
         ("beats", "novel_beats", ("brief", "story_bible"), 3_000),
         ("outline", "novel_outline", ("brief", "story_bible", "beats"), 5_000),
+        ("metadata", "novel_metadata", ("brief", "story_bible", "outline"), 2_500),
     ],
 )
 def test_each_recipe_names_its_template_inputs_and_cap_and_no_tools(
@@ -71,21 +84,39 @@ def test_each_recipe_names_its_template_inputs_and_cap_and_no_tools(
     )
 
 
+@pytest.mark.parametrize("stage", ["assemble", "audit", "build"])
+def test_the_stages_after_the_draft_have_no_recipe_because_no_model_does_them(stage: str) -> None:
+    with pytest.raises(ValueError, match=f"a novel run has no recipe for stage '{stage}'"):
+        NovelRecipes().recipe(stage)
+
+
 def test_a_stage_a_novel_does_not_have_is_refused() -> None:
     with pytest.raises(ValueError, match="a novel run has no recipe for stage 'research'"):
         NovelRecipes().recipe("research")
 
 
-CHECKS = NovelOutputChecks(StoryBibleParser(), OutlineParser())
+LISTING = (
+    "Title: The Vault\nSubtitle: A heist\nDescription:\n" + "Ana plans one last job. " * 20 + "\n"
+    "Keywords:\n- heist\n- thriller\n- vault\n- crew\n- betrayal\n- city\n- night\n"
+    "Categories:\n- Books > Literature & Fiction > Thrillers\n"
+)
+CHECKS = NovelOutputChecks(StoryBibleParser(), OutlineParser(), MetadataParser(DashRewriter()))
 
 
 def test_it_is_an_output_check() -> None:
     assert isinstance(CHECKS, StageOutputCheckInterface)
 
 
-def test_a_readable_bible_and_a_readable_outline_pass() -> None:
+def test_a_readable_bible_outline_and_listing_pass() -> None:
     CHECKS.check("story_bible", BIBLE)
     CHECKS.check("outline", OUTLINE)
+    CHECKS.check("metadata", LISTING)
+
+
+def test_an_unreadable_listing_stops_the_run_where_it_was_written() -> None:
+    with pytest.raises(ApplicationError) as caught:
+        CHECKS.check("metadata", "a blurb with none of the labelled sections")
+    assert caught.value.code == "METADATA_INVALID"
 
 
 def test_an_unreadable_bible_stops_the_run_where_it_was_written() -> None:
