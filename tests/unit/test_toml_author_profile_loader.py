@@ -103,3 +103,40 @@ def test_what_the_profile_model_refuses_is_refused_with_its_reason(tmp_path: Pat
         "the edition has to say 'Edition', as in 'First Edition'"
     )
     assert "publisher" in refused(write(tmp_path, 'author = "A"\n'))
+
+
+def test_a_pricing_table_becomes_the_profiles_pricing(tmp_path: Path) -> None:
+    text = GOOD + (
+        '\n[pricing]\nverified_on = "2026-11-19"\nsource_url = "https://kdp.example/costs"\n'
+        "ebook = 4.99\npaperback = 12.99\nhardcover = 22.99\n"
+    )
+    loaded = LOADER.load(write(tmp_path, text))
+    assert loaded is not None and loaded.pricing is not None
+    assert loaded.pricing.entries() == {
+        "verified_on": "2026-11-19",
+        "source_url": "https://kdp.example/costs",
+        "ebook": 4.99,
+        "paperback": 12.99,
+        "hardcover": 22.99,
+    }
+
+
+@pytest.mark.parametrize(
+    ("table", "why"),
+    [
+        ('pricing = "cheap"\n', "pricing is a table"),
+        ("[pricing]\nebook = 4.99\nextra = 1\n", "pricing has unknown keys ['extra']"),
+        ("[pricing]\nebook = 4.99\n", "pricing:"),
+        (
+            '[pricing]\nverified_on = "no"\nsource_url = "https://a.example"\nebook = 1\npaperback = 2\n',
+            "ISO date",
+        ),
+    ],
+)
+def test_a_pricing_table_that_is_not_one_is_refused_and_says_why(
+    tmp_path: Path, table: str, why: str
+) -> None:
+    text = GOOD.split("also_by")[0] + table if table.startswith("pricing") else GOOD + "\n" + table
+    with pytest.raises(ApplicationError) as error:
+        LOADER.load(write(tmp_path, text))
+    assert error.value.code == "AUTHOR_PROFILE_INVALID" and why in error.value.message

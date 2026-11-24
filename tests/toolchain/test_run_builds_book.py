@@ -10,16 +10,18 @@ import hashlib
 import json
 import shutil
 import zipfile
+from datetime import date
 from io import BytesIO
 from pathlib import Path
 
 import pytest
 from local_server import LocalServer
 from pypdf import PdfReader
-from smoke_rehearsal import rehearsal, serve
+from smoke_rehearsal import AUTHOR, NoSecrets, brief_for, environment, rehearsal, serve
 from smoke_run import SmokeReport
 
 from engineering_influence.models.book_kind import BookKind
+from engineering_influence.runtime.local_book_runtime import LocalBookRuntime
 
 pytestmark = pytest.mark.toolchain
 
@@ -103,3 +105,71 @@ def test_a_novel_run_ends_in_a_built_book_at_its_own_trim_size(tmp_path: Path) -
     assert (round(float(page.mediabox.width)), round(float(page.mediabox.height))) == (396, 612)
     with zipfile.ZipFile(BytesIO(files[f"book/{slug}.epub"])) as epub:
         assert epub.testzip() is None
+
+
+def priced_profile(tmp_path: Path) -> Path:
+    """The made-up author of the rehearsal, with the pricing a strict release needs, dated today."""
+    path = tmp_path / "priced.toml"
+    path.write_text(
+        AUTHOR + f'\n[pricing]\nverified_on = "{date.today().isoformat()}"\n'
+        'source_url = "https://kdp.amazon.com/en_US/help/topic/G201834170"\n'
+        "ebook = 4.99\npaperback = 12.99\nhardcover = 22.99\n",
+        encoding="utf-8",
+    )
+    return path
+
+
+def test_a_strict_release_passes_when_the_author_supplied_the_pricing(tmp_path: Path) -> None:
+    settings = {
+        "EI_AUTHOR_PROFILE": str(priced_profile(tmp_path)),
+        "EI_BUILD_STRICT_RELEASE": "1",
+    }
+    report = run_with(tmp_path, settings)
+    assert report.completed and report.status == "completed", report.issues
+    quality = json.loads(report.artifacts["quality-report.json"])
+    assert quality["status"] == "pass" and quality["errors"] == [] and quality["warnings"] == []
+
+
+def test_book_create_makes_a_whole_book_and_writes_it_to_a_folder(tmp_path: Path) -> None:
+    missing = [tool for tool in TOOLS if shutil.which(tool) is None]
+    if missing:
+        pytest.skip(f"the toolchain is not installed: {', '.join(missing)}")
+    with serve() as server:
+        env = environment(
+            tmp_path,
+            server.url,
+            {
+                "EI_AUTHOR_PROFILE": str(priced_profile(tmp_path)),
+                "EI_BUILD_STRICT_RELEASE": "1",
+            },
+        )
+        creator = LocalBookRuntime(tmp_path / "state", env, NoSecrets())
+        try:
+            run = creator.start(brief_for(BookKind.NONFICTION), lambda line: None)
+            creator.export(tmp_path / "out")
+        finally:
+            creator.close()
+    assert run.status.value == "completed", run.issues
+    book = tmp_path / "out" / "run" / "book"
+    assert (book / f"{SLUG}.pdf").read_bytes().startswith(b"%PDF")
+    assert (book / f"{SLUG}-ebook.jpg").read_bytes().startswith(b"\xff\xd8")
+    assert (book / "listing.md").is_file() and (
+        tmp_path / "out" / "books" / f"{SLUG}.toml"
+    ).is_file()
+    with zipfile.ZipFile(book / f"{SLUG}.epub") as epub:
+        assert epub.testzip() is None
+    assert (
+        json.loads((tmp_path / "out" / "run" / "quality-report.json").read_text())["status"]
+        == "pass"
+    )
+
+
+def test_a_novel_also_passes_a_strict_release_with_the_authors_pricing(tmp_path: Path) -> None:
+    settings = {
+        "EI_AUTHOR_PROFILE": str(priced_profile(tmp_path)),
+        "EI_BUILD_STRICT_RELEASE": "1",
+    }
+    report = run_with(tmp_path, settings, kind=BookKind.NOVEL)
+    assert report.completed and report.status == "completed", report.issues
+    quality = json.loads(report.artifacts["quality-report.json"])
+    assert quality["status"] == "pass" and quality["errors"] == []

@@ -7,36 +7,14 @@ folder the run is written to, without a real model. What it cannot say is whethe
 """
 
 import json
-from collections.abc import Mapping
 from pathlib import Path
 
 import pytest
-from smoke_rehearsal import rehearsal, serve
+from smoke_rehearsal import RehearsalBuilder, rehearsal, serve
 from smoke_run import DEFAULT_IDEA, RUN_ID, LiveSettings, SmokeReport, SmokeRun
 
 from engineering_influence.errors.application_error import ApplicationError
-from engineering_influence.interfaces.manuscript_builder_interface import ManuscriptBuilderInterface
 from engineering_influence.models.book_kind import BookKind
-from engineering_influence.models.manuscript_build import ManuscriptBuild
-
-
-class RehearsalBuilder(ManuscriptBuilderInterface):
-    """The free rehearsal has no TeX toolchain, so the book is not built here: the build stage is given a scripted pass.
-
-    The real build, from a run's own output to a strict-release PDF and EPUB, is the toolchain test
-    ``tests/toolchain/test_run_builds_book.py``.
-    """
-
-    def build(self, files: Mapping[str, bytes], slug: str) -> ManuscriptBuild:
-        return ManuscriptBuild(
-            True,
-            "pass",
-            (),
-            (),
-            (("pdf", "pass"), ("covers", "pass"), ("epub", "pass")),
-            (("publication-report.json", b"{}"),),
-            (("listing.md", b"# Listing\n"), (f"{slug}.pdf", b"%PDF-1.7")),
-        )
 
 
 def smoke(tmp_path: Path, url: str, cap: int = 5_000_000) -> SmokeRun:

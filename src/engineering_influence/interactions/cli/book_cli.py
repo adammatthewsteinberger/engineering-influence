@@ -7,13 +7,22 @@ import argparse
 import json
 import sys
 import tomllib
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
 from engineering_influence.interactions.cli.interfaces.book_cli_interface import BookCliInterface
+from engineering_influence.interfaces.local_book_creator_interface import (
+    LocalBookCreatorInterface,
+)
+from engineering_influence.models.book_brief import BookBrief
+from engineering_influence.models.book_kind import BookKind
+from engineering_influence.models.book_run import BookRun
+from engineering_influence.models.run_status import RunStatus
 
 if TYPE_CHECKING:
     from engineering_influence.controllers.publishing_controller import PublishingController
@@ -22,13 +31,21 @@ if TYPE_CHECKING:
 class BookCli(BookCliInterface):
     """Audit, build, and publish the books of a project.
 
-    ei book [--root DIR] audit|build|epub|covers|qa|publish ...
+    ei book [--root DIR] audit|build|epub|covers|qa|package|publish ...
+    ei book create --kind KIND IDEA --budget-usd N --out DIR --profile FILE
     """
 
     ERRORS = (BookBuildError, ManuscriptError, OSError, ValueError, tomllib.TOMLDecodeError)
 
-    def __init__(self, controller_for: Callable[[Path], PublishingController]) -> None:
+    MICRO = Decimal(1_000_000)
+
+    def __init__(
+        self,
+        controller_for: Callable[[Path], PublishingController],
+        creator_for: Callable[[Path, Mapping[str, str]], LocalBookCreatorInterface],
+    ) -> None:
         self._controller_for = controller_for
+        self._creator_for = creator_for
 
     def register(self, subparsers: Any) -> None:
         """Add the `book` command and its subcommands."""
@@ -60,6 +77,43 @@ class BookCli(BookCliInterface):
                 help="write the release bundle (listing, manifest, finished files) for KDP",
             )
         )
+        create = sub.add_parser(
+            "create",
+            help="make a whole book from an idea, with nobody in the loop, and write it to a folder",
+            description="Runs every stage of the plan for the kind of book (the stages a worker would run, "
+            "with the models and search the environment names) and writes the book, its PDF, EPUB, covers, "
+            "listing and quality report to --out. The run is kept in a state folder beside it, so a run that "
+            "stops can be continued with --resume without paying for finished stages again.",
+        )
+        create.add_argument("idea", nargs="?", help="what the book is about")
+        create.add_argument("--kind", choices=[kind.value for kind in BookKind])
+        create.add_argument(
+            "--out", type=Path, required=True, help="a new or empty folder for the book"
+        )
+        create.add_argument(
+            "--budget-usd", help="the most the run may spend, in dollars (no default)"
+        )
+        create.add_argument("--profile", type=Path, help="the author's details and pricing (TOML)")
+        create.add_argument("--title", help="the title to use, if you have one")
+        create.add_argument("--audience", help="who the book is for")
+        create.add_argument("--target-words", type=int, help="how long the book should be")
+        create.add_argument("--trim-size", help="the print trim size, such as 5.5x8.5")
+        create.add_argument(
+            "--strict-release",
+            action="store_true",
+            help="fail the build on any release warning; needs [pricing] in the profile",
+        )
+        create.add_argument(
+            "--state-dir", type=Path, help="where the run is kept (default: OUT.state)"
+        )
+        create.add_argument(
+            "--resume", action="store_true", help="continue the run in the state folder"
+        )
+        create.add_argument(
+            "--approve-spend",
+            action="store_true",
+            help="with --resume: grant the extra budget a stopped run asked for",
+        )
         publish = self._slugs(sub.add_parser("publish", help="the full acceptance pipeline"))
         publish.add_argument("--audit-only", action="store_true")
         publish.add_argument("--no-render", action="store_true", help="skip all-page rendering")
@@ -69,6 +123,8 @@ class BookCli(BookCliInterface):
 
     def run(self, arguments: argparse.Namespace) -> int:
         """Execute the chosen subcommand; return the process status."""
+        if arguments.book_command == "create":
+            return self._create(arguments)
         if arguments.book_command in ("qa", "publish") and arguments.dpi < 36:
             print("error: --dpi must be at least 36", file=sys.stderr)
             return 2
@@ -95,6 +151,121 @@ class BookCli(BookCliInterface):
             print(f"error: {error}", file=sys.stderr)
             return 1
         return 1 if failures else 0
+
+    def _create(self, arguments: argparse.Namespace) -> int:
+        """Make the book: 0 it is written, 1 the run failed, 2 the command could not start, 3 it needs a decision."""
+        state = arguments.state_dir or arguments.out.with_name(arguments.out.name + ".state")
+        try:
+            brief = None if arguments.resume else self._brief(arguments)
+            if arguments.resume and not state.is_dir():
+                raise ApplicationError(
+                    code="LOCAL_RUN_MISSING",
+                    message=f"there is no run to resume in {state}",
+                    http_status=404,
+                )
+            if not arguments.resume and state.exists():
+                raise ApplicationError(
+                    code="LOCAL_RUN_EXISTS",
+                    message=f"{state} already holds a run; add --resume to continue it, or choose another --out",
+                    http_status=409,
+                )
+        except ApplicationError as error:
+            print(f"error: {error.message}", file=sys.stderr)
+            return 2
+        settings = {"EI_BUILD_STRICT_RELEASE": "1"} if arguments.strict_release else {}
+        if arguments.profile is not None:
+            settings["EI_AUTHOR_PROFILE"] = str(arguments.profile)
+        try:
+            creator = self._creator_for(state, settings)
+        except ImportError as error:
+            print(
+                "error: book create needs the runtime and publishing extras: "
+                f"pip install 'engineering-influence[runtime,publishing]' ({error.name} is missing)",
+                file=sys.stderr,
+            )
+            return 1
+        except ApplicationError as error:
+            print(f"error: {error.message}", file=sys.stderr)
+            return 2
+        try:
+            progress = lambda line: print(line, flush=True)
+            run = (
+                creator.resume(arguments.approve_spend, progress)
+                if brief is None
+                else creator.start(brief, progress)
+            )
+            return self._finish(creator, run, arguments.out, state)
+        except ApplicationError as error:
+            print(f"error: {error.message}", file=sys.stderr)
+            return 2
+        finally:
+            creator.close()
+
+    def _finish(
+        self, creator: LocalBookCreatorInterface, run: BookRun, out: Path, state: Path
+    ) -> int:
+        spent = f"spent {Decimal(run.budget.spent) / self.MICRO:.4f} of {Decimal(run.budget.cap) / self.MICRO:.2f} USD"
+        if run.status in (RunStatus.AWAITING_CONSENT, RunStatus.PARKED_CAPACITY):
+            asked = run.consent.requested_micro_usd if run.consent is not None else None
+            need = (
+                f"it asked for {Decimal(asked) / self.MICRO:.4f} USD more"
+                if asked is not None
+                else "it needs more budget"
+            )
+            print(
+                f"stopped at stage {run.stage!r}: {need} ({spent}). Nothing was written to {out}. "
+                f"Continue with: ei book create --out {out} --resume --approve-spend",
+                file=sys.stderr,
+            )
+            return 3
+        done = creator.export(out)
+        for issue in run.issues:
+            print(f"issue: {issue.code}: {issue.detail}", file=sys.stderr)
+        if run.status is RunStatus.COMPLETED:
+            print(
+                f"the book is written to {out} ({done.files} files; the finished files are in {out}/run/book); {spent}"
+            )
+            return 0
+        print(
+            f"the run {run.status.value} at stage {run.stage!r}; what it made is in {out}; {spent}",
+            file=sys.stderr,
+        )
+        return 1
+
+    def _brief(self, arguments: argparse.Namespace) -> BookBrief:
+        for name, value in (
+            ("an idea", arguments.idea),
+            ("--kind", arguments.kind),
+            ("--budget-usd", arguments.budget_usd),
+        ):
+            if not value:
+                raise ApplicationError(
+                    code="BRIEF_INVALID",
+                    message=f"book create needs {name} (or --resume to continue a run)",
+                    http_status=422,
+                )
+        try:
+            micro = int((Decimal(arguments.budget_usd) * self.MICRO).to_integral_value())
+        except InvalidOperation as error:
+            raise ApplicationError(
+                code="BRIEF_INVALID",
+                message=f"--budget-usd is a number of dollars, not {arguments.budget_usd!r}",
+                http_status=422,
+            ) from error
+        try:
+            return BookBrief(
+                kind=BookKind(arguments.kind),
+                idea=arguments.idea,
+                budget_micro_usd=micro,
+                title_hint=arguments.title,
+                audience=arguments.audience,
+                target_words=arguments.target_words,
+                trim_size=arguments.trim_size,
+            )
+        except ValueError as error:
+            raise ApplicationError(
+                code="BRIEF_INVALID", message=str(error), http_status=422
+            ) from error
 
     def _guarded(
         self, handler: Any, controller: PublishingController, slug: str, arguments: Any

@@ -308,7 +308,18 @@ ebook_isbn = "978-0-0000-0001-7" # optional
 dedication = "For you."          # optional
 copyright_notes = "Notes."       # optional
 also_by = ["Earlier Book"]       # optional, at most 20
+
+[pricing]                        # optional; needed for a strict release
+verified_on = "2026-11-19"       # the day you checked the prices (an ISO date)
+source_url = "https://kdp.amazon.com/en_US/help/topic/G201834170"  # a page that shows the print costs
+ebook = 4.99
+paperback = 12.99
+hardcover = 22.99                # optional; a price here makes the book a KDP hardcover too
 ```
+
+The prices are yours: a run never invents them. They go into the book's `[release.pricing]`, which is what a strict release
+checks (`EI_BUILD_STRICT_RELEASE`, or `--strict-release` on `ei book create`). Without a `[pricing]` table a missing price is a
+warning in the run's `quality-report.json`, and a strict release fails.
 
 Any other key is refused, a missing file stops the process at start (`AUTHOR_PROFILE_MISSING`), and a bad one stops it with
 the reason (`AUTHOR_PROFILE_INVALID`). The file is at most 64 KiB; the limits on each field are fixed in the code. Without a

@@ -18,6 +18,7 @@ from engineering_influence.interfaces.manuscript_builder_interface import Manusc
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
 from engineering_influence.models.book_brief import BookBrief
 from engineering_influence.models.book_kind import BookKind
+from engineering_influence.models.manuscript_build import ManuscriptBuild
 
 DESCRIPTION = " ".join(["Herbs are easier to keep alive indoors than most people think."] * 10)
 OUTLINE = """## Chapter 1: Light
@@ -177,11 +178,31 @@ def rehearsal(
     settings: Mapping[str, str] | None = None,
     kind: BookKind = BookKind.NONFICTION,
 ) -> SmokeRun:
+    brief = brief_for(kind, cap)
+    return SmokeRun(
+        environment(tmp_path, url, settings),
+        NoSecrets(),
+        brief,
+        date(2026, 11, 22),
+        builder=builder,
+    )
+
+
+def brief_for(kind: BookKind, cap: int = 5_000_000) -> BookBrief:
+    """The rehearsal's brief for a kind of book."""
+    fields = BRIEF if kind is BookKind.NONFICTION else NOVEL_BRIEF
+    return BookBrief(kind=kind, budget_micro_usd=cap, **fields)  # type: ignore[arg-type]
+
+
+def environment(
+    tmp_path: Path, url: str, settings: Mapping[str, str] | None = None
+) -> dict[str, str]:
+    """The environment a worker reads: the scripted server as the model, a made-up author, no search."""
     profiles, catalog, author = tmp_path / "p.toml", tmp_path / "c.toml", tmp_path / "a.toml"
     profiles.write_text(PROFILE.format(url=url), encoding="utf-8")
     catalog.write_text(CATALOG, encoding="utf-8")
     author.write_text(AUTHOR, encoding="utf-8")
-    environment = {
+    return {
         "EI_STAGE_EXECUTOR": "model",
         "EI_STAGE_MODEL_PROFILE": "writer",
         "EI_MODEL_PROFILES": str(profiles),
@@ -190,6 +211,22 @@ def rehearsal(
         "EI_AUTHOR_PROFILE": str(author),
         **(settings or {}),
     }
-    fields = BRIEF if kind is BookKind.NONFICTION else NOVEL_BRIEF
-    brief = BookBrief(kind=kind, budget_micro_usd=cap, **fields)  # type: ignore[arg-type]
-    return SmokeRun(environment, NoSecrets(), brief, date(2026, 11, 22), builder=builder)
+
+
+class RehearsalBuilder(ManuscriptBuilderInterface):
+    """The free rehearsal has no TeX toolchain, so the book is not built here: the build stage is given a scripted pass.
+
+    The real build, from a run's own output to a strict-release PDF and EPUB, is the toolchain test
+    ``tests/toolchain/test_run_builds_book.py``.
+    """
+
+    def build(self, files: Mapping[str, bytes], slug: str) -> ManuscriptBuild:
+        return ManuscriptBuild(
+            True,
+            "pass",
+            (),
+            (),
+            (("pdf", "pass"), ("covers", "pass"), ("epub", "pass")),
+            (("publication-report.json", b"{}"),),
+            (("listing.md", b"# Listing\n"), (f"{slug}.pdf", b"%PDF-1.7")),
+        )

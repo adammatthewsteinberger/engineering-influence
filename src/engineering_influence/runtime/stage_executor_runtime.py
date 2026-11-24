@@ -371,12 +371,19 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         """
         if self._builder is not None:
             return self._builder
-        strict = self._environment.get("EI_BUILD_STRICT_RELEASE", "").strip().lower() in (
+        return TempProjectManuscriptBuilder(self._publisher, strict_release=self.strict_release())
+
+    def strict_release(self) -> bool:
+        """Whether ``EI_BUILD_STRICT_RELEASE`` asks the build stage for a strict release (``1``, ``true`` or ``yes``)."""
+        return self._environment.get("EI_BUILD_STRICT_RELEASE", "").strip().lower() in (
             "1",
             "true",
             "yes",
         )
-        return TempProjectManuscriptBuilder(self._publisher, strict_release=strict)
+
+    def author_profile(self) -> AuthorProfile | None:
+        """The author's details ``EI_AUTHOR_PROFILE`` names, or None; a named file that is not a profile is refused."""
+        return self._author_profile()
 
     @staticmethod
     def _publisher(root: Path) -> BookPublisherInterface:

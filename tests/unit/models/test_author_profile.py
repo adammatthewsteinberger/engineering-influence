@@ -125,3 +125,13 @@ def test_also_by_is_a_tuple_of_at_most_twenty_titles_each_one_line() -> None:
 def test_text_fields_must_be_text() -> None:
     assert refused(author=3) == "author is text"
     assert refused(author_bio=3) == "author_bio is text"
+
+
+def test_a_profile_may_carry_the_authors_pricing() -> None:
+    from engineering_influence.models.book_pricing import BookPricing
+
+    pricing = BookPricing("2026-11-19", "https://kdp.example/print-costs", 4.99, 12.99)
+    assert profile().pricing is None
+    assert profile(pricing=pricing).pricing is pricing
+    assert "pricing" not in profile(pricing=pricing).entries()
+    assert "pricing is a BookPricing" in refused(pricing={"ebook": 4.99})

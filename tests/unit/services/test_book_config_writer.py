@@ -146,3 +146,38 @@ def test_any_valid_profile_reads_back_exactly(
     config = tomllib.loads(WRITER.write("nonfiction", metadata(), made, None, ("a.md",)))
     for key, value in made.entries().items():
         assert config[key] == value
+
+
+def test_the_authors_pricing_is_written_as_the_release_pricing_table() -> None:
+    from engineering_influence.models.book_pricing import BookPricing
+
+    prices = BookPricing("2026-11-19", "https://kdp.example/costs", 4.99, 12, 22.99)
+    text = WRITER.write("novel", metadata(), profile(pricing=prices), None, ("a.md",))
+    config = tomllib.loads(text)
+    assert config["release"]["pricing"] == {
+        "verified_on": "2026-11-19",
+        "source_url": "https://kdp.example/costs",
+        "ebook": 4.99,
+        "paperback": 12,
+        "hardcover": 22.99,
+    }
+    assert config["release"]["keywords"] and config["parts"][0]["chapters"] == ["a.md"]
+    assert config["release"]["formats"] == {"kdp_hardcover": True}
+    assert config["formats"] == {"hardcover": True}
+    assert text.index("[release]") < text.index("[release.pricing]") < text.index("[[parts]]")
+
+
+def test_without_pricing_there_is_no_pricing_table() -> None:
+    config = tomllib.loads(WRITER.write("novel", metadata(), profile(), None, ("a.md",)))
+    assert "pricing" not in config["release"]
+
+
+def test_a_book_with_no_hardcover_price_is_not_a_hardcover() -> None:
+    from engineering_influence.models.book_pricing import BookPricing
+
+    prices = BookPricing("2026-11-19", "https://kdp.example/costs", 4.99, 12.99)
+    config = tomllib.loads(
+        WRITER.write("novel", metadata(), profile(pricing=prices), None, ("a.md",))
+    )
+    assert "formats" not in config and "formats" not in config["release"]
+    assert "hardcover" not in config["release"]["pricing"]

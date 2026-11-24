@@ -14,6 +14,7 @@ from engineering_influence.services.interfaces.book_config_writer_interface impo
 class BookConfigWriter(BookConfigWriterInterface):
     """``books/<slug>.toml``: the listing, the author's details when a profile was supplied, and the chapters.
 
+    A hardcover price in the author's pricing makes the book a KDP hardcover too (``[release.formats]`` and ``[formats]``).
     It names the kind, the title, the subtitle, the description, the source folder (``src``), the trim size
     when the brief set one, then whatever the author profile sets (author, publisher, edition, year, bio and the
     optional rest), the release contract's keywords and categories, and one part, ``Part One``, holding every
@@ -55,6 +56,26 @@ class BookConfigWriter(BookConfigWriterInterface):
             f"keywords = {self._value(list(metadata.keywords))}",
             f"categories = {self._value(list(metadata.categories))}",
             "",
+        ]
+        if profile is not None and profile.pricing is not None:
+            lines += ["[release.pricing]"]
+            lines += [
+                f"{key} = {self._pricing_value(value)}"
+                for key, value in profile.pricing.entries().items()
+            ]
+            lines += [""]
+            if profile.pricing.hardcover is not None:
+                # A hardcover price means a KDP hardcover: the release check refuses a hardcover price with no
+                # provider unless KDP is the provider, and the build makes the hardcover files only when asked.
+                lines += [
+                    "[release.formats]",
+                    "kdp_hardcover = true",
+                    "",
+                    "[formats]",
+                    "hardcover = true",
+                    "",
+                ]
+        lines += [
             "[[parts]]",
             f"title = {self._text(self.PART)}",
             "chapters = [",
@@ -67,6 +88,9 @@ class BookConfigWriter(BookConfigWriterInterface):
         if isinstance(value, list):
             return "[" + ", ".join(self._text(item) for item in value) + "]"
         return self._text(value)
+
+    def _pricing_value(self, value: str | float) -> str:
+        return self._text(value) if isinstance(value, str) else json.dumps(value)
 
     @staticmethod
     def _text(value: str) -> str:
