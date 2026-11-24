@@ -5,8 +5,8 @@ The public package accepts a project title, slug, governing postulates and the
 stages to run. Target formats and an autonomy policy are planned, not accepted yet. Private books repositories may add a profile that
 fills the governing-postulates slot without changing the public domain model.
 
-The versioned configuration schema is not published yet; it is planned under
-`contracts/book_config/v1` before the first stable release.
+The book config, the brief and the run summary schemas are versioned under `contracts/` and frozen by snapshot
+tests ([COMPATIBILITY.md](COMPATIBILITY.md)).
 
 ## Security settings
 
@@ -105,8 +105,8 @@ change.
   not masked, so pass values as `extra` fields.
 - Counters and latencies are per process. Scrape every replica.
 - `ToolchainHealthCheck` and `TcpHealthCheck` check presence and reachability,
-  not that the dependency is healthy. There is no LLM-runner check and no budget
-  alert yet, because no budget guard exists in this package.
+  not that the dependency is healthy. There is no LLM-runner health check and no
+  alert on budget exhaustion; a budget stop shows as a run awaiting consent.
 - `ei serve api` and `ei serve worker` build this wiring for you. If you embed the
   application in your own process, wire the adapters above yourself.
 
@@ -179,7 +179,7 @@ and republish it by hand. Stopping the worker finishes the job in flight first.
 ### Limits to know
 
 - **A run starts from `ei run create BRIEF.TOML`.** It saves the run and queues its first stage on the broker, and the
-  worker does the stages, as `resume` does. No API endpoint or MCP tool starts a run yet; `ei run runs` lists them.
+  worker does the stages, as `resume` does. A run can also be started with `POST /v1/runs`, the SDK's `create_run`, the MCP `create_run` tool, or `ei book create` (in one process); `ei run runs` lists them.
 - **The worker's default is a free local model.** `EI_STAGE_EXECUTOR` is `local` unless set:
   an open-source model (`gpt-oss:20b`, Apache 2.0) on this machine through Ollama, no key, no cost, and a SearXNG at
   `http://127.0.0.1:8888` for research. Nothing is contacted when the worker starts; [LOCAL_MODEL.md](LOCAL_MODEL.md) says how to
@@ -190,8 +190,8 @@ and republish it by hand. Stopping the worker finishes the job in flight first.
   unless `EI_STAGE_MODEL_PROFILE` (a profile's name), `EI_MODEL_PROFILES` and `EI_MODEL_CATALOG`
   (the files `ei doctor --models` checks, see [MODEL_PROFILES.md](MODEL_PROFILES.md)) are set,
   the profile exists, a price is in force today, and its key is available. A profile file being
-  present never switches it on, because this spends money. Only non-fiction runs have stages so
-  far: brief, positioning, research and outline. An answer that is refused, cut off or empty stops the run, and so does an
+  present never switches it on, because this spends money. Non-fiction and novel runs have stages from the
+  brief to a built book ([BOOKS_AND_KDP.md](BOOKS_AND_KDP.md)). An answer that is refused, cut off or empty stops the run, and so does an
   outline that cannot be read as numbered chapters (`OUTLINE_INVALID`; see [PROMPTS.md](PROMPTS.md#the-outline-is-a-format-not-just-prose)).
   Nothing has been run against a live provider.
 - **`EI_EVAL_JUDGE_PROFILE`** (required by `ei evaluate`): the name of the profile, in `EI_MODEL_PROFILES`, of the model that scores the
@@ -222,8 +222,7 @@ and republish it by hand. Stopping the worker finishes the job in flight first.
 - **No webhook is emitted.** The outbox, signing and dispatch exist, but no service
   creates outbox intents, and the worker does not run the dispatcher.
 - **The read API covers book runs only.** `GET /v1/runs/{id}` and `ei run status` show a run;
-  pipeline progress is still visible only in the ledger table and the logs. The SDK and the MCP
-  server have no run methods yet.
+  pipeline progress is still visible only in the ledger table and the logs.
 - **The base images are tags, not digests**, and the worker has no container
   healthcheck; it logs a heartbeat and raises a critical alert if it stalls.
 

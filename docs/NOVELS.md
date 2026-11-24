@@ -18,8 +18,8 @@ runtime dispatches by kind, so a non-fiction run is untouched.
 | `audit` | none | the same publish audits as `ei book audit` (`audit.md`, `audit/`) | a book that fails stops the run |
 | `build` | none | the interior PDF, EPUB, covers, listing and KDP bundle under `book/`, the reports under `build/`, `quality-report.json` and `build.md` | a book that does not pass stops the run (`BUILD_FAILED`) |
 
-The five stages are the whole plan today. The editing passes, assembly and the audit for a novel are not built, so a
-novel run stops after the draft.
+The plan is nine stages, from the brief to a built book. Only the editing passes (revision and copy editing) are not
+built, so a novel is built from the draft as written.
 
 ## Drafting
 

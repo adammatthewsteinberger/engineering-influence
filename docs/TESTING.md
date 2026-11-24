@@ -13,13 +13,17 @@ uv sync --extra test --extra runtime --extra dev --extra publishing
 | Security lint | `uv run bandit -q -r src packages` | common insecure patterns |
 | Dependencies | `uv run pip-audit` | known vulnerabilities (the two local packages are reported as unauditable; that is expected) |
 | Types | `uv run mypy --strict src packages` | strict typing |
-| Tests | `uv run pytest --cov --cov-branch --cov-fail-under=100` | all tests and **100% branch coverage** |
+| Format | `uv run ruff format --check .` | one formatting, no drift |
+| Tests | `uv run pytest --cov --cov-branch --cov-fail-under=100` | all tests and **100% branch coverage**, on Python 3.12, 3.13 and 3.14 |
 | Integration | `eval "$(sh tests/integration/stack.sh up)"`, then `uv run pytest -m integration tests/integration` | the migrations on PostgreSQL, the stores under concurrent writers, jobs through RabbitMQ, and a book run that finishes through the stack however its workers die |
 | Compose smoke | `sh examples/compose_smoke.sh` | the real stack: credentials refused, a two-stage pipeline completes, a malformed message is dead-lettered, the curl example works |
 | Provenance | `vibey-gh check --ci`; on pull requests `vibey-gh provenance-check` and `conventional-check` | file headers, `Made-With:` trailers, Conventional Commit subjects |
 | Leak scan | gitleaks plus a path check | no secrets and no private-content paths in history |
 | Workflows | `actionlint`, `zizmor` | workflow correctness and security |
 | Distribution | built in CI | wheel and sdist install and run; `py.typed` ships |
+| Toolchain | `uv run pytest -m toolchain` (the CI `toolchain` job) | real LuaLaTeX, epubcheck and the book build end to end |
+| Canary | `.github/workflows/canary.yml` | a daily fresh dependency resolve, to catch an upstream break early |
+| Nightly evaluation | `.github/workflows/nightly-eval.yml` | `ei evaluate` against a real model; **paid**, off until `RUN_NIGHTLY_EVAL` is `true`, and never run |
 
 ## Test layout
 

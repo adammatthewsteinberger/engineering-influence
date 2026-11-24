@@ -11,11 +11,11 @@ PDFs, EPUB, covers, listing metadata and a release-readiness report. See
 The same behavior is reachable five ways, all over one controller layer: a **REST API**,
 an **MCP server**, a **CLI**, a **Python SDK** (sync and async) and **signed webhooks**.
 
-> **Status: alpha (`0.1.0a2`).** The orchestration and the KDP packaging and verification are
-> built and tested. The *writing* is not yet autonomous: the runner and gate that ship are
-> deterministic placeholders, so a pipeline runs end to end but produces fixed text until a
-> model-backed runner is plugged in. Nothing uploads to KDP for you (KDP has no API); a person
-> reviews and uploads. See [Limitations](#limitations).
+> **Status: alpha (`0.1.0a2`).** The orchestration, the KDP packaging and verification, and the
+> writing stages are built and tested: `ei book create` takes an idea to a built KDP package with a
+> free local model or a configured one. The writing has only been run against scripted servers, never
+> a live provider, and no real model has been measured against the quality bar yet. Nothing uploads to
+> KDP for you (KDP has no API); a person reviews and uploads. See [Limitations](#limitations).
 
 This repository holds the method and the software only. Author-owned manuscripts, profiles
 and private publishing configuration live in a separate private repository.
@@ -47,7 +47,7 @@ Stop with `sh examples/down.sh --volumes`.
 |---|---|---|
 | Calling from any language | REST API | [`examples/api/`](examples/api) (Python `requests`, `curl`) |
 | Writing Python | SDK, sync or async | [`examples/sdk/`](examples/sdk) |
-| Wiring an AI host or agent | MCP server (stdio) | [`examples/mcp/`](examples/mcp) |
+| Wiring an AI host or agent | MCP server (stdio, `ei serve mcp`) | [`examples/mcp/`](examples/mcp) |
 | At a terminal | `ei` CLI | [`examples/cli/run.sh`](examples/cli/run.sh) |
 | Receiving events | Signed webhooks | [`examples/webhooks/`](examples/webhooks) |
 | Operating it | Health, metrics, logs | [`examples/observability/`](examples/observability) |
@@ -55,7 +55,7 @@ Stop with `sh examples/down.sh --volumes`.
 Install the package without the repository: `pip install "engineering-influence[api,runtime]"`
 (pre-release; PyPI publication is not enabled yet, so use the
 [GitHub release](https://github.com/adammatthewsteinberger/engineering-influence/releases) assets).
-Optional extras: `api`, `runtime`, `cli`, `mcp`, `publishing`.
+Optional extras: `api`, `webhooks`, `runtime`, `mcp`, `publishing` (and `test` and `dev` for contributors).
 
 ## Documentation
 
@@ -71,6 +71,15 @@ Optional extras: `api`, `runtime`, `cli`, `mcp`, `publishing`.
 | [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) | What is promised to callers, and the snapshots that catch a change to it |
 | [docs/EVALUATION.md](docs/EVALUATION.md) | `ei evaluate`: the paid evaluation that measures the 1.0 quality and cost bars |
 | [docs/RELEASING.md](docs/RELEASING.md) | Cutting and verifying a release |
+| [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) | What is protected, from whom, and what is not |
+| [docs/NOVELS.md](docs/NOVELS.md) | The novel stages, from brief to a built book |
+| [docs/PROMPTS.md](docs/PROMPTS.md) | The prompt templates, their versions and the lock |
+| [docs/LOCAL_MODEL.md](docs/LOCAL_MODEL.md) | The free local model the worker uses by default |
+| [docs/MODEL_PROFILES.md](docs/MODEL_PROFILES.md), [docs/MODEL_CATALOG.md](docs/MODEL_CATALOG.md), [docs/MODEL_CALLS.md](docs/MODEL_CALLS.md) | Choosing, pricing and calling a model |
+| [docs/LIVE_SMOKE_TEST.md](docs/LIVE_SMOKE_TEST.md) | The capped test against a real model |
+| [docs/RESEARCH.md](docs/RESEARCH.md), [docs/TOOL_LOCK.md](docs/TOOL_LOCK.md) | Web search and fetch for the research stage, and the tool lock |
+| [docs/SKILLS.md](docs/SKILLS.md), [docs/PLUGINS.md](docs/PLUGINS.md) | Skills and plugin bundles |
+| [docs/WORKER_IMAGE.md](docs/WORKER_IMAGE.md) | The worker image and the TeX toolchain |
 | [docs/adr/](docs/adr) | Architecture decisions |
 | [CHANGELOG.md](CHANGELOG.md) | What changed |
 
@@ -78,11 +87,11 @@ Optional extras: `api`, `runtime`, `cli`, `mcp`, `publishing`.
 
 Read these before you depend on it:
 
-- The writing is not autonomous yet: the runner and gate are placeholders (`DeterministicRunner`, `NonEmptyArtifactGate`).
+- The writing is built but unproven: it has run only against scripted servers, never a live provider. The placeholder runner and gate (`DeterministicRunner`, `NonEmptyArtifactGate`) apply only to the `/v1/pipelines` stage pipeline and to `EI_STAGE_EXECUTOR=deterministic`.
 - Delivery is at least once: a crash between the ledger write and the acknowledgement re-runs a stage.
-- There is no endpoint to resolve a human gate. A book run can be read with `GET /v1/runs/{id}` and `ei run status`, but pipeline progress is still only in the ledger table and the logs.
+- There is no endpoint to resolve a pipeline's human gate (a run's spend consent is answered with `ei run grant` and `deny`, `POST /v1/runs/{id}/grant` and `deny`, or the MCP tools). A book run can be read with `GET /v1/runs/{id}` and `ei run status`, but pipeline progress is still only in the ledger table and the logs.
 - No service emits webhooks yet, although signing, the outbox and a verifier exist.
-- `ei pipeline start` and the MCP server use in-memory adapters; they plan work but do not reach the stack.
+- `ei pipeline start` and the example MCP server (`examples/mcp/server.py`) use in-memory adapters; they plan work but do not reach the stack. `ei serve mcp` does.
 - The schema is managed by `ei db upgrade`; run it before starting a new release. A database created before the outbox gained its `dead_at` column must be recreated, because the baseline migration does not add it.
 
 Details and the full list: [docs/CONFIGURATION.md](docs/CONFIGURATION.md#limits-to-know).
