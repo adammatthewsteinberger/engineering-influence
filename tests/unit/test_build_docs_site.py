@@ -382,3 +382,27 @@ def test_the_book_is_in_the_readme_and_in_the_footer_of_every_page() -> None:
     assert BOOK in (ROOT / "README.md").read_text(encoding="utf-8")
     assert BOOK in config["copyright"]
     assert "Engineering Influence: A Playbook for the Remnant" in config["copyright"]
+
+
+def test_the_navigation_has_at_most_five_groups_so_the_top_bar_stays_readable() -> None:
+    config = yaml.safe_load((ROOT / "properdocs.yml").read_text(encoding="utf-8"))
+    groups = [
+        item
+        for item in config["nav"]
+        if isinstance(item, dict) and item and next(iter(item.values())) != "index.md"
+    ]
+
+    assert len(groups) <= 5, f"{len(groups)} top-level groups: {[next(iter(g)) for g in groups]}"
+
+
+def test_no_edit_link_is_shown_because_the_pages_are_not_files_of_the_docs_folder() -> None:
+    config = yaml.safe_load((ROOT / "properdocs.yml").read_text(encoding="utf-8"))
+
+    assert config["edit_uri"] == ""
+
+
+def test_the_menus_have_a_solid_background_in_each_theme() -> None:
+    css = (ROOT / "docs-site" / "site.css").read_text(encoding="utf-8")
+
+    assert '[data-bs-theme="dark"] .dropdown-menu' in css and "#0f1424" in css
+    assert "#ffffff !important" in css and "background-color: var(--bs-dropdown-bg)" not in css
