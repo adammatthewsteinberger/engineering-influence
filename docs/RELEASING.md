@@ -1,5 +1,10 @@
 # Releasing
 
+**BLUF:** A release is a merge to `main`; a development build is a merge to `develop`. A merge to `main` creates
+the tag and a public GitHub release straight away. Uploading to PyPI, TestPyPI or GHCR happens only when its
+repository variable is `true`, and it waits for a person only if you gave that environment required reviewers. The
+five upload jobs have never run against a real index or registry, so nothing is on PyPI or GHCR yet.
+
 Publishing is driven by the branch a commit lands on, and a person approves every upload.
 
 | Merge to | What happens | Where it goes |
@@ -10,6 +15,28 @@ Publishing is driven by the branch a commit lands on, and a person approves ever
 Nothing uploads until you turn each index on with a repository variable and approve its environments,
 so merging is safe before that setup is done. ADR 0009 records why the release moved from a pushed tag
 to a merge to `main`.
+
+## Two keys
+
+> **Daniel:** If merging to main publishes to PyPI, one slip and a bad version is on the internet forever.
+>
+> **Professor Feynman:** How does a bank vault open?
+>
+> **Daniel:** Two keys, held by two people.
+>
+> **Professor Feynman:** Here the first key is the merge, which asks. The second is a switch you set per index,
+> such as `PUBLISH_TO_PYPI`, plus a person approving the environment that uploads, if you set reviewers on it.
+> Both are off by default. The tag and the GitHub release are not behind either key. A release also has a guard
+> that refuses a version with no changelog section or leftover fragments.
+>
+> **Daniel:** And if the guard passes and I still publish something wrong?
+>
+> **Professor Feynman:** Then you learn the hard part: PyPI never lets a version be reused. You cannot take it
+> back, you release the next version. That is why you publish a pre-release first. The picture has one more limit:
+> the second key is only as good as the person turning it, so read what you approve.
+>
+> **Daniel:** Merge asks, the switch and the approval decide, and a mistake costs a version number. I will start
+> with a pre-release.
 
 ## Cutting a release
 
@@ -171,7 +198,7 @@ CI runs `actionlint` and `zizmor` (medium severity and above) on every workflow.
 
 ## What has not been exercised
 
-- The five publishing jobs (`testpypi`, `testpypi-sdk`, `pypi`, `pypi-sdk`, `images`) have never run: they need the trusted publishers and the variables described above.
+- The five upload jobs (`testpypi`, `testpypi-sdk`, `pypi`, `pypi-sdk`, `images`) have never run against a real index or registry: they need the trusted publishers and the variables described above.
 - The `github-release` job has not run in its new form, which creates the tag itself instead of reading one.
 - The guard is tested against its own script (`tests/e2e/test_release_guard.py`), and the development-build staging step against the real step (`tests/e2e/test_dev_build_stage.py`).
   The upload jobs are tested only by their shape.

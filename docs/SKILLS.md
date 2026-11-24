@@ -1,5 +1,11 @@
 # Skills
 
+**BLUF:** A skill is a piece of text a person chose to add to one stage's prompt: a house style, a checklist, a
+way of reading sources. It is data, with no command, tool or address, so installing one cannot run anything or
+reach anything. The one tool it can bring is the built-in, read-only `read_skill`, for a skill with reference
+sections. A hash pins its exact text, the lock says which stages may see it, and a run reads the lock only when
+`EI_SKILL_LOCK` names one.
+
 A **skill** is text a person chose to add to a stage's prompt: a house style, a checklist, a way of
 reading sources. It is slice 5 of [ADR 0008](adr/0008-tools-for-the-model.md). A skill is **data**. It has no
 command, no tool, no address and no blanks to fill, so installing one cannot run anything, reach
@@ -7,6 +13,42 @@ anything or give a stage a tool it did not have. It can only change what the mod
 
 **Status.** Built and tested against fakes and a scripted local model server: the skill file format, the
 lock, `ei skills`, and the wiring into a model-backed run. No skill has been run by a live model.
+
+## A note clipped to the order
+
+> **Daniel:** I have a house style. Can I not just put it in the prompt?
+>
+> **Professor Feynman:** You can. What happens when someone edits the style a month later and does not tell you?
+>
+> **Daniel:** My books change and I do not know why.
+>
+> **Professor Feynman:** That is what the lock prevents. A skill is a small file whose bytes are hashed and
+> written in a lock you review. Change one character and the run refuses to start until a person locks it again.
+> The text is also clipped to the end of the stage's request, like a note on a kitchen order, never into the fixed
+> system part.
+>
+> **Daniel:** And only the stages I name see it?
+>
+> **Professor Feynman:** Only those, at most four skills each, no wildcards. A skill enabled for no stage is never
+> shown to a model. Notice what a skill cannot do: it cannot add a tool of its own (the one exception is the
+> read-only `read_skill`, for a skill with reference sections), change an output limit or touch the system prompt.
+> Where the picture breaks: a note on an order can still say something foolish, and the cook will follow it. A
+> skill is trusted text, because it is meant to instruct.
+>
+> **Daniel:** So the lock protects me from silent changes, not from my own bad advice. I will keep each skill
+> short and read it before I enable it.
+
+## Skills at a glance
+
+| Question | Answer |
+|---|---|
+| What is it? | One TOML file of text, one part per stage it speaks to |
+| What pins it? | The hash of its bytes in `ei-skills.lock.toml` |
+| Who sees it? | Only the stages the lock enables it for, at most four skills per stage |
+| Where does it go in the prompt? | The end of the user part, never the system part |
+| Can it give a stage a tool? | Not one of its own. A skill with reference sections adds only the built-in, read-only `read_skill` tool |
+| Is it proven against a live model? | No |
+
 
 ## A skill file
 
@@ -23,7 +65,7 @@ research = "Say where you read it, and what the page itself said."
 outline = "Prefer short chapters, each with one job."
 ```
 
-Each part is named for **the stage it speaks to** (`brief`, `positioning`, `research`, `outline`, `metadata`, `draft`, `revise_structure`, `revise_lines`, `copy_edit`; `assemble` and `audit` make no model call, so a skill for either does nothing) and
+Each part is named for **the stage it speaks to** (`brief`, `positioning`, `research`, `outline`, `metadata`, `draft`, `revise_structure`, `revise_lines`, `copy_edit`, and for a novel `story_bible` and `beats`; `assemble` and `audit` make no model call, so a skill for either does nothing) and
 holds the text for that stage. A skill with no text for a stage never reaches it.
 
 ### Reference sections: read on request
@@ -54,7 +96,7 @@ skill costs a prompt a line for each section until the model reads one.
 - `read_skill` is offered in drafting and the editing passes as well as the earlier stages, and only when the skill is enabled for that stage.
 
 Reading is strict. Any other key (a misspelt one, `command`, `tools`, `url`, `untrusted`) is refused and
-named. The file must name itself the same as its file name. A file is at most 64 KiB, a skill at most 32
+named. The file must name itself the same as its file name. A file is at most 256 KiB, a skill at most 32
 parts, and a part at most 8,000 characters.
 
 **Text a reviewer cannot see is refused.** The text a person approved is exactly the text a model sees, so
@@ -80,10 +122,10 @@ path and what it kept, and tells you to read the file before you lock it with `e
   code fence is not a heading), and text before the first one is the section `Overview`. `--section "Source
   Evaluation"` (repeat it) keeps only those, by title, ignoring case; with none, every section is kept. Each
   stage you name gets the same text, with the headings kept.
-- **Nothing is cut to fit.** A part holds 8,000 characters and a `SKILL.md` is usually longer (the median Vibey skill is
-  12 KB, the largest 58 KB). When the chosen text is too long, the error lists every section with its length so you can
-  pick, for example, just `Source Evaluation` and `Database Searching` out of a 26 KB methodology reference. A skill
-  file larger than the lock reads (64 KiB) is refused here, with the reason, rather than after you have committed to it.
+- **Nothing is cut to fit.** A part holds 8,000 characters and a `SKILL.md` is usually longer (some run to tens of
+  kilobytes). When the chosen text is too long, the error lists every section with its length so you can
+  pick, for example, just `Source Evaluation` and `Database Searching` out of a long methodology reference. A skill
+  file larger than the lock reads (256 KiB) is refused here, with the reason, rather than after you have committed to it.
 - **`--reference` keeps the sections for on-demand reading** instead of as stage text (see "Reference sections" above): each chosen
   section stays separate, without its heading, and `--stage` is not allowed with it. A reference section may be up to 20,000
   characters, far past a part's 8,000, so a methodology reference usually imports whole. The skill is then enabled with
@@ -93,7 +135,7 @@ path and what it kept, and tells you to read the file before you lock it with `e
   a list under a key. A skill here is text and grants nothing, so a `SKILL.md` that asks for a tool gets no tool.
 - **The name** is the file's, lower-cased with hyphens and spaces made underscores (`research-methodology` becomes
   `research_methodology`), unless you give `--name`. A name that cannot be made safe says so.
-- **The description** is cut at a word to 300 characters with `...` when it is longer (real ones run past 1,000), and the
+- **The description** is cut at a word to 300 characters with `...` when it is longer (a real one can be longer), and the
   output says it was. It is shown in lists and is never part of a prompt.
 - Text a reviewer could not see is refused with the character named, exactly as for any skill.
 
@@ -209,7 +251,7 @@ Prefer short chapters, each with one job.
 - Whether a model *obeys* the framing sentence is a property of the model, not of this code. If a skill
   contradicts the stage's instructions, the stage's instructions are the ones the framing asks it to keep.
 - The copy kept in `skills/` is read through no link and refused if it is a link, a folder or larger than
-  64 KiB. Nothing prevents a person with write access to the folder from changing it; the hash is what
+  256 KiB. Nothing prevents a person with write access to the folder from changing it; the hash is what
   turns that into a refusal at the next run.
 
 ## What is not built

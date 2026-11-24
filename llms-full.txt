@@ -40,7 +40,8 @@ Optional flags: `--title TEXT`, `--audience TEXT`, `--target-words N`, `--trim-s
 ## Exit codes of `ei book create`
 
     0  the book is written. Files: ./BOOK/run/book/  Report: ./BOOK/run/quality-report.json
-    1  the run failed, or an extra is missing. What it made is still in ./BOOK/. Read the `issue:` lines.
+    1  the run failed, or an extra is missing. A failed run is final: --resume does not retry it. What it made
+       is still in ./BOOK/. Read the `issue:` lines.
     2  it could not start: a missing idea, kind, budget or profile; a bad profile; a state folder that
        already exists without --resume; no run to resume; a budget below the estimate.
     3  it stopped to ask for more budget. Nothing is lost and nothing more is spent.
@@ -49,7 +50,8 @@ On 3, ask the user. Only if they agree:
 
     ei book create --out ./BOOK --resume --approve-spend
 
-To continue a run that stopped for any other reason (finished stages are never run or paid for again):
+To continue a run that was interrupted by a crash or a closed terminal (finished stages are never run or paid for
+again; a run that failed is final and is not retried):
 
     ei book create --out ./BOOK --resume
 

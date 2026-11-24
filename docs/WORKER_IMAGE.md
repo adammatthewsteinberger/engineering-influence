@@ -1,13 +1,40 @@
 # The worker image and the TeX toolchain
 
+**BLUF:** There are two images. The slim `runtime` image runs the API and the worker. The `worker-tex` image adds
+the TeX toolchain a book's last stage, `build`, needs to make the PDF and EPUB. A slim worker still writes every
+chapter; only `build` fails, naming the missing tool, and what the earlier stages wrote stays in the run.
+
+## A kitchen with no oven
+
+> **Daniel:** I started the stack, a run went through every writing stage, and then it failed at `build`.
+> Everything before it looked fine. What did I do wrong?
+>
+> **Professor Feynman:** Imagine a kitchen that can chop, mix and season, but has no oven. What can it make?
+>
+> **Daniel:** Everything up to the baking. And then it stops.
+>
+> **Professor Feynman:** That is the slim worker. It does every writing stage. The `build` stage typesets the book
+> with LaTeX and packs an EPUB, which needs the tools in the TeX image. Without them it fails with `BUILD_FAILED`
+> and names the missing tool, and the earlier work stays in the run.
+>
+> **Daniel:** So I lose nothing, I just cannot finish.
+>
+> **Professor Feynman:** You lose nothing you wrote: every chapter is stored with the run. But a failed run is
+> final, so you cannot run `build` again on it. Start a new run on the `worker-tex` image, or build the exported
+> files with `ei book build`. One limit: the TeX image is about 2.9 GB, and only a short test book has been built
+> in it. A full-length book has not.
+>
+> **Daniel:** Slim for writing, TeX for building, and a failed build does not cost me the chapters.
+
+
 The `Dockerfile` has two images, and `docker build` without a target makes the slim one.
 
-| Target | Command | Size (measured) | For |
+| Target | Command | Size (measured once, not in CI) | For |
 |---|---|---|---|
 | `runtime` (default) | `docker build -t engineering-influence:local .` | about 1.2 GB | the API and the worker, as `examples/docker-compose.yml` runs them |
 | `worker-tex` | `docker build --target worker-tex -t engineering-influence:tex .` | about 2.9 GB | a worker that can build books: LuaLaTeX, latexmk, tex4ebook, pdftoppm, epubcheck, a Java runtime, zip and tidy |
 
-The TeX image has the same packages the CI toolchain job installs, plus `zip` and `tidy` (the CI runners already have
+The TeX image has the same packages the CI toolchain job installs, plus `poppler-utils`, `zip` and `tidy` (the CI runners already have
 `zip`, but `tex4ebook` needs it to pack an EPUB). Recommended TeX packages are not installed.
 
 ## Running it
@@ -19,7 +46,7 @@ the build can write it:
 ```bash
 docker run --rm --read-only --tmpfs /tmp --cap-drop ALL \
   -v "$PWD/my-book:/work" -w /work engineering-influence:tex \
-  build demo
+  book build demo
 ```
 
 ## What was verified, and what was not
@@ -43,6 +70,9 @@ keeps the slim one. Add the override to switch only the worker:
 docker compose -f examples/docker-compose.yml -f examples/docker-compose.tex.yml \
   --env-file examples/.env up -d --build --wait
 ```
+
+The worker also needs `EI_AUTHOR_PROFILE` pointing at a profile file mounted into the container, and neither compose
+file provides one: without it the assembled book does not build.
 
 A slim worker still does every writing stage. Only `build` fails (`BUILD_FAILED`), naming the missing tool, and what the
 earlier stages wrote stays in the run.

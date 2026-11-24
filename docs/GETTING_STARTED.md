@@ -134,17 +134,17 @@ cap. A whole book takes a long time; how long on your machine is not yet measure
 | Exit | Meaning | What to do |
 |---|---|---|
 | `0` | The book is written | Open `my-book/run/book/` and read `my-book/run/quality-report.json` |
-| `1` | The run failed; what it made is still in `my-book/` | Read the `issue:` lines it printed |
+| `1` | The run failed, and a failed run is final; what it made is still in `my-book/` | Read the `issue:` lines it printed, fix the cause, and start a new run with a new `--out` |
 | `2` | It could not start | The message says why |
 | `3` | It stopped to ask for more budget; nothing is lost | `ei book create --out ./my-book --resume --approve-spend` |
 
-If it stops for any reason (a crash, a closed laptop, a fixed problem), carry on:
+If it is interrupted (a crash, a closed laptop, a provider that was out of capacity), carry on:
 
 ```bash
 ei book create --out ./my-book --resume
 ```
 
-Finished stages are never run or paid for again. The run is kept in `my-book.state/`.
+Finished stages are never run or paid for again. The run is kept in `my-book.state/`. A run that ended in failure (exit 1) is final: `--resume` returns it as it is and does not try again. A failed run's chapters are still in `my-book/`.
 
 What is in the folder, and every flag: [INTERACTIONS.md](INTERACTIONS.md#cli) and
 [BOOKS_AND_KDP.md](BOOKS_AND_KDP.md).

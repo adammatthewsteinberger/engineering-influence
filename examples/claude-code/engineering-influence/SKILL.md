@@ -42,7 +42,7 @@ The log gets an `estimate:` line, then one `stage: outcome` line per stage, then
 | Exit | Meaning | What to do |
 |---|---|---|
 | 0 | The book is written | The files are in `BOOK/run/book/`; read `BOOK/run/quality-report.json` |
-| 1 | The run failed; what it made is still in `BOOK/` | Read the `issue: CODE: detail` lines in the log and tell the user |
+| 1 | The run failed, and **a failed run is final**: `--resume` will not retry it. What it made is still in `BOOK/` | Read the `issue: CODE: detail` lines in the log and tell the user. Start a new run with a new `--out` only if they ask |
 | 2 | It could not start | The message says why: a missing idea, kind, budget or profile, or a budget below the estimate |
 | 3 | It stopped to ask for more budget; nothing was lost | **Ask the user.** Only if they agree: `ei book create --out ./BOOK --resume --approve-spend` |
 
@@ -52,7 +52,7 @@ The log gets an `estimate:` line, then one `stage: outcome` line per stage, then
 ei book create --out ./BOOK --resume
 ```
 
-Finished stages are never paid for again. Use this after a crash, a closed terminal or a fixed problem.
+Finished stages are never paid for again. Use this after a crash or a closed terminal, or when a provider was out of capacity. It does not retry a run that failed (exit 1).
 
 ## Rules
 

@@ -1,5 +1,11 @@
 # Testing
 
+**BLUF:** CI is the source of truth: lint, import rules, types, security lint, tests with 100% branch coverage,
+the toolchain build, an integration run against real PostgreSQL and RabbitMQ, workflow and secret scans. Almost
+every command is on this page so you can run it before you push; the leak scan, `gitleaks`, `actionlint` and
+`zizmor` run only in CI. Most tests use scripted fakes, so they prove the machinery, not that a real model writes
+well.
+
 CI (`.github/workflows/ci.yml`) is the source of truth. These are its jobs and how to run each locally.
 
 ```bash
@@ -24,6 +30,27 @@ uv sync --extra test --extra runtime --extra dev --extra publishing
 | Toolchain | `uv run pytest -m toolchain` (the CI `toolchain` job) | real LuaLaTeX, epubcheck and the book build end to end |
 | Canary | `.github/workflows/canary.yml` | a daily fresh dependency resolve, to catch an upstream break early |
 | Nightly evaluation | `.github/workflows/nightly-eval.yml` | `ei evaluate` against a real model; **paid**, off until `RUN_NIGHTLY_EVAL` is `true`, and never run |
+
+## What 100% does not mean
+
+> **Daniel:** The project insists on one hundred percent coverage. So there are no bugs.
+>
+> **Professor Feynman:** A smoke detector is installed in every room. Does that mean nothing can burn?
+>
+> **Daniel:** It means every room is wired. Not that it would go off.
+>
+> **Professor Feynman:** Coverage says every line ran during a test. It does not say anything checked the result.
+> A test that runs a line and asserts nothing makes the number go up and protects nothing. The test of a test is
+> whether it can fail.
+>
+> **Daniel:** How do I find out?
+>
+> **Professor Feynman:** Break the code on purpose and watch. Change a comparison, delete a check, and see whether
+> a test goes red. If none does, the line is covered and unprotected. CI does not do this for you; it is something
+> to do when you add a rule that matters.
+>
+> **Daniel:** So the number is the floor and not the proof, and I should break my own change before I trust its
+> tests.
 
 ## Test layout
 

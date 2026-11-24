@@ -67,11 +67,11 @@ The book lands in `./my-book/run/book/`. Nothing is uploaded: you read it, then 
 
 ```bash
 ei doctor --ready                      # can this machine make a book now? every gap, with the fix
-ei book create --out ./my-book --resume  # carry on after a crash, a closed laptop or a fixed problem
+ei book create --out ./my-book --resume  # carry on after a crash, a closed laptop or a provider at capacity
 ei book create --out ./my-book --resume --approve-spend   # allow the extra budget a stopped run asked for
 ```
 
-`ei book create` exits `0` when the book is written, `1` when the run failed (what it made is kept), `2` when
+`ei book create` exits `0` when the book is written, `1` when the run failed (what it made is kept, and a failed run is final), `2` when
 it could not start, and `3` when it stopped to ask for more budget.
 
 ## Let another AI drive it

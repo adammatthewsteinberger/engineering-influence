@@ -1,5 +1,10 @@
 # The tool lock
 
+**BLUF:** A tool server (an MCP server) runs in a book run only if a person approved it, and only while it is
+still what was approved. The approval is the tool lock, a TOML file you review like any other commit. It pins the
+server's files, its name and version, and a hash of every tool it advertises, and it says which stage may call
+which tool. A run reads a lock only when `EI_TOOL_LOCK` names one.
+
 Third-party tool servers (MCP servers) run only if a person has approved them, and only while they
 are still what was approved. The approval is the **tool lock**, a TOML file you review like any other
 commit. This is slice 4 of [ADR 0008](adr/0008-tools-for-the-model.md), built in parts.
@@ -11,6 +16,48 @@ a run that is given a lock starts and verifies each server, registers its tools,
 the tools the lock grants it, and (slice 4d) **remote servers over HTTP**. No third-party server has been
 run by a live model, and no server other than small ones written for the tests has been run at all; the
 HTTP transport has only been run against a scripted server, never over a real network.
+
+## A guest list with a photograph
+
+> **Daniel:** I want the research stage to use a tool server I found. Why can I not just point it at the server
+> and let it go?
+>
+> **Professor Feynman:** You are the caretaker of a building. A visitor says he is from the gas company. What do
+> you check?
+>
+> **Daniel:** His name on the list. And his badge.
+>
+> **Professor Feynman:** Two checks, then. The lock is both. First, the list: which server, and which of its tools
+> a stage may call, written down in a file you reviewed. Second, the badge: a hash of the server's files, and of
+> every tool it advertises (name, description and schema), checked every time it starts. If either changed, it
+> does not come in.
+>
+> **Daniel:** A hash of its tool descriptions? Why would that matter?
+>
+> **Professor Feynman:** Because a tool's description is where a hostile server hides instructions for the model.
+> Reword one word and the hash changes, and the run stops at start with `TOOL_LOCK_MISMATCH` naming the server.
+>
+> **Daniel:** So a lock means the server is safe.
+>
+> **Professor Feynman:** No, and this is where the picture breaks. A badge proves it is the person you approved.
+> It does not prove that person is honest. Dependencies are not hashed, a remote server is pinned only by its
+> address and by what it advertises (its name, version and tools), and what a server returns is still untrusted
+> text. You decide whether to approve; the lock makes sure it stays what you approved.
+>
+> **Daniel:** The lock keeps it the same as what I approved, and the approving is still my job. I will read the
+> server before I add it.
+
+## The lock at a glance
+
+| Question | Answer |
+|---|---|
+| Where is it read from? | In a run, only the file `EI_TOOL_LOCK` names, and a file in the current directory is ignored. The `ei tools` commands use `--lock`, else `EI_TOOL_LOCK`, else `./ei-tools.lock.toml` |
+| What is pinned for a local server? | Its files by hash, its name, its version and a hash of its tools |
+| What is pinned for a remote server? | Its address and what it advertises, and nothing else |
+| Who may call a tool? | Only a stage the lock grants it to, with no wildcards |
+| What if anything differs? | The process stops at start: `TOOL_LOCK_MISMATCH`, or `TOOL_SERVER_UNAVAILABLE` |
+| Is it proven against a live model? | No. Only small servers written for the tests have been run |
+
 
 ## In a run
 

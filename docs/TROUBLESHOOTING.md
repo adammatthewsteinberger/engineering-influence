@@ -1,5 +1,32 @@
 # Troubleshooting
 
+**BLUF:** Ask the machine first: `ei doctor --ready` checks the extras, the build tools, the author profile, the
+local model (when `EI_STAGE_EXECUTOR` is `local`) and the search, and says what to do about each failure. It makes
+one tiny request to the local model and one real search request, and it does not look at the database or the
+broker. If the machine is fine and the stack is not, find the symptom in the table below. The rows about the stack
+assume you ran `set -a; . examples/.env; set +a`.
+
+## Ask before you guess
+
+> **Daniel:** Something failed and I have forty log lines. I do not know where to start.
+>
+> **Professor Feynman:** A car will not start. What is the first thing a mechanic does?
+>
+> **Daniel:** Plugs in the diagnostic computer.
+>
+> **Professor Feynman:** Ask the machine. `ei doctor --ready` is yours: one line per thing a book needs, `ok` or
+> `FAIL`, and each `FAIL` says what to do. It finds the author profile you forgot and the TeX tool that is missing
+> before you spend an hour on a log.
+>
+> **Daniel:** And if it all says `ok` and the stack still misbehaves?
+>
+> **Professor Feynman:** Then the machine is fine and the fault is elsewhere. The doctor checks this computer's
+> own files and tools, the local model and the search, and not the stack: it does not look at the database or the
+> broker. Look your symptom up below, and collect the evidence the last section lists before you ask for help.
+>
+> **Daniel:** Doctor for the machine, the table for the stack, and the evidence block for a bug report.
+
+
 Find the symptom, then the cause. Commands assume you ran `set -a; . examples/.env; set +a`.
 
 | Symptom | Cause | Fix |
@@ -10,12 +37,21 @@ Find the symptom, then the cause. Commands assume you ran `set -a; . examples/.e
 | `ei run resume` prints `ConnectionError while talking to the stack` | The broker was unreachable after the run was un-parked, so its stage was not queued | Run the same command again: resuming a running run queues its stage |
 | `ei run …` prints `error: run 'x' is already completed` (exit 1) | Completed and failed runs cannot be resumed or cancelled | Nothing to do; a cancelled run can be cancelled again, which changes nothing |
 | `ei db upgrade` prints `cannot reach or migrate the database (OperationalError)` | The URL is wrong or the database is down; the message never includes the password | Check `EI_DATABASE_URL` and that Postgres is reachable from where you run it |
-| `ei serve` prints `needs the api and runtime extras` | Optional dependencies missing | `pip install "engineering-influence[api,runtime]"` or `uv sync --extra api --extra runtime` |
-| `ei book …` prints `needs the publishing extra` | Pillow, numpy and the PDF libraries are optional | `pip install "engineering-influence[publishing]"` |
+| `ei serve api` or `worker` prints `needs the api and runtime extras`; `ei serve mcp` names the `mcp` and `runtime` extras | Optional dependencies missing | `pip install "engineering-influence[api,runtime]"` (or `[mcp,runtime]`), or `uv sync` with those extras |
+| `ei book …` prints `book commands need the publishing extra`; `ei book create` prints `book create needs the runtime and publishing extras` | Pillow, numpy and the PDF libraries are optional | `pip install "engineering-influence[publishing]"` (and `[runtime]` for `book create`) |
+| `ei book create` stops at once with `already exists and is not an empty folder` (exit 2) | `--out` holds something, and a book is written only into a new or empty folder | Choose a new `--out`. To keep a run you were resuming, `--out NEW_FOLDER --state-dir OLD.state --resume` |
+| `ei book create` exits 1 and prints `issue: stage-failed: …the book 'SLUG' did not build…`, naming a step or tool | The `build` stage could not make the PDF or EPUB, usually because a TeX tool is not installed. Every chapter was still written and is in `--out` | `ei doctor --ready` lists each missing tool. Install it. **A failed run is final: `--resume` does not retry it.** Build the exported project with `ei book --root OUT build SLUG` (or `publish`), or start a new run with a new `--out`. Rebuilding the export has not been tried end to end |
+| `ei book create` exits 2 and prints `a book needs the author's details to be typeset` (code `AUTHOR_PROFILE_REQUIRED`) | A book needs the author's details to be typeset, and none was named | Pass `--profile FILE` or set `EI_AUTHOR_PROFILE`; `examples/author-profile.example.toml` is a starting point. (`ei doctor --ready` takes `--author-profile`.) |
+| `ei book create` exits 3 | The run stopped to ask for more budget. Nothing is lost | Decide, then `ei book create --out DIR --resume --approve-spend` |
+| `ei doctor --ready` fails `local: server` | Ollama is not running at `EI_LOCAL_URL` | Start Ollama, or set `EI_LOCAL_URL`; see [LOCAL_MODEL.md](LOCAL_MODEL.md) |
+| `ei doctor --ready` fails `local: context` | The server loaded the model with fewer than 32,768 tokens | Set `OLLAMA_CONTEXT_LENGTH=32768` where you start Ollama and restart it |
+| `ei doctor --ready` prints `FAIL searxng at its default address: search: …` | Nothing answered a real test search at `http://127.0.0.1:8888`, or at the `EI_SEARXNG_URL` or Brave you set | Start the SearXNG in `examples/searxng/` (see [RESEARCH.md](RESEARCH.md)) or set `EI_SEARXNG_URL` or `BRAVE_SEARCH_API_KEY` |
+| `ei doctor --ready` prints `FAIL install: tool <name>` or `FAIL install: extra <name>` | The build stage needs that tool, or the run needs that extra | Install it; [WORKER_IMAGE.md](WORKER_IMAGE.md) lists the TeX packages |
+| `ei doctor --ready` fails `local: model` or `local: answers` | The model is not pulled, or it returned an empty answer | `ollama pull gpt-oss:20b`; see [LOCAL_MODEL.md](LOCAL_MODEL.md) |
 | API will not start; mentions API keys | `EI_API_KEYS` unset or a key shorter than 24 characters | `openssl rand -hex 24` per key |
 | `401 UNAUTHORIZED` | Missing or wrong key | `Authorization: Bearer $EI_API_KEY` or `X-API-Key`; the key is the one in `EI_API_KEYS` |
 | `429 RATE_LIMITED` | Budget spent (default burst 30, 10 per second) | Back off; raise `EI_RATE_BURST` / `EI_RATE_PER_SECOND` for trusted clients |
-| `422` on `POST /v1/pipelines` | A required field is missing or a stage name is unknown | Valid stages: `thesis book novel screenplay hub spokes distribution publish` |
+| `422` on `POST /v1/pipelines` | A required field is missing or a stage name is unknown; the answer names the valid stages | Valid stages: `thesis book novel screenplay hub spokes distribution publish` |
 | `GET /health/ready` returns 503 | A dependency is unreachable; the body never says which | Read `/metrics` (needs a key) and the API log |
 | `Connection refused` on port 8000 | Stack not up, or `EI_API_PORT` changed | `docker compose -f examples/docker-compose.yml --env-file examples/.env ps` |
 | Postgres container unhealthy, exits at start (Postgres 18 image) | The volume is mounted at `/var/lib/postgresql/data`; 18+ images keep a versioned directory under `/var/lib/postgresql` | Mount `/var/lib/postgresql` (the shipped compose file does) and delete the old volume: `sh examples/down.sh --volumes` |
