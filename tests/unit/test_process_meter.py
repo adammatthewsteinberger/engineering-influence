@@ -121,3 +121,32 @@ def test_memory_is_summed_over_every_process_in_the_group(tmp_path: Path) -> Non
         process.wait()
         if process.stdout:
             process.stdout.close()
+
+
+def test_ps_is_run_from_where_the_system_keeps_it_not_looked_up_on_path(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    process = holder(50)
+    try:
+        monkeypatch.setenv("PATH", str(tmp_path))  # a folder with no ps in it
+
+        assert ProcessMeter().memory_bytes(os.getpgid(process.pid)) >= 50 * MIB
+    finally:
+        process.kill()
+        process.wait()
+
+
+def test_the_first_place_that_has_ps_is_the_one_used() -> None:
+    seen: list[str] = []
+
+    def only_the_second(place: str) -> bool:
+        seen.append(place)
+        return place == "/usr/bin/ps"
+
+    assert ProcessMeter(only_the_second)._ps() == "/usr/bin/ps"
+    assert seen == ["/bin/ps", "/usr/bin/ps"]
+    assert ProcessMeter(lambda place: True)._ps() == "/bin/ps"
+
+
+def test_with_ps_in_neither_place_the_search_path_is_the_fallback() -> None:
+    assert ProcessMeter(lambda place: False)._ps() == "ps"
