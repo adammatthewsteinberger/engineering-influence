@@ -3,6 +3,7 @@
 
 import os
 import subprocess  # nosec B404
+from collections.abc import Callable
 from pathlib import Path
 
 from engineering_influence.infrastructure.process.interfaces.process_meter_interface import (
@@ -16,13 +17,26 @@ class ProcessMeter(ProcessMeterInterface):
     Resident memory is sampled, so a tool that allocates faster than the sampling interval
     can pass its limit before it is seen; the overshoot is bounded by how much it can touch
     in one interval. A process that has left the group is not counted.
+
+    ``ps`` is run from where the system keeps it, not looked up on ``PATH``: a tool is often run with a
+    ``PATH`` of its own, and a measuring command that is found only through it would fail the first time a
+    tool lasted past one sampling interval (and could be replaced by whatever a ``PATH`` entry holds).
+    ``PATH`` is the fallback only when neither place has it.
     """
+
+    LOCATIONS = ("/bin/ps", "/usr/bin/ps")
+
+    def __init__(self, exists: Callable[[str], bool] = os.path.exists) -> None:
+        self._exists = exists
+
+    def _ps(self) -> str:
+        return next((place for place in self.LOCATIONS if self._exists(place)), "ps")
 
     def memory_bytes(self, group: int) -> int:
         """Resident memory of every process in the group, in bytes; 0 when none is left."""
         # Fixed arguments, no shell.
-        listing = subprocess.run(  # nosec B603 B607
-            ["ps", "-axo", "pgid=,rss="],
+        listing = subprocess.run(  # nosec B603
+            [self._ps(), "-axo", "pgid=,rss="],
             capture_output=True,
             text=True,
             timeout=10,
