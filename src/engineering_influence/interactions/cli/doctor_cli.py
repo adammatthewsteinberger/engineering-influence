@@ -106,11 +106,7 @@ class DoctorCli(DoctorCliInterface):
             profile = arguments.author_profile or self._from_environment("EI_AUTHOR_PROFILE")
             query = arguments.query or self.DEFAULT_QUERY
             return self._report(
-                lambda: (
-                    *self._ready().check(profile),
-                    *self._local().check(),
-                    *self._search().check(query),
-                ),
+                lambda: self._everything(profile, query),
                 "one tiny completion to the local model, and one search request per provider",
             )
         if arguments.search:
@@ -153,6 +149,48 @@ class DoctorCli(DoctorCliInterface):
         sent = "one model-list request per profile" if arguments.probe else "nothing"
         print(f"all {len(findings)} checks passed; sent: {sent}")
         return 0
+
+    def _everything(self, profile: Path | None, query: str) -> tuple[DoctorFinding, ...]:
+        """Every part of the readiness check, each on its own, so one that cannot run never hides the others.
+
+        A part that cannot even start (a missing extra, a setting that is not usable) becomes one failed finding
+        that says why. The local model is checked only when it is what would write the book: with
+        ``EI_STAGE_EXECUTOR`` set to something else, that is said and ``--models`` is the check to run.
+        """
+        executor = self._environment.get("EI_STAGE_EXECUTOR", "local")
+        parts: list[tuple[str, Callable[[], tuple[DoctorFinding, ...]]]] = [
+            ("install", lambda: self._ready().check(profile))
+        ]
+        if executor == "local":
+            parts.append(("local", lambda: self._local().check()))
+        parts.append(("search", lambda: self._search().check(query)))
+        findings: list[DoctorFinding] = []
+        for name, check in parts:
+            try:
+                findings.extend(check())
+            except ImportError as error:
+                findings.append(
+                    DoctorFinding(
+                        name,
+                        "could be checked",
+                        False,
+                        "it needs the runtime extra: "
+                        f"pip install 'engineering-influence[runtime]' ({error.name} is missing)",
+                    )
+                )
+            except ApplicationError as error:
+                findings.append(DoctorFinding(name, "could be checked", False, error.message))
+        if executor != "local":
+            findings.append(
+                DoctorFinding(
+                    "local",
+                    "skipped",
+                    True,
+                    f"EI_STAGE_EXECUTOR is {executor!r}, so the local model is not what writes; "
+                    "check yours with ei doctor --models",
+                )
+            )
+        return tuple(findings)
 
     def _report(self, check: Callable[[], tuple[DoctorFinding, ...]], sent: str) -> int:
         try:

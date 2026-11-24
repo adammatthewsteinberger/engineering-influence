@@ -174,6 +174,7 @@ class BookCli(BookCliInterface):
                     message=f"{state} already holds a run; add --resume to continue it, or choose another --out",
                     http_status=409,
                 )
+            self._check_out(arguments.out, state, arguments.resume)
         except ApplicationError as error:
             print(f"error: {error.message}", file=sys.stderr)
             return 2
@@ -209,6 +210,29 @@ class BookCli(BookCliInterface):
             return 2
         finally:
             creator.close()
+
+    @staticmethod
+    def _check_out(out: Path, state: Path, resuming: bool) -> None:
+        """Refuse a folder the book could not be written to, before a stage is run, not after the last one.
+
+        The book is written to ``--out`` only when the run ends, and only into a new or empty folder, so a folder
+        that holds anything would otherwise be found out after every stage had been run and paid for. A run that
+        failed has already written what it made there, so continuing it needs a new folder; the run itself is in
+        the state folder and loses nothing.
+        """
+        if not out.is_symlink() and (not out.exists() or (out.is_dir() and not any(out.iterdir()))):
+            return
+        advice = (
+            f"the run is safe in {state}: continue it into a new folder with "
+            f"--out NEW_FOLDER --state-dir {state} --resume"
+            if resuming
+            else "choose a new or empty --out"
+        )
+        raise ApplicationError(
+            code="EXPORT_TARGET_NOT_EMPTY",
+            message=f"{out} already exists and is not an empty folder; {advice}",
+            http_status=409,
+        )
 
     def _affordable(
         self, creator: LocalBookCreatorInterface, brief: BookBrief, ignore: bool

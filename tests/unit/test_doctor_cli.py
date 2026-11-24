@@ -965,3 +965,87 @@ def test_the_real_readiness_doctor_looks_at_this_interpreter_this_path_and_the_r
     assert findings["extra runtime"].passed and findings["extra publishing"].passed
     assert findings["author profile"].detail == f"there is no file at {tmp_path / 'none.toml'}"
     assert findings["tool zip"].passed == (shutil.which("zip") is not None)
+
+
+# ------------------------------------------------------------------------------ doctor --ready: one part never hides another
+def test_a_part_that_cannot_start_is_one_failed_line_and_the_other_parts_are_still_shown(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    def no_local() -> LocalModelDoctorInterface:
+        raise ImportError("no httpx", name="httpx")
+
+    def bad_search() -> SearchDoctorInterface:
+        raise ApplicationError("STAGE_SEARXNG_URL_INVALID", "EI_SEARXNG_URL is not usable: no host")
+
+    cli = DoctorCli(never_models, bad_search, no_local, {}, lambda: ReadinessFake(INSTALLED))
+
+    assert cli.run(ready_args()) == 1
+
+    assert capsys.readouterr().out == (
+        "ok   install: extra runtime: installed\n"
+        "FAIL local: could be checked: it needs the runtime extra: "
+        "pip install 'engineering-influence[runtime]' (httpx is missing)\n"
+        "FAIL search: could be checked: EI_SEARXNG_URL is not usable: no host\n"
+        "2 of 3 checks failed\n"
+    )
+
+
+def test_the_install_part_failing_to_start_does_not_stop_the_model_and_search_checks(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    def no_ready() -> ReadinessDoctorInterface:
+        raise ApplicationError("AUTHOR_PROFILE_INVALID", "the profile cannot be used")
+
+    cli = DoctorCli(
+        never_models,
+        lambda: SearchDoctorFake(GOOD),
+        lambda: LocalDoctorFake(LOCAL_GOOD),
+        {},
+        no_ready,
+    )
+
+    assert cli.run(ready_args()) == 1
+    out = capsys.readouterr().out
+    assert out.startswith("FAIL install: could be checked: the profile cannot be used\n")
+    assert "ok   local: server: Ollama answers\n" in out and "ok   searxng: search:" in out
+    assert out.endswith("1 of 4 checks failed\n")
+
+
+@pytest.mark.parametrize("executor", ["model", "deterministic"])
+def test_the_local_model_is_not_checked_when_it_is_not_what_writes_the_book(
+    capsys: pytest.CaptureFixture[str], executor: str
+) -> None:
+    cli = DoctorCli(
+        never_models,
+        lambda: SearchDoctorFake(GOOD),
+        NO_LOCAL,
+        {"EI_STAGE_EXECUTOR": executor},
+        lambda: ReadinessFake(INSTALLED),
+    )
+
+    assert cli.run(ready_args()) == 0
+
+    assert capsys.readouterr().out == (
+        "ok   install: extra runtime: installed\n"
+        "ok   searxng: search: 5 links, the first from example.org\n"
+        f"ok   local: skipped: EI_STAGE_EXECUTOR is {executor!r}, so the local model is not what writes; "
+        "check yours with ei doctor --models\n"
+        "all 3 checks passed; sent: one tiny completion to the local model, "
+        "and one search request per provider\n"
+    )
+
+
+def test_the_local_model_is_checked_when_the_setting_says_local(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    local = LocalDoctorFake(LOCAL_GOOD)
+    cli = DoctorCli(
+        never_models,
+        lambda: SearchDoctorFake(GOOD),
+        lambda: local,
+        {"EI_STAGE_EXECUTOR": "local"},
+        lambda: ReadinessFake(INSTALLED),
+    )
+
+    assert cli.run(ready_args()) == 0 and local.calls == 1
+    assert "skipped" not in capsys.readouterr().out
