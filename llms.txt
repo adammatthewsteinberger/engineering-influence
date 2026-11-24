@@ -21,6 +21,7 @@
 - [Contributing](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/CONTRIBUTING.md)
 - [Testing](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/TESTING.md): the CI gates and how to run them
 - [Compatibility](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/COMPATIBILITY.md): the public contracts, what counts as a breaking change, and the snapshots that guard them
+- [Evaluation](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/EVALUATION.md): `ei evaluate`, the rubric, the judge, and the bar a release must meet
 - [Agent guidance](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/AGENTS.md)
 - [Security policy](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/SECURITY.md)
 

@@ -342,3 +342,48 @@ def test_serve_mcp_is_one_of_the_targets_and_a_configuration_error_exits_2(
     assert parser.parse_args(["serve", "mcp"]).target == "mcp"
     status, stderr = run(ServeCli(ServeStarter(MappingSecrets({}))), "mcp", {}, monkeypatch)
     assert status == 2 and "EI_DATABASE_URL" in stderr
+
+
+def test_the_real_evaluate_command_is_wired_and_refuses_to_spend_without_the_paid_switch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.delenv("EI_ALLOW_PAID", raising=False)
+    status = (
+        CliRuntime()
+        .build()
+        .run(
+            [
+                "evaluate",
+                "--out",
+                str(tmp_path / "o"),
+                "--budget-usd",
+                "1",
+                "--judge-budget-usd",
+                "1",
+            ]
+        )
+    )
+    assert status == 2 and "EI_ALLOW_PAID=1" in capsys.readouterr().err
+
+
+def test_the_cli_builds_the_evaluation_from_the_environment_and_the_settings_it_is_given(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from engineering_influence.interfaces.release_evaluator_interface import (
+        ReleaseEvaluatorInterface,
+    )
+    from engineering_influence.runtime.evaluation_runtime import EvaluationRuntime
+
+    monkeypatch.setenv("EI_EVAL_JUDGE_PROFILE", "judge")
+    monkeypatch.setenv("EI_AUTHOR_PROFILE", str(tmp_path / "not-there.toml"))
+    evaluator = CliRuntime()._release_evaluator(
+        tmp_path / "work",
+        tmp_path / "rubric.toml",
+        tmp_path / "set.toml",
+        None,
+        {"EI_AUTHOR_PROFILE": "chosen.toml"},
+    )
+    assert isinstance(evaluator, ReleaseEvaluatorInterface)
+    assert isinstance(evaluator, EvaluationRuntime)
+    assert evaluator._environment["EI_EVAL_JUDGE_PROFILE"] == "judge"
+    assert evaluator._environment["EI_AUTHOR_PROFILE"] == "chosen.toml"

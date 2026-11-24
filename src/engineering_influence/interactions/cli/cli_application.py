@@ -18,6 +18,9 @@ from engineering_influence.interactions.cli.interfaces.db_cli_interface import D
 from engineering_influence.interactions.cli.interfaces.doctor_cli_interface import (
     DoctorCliInterface,
 )
+from engineering_influence.interactions.cli.interfaces.evaluate_cli_interface import (
+    EvaluateCliInterface,
+)
 from engineering_influence.interactions.cli.interfaces.plugins_cli_interface import (
     PluginsCliInterface,
 )
@@ -47,6 +50,7 @@ class CliApplication(CliApplicationInterface):
         skills_cli: SkillsCliInterface,
         plugins_cli: PluginsCliInterface,
         acp_cli: AcpCliInterface,
+        evaluate_cli: EvaluateCliInterface,
     ) -> None:
         self._controller = controller
         self._book_cli = book_cli
@@ -58,6 +62,7 @@ class CliApplication(CliApplicationInterface):
         self._skills_cli = skills_cli
         self._plugins_cli = plugins_cli
         self._acp_cli = acp_cli
+        self._evaluate_cli = evaluate_cli
 
     def parser(self) -> argparse.ArgumentParser:
         """The whole command tree as a parser: every command, option and choice of ``ei``."""
@@ -82,6 +87,7 @@ class CliApplication(CliApplicationInterface):
         self._skills_cli.register(subparsers)
         self._plugins_cli.register(subparsers)
         self._acp_cli.register(subparsers)
+        self._evaluate_cli.register(subparsers)
         return parser
 
     def run(self, argv: list[str] | None = None) -> int:
@@ -105,6 +111,8 @@ class CliApplication(CliApplicationInterface):
             return self._plugins_cli.run(arguments)
         if arguments.command == "acp":
             return self._acp_cli.run(arguments)
+        if arguments.command == "evaluate":
+            return self._evaluate_cli.run(arguments)
         if arguments.command == "pipeline" and arguments.pipeline_command == "start":
             request = ProjectRequest(
                 slug=arguments.slug,

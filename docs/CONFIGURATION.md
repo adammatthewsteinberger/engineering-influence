@@ -194,6 +194,9 @@ and republish it by hand. Stopping the worker finishes the job in flight first.
   far: brief, positioning, research and outline. An answer that is refused, cut off or empty stops the run, and so does an
   outline that cannot be read as numbered chapters (`OUTLINE_INVALID`; see [PROMPTS.md](PROMPTS.md#the-outline-is-a-format-not-just-prose)).
   Nothing has been run against a live provider.
+- **`EI_EVAL_JUDGE_PROFILE`** (required by `ei evaluate`): the name of the profile, in `EI_MODEL_PROFILES`, of the model that scores the
+  evaluation's books. It is a model of its own, never the one that wrote them. `ei evaluate` refuses to start without it
+  (`EVALUATION_JUDGE_REQUIRED`) and spends only when `EI_ALLOW_PAID=1` ([EVALUATION.md](EVALUATION.md)).
 - **`EI_BUILD_STRICT_RELEASE`** (optional, default off): `1`, `true` or `yes` makes a run's `build` stage build a strict release,
   so any readiness warning (for example a missing price or its source and date) fails the run. Off, those are warnings in
   the run's `quality-report.json`. The build needs the TeX worker image ([WORKER_IMAGE.md](WORKER_IMAGE.md)).

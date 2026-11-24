@@ -23,6 +23,11 @@ chapter, from the widest to the narrowest. Every blank in them is untrusted (the
 the voice), and each tells the model to return only the whole edited chapter and to stay within a stated length of the original; the
 executor enforces the bound (see ADR 0010).
 
+`eval_judge` (version 1) is the one prompt that is not part of making a book: the evaluation's judge ([EVALUATION.md](EVALUATION.md)).
+It is given a finished book and the rubric and answers one JSON object of scores and reasons; the book is its one untrusted blank, so
+a book that tells the judge to score it highly is data, not an instruction. `ScoreParser` refuses an answer that is not exactly the
+rubric's dimensions with whole scores from 1 to 5 (`JUDGE_ANSWER_INVALID`).
+
 `stage_metadata` (version 1) writes the store listing (title, subtitle, description, seven keywords, up to three categories) in a
 format a program reads, like the outline: `MetadataParser` refuses an answer it cannot read (`METADATA_INVALID`), so a malformed
 listing stops the run where it is written. Its rules are the release contract's, so a listing that parses cannot fail that check for

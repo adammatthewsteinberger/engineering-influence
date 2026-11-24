@@ -1,0 +1,69 @@
+# The nightly paid evaluation (ADR 0003, A5 and A6; docs/EVALUATION.md). It makes five short books with a real model
+# and has a judge score them, so it spends money. It is OFF until the repository variable RUN_NIGHTLY_EVAL is "true",
+# and it runs in the `evaluation` environment, whose reviewers approve each run and which holds the secrets.
+#
+# What the maintainer provides before turning it on (none of this is in the repository):
+#   - environment `evaluation`, with the secret ANTHROPIC_API_KEY (or whichever key the profiles name);
+#   - variables EVAL_STAGE_PROFILE and EVAL_JUDGE_PROFILE: the writer's and the judge's profile names;
+#   - evaluation/model_profiles.toml and evaluation/model_catalog.toml (docs/MODEL_PROFILES.md, docs/MODEL_CATALOG.md);
+#   - evaluation/author.toml: the author details the build needs;
+#   - evaluation/baseline.json: the previous release's evaluation.json, committed once there is one.
+# This workflow has not run. Expect to fix it on its first real run.
+name: Nightly evaluation
+
+on:
+  schedule:
+    - cron: "43 4 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  evaluate:
+    if: ${{ vars.RUN_NIGHTLY_EVAL == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    environment: evaluation
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build the worker image that can build books
+        run: docker build --target worker-tex -t engineering-influence:tex .
+      - name: Evaluate
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          EVAL_STAGE_PROFILE: ${{ vars.EVAL_STAGE_PROFILE }}
+          EVAL_JUDGE_PROFILE: ${{ vars.EVAL_JUDGE_PROFILE }}
+          RELEASE_LABEL: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          for f in model_profiles.toml model_catalog.toml author.toml; do
+            test -f "evaluation/$f" || { echo "evaluation/$f is missing"; exit 2; }
+          done
+          baseline=()
+          if test -f evaluation/baseline.json; then baseline=(--baseline /eval/baseline.json); fi
+          mkdir -p eval-out && chmod 777 eval-out
+          docker run --rm --read-only --tmpfs /tmp --cap-drop ALL \
+            -v "$PWD/evaluation:/eval:ro" -v "$PWD/eval-out:/out" \
+            -e EI_ALLOW_PAID=1 -e ANTHROPIC_API_KEY \
+            -e EI_STAGE_EXECUTOR=model \
+            -e EI_STAGE_MODEL_PROFILE="$EVAL_STAGE_PROFILE" \
+            -e EI_EVAL_JUDGE_PROFILE="$EVAL_JUDGE_PROFILE" \
+            -e EI_MODEL_PROFILES=/eval/model_profiles.toml \
+            -e EI_MODEL_CATALOG=/eval/model_catalog.toml \
+            -e EI_AUTHOR_PROFILE=/eval/author.toml \
+            engineering-influence:tex evaluate \
+              --out /out/run --budget-usd 5 --judge-budget-usd 3 \
+              --set /eval/set.toml --rubric /eval/rubric.toml \
+              --release "$RELEASE_LABEL" "${baseline[@]}"
+      - name: Keep the report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: evaluation
+          path: eval-out/run/evaluation.json
+          if-no-files-found: ignore
+          retention-days: 90

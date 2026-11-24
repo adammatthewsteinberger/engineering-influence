@@ -5,6 +5,10 @@
 version = 2
 fingerprint = "6536536270f882538435c9ee6af2c3e7ee9ff09d94f659c3919739b61834a676"
 
+[eval_judge]
+version = 1
+fingerprint = "d07f6a1b2a3231bb38d7ab6a7138dee2319b82c046fcf19ff6194d49e92d0f2d"
+
 [novel_beats]
 version = 1
 fingerprint = "9a99e0b6e16182d72e0dd4a8dad33bd860bd5d69f7b458d19f294981da9847b0"

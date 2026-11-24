@@ -386,6 +386,22 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             return self._builder
         return TempProjectManuscriptBuilder(self._publisher, strict_release=self.strict_release())
 
+    def model(self) -> ModelInterface:
+        """The model the environment names (``local`` or ``model``), without building any stage, for a caller that only needs to ask it.
+
+        The evaluation's judge is built this way, from an environment whose ``EI_STAGE_MODEL_PROFILE`` names the judge's
+        profile. The offline placeholder has no model and is refused. Close the runtime when the model is no longer needed.
+        """
+        kind = self._environment.get("EI_STAGE_EXECUTOR", "local")
+        if kind not in ("local", "model"):
+            raise ApplicationError(
+                code="STAGE_EXECUTOR_UNKNOWN",
+                message=f"EI_STAGE_EXECUTOR is {kind!r}; a model needs 'local' or 'model'",
+                http_status=503,
+            )
+        self._free = kind == "local"
+        return self._local_model() if self._free else self._model()
+
     def estimator(self) -> CostEstimatorInterface | None:
         """What a book is expected to cost with the model this runtime built, or None when no model is used."""
         return self._estimator

@@ -1,0 +1,79 @@
+# The rubric every release is scored on (ADR 0003, criterion A6). A judge model reads a finished book against it and
+# gives each dimension a whole number from 1 to 5. Changing a word here changes what a score means, so a change to this
+# file is a change to the benchmark: raise `version` and commit a new baseline with it.
+
+version = 1
+pass_mean = 3.5   # every dimension's mean over the set must reach this
+max_drop = 0.2    # and no dimension's mean may fall by more than this since the previous release
+
+[[dimension]]
+name = "structure"
+question = "Does the book do what a reader would expect from its title and idea, chapter by chapter, with a clear arc and no repetition?"
+kinds = ["nonfiction", "novel"]
+[dimension.anchors]
+1 = "Chapters wander, repeat each other or contradict the premise; the order looks arbitrary."
+3 = "The order makes sense and each chapter has a job, but some overlap, drift or thin chapters remain."
+5 = "Every chapter earns its place, builds on the last and the whole has a shape the reader can feel."
+
+[[dimension]]
+name = "prose"
+question = "Is the writing clear, specific and well made at the sentence and paragraph level?"
+kinds = ["nonfiction", "novel"]
+[dimension.anchors]
+1 = "Vague, padded or clumsy; stock phrases and filler throughout; hard to read."
+3 = "Readable and correct, with some generic phrasing, repeated constructions or flat passages."
+5 = "Precise, varied and alive; nothing to cut; a person would be glad to read it."
+
+[[dimension]]
+name = "voice"
+question = "Is the voice consistent from the first chapter to the last, and suited to the book?"
+kinds = ["nonfiction", "novel"]
+[dimension.anchors]
+1 = "The register, person or attitude changes from chapter to chapter, as if different authors wrote them."
+3 = "Mostly consistent, with noticeable lapses in register or tone."
+5 = "One voice throughout, distinct and right for the subject."
+
+[[dimension]]
+name = "accuracy"
+question = "Are the claims specific and plausible, and does the book avoid inventing sources, statistics, quotations, studies or credentials?"
+kinds = ["nonfiction"]
+[dimension.anchors]
+1 = "Invents facts, quotations or sources, or makes confident claims that are plainly wrong."
+3 = "Mostly sound, with some vague or unsupported claims a careful reader would want checked."
+5 = "Claims are specific, hedged where they should be, and nothing in it looks invented."
+
+[[dimension]]
+name = "usefulness"
+question = "Could the intended reader do something after reading that they could not do before?"
+kinds = ["nonfiction"]
+[dimension.anchors]
+1 = "Talks around the subject; the reader would learn nothing they could act on."
+3 = "Gives real information but leaves gaps, or stays general where examples were needed."
+5 = "Concrete, complete enough to act on, and organised so the reader can find what they need."
+
+[[dimension]]
+name = "continuity"
+question = "Do names, ages, places, objects and the order of events agree from chapter to chapter?"
+kinds = ["novel"]
+[dimension.anchors]
+1 = "Facts contradict each other: characters change names or ages, events happen out of order."
+3 = "A few slips a careful reader would notice, none that break the story."
+5 = "Everything agrees; earlier details are remembered and used."
+
+[[dimension]]
+name = "character"
+question = "Are the characters distinct, motivated and consistent in what they want and how they act?"
+kinds = ["novel"]
+[dimension.anchors]
+1 = "Interchangeable or incoherent; actions do not follow from wants."
+3 = "Recognisable, with some flat or inconsistent moments."
+5 = "Each is a person with wants and a way of speaking; choices drive the story."
+
+[[dimension]]
+name = "pacing"
+question = "Does the story move at a rate that holds interest, with tension that rises and releases?"
+kinds = ["novel"]
+[dimension.anchors]
+1 = "Stalls or rushes; scenes have no stakes; the middle is lost."
+3 = "Moves along, with some slack stretches or abrupt turns."
+5 = "Scenes turn on something, tension builds and the ending lands."
