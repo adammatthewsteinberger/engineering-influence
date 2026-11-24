@@ -32,6 +32,10 @@ should upload to PyPI.
    when the merge happens, not from the act of tagging.
 5. **The core and the SDK are separate jobs and environments**, because PyPI tells pending trusted
    publishers apart by owner, repository, workflow and environment (see `docs/RELEASING.md`).
+6. **A release also publishes the two images to GHCR** (added for criterion A9 of ADR 0003). The `images` job runs
+   after the GitHub release, from its own `ghcr` environment and behind `PUBLISH_IMAGES`, which is off by default. It
+   builds with the plain `docker` command and attests each image by digest, so it adds no third-party action. A
+   version tag is never written over an image built from another commit, which is the same rule the git tag follows.
 
 ## Consequences
 
