@@ -352,3 +352,33 @@ def test_the_stylesheet_keeps_tables_readable_on_the_dark_theme() -> None:
     # `break-word` as a word-break lets code break at any character, which squeezes a column to one letter wide.
     assert "word-break: break-word" not in css and "overflow-wrap: anywhere" not in css
     assert "overflow-x: auto" in css
+
+
+def test_the_site_is_published_at_the_address_the_documents_name(tmp_path: Path) -> None:
+    address = "https://adammatthewsteinberger.github.io/engineering-influence/"
+    config = yaml.safe_load((ROOT / "properdocs.yml").read_text(encoding="utf-8"))
+
+    assert config["site_url"] == address
+    assert address in (ROOT / "docs" / "DOCUMENTATION_SITE.md").read_text(encoding="utf-8")
+    robots = (
+        SITE.build(ROOT, tmp_path / "out", "develop") and (tmp_path / "out" / "robots.txt")
+    ).read_text()
+    assert f"Sitemap: {address}sitemap.xml" in robots
+
+
+def test_the_limitation_about_the_example_worker_names_the_compose_file() -> None:
+    text = (ROOT / "README.md").read_text(encoding="utf-8")
+
+    assert "EI_STAGE_EXECUTOR=deterministic" in text
+    assert "A worker started any other way uses the free" in text
+
+
+BOOK = "https://www.amazon.com/dp/B0HPWQFD3Y"
+
+
+def test_the_book_is_in_the_readme_and_in_the_footer_of_every_page() -> None:
+    config = yaml.safe_load((ROOT / "properdocs.yml").read_text(encoding="utf-8"))
+
+    assert BOOK in (ROOT / "README.md").read_text(encoding="utf-8")
+    assert BOOK in config["copyright"]
+    assert "Engineering Influence: A Playbook for the Remnant" in config["copyright"]

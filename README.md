@@ -142,8 +142,9 @@ Read these before you depend on it.
 - **The first run needs a big download**: about 13 GB for the model and several GB for TeX.
 - **Novels get no editing passes** yet; a novel is built from its draft.
 - **On the stack**, delivery is at least once (a crash can re-run a stage), no service emits webhooks yet
-  although signing and a verifier exist, and the example worker writes placeholder text until you point it at a
-  model. `ei pipeline start` and the example MCP server only plan work; `ei serve mcp` reaches the stack.
+  although signing and a verifier exist, and the example compose file runs the worker on placeholder text
+  (`EI_STAGE_EXECUTOR=deterministic`) until you point it at a model. A worker started any other way uses the free
+  local model by default. `ei pipeline start` and the example MCP server only plan work; `ei serve mcp` reaches the stack.
 - **The schema is managed by `ei db upgrade`**; run it before starting a new release on the stack.
 
 The full list: [Configuration](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/CONFIGURATION.md).
@@ -167,6 +168,10 @@ Per [ADR 0002](https://github.com/adammatthewsteinberger/engineering-influence/b
 
 [CONTRIBUTING.md](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/CONTRIBUTING.md) · [SECURITY.md](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/SECURITY.md) (report privately) ·
 [SUPPORT.md](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/SUPPORT.md) · [CODE_OF_CONDUCT.md](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/CODE_OF_CONDUCT.md)
+
+## The book
+
+The author's book on the thinking behind this project is *Engineering Influence: A Playbook for the Remnant to Bring Christian Culture Back to America*: [buy it on Amazon](https://www.amazon.com/dp/B0HPWQFD3Y).
 
 ## License
 

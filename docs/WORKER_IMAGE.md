@@ -31,7 +31,7 @@ The `Dockerfile` has two images, and `docker build` without a target makes the s
 
 | Target | Command | Size (measured once, not in CI) | For |
 |---|---|---|---|
-| `runtime` (default) | `docker build -t engineering-influence:local .` | about 1.2 GB | the API and the worker, as `examples/docker-compose.yml` runs them |
+| `runtime` (default) | `docker build -t engineering-influence:local .` | about 1.2 GB | the API and the worker, as `examples/docker-compose.yml` runs them. It adds `procps`, which provides `ps`: the worker measures each tool's memory with it, and the slim base image does not include it |
 | `worker-tex` | `docker build --target worker-tex -t engineering-influence:tex .` | about 2.9 GB | a worker that can build books: LuaLaTeX, latexmk, tex4ebook, pdftoppm, epubcheck, a Java runtime, zip and tidy |
 
 The TeX image has the same packages the CI toolchain job installs, plus `poppler-utils`, `zip` and `tidy` (the CI runners already have

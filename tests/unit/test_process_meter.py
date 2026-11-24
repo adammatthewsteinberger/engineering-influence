@@ -150,3 +150,26 @@ def test_the_first_place_that_has_ps_is_the_one_used() -> None:
 
 def test_with_ps_in_neither_place_the_search_path_is_the_fallback() -> None:
     assert ProcessMeter(lambda place: False)._ps() == "ps"
+
+
+def test_without_ps_anywhere_the_meter_says_what_to_install_rather_than_crashing() -> None:
+    from engineering_influence.errors.typesetting.book_build_error import BookBuildError
+
+    # No ps at either location, and none to find on PATH under the bare name.
+    meter = ProcessMeter(exists=lambda place: False, fallback="/no/such/ps")
+
+    with pytest.raises(BookBuildError, match="install the procps package"):
+        meter.memory_bytes(os.getpid())
+
+
+def test_a_ps_that_fails_is_an_error_and_not_a_silent_zero(tmp_path: Path) -> None:
+    """If ps runs and fails, the meter must raise: a zero would tell the runner a tool uses no memory."""
+    import subprocess as sub
+
+    failing = tmp_path / "ps"
+    failing.write_text("#!/bin/sh\necho 'boom' >&2\nexit 1\n")
+    failing.chmod(0o755)
+    meter = ProcessMeter(exists=lambda place: place == str(failing), fallback=str(failing))
+
+    with pytest.raises(sub.CalledProcessError):
+        meter.memory_bytes(os.getpid())

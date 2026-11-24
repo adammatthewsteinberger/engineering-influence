@@ -6,6 +6,7 @@ import subprocess  # nosec B404
 from collections.abc import Callable
 from pathlib import Path
 
+from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 from engineering_influence.infrastructure.process.interfaces.process_meter_interface import (
     ProcessMeterInterface,
 )
@@ -26,22 +27,37 @@ class ProcessMeter(ProcessMeterInterface):
 
     LOCATIONS = ("/bin/ps", "/usr/bin/ps")
 
-    def __init__(self, exists: Callable[[str], bool] = os.path.exists) -> None:
+    def __init__(
+        self,
+        exists: Callable[[str], bool] = os.path.exists,
+        fallback: str = "ps",
+    ) -> None:
         self._exists = exists
+        self._fallback = fallback
 
     def _ps(self) -> str:
-        return next((place for place in self.LOCATIONS if self._exists(place)), "ps")
+        return next((place for place in self.LOCATIONS if self._exists(place)), self._fallback)
 
     def memory_bytes(self, group: int) -> int:
-        """Resident memory of every process in the group, in bytes; 0 when none is left."""
+        """Resident memory of every process in the group, in bytes; 0 when none is left.
+
+        Raises BookBuildError when there is no ``ps`` to ask, rather than an error that stops the run without
+        saying why: the fix is to install ``procps``, and the message says so.
+        """
         # Fixed arguments, no shell.
-        listing = subprocess.run(  # nosec B603
-            [self._ps(), "-axo", "pgid=,rss="],
-            capture_output=True,
-            text=True,
-            timeout=10,
-            check=True,
-        ).stdout
+        try:
+            listing = subprocess.run(  # nosec B603
+                [self._ps(), "-axo", "pgid=,rss="],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                check=True,
+            ).stdout
+        except FileNotFoundError as error:
+            raise BookBuildError(
+                "this machine has no ps, which the build uses to measure a tool's memory; "
+                "install the procps package (the worker image includes it)"
+            ) from error
         kib = 0
         for line in listing.splitlines():
             pgid, rss = line.split()
