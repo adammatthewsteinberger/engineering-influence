@@ -46,6 +46,7 @@ branch is refused.
 | `testpypi-sdk` | `develop` | Uploads the SDK, after the core | the core upload did not succeed, or the `testpypi-sdk` environment is not approved |
 | `pypi` | `main` | Uploads the core package to PyPI with attestations, after the GitHub release | `PUBLISH_TO_PYPI` is not `true` (the job is skipped), or the `pypi` environment is not approved |
 | `pypi-sdk` | `main` | Uploads the SDK to PyPI with attestations, after the core | the core was not published, or the `pypi-sdk` environment is not approved |
+| `images` | `main` | Builds the `runtime` and `worker-tex` images from the released commit, runs `ei --version` in each, pushes them to GHCR and attests the provenance of each by digest, after the GitHub release | `PUBLISH_IMAGES` is not `true` (the job is skipped), or the `ghcr` environment is not approved; an image reports another version; a tag is already published from a different commit, or the registry gives any answer about it other than a clear "no such manifest" |
 
 The `build` job is the same reusable workflow that CI runs on every push (`distribution`). A release
 therefore cannot fail on packaging for the first time at release time. Versions with `a`, `b` or `rc` are
@@ -127,11 +128,39 @@ Do this once per repository, before setting the variable:
 
 A PyPI version can never be replaced or reused. Publish a pre-release first.
 
+## The images
+
+A release also publishes two images to `ghcr.io/adammatthewsteinberger/engineering-influence`:
+
+| Tag | Image | Moves |
+|---|---|---|
+| `<version>` | the slim `runtime` target (API and worker) | never: a tag built from another commit stops the job |
+| `<version>-tex` | the `worker-tex` target (the worker that can build books) | never |
+| `latest`, `tex` | the same two images | on a stable release only; a pre-release (`a`, `b`, `rc`) leaves them alone |
+
+Each image is checked before it is pushed: `ei --version` in it must print the released version. Each one carries the
+OCI labels `source`, `revision` (the commit) and `version`, and a build-provenance attestation stored in the registry
+beside it. A repeat run finds a version tag already published from the same commit and leaves it alone, and refuses one
+published from another.
+
+One-time setup, before setting the variable:
+
+1. In the repository settings, create the environment `ghcr`, add **required reviewers**, and limit its deployment
+   branches to `main`. A workflow that names an environment that does not exist creates it with no protection.
+2. Set the repository variable `PUBLISH_IMAGES` to `true`.
+3. After the first push, open the package on GitHub and set its visibility. A new package starts private, and a private
+   image cannot be pulled by the people who read this documentation.
+
+The workflow logs in with the run's own token, so no secret is stored. Not yet verified: the job has never run, so the
+build time (the TeX image is about 2.9 GB) and whether a hosted runner has the disk for both images are unknown, and the
+base image `python:3.13-slim` is a tag, not a digest, so two builds of one commit can differ.
+
 ## Checking a download
 
 ```bash
 sha256sum -c SHA256SUMS
 gh attestation verify engineering_influence-0.1.0-py3-none-any.whl --repo adammatthewsteinberger/engineering-influence
+gh attestation verify oci://ghcr.io/adammatthewsteinberger/engineering-influence:0.1.0 --repo adammatthewsteinberger/engineering-influence
 ```
 
 ## Keeping the pipeline current

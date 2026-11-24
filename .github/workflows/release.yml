@@ -14,6 +14,8 @@
 #      pending publishers apart by their environment: testpypi and testpypi-sdk for develop, pypi and
 #      pypi-sdk for main. The SDK goes up only after the core. Each environment needs a person's
 #      approval, and each index has its own on/off variable (PUBLISH_TO_TESTPYPI, PUBLISH_TO_PYPI).
+#   5. A release also pushes the two images to GHCR, from its own environment (ghcr) and behind its
+#      own variable (PUBLISH_IMAGES), with build provenance attested for each.
 name: Release
 
 on:
@@ -218,6 +220,89 @@ jobs:
         with:
           packages-dir: pypi-dist/
           attestations: true
+
+  # main: the two images, to GHCR, from the commit that was released. A tag that is already published
+  # must have been built from this same commit, or nothing is pushed; anything other than a clear
+  # "no such manifest" from the registry stops the job. Pre-releases get their version tags only. A
+  # stable release also moves `latest` and `tex`. Turn it on with PUBLISH_IMAGES once the `ghcr`
+  # environment exists. See docs/RELEASING.md.
+  images:
+    needs: [guard, github-release]
+    if: needs.guard.outputs.kind == 'release' && vars.PUBLISH_IMAGES == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment:
+      name: ghcr
+      url: https://github.com/adammatthewsteinberger/engineering-influence/pkgs/container/engineering-influence
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    outputs:
+      image: ${{ steps.publish.outputs.image }}
+      runtime_digest: ${{ steps.publish.outputs.runtime_digest }}
+      tex_digest: ${{ steps.publish.outputs.tex_digest }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Build, check and push both images
+        id: publish
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.guard.outputs.version }}
+        run: |
+          set -eu
+          image="ghcr.io/$(printf '%s' "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')"
+          stable=yes
+          case "$VERSION" in *a[0-9]*|*b[0-9]*|*rc[0-9]*) stable=no ;; esac
+          printf '%s' "$GITHUB_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+          # publish <Dockerfile target> <tag> <floating tag> <output name>
+          publish() {
+            target="$1"; tag="$2"; floating="$3"; key="$4"
+            ref="$image:$tag"
+            err="$(mktemp)"
+            if docker manifest inspect "$ref" >/dev/null 2>"$err"; then
+              docker pull --quiet "$ref" >/dev/null
+              built="$(docker inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$ref")"
+              [ "$built" = "$GITHUB_SHA" ] || { echo "$ref was built from '$built', not from $GITHUB_SHA" >&2; exit 1; }
+              echo "$ref is already published from this commit"
+            elif grep -Eiq 'no such manifest|manifest unknown|not found' "$err"; then
+              docker build --target "$target" --tag "$ref" \
+                --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
+                --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+                --label "org.opencontainers.image.version=$VERSION" \
+                .
+              reported="$(docker run --rm "$ref" --version)"
+              [ "$reported" = "engineering-influence $VERSION" ] || { echo "$ref reports '$reported', not $VERSION" >&2; exit 1; }
+              docker push --quiet "$ref"
+            else
+              cat "$err" >&2
+              echo "could not tell whether $ref exists" >&2
+              exit 1
+            fi
+            digest="$(docker inspect --format '{{index .RepoDigests 0}}' "$ref")"
+            echo "${key}=${digest#*@}" >> "$GITHUB_OUTPUT"
+            if [ "$stable" = yes ]; then
+              docker tag "$ref" "$image:$floating"
+              docker push --quiet "$image:$floating"
+            fi
+          }
+          publish runtime "$VERSION" latest runtime_digest
+          publish worker-tex "$VERSION-tex" tex tex_digest
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ${{ steps.publish.outputs.image }}
+          subject-digest: ${{ steps.publish.outputs.runtime_digest }}
+          push-to-registry: true
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ${{ steps.publish.outputs.image }}
+          subject-digest: ${{ steps.publish.outputs.tex_digest }}
+          push-to-registry: true
 
   pypi-sdk:
     needs: [guard, pypi]
