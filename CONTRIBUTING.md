@@ -16,10 +16,11 @@ problems privately through [SECURITY.md](SECURITY.md).
 >
 > **Daniel:** By where it is shelved. If I know the rule I do not have to search.
 >
-> **Professor Feynman:** Same here. Each rule is a shelving rule that a test enforces, so nobody has to remember
-> it. One class per file means a class is where its name says. Layers that point inward mean a service never
-> imports a database adapter, so swapping the adapter touches one place. And tests pass fakes instead of patching
-> because a patched test passes even when the real wiring is wrong.
+> **Professor Feynman:** Same here. Most rules are shelving rules that a test or a tool enforces, so nobody has to
+> remember them, and a couple are conventions that review holds. One class per file means a class is where its
+> name says. Layers that point inward mean a service never imports a database adapter, so swapping the adapter
+> touches one place. And tests pass fakes instead of patching because a patched test passes even when the real
+> wiring is wrong.
 >
 > **Daniel:** So the ceremony is what lets a stranger change the code without breaking something they cannot see.
 >
@@ -36,7 +37,7 @@ problems privately through [SECURITY.md](SECURITY.md).
 | Every class has an interface in a sibling `interfaces/` folder | `tests/architecture` |
 | Layers point inward only | `lint-imports` and the layer matrix in `tests/architecture` |
 | Models import nothing effectful, only models, errors and the standard library | `tests/architecture` |
-| Tests pass fakes, never patch production code | `tests/architecture/test_no_patching.py` |
+| No `monkeypatch.setattr` of production code outside a short list of system-boundary calls | `tests/architecture/test_no_patching.py` (other ways of patching are not checked) |
 | 100% line and branch coverage | `pytest --cov --cov-fail-under=100` |
 
 
@@ -82,7 +83,7 @@ interfaces, and adapters implement interfaces ([docs/ARCHITECTURE.md](docs/ARCHI
 - one class per file, no loose production functions;
 - every class implements an interface, and interfaces live in sibling `interfaces/` folders;
 - layers point inward only (`lint-imports` runs a strict layers contract);
-- only `runtime/` composes concrete classes; everything else receives its collaborators;
+- only `runtime/` composes concrete classes; everything else receives its collaborators (a convention that review holds, not a test);
 - tests pass fakes instead of patching production code.
 
 A new external integration needs an **interface**, an **adapter**, an **ADR** when the choice is

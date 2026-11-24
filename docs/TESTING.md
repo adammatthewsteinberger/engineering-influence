@@ -1,9 +1,10 @@
 # Testing
 
 **BLUF:** CI is the source of truth: lint, import rules, types, security lint, tests with 100% branch coverage,
-the toolchain build, an integration run against real PostgreSQL and RabbitMQ, workflow and secret scans. Every
-command is on this page so you can run each one before you push. Most tests use scripted fakes, so they prove the
-machinery, not that a real model writes well.
+the toolchain build, an integration run against real PostgreSQL and RabbitMQ, workflow and secret scans. Almost
+every command is on this page so you can run it before you push; the leak scan, `gitleaks`, `actionlint` and
+`zizmor` run only in CI. Most tests use scripted fakes, so they prove the machinery, not that a real model writes
+well.
 
 CI (`.github/workflows/ci.yml`) is the source of truth. These are its jobs and how to run each locally.
 

@@ -1,8 +1,9 @@
 # Releasing
 
-**BLUF:** A release is a merge to `main`; a development build is a merge to `develop`. A merge only asks. Nothing
-uploads until you turn each index on with a repository variable and a person approves that index's environment, so
-merging is safe before the setup is done. No publishing job has ever run, and nothing is on PyPI or GHCR yet.
+**BLUF:** A release is a merge to `main`; a development build is a merge to `develop`. A merge to `main` creates
+the tag and a public GitHub release straight away. Uploading to PyPI, TestPyPI or GHCR happens only when its
+repository variable is `true`, and it waits for a person only if you gave that environment required reviewers. The
+five upload jobs have never run against a real index or registry, so nothing is on PyPI or GHCR yet.
 
 Publishing is driven by the branch a commit lands on, and a person approves every upload.
 
@@ -24,8 +25,9 @@ to a merge to `main`.
 > **Daniel:** Two keys, held by two people.
 >
 > **Professor Feynman:** Here the first key is the merge, which asks. The second is a switch you set per index,
-> such as `PUBLISH_TO_PYPI`, plus a person approving the environment that uploads. Both are off by default. A
-> release also has a guard that refuses a version with no changelog section or leftover fragments.
+> such as `PUBLISH_TO_PYPI`, plus a person approving the environment that uploads, if you set reviewers on it.
+> Both are off by default. The tag and the GitHub release are not behind either key. A release also has a guard
+> that refuses a version with no changelog section or leftover fragments.
 >
 > **Daniel:** And if the guard passes and I still publish something wrong?
 >
@@ -196,7 +198,7 @@ CI runs `actionlint` and `zizmor` (medium severity and above) on every workflow.
 
 ## What has not been exercised
 
-- The five publishing jobs (`testpypi`, `testpypi-sdk`, `pypi`, `pypi-sdk`, `images`) have never run: they need the trusted publishers and the variables described above.
+- The five upload jobs (`testpypi`, `testpypi-sdk`, `pypi`, `pypi-sdk`, `images`) have never run against a real index or registry: they need the trusted publishers and the variables described above.
 - The `github-release` job has not run in its new form, which creates the tag itself instead of reading one.
 - The guard is tested against its own script (`tests/e2e/test_release_guard.py`), and the development-build staging step against the real step (`tests/e2e/test_dev_build_stage.py`).
   The upload jobs are tested only by their shape.

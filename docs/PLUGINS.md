@@ -28,9 +28,10 @@ server and a scripted address, never the real internet.
 >
 > **Daniel:** No. I open it on the table and look.
 >
-> **Professor Feynman:** `ei plugins show` is the table: it prints every skill's text and every server's command.
-> `ei plugins add` then does only two things. It locks the skills, each enabled for no stage, and it prints the
-> commands for the servers. It does not run them.
+> **Professor Feynman:** `ei plugins show` is the table: it prints each server's command in full, and the first
+> 100 characters of each skill's text for each stage. It does not print a skill's reference sections at all, so
+> open the bundle file itself to read the rest. `ei plugins add` then does only two things. It locks the skills,
+> each enabled for no stage, and it prints the commands for the servers. It does not run them.
 >
 > **Daniel:** So even after `add`, nothing is running and no stage can use anything.
 >
@@ -49,7 +50,7 @@ server and a scripted address, never the real internet.
 
 | Step | What happens | What does not |
 |---|---|---|
-| `ei plugins show FILE` | Prints every skill's text and every server's command | Nothing is installed |
+| `ei plugins show FILE` | Prints every server's command, and each skill's text for each stage cut to 100 characters; reference sections are not shown | Nothing is installed |
 | `ei plugins add FILE` | Locks the skills, enabled for no stage; prints the `ei tools add` commands | Nothing is started, granted or enabled |
 | `ei tools add …` (you run it) | Runs the local server once and locks it | Nothing is granted to a stage |
 | `ei tools grant` and `ei skills enable` (you run them) | A stage may now use the tool or see the skill | |
@@ -230,14 +231,14 @@ indexes.
 ## What this does and does not give you
 
 - **It gives you one thing to review and one hash to pin** for a set of skills and server definitions, and a
-  way to undo the install. `show` lists every part of a bundle, including the text of every skill.
+  way to undo the install. `show` lists every part of a bundle: each server's command in full and the first 100 characters of each skill's stage text. Read the bundle file for the rest.
 - **It does not vouch for anything.** A plugin's skills are trusted as installed once you enable them
   ([SKILLS.md](SKILLS.md#what-this-does-and-does-not-give-you)), and a server it describes is exactly as
   trustworthy as `ei tools add` makes it ([TOOL_LOCK.md](TOOL_LOCK.md)), which for a local server pins the
   files it runs and for a remote server pins only its address and what it advertises.
 - **The hash proves you got the file the index described, not that anyone vetted it.** An index is only as
   trustworthy as whoever controls the host it came from, and so is every file it points to. What stands between
-  you and a hostile plugin is that you read it (`ei plugins show` prints every skill's text and every server's
+  you and a hostile plugin is that you read it (`ei plugins show` prints the first 100 characters of each skill's stage text and every server's
   command) before `add`, and that installing it enables nothing.
 - The printed command is shell-quoted, so what you see is what would be typed. Read it before you run it:
   `ei tools add` **runs a local server once**, and a command a stranger wrote can do anything its user can.

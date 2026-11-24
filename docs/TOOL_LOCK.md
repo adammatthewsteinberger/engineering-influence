@@ -28,10 +28,11 @@ HTTP transport has only been run against a scripted server, never over a real ne
 > **Daniel:** His name on the list. And his badge.
 >
 > **Professor Feynman:** Two checks, then. The lock is both. First, the list: which server, and which of its tools
-> a stage may call, written down in a file you reviewed. Second, the badge: a hash of the server's files and of
-> everything it says about itself, checked every time it starts. If either changed, it does not come in.
+> a stage may call, written down in a file you reviewed. Second, the badge: a hash of the server's files, and of
+> every tool it advertises (name, description and schema), checked every time it starts. If either changed, it
+> does not come in.
 >
-> **Daniel:** A hash of what it says about itself? Why would that matter?
+> **Daniel:** A hash of its tool descriptions? Why would that matter?
 >
 > **Professor Feynman:** Because a tool's description is where a hostile server hides instructions for the model.
 > Reword one word and the hash changes, and the run stops at start with `TOOL_LOCK_MISMATCH` naming the server.
@@ -40,8 +41,8 @@ HTTP transport has only been run against a scripted server, never over a real ne
 >
 > **Professor Feynman:** No, and this is where the picture breaks. A badge proves it is the person you approved.
 > It does not prove that person is honest. Dependencies are not hashed, a remote server is pinned only by its
-> address, and what a server returns is still untrusted text. You decide whether to approve; the lock makes sure
-> it stays what you approved.
+> address and by what it advertises (its name, version and tools), and what a server returns is still untrusted
+> text. You decide whether to approve; the lock makes sure it stays what you approved.
 >
 > **Daniel:** The lock keeps it the same as what I approved, and the approving is still my job. I will read the
 > server before I add it.
@@ -50,7 +51,7 @@ HTTP transport has only been run against a scripted server, never over a real ne
 
 | Question | Answer |
 |---|---|
-| Where is it read from? | Only the file `EI_TOOL_LOCK` names. A file in the current directory is ignored |
+| Where is it read from? | In a run, only the file `EI_TOOL_LOCK` names, and a file in the current directory is ignored. The `ei tools` commands use `--lock`, else `EI_TOOL_LOCK`, else `./ei-tools.lock.toml` |
 | What is pinned for a local server? | Its files by hash, its name, its version and a hash of its tools |
 | What is pinned for a remote server? | Its address and what it advertises, and nothing else |
 | Who may call a tool? | Only a stage the lock grants it to, with no wildcards |

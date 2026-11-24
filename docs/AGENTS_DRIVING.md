@@ -78,13 +78,15 @@ You can write a book with the `ei` command. Follow these steps exactly.
    --out must be a new or empty folder.
 4. When it ends, read the exit code:
      0  the book is written: the files are in ./BOOK/run/book/ and the report is ./BOOK/run/quality-report.json
-     1  the run failed: tell me the `issue:` lines in ./BOOK.log. What it made is still in ./BOOK/
+     1  the run failed, and a failed run is final: tell me the `issue:` lines in ./BOOK.log. What it made is
+        still in ./BOOK/
      2  it could not start: tell me the error message
      3  it stopped to ask for more budget: ASK ME. Only if I say yes, run
           ei book create --out ./BOOK --resume --approve-spend
-5. To continue a run that stopped for any other reason:
+5. To continue a run that was interrupted (a crash, a closed terminal):
      ei book create --out ./BOOK --resume
-   Finished stages are never run or paid for again.
+   Finished stages are never run or paid for again. A run that ended in failure (exit 1) is final and
+   --resume will not retry it: tell me, and start a new run with a new --out if I ask.
 
 Never pass --approve-spend or --ignore-estimate unless I agreed to that spend in this conversation.
 Never set EI_ALLOW_PAID or run `ei evaluate` unless I asked for a paid evaluation.
