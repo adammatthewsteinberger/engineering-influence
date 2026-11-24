@@ -4,6 +4,7 @@ import argparse
 import io
 from collections.abc import Mapping
 from contextlib import redirect_stderr
+from pathlib import Path
 
 import pytest
 
@@ -250,3 +251,28 @@ def test_the_top_level_command_routes_serve(monkeypatch: pytest.MonkeyPatch) -> 
 def test_serve_only_accepts_known_targets() -> None:
     with pytest.raises(SystemExit):
         CliRuntime().build().run(["serve", "everything"])
+
+
+def test_the_cli_builds_the_local_book_maker_from_the_environment_and_the_settings_it_is_given(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from engineering_influence.interfaces.local_book_creator_interface import (
+        LocalBookCreatorInterface,
+    )
+    from engineering_influence.runtime.local_book_runtime import LocalBookRuntime
+
+    profile = tmp_path / "author.toml"
+    profile.write_text(
+        'author = "A"\npublisher = "P"\nedition = "First Edition"\nauthor_bio = "B"\n',
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("EI_STAGE_EXECUTOR", "deterministic")
+    monkeypatch.setenv("EI_AUTHOR_PROFILE", str(tmp_path / "not-there.toml"))
+    creator = CliRuntime()._local_book_creator(
+        tmp_path / "state", {"EI_AUTHOR_PROFILE": str(profile)}
+    )
+    try:
+        assert isinstance(creator, LocalBookCreatorInterface)
+    finally:
+        creator.close()
+    assert (tmp_path / "state" / LocalBookRuntime.DATABASE).is_file()

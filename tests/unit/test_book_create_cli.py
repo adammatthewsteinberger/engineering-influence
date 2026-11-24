@@ -1,0 +1,244 @@
+"""``ei book create``: the arguments become a brief, the run is made or continued, and the exit status says how it ended."""
+
+import argparse
+from collections.abc import Callable, Mapping
+from dataclasses import replace
+from pathlib import Path
+
+import pytest
+
+from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.interactions.cli.book_cli import BookCli
+from engineering_influence.interfaces.local_book_creator_interface import (
+    LocalBookCreatorInterface,
+)
+from engineering_influence.models.book_brief import BookBrief
+from engineering_influence.models.book_kind import BookKind
+from engineering_influence.models.book_run import BookRun
+from engineering_influence.models.budget import Budget
+from engineering_influence.models.export_summary import ExportSummary
+from engineering_influence.models.quality_issue import QualityIssue
+from engineering_influence.models.run_status import RunStatus
+from engineering_influence.models.spend_request import SpendRequest
+from engineering_influence.models.stage_plan import StagePlan
+
+PLAN = StagePlan(BookKind.NONFICTION, ("brief", "build"))
+
+
+def run_in(status: RunStatus, **changes: object) -> BookRun:
+    brief = BookBrief(BookKind.NONFICTION, "bees", 5_000_000)
+    run = BookRun("r", brief, PLAN, Budget(cap=5_000_000, spent=1_234_500), stage="build")
+    return replace(run, status=status, **changes)  # type: ignore[arg-type]
+
+
+class Creator(LocalBookCreatorInterface):
+    def __init__(self, outcome: BookRun | Exception) -> None:
+        self.outcome = outcome
+        self.started: list[BookBrief] = []
+        self.resumed: list[bool] = []
+        self.exported: list[Path] = []
+        self.closed = 0
+
+    def _result(self) -> BookRun:
+        if isinstance(self.outcome, Exception):
+            raise self.outcome
+        return self.outcome
+
+    def start(self, brief: BookBrief, progress: Callable[[str], None]) -> BookRun:
+        self.started.append(brief)
+        progress("brief: advanced")
+        return self._result()
+
+    def resume(self, approve_spend: bool, progress: Callable[[str], None]) -> BookRun:
+        self.resumed.append(approve_spend)
+        return self._result()
+
+    def export(self, directory: Path) -> ExportSummary:
+        self.exported.append(directory)
+        return ExportSummary(14, 3)
+
+    def close(self) -> None:
+        self.closed += 1
+
+
+class Harness:
+    def __init__(self, outcome: BookRun | Exception, refuse: Exception | None = None) -> None:
+        self.creator = Creator(outcome)
+        self.made: list[tuple[Path, Mapping[str, str]]] = []
+        self._refuse = refuse
+
+    def creator_for(self, state: Path, settings: Mapping[str, str]) -> LocalBookCreatorInterface:
+        self.made.append((state, dict(settings)))
+        if self._refuse is not None:
+            raise self._refuse
+        return self.creator
+
+    def run(self, *argv: str) -> int:
+        cli = BookCli(lambda root: None, self.creator_for)  # type: ignore[arg-type, return-value]
+        parser = argparse.ArgumentParser()
+        cli.register(parser.add_subparsers(dest="command", required=True))
+        return cli.run(parser.parse_args(["book", "create", *argv]))
+
+
+def create(tmp_path: Path, *extra: str) -> list[str]:
+    return ["--kind", "nonfiction", "--budget-usd", "5", "--out", str(tmp_path / "out"), *extra]
+
+
+def test_a_finished_book_is_written_and_the_command_succeeds(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    harness = Harness(run_in(RunStatus.COMPLETED))
+    assert harness.run("how to keep bees", *create(tmp_path, "--profile", "me.toml")) == 0
+    brief = harness.creator.started[0]
+    assert (brief.kind, brief.idea, brief.budget_micro_usd) == (
+        BookKind.NONFICTION,
+        "how to keep bees",
+        5_000_000,
+    )
+    assert harness.creator.exported == [tmp_path / "out"] and harness.creator.closed == 1
+    state, settings = harness.made[0]
+    assert state == tmp_path / "out.state" and settings == {"EI_AUTHOR_PROFILE": "me.toml"}
+    out = capsys.readouterr().out
+    assert "brief: advanced" in out and "14 files" in out and "spent 1.2345 of 5.00 USD" in out
+
+
+def test_the_optional_details_reach_the_brief(tmp_path: Path) -> None:
+    harness = Harness(run_in(RunStatus.COMPLETED))
+    harness.run(
+        "bees",
+        *create(tmp_path),
+        "--title",
+        "Bees",
+        "--audience",
+        "beginners",
+        "--target-words",
+        "900",
+        "--trim-size",
+        "5.5x8.5",
+        "--strict-release",
+        "--state-dir",
+        str(tmp_path / "keep"),
+    )
+    brief = harness.creator.started[0]
+    assert (brief.title_hint, brief.audience, brief.target_words, brief.trim_size) == (
+        "Bees",
+        "beginners",
+        900,
+        "5.5x8.5",
+    )
+    assert harness.made == [(tmp_path / "keep", {"EI_BUILD_STRICT_RELEASE": "1"})]
+
+
+@pytest.mark.parametrize("budget", ["0", "-1", "lots", "0.0000001"])
+def test_a_budget_that_is_not_a_positive_amount_of_dollars_is_refused(
+    tmp_path: Path, budget: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    harness = Harness(run_in(RunStatus.COMPLETED))
+    argv = ["bees", "--kind", "novel", "--budget-usd", budget, "--out", str(tmp_path / "out")]
+    assert harness.run(*argv) == 2
+    assert capsys.readouterr().err.startswith("error: ")
+    assert harness.made == []
+
+
+@pytest.mark.parametrize(
+    ("argv", "missing"),
+    [
+        (["--kind", "novel", "--budget-usd", "5"], "an idea"),
+        (["bees", "--budget-usd", "5"], "--kind"),
+        (["bees", "--kind", "novel"], "--budget-usd"),
+    ],
+)
+def test_an_idea_a_kind_and_a_budget_are_all_needed_to_start(
+    tmp_path: Path, argv: list[str], missing: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    harness = Harness(run_in(RunStatus.COMPLETED))
+    assert harness.run(*argv, "--out", str(tmp_path / "out")) == 2
+    assert f"book create needs {missing}" in capsys.readouterr().err
+    assert harness.made == []
+
+
+def test_a_brief_the_model_refuses_is_reported_not_raised(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    harness = Harness(run_in(RunStatus.COMPLETED))
+    assert harness.run("bees", *create(tmp_path, "--target-words", "-4")) == 2
+    assert "target words must be positive" in capsys.readouterr().err
+
+
+def test_a_folder_that_already_holds_a_run_is_not_started_over(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    (tmp_path / "out.state").mkdir()
+    harness = Harness(run_in(RunStatus.COMPLETED))
+    assert harness.run("bees", *create(tmp_path)) == 2
+    assert "add --resume" in capsys.readouterr().err and harness.made == []
+
+
+def test_a_run_that_stopped_asking_for_money_waits_for_the_persons_word(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    asking = run_in(RunStatus.AWAITING_CONSENT, consent=SpendRequest(250_000, "build"))
+    harness = Harness(asking)
+    assert harness.run("bees", *create(tmp_path)) == 3
+    err = capsys.readouterr().err
+    assert "it asked for 0.2500 USD more" in err and "--resume --approve-spend" in err
+    assert "Nothing was written" in err and harness.creator.exported == []
+    assert harness.creator.closed == 1
+
+
+def test_a_parked_run_says_it_needs_more_budget(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    harness = Harness(run_in(RunStatus.PARKED_CAPACITY))
+    assert harness.run("bees", *create(tmp_path)) == 3
+    assert "it needs more budget" in capsys.readouterr().err
+
+
+def test_a_failed_run_still_writes_what_it_made_and_names_what_went_wrong(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    issue = QualityIssue("build", "stage-failed", "the book did not build", blocking=True)
+    harness = Harness(run_in(RunStatus.FAILED, issues=(issue,)))
+    assert harness.run("bees", *create(tmp_path)) == 1
+    err = capsys.readouterr().err
+    assert "issue: stage-failed: the book did not build" in err
+    assert "failed at stage 'build'; what it made is in" in err
+    assert harness.creator.exported == [tmp_path / "out"]
+
+
+def test_resuming_needs_the_state_folder_and_passes_the_approval_on(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    harness = Harness(run_in(RunStatus.COMPLETED))
+    assert harness.run("--out", str(tmp_path / "out"), "--resume") == 2
+    assert "no run to resume" in capsys.readouterr().err
+    (tmp_path / "out.state").mkdir()
+    assert harness.run("--out", str(tmp_path / "out"), "--resume", "--approve-spend") == 0
+    assert harness.creator.resumed == [True] and harness.creator.started == []
+
+
+def test_a_book_that_cannot_be_made_is_refused_before_the_run_starts(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    refusal = ApplicationError(code="AUTHOR_PROFILE_REQUIRED", message="name an author profile")
+    harness = Harness(run_in(RunStatus.COMPLETED), refuse=refusal)
+    assert harness.run("bees", *create(tmp_path)) == 2
+    assert "name an author profile" in capsys.readouterr().err
+    assert harness.creator.started == []
+
+
+def test_missing_extras_are_named(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    harness = Harness(
+        run_in(RunStatus.COMPLETED), refuse=ImportError("no sqlmodel", name="sqlmodel")
+    )
+    assert harness.run("bees", *create(tmp_path)) == 1
+    assert "engineering-influence[runtime,publishing]" in capsys.readouterr().err
+
+
+def test_an_error_while_the_run_goes_is_one_line_and_the_creator_is_still_closed(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    harness = Harness(ApplicationError(code="RUN_X", message="the model was refused"))
+    assert harness.run("bees", *create(tmp_path)) == 2
+    assert "error: the model was refused" in capsys.readouterr().err
+    assert harness.creator.closed == 1

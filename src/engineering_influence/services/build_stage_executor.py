@@ -23,8 +23,8 @@ from engineering_influence.services.interfaces.quality_report_interface import (
 class BuildStageExecutor(StageExecutorInterface):
     """The ``build`` stage: no model call; the whole publishing pipeline runs on what ``assemble`` wrote.
 
-    It builds the interior PDF, the covers and the EPUB, verifies each, checks the release as a strict release,
-    and packages the KDP bundle. It stores the bundle's files under ``book/`` (the finished interior, EPUB and
+    It builds the interior PDF, the covers and the EPUB, verifies each, checks the release (as a strict release
+    when the builder was asked for one, which needs the author's pricing), and packages the KDP bundle. It stores the bundle's files under ``book/`` (the finished interior, EPUB and
     covers, ``listing.md`` and ``MANIFEST.json``) and the build's evidence under ``build/`` (the publication
     report and the step logs). It then writes ``quality-report.json`` and ``build.md``.
 

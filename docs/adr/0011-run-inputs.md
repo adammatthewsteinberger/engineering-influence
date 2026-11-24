@@ -5,7 +5,7 @@ Status: proposed
 ## Context
 
 A run's only input is the brief's one `idea`. A person who has notes, an excerpt, a draft or reference text has no way to
-give it to the run, and the plan (M6.5) asks for pasted text and files. Nothing starts a run yet (`ei book create` is M8), so
+give it to the run, and the plan (M6.5) asks for pasted text and files. Nothing started a run when this was written (`ei book create` was M8; it now exists), so
 whatever is decided here has to hold for every surface that will: the CLI, the API, MCP and the SDK.
 
 Anything a person hands over may have been written by someone else (a page they copied, a file they were sent). It has to

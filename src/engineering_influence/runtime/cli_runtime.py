@@ -3,6 +3,7 @@
 
 import os
 import sys
+from collections.abc import Mapping
 from datetime import date
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -62,6 +63,9 @@ from engineering_influence.interactions.cli.serve_cli import ServeCli
 from engineering_influence.interactions.cli.skills_cli import SkillsCli
 from engineering_influence.interactions.cli.tools_cli import ToolsCli
 from engineering_influence.interfaces.bundle_fetcher_interface import BundleFetcherInterface
+from engineering_influence.interfaces.local_book_creator_interface import (
+    LocalBookCreatorInterface,
+)
 from engineering_influence.interfaces.mcp_remote_transport_factory_interface import (
     McpRemoteTransportFactoryInterface,
 )
@@ -157,7 +161,7 @@ class CliRuntime(CliRuntimeInterface):
         controller = ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue()))
         return CliApplication(
             controller,
-            BookCli(self._publishing_controller),
+            BookCli(self._publishing_controller, self._local_book_creator),
             ServeCli(ServeStarter()),
             DbCli(self._schema_migrator, self._secret_provider),
             RunCli(
@@ -432,6 +436,14 @@ class CliRuntime(CliRuntimeInterface):
     def _resume_run(self) -> ResumeRunInterface:
         """Build the resume service; it queues through the broker unless a queue was injected."""
         return ResumeRun(self._run_repository(), self._broker_queue())
+
+    def _local_book_creator(
+        self, state_dir: Path, settings: Mapping[str, str]
+    ) -> LocalBookCreatorInterface:
+        """Build the one-process book maker over a state folder; it needs the ``runtime`` extra."""
+        from engineering_influence.runtime.local_book_runtime import LocalBookRuntime
+
+        return LocalBookRuntime(state_dir, {**os.environ, **settings}, self._secret_provider())
 
     def _create_run(self) -> CreateRunInterface:
         """Build the create service: it saves the run and queues its first stage on the broker."""

@@ -65,10 +65,10 @@ trim size is the brief's (`trim_size`, for example `5.5x8.5`). **There are no ed
 from the draft as written, so it is only as good as the draft. The build needs the TeX worker image
 ([WORKER_IMAGE.md](WORKER_IMAGE.md)); `EI_BUILD_STRICT_RELEASE` works as for non-fiction ([BOOKS_AND_KDP.md](BOOKS_AND_KDP.md)).
 
-A novel is not yet runnable from the command line: `ei book create` is M8, and the paid smoke test in
-[LIVE_SMOKE_TEST.md](LIVE_SMOKE_TEST.md) drives only the non-fiction plan. What exists today is the stage code, tested
-against scripted servers, and a scripted run of the whole plan that is built with the real toolchain
-(`tests/toolchain/test_run_builds_book.py`). To see the prompts a novel sends without a model, read the templates named in the table above
+`ei book create --kind novel "<idea>" --budget-usd N --out DIR --profile FILE` makes a novel the same way it makes a
+non-fiction book ([INTERACTIONS.md](INTERACTIONS.md)). The paid smoke test in [LIVE_SMOKE_TEST.md](LIVE_SMOKE_TEST.md) drives only the
+non-fiction plan. A novel has been run only against scripted servers, and that scripted run of the whole plan is built with the real
+toolchain, including as a strict release (`tests/toolchain/test_run_builds_book.py`). To see the prompts a novel sends without a model, read the templates named in the table above
 (`src/engineering_influence/infrastructure/prompt_library/templates/novel_*.toml`); each is versioned, and its text is
 pinned in `tests/fixtures/prompt_templates.lock.toml`.
 

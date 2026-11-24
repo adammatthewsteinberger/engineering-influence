@@ -10,11 +10,13 @@ from engineering_influence.interfaces.author_profile_loader_interface import (
     AuthorProfileLoaderInterface,
 )
 from engineering_influence.models.author_profile import AuthorProfile
+from engineering_influence.models.book_pricing import BookPricing
 
 
 class TomlAuthorProfileLoader(AuthorProfileLoaderInterface):
     """The file holds ``author``, ``publisher``, ``edition`` and ``author_bio``, and may hold ``year``, ``website``,
-    ``email``, ``isbn``, ``ebook_isbn``, ``dedication``, ``copyright_notes`` and ``also_by`` (a list of titles).
+    ``email``, ``isbn``, ``ebook_isbn``, ``dedication``, ``copyright_notes``, ``also_by`` (a list of titles) and a ``[pricing]`` table
+    (``verified_on``, ``source_url``, ``ebook``, ``paperback`` and optionally ``hardcover``).
 
     Any other key is refused, so a misspelt one cannot quietly leave a field out, and a value of the wrong
     kind is refused rather than turned into text. A file larger than 64 KiB is refused unread, because a
@@ -33,7 +35,8 @@ class TomlAuthorProfileLoader(AuthorProfileLoaderInterface):
         "dedication",
         "copyright_notes",
     )
-    KEYS = frozenset({*TEXT, "year", "also_by"})
+    PRICING = ("verified_on", "source_url", "ebook", "paperback", "hardcover")
+    KEYS = frozenset({*TEXT, "year", "also_by", "pricing"})
     MAX_BYTES = 64 * 1024
 
     def load(self, path: Path) -> AuthorProfile | None:
@@ -64,10 +67,23 @@ class TomlAuthorProfileLoader(AuthorProfileLoaderInterface):
             if not isinstance(titles, list) or not all(isinstance(title, str) for title in titles):
                 raise self._invalid(path, "also_by is a list of titles")
             values["also_by"] = tuple(titles)
+        if "pricing" in raw:
+            values["pricing"] = self._pricing(path, raw["pricing"])
         try:
             return AuthorProfile(**values)
         except (TypeError, ValueError) as error:
             raise self._invalid(path, str(error)) from error
+
+    def _pricing(self, path: Path, table: Any) -> BookPricing:
+        if not isinstance(table, dict):
+            raise self._invalid(path, "pricing is a table")
+        unknown = sorted(table.keys() - set(self.PRICING))
+        if unknown:
+            raise self._invalid(path, f"pricing has unknown keys {unknown}")
+        try:
+            return BookPricing(**table)
+        except (TypeError, ValueError) as error:
+            raise self._invalid(path, f"pricing: {error}") from error
 
     @staticmethod
     def _invalid(path: Path, why: str) -> ApplicationError:

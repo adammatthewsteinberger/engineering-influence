@@ -6,6 +6,7 @@ import unicodedata
 from dataclasses import dataclass
 from typing import Any, ClassVar
 
+from engineering_influence.models.book_pricing import BookPricing
 from engineering_influence.models.interfaces.author_profile_interface import AuthorProfileInterface
 
 
@@ -15,7 +16,7 @@ class AuthorProfile(AuthorProfileInterface):
 
     The author, the publisher, the edition and the bio are required, because the typesetter will not build a
     book without them. The edition has to say ``Edition`` (the text check looks for it). The rest are
-    optional. A bio, a dedication and the copyright notes may run to several paragraphs; everything else is
+    optional, and so is the pricing, which a strict release needs (see ``BookPricing``). A bio, a dedication and the copyright notes may run to several paragraphs; everything else is
     one line. Every text is held to what a person can read, with no control or invisible characters.
 
     These are the author's, so they are supplied to a run (see ``EI_AUTHOR_PROFILE`` in CONFIGURATION.md)
@@ -40,6 +41,7 @@ class AuthorProfile(AuthorProfileInterface):
     dedication: str = ""
     copyright_notes: str = ""
     also_by: tuple[str, ...] = ()
+    pricing: BookPricing | None = None
 
     def __post_init__(self) -> None:
         for label, value in (
@@ -70,6 +72,8 @@ class AuthorProfile(AuthorProfileInterface):
             raise ValueError(f"also_by is a tuple of at most {self.MAX_ALSO_BY} titles")
         for title in self.also_by:
             self._line("an also_by title", title, required=True)
+        if self.pricing is not None and not isinstance(self.pricing, BookPricing):
+            raise TypeError("pricing is a BookPricing")
 
     def entries(self) -> dict[str, Any]:
         """The book config entries this profile sets, in the order they are written; empty ones are left out."""
