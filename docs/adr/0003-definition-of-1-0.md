@@ -22,7 +22,7 @@ vibey standards define no "stable" bar, so this ADR sets one.
 | A5 | No run exceeds its budget cap; the pre-flight estimate is within 30% of actual spend on the evaluation set | Property test, evaluation report |
 | A6 | Mean rubric score is at least 3.5 of 5 on every dimension and falls no more than 0.2 from the previous release | Nightly paid evaluation |
 | A7 | These contracts are frozen and snapshot-tested: the brief and book-config schemas, the REST OpenAPI document, the webhook catalogue, the job message, the CLI, the SDK and the MCP tools | Snapshot tests, `docs/COMPATIBILITY.md` |
-| A8 | Every quality gate in `CONTRIBUTING.md` passes, including 100% branch coverage per layer | CI |
+| A8 | Every quality gate in `CONTRIBUTING.md` passes, including 100% line and branch coverage of the core and the SDK, enforced as one global threshold | CI |
 | A9 | Core and SDK are published to PyPI in lockstep, and images to GHCR, with attestations | Release run, `gh attestation verify` |
 | A10 | Every documented claim matches the code, and a threat model exists | Documentation and release audits |
 

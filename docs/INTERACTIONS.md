@@ -186,10 +186,12 @@ ei tools verify [--lock PATH] [NAME …]
 ei tools grant [--lock PATH] NAME STAGE TOOL …
 ei tools revoke [--lock PATH] NAME STAGE [TOOL …]
 ei skills add [--lock PATH] [--replace] FILE
+ei skills import SOURCE (--stage STAGE [--stage STAGE …] | --reference) [--section TITLE …] [--name NAME] [--version N] [--out FILE]
 ei skills enable|disable [--lock PATH] NAME STAGE
 ei skills remove [--lock PATH] NAME
 ei skills list|verify [--lock PATH]
 ei plugins show FILE
+ei plugins import FOLDER [--name NAME] [--version N] [--out FILE]
 ei plugins add [--lock PATH] [--skill-lock PATH] FILE
 ei plugins list [--lock PATH]
 ei plugins verify|remove … [--lock PATH] [--skill-lock PATH]
@@ -221,12 +223,14 @@ ei plugins fetch INDEX NAME [--output DIR]
 | `ei tools grant NAME STAGE TOOL …` | Lets a stage call some of a locked server's tools: edits the lock, runs nothing. The tools must be ones the lock lists; no wildcards. A stage with no grant gets none. | `0`; `2` on a refusal or an unusable lock |
 | `ei tools revoke NAME STAGE [TOOL …]` | Takes tools back from a stage, or all of them if none are named. A stage with no grant is an error. | same |
 | `ei skills add FILE` | Reads a skill file once, checks it strictly (no key but `name`, `version`, `description` and `[parts]`; no invisible or control characters) and records the SHA-256 of its bytes in the skill lock, keeping a copy in `skills/` beside it. **Enables nothing**; prints each part so you can read what will be added to prompts. `--replace` locks it again and clears its stages. Starts nothing. See [SKILLS.md](SKILLS.md). | `0`; `2` on a refusal or an unusable lock |
+| `ei skills import SOURCE …` | Turns a `SKILL.md` (a `---` block of `key: value` lines, then markdown) into a skill file (`--out`) and prints what it kept and set aside, to be reviewed and then added. It does not touch the lock. See [SKILLS.md](SKILLS.md#importing-a-skillmd). | `0`; `2` an unreadable source or a bad option |
 | `ei skills enable NAME STAGE` | Lets a stage's prompt carry a skill: checks the file against its hash and refuses a stage the skill has no text for. At most four skills per stage. | same |
 | `ei skills disable NAME STAGE` | Stops a stage carrying a skill. | same |
 | `ei skills remove NAME` | Unlocks a skill and deletes its copy. | same |
 | `ei skills list` | Shows the locked skills with their short hash and stages. Reads no skill file. | `0`; `2` an unusable lock |
 | `ei skills verify` | Re-hashes every locked skill, enabled or not, against the lock. | `0` all match; `1` one does not; `2` setup trouble |
 | `ei plugins show FILE` | Reads a plugin file and says what installing it would do: its skills (with their text), and the `ei tools add` command for each server. Changes nothing. See [PLUGINS.md](PLUGINS.md). | `0`; `2` on a refusal |
+| `ei plugins import FOLDER` | Turns a plugin folder written for Claude Code into a bundle file (`--out`), to be shown and then added. It does not touch the lock. See [PLUGINS.md](PLUGINS.md). | `0`; `2` an unreadable folder or a bad option |
 | `ei plugins add FILE` | Locks the bundle's skills (each enabled for **no** stage), keeps a copy of the bundle, and records its SHA-256 in the plugin lock. **Starts nothing, contacts nothing, grants nothing:** the commands for its servers are printed for you to review and run. Refuses a plugin that is installed or skills that are already locked, before writing anything. | `0`; `2` on a refusal or an unusable lock |
 | `ei plugins list` | Shows the installed plugins, the skills installed and the servers described. | `0`; `2` an unusable lock |
 | `ei plugins verify` | Re-hashes each kept bundle and checks that its skills are still locked as installed. | `0` all match; `1` one does not; `2` setup trouble |
