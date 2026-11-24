@@ -9,7 +9,8 @@ site_url: https://adammatthewsteinberger.github.io/engineering-influence/
 copyright: '<a href="https://www.amazon.com/dp/B0HPWQFD3Y">Engineering Influence: A Playbook for the Remnant to Bring Christian Culture Back to America</a>'
 repo_url: https://github.com/adammatthewsteinberger/engineering-influence
 repo_name: adammatthewsteinberger/engineering-influence
-edit_uri: edit/develop/
+# No "Edit on GitHub" link: the pages are assembled from the repository's own files, so a link to docs/<name>.md would be wrong.
+edit_uri: ""
 
 # The pages are assembled from the repository's own Markdown by scripts/build_docs_site.py, so a document is
 # written once and read both on GitHub and here.
@@ -66,7 +67,6 @@ nav:
       - Troubleshooting: troubleshooting.md
       - Releasing: releasing.md
       - Documentation site: documentation-site.md
-  - Quality:
       - Testing: testing.md
       - Evaluation: evaluation.md
       - Live smoke test: live-smoke-test.md
