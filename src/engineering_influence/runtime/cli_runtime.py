@@ -93,9 +93,15 @@ from engineering_influence.services.interfaces.local_model_doctor_interface impo
 from engineering_influence.services.interfaces.model_doctor_interface import (
     ModelDoctorInterface,
 )
+from engineering_influence.services.interfaces.resolve_spend_consent_interface import (
+    ResolveSpendConsentInterface,
+)
 from engineering_influence.services.interfaces.resume_run_interface import ResumeRunInterface
 from engineering_influence.services.interfaces.search_doctor_interface import (
     SearchDoctorInterface,
+)
+from engineering_influence.services.interfaces.spend_ceiling_interface import (
+    SpendCeilingInterface,
 )
 from engineering_influence.services.local_default_model import LocalDefaultModel
 from engineering_influence.services.local_model_doctor import LocalModelDoctor
@@ -172,7 +178,7 @@ class CliRuntime(CliRuntimeInterface):
                 self._create_run,
                 self._list_runs,
                 BriefReader(),
-                lambda: ResolveSpendConsent(self._run_repository(), self._broker_queue()),
+                self._resolve_spend,
             ),
             DoctorCli(
                 self._model_doctor, self._search_doctor, self._local_model_doctor, os.environ
@@ -445,11 +451,23 @@ class CliRuntime(CliRuntimeInterface):
 
         return LocalBookRuntime(state_dir, {**os.environ, **settings}, self._secret_provider())
 
+    def _spend_ceiling(self, runs: RunRepositoryInterface) -> SpendCeilingInterface:
+        """The operator's spend ceilings (``EI_MAX_RUN_BUDGET_MICRO_USD``, ``EI_MAX_OUTSTANDING_BUDGET_MICRO_USD``)."""
+        from engineering_influence.models.spend_limits import SpendLimits
+        from engineering_influence.services.spend_ceiling import SpendCeiling
+
+        return SpendCeiling(runs, SpendLimits.from_environment(os.environ))
+
+    def _resolve_spend(self) -> ResolveSpendConsentInterface:
+        runs = self._run_repository()
+        return ResolveSpendConsent(runs, self._broker_queue(), self._spend_ceiling(runs))
+
     def _create_run(self) -> CreateRunInterface:
         """Build the create service: it saves the run and queues its first stage on the broker."""
         from engineering_influence.services.create_run import CreateRun
 
-        return CreateRun(self._run_repository(), self._broker_queue())
+        runs = self._run_repository()
+        return CreateRun(runs, self._broker_queue(), ceiling=self._spend_ceiling(runs))
 
     def _list_runs(self) -> ListRunsInterface:
         """Build the list service; it needs only the database."""
@@ -511,11 +529,11 @@ class CliRuntime(CliRuntimeInterface):
 
         runs = self._run_repository()
         return AcpApplication(
-            CreateRun(runs, self._broker_queue()),
+            CreateRun(runs, self._broker_queue(), ceiling=self._spend_ceiling(runs)),
             CancelRun(runs),
             BriefReader(),
             RunProgress(runs),
-            ResolveSpendConsent(runs, self._broker_queue()),
+            ResolveSpendConsent(runs, self._broker_queue(), self._spend_ceiling(runs)),
             SqlModelAcpSessionStore(
                 self._secret_provider().require("EI_DATABASE_URL"), pooled=False
             ),
