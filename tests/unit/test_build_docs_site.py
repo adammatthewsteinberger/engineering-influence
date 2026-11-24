@@ -339,3 +339,16 @@ def test_the_build_writes_the_decision_record_index_and_lets_crawlers_in(tmp_pat
     assert "| [ADR 0001: X](0001-x.md) | accepted |" in (out / "adr" / "index.md").read_text()
     robots = (out / "robots.txt").read_text().splitlines()
     assert robots[:2] == ["User-agent: *", "Allow: /"]
+
+
+def test_the_stylesheet_keeps_tables_readable_on_the_dark_theme() -> None:
+    css = (ROOT / "docs-site" / "site.css").read_text(encoding="utf-8")
+
+    # Every row, not only the even ones, takes the table's own text colour: Bootstrap's striped colour is black.
+    assert "--bs-table-striped-color: var(--bs-table-color)" in css
+    assert ".table.table-striped" in css
+    # Cells wrap their prose, as the Vibey stylesheet would otherwise keep each on one line.
+    assert "white-space: normal" in css
+    # `break-word` as a word-break lets code break at any character, which squeezes a column to one letter wide.
+    assert "word-break: break-word" not in css and "overflow-wrap: anywhere" not in css
+    assert "overflow-x: auto" in css
