@@ -15,8 +15,11 @@ from pathlib import Path
 
 import pytest
 from local_server import LocalServer
+from pypdf import PdfReader
 from smoke_rehearsal import rehearsal, serve
 from smoke_run import SmokeReport
+
+from engineering_influence.models.book_kind import BookKind
 
 pytestmark = pytest.mark.toolchain
 
@@ -32,13 +35,17 @@ BOOK = {
 }
 
 
-def run_with(tmp_path: Path, settings: dict[str, str] | None = None) -> SmokeReport:
+def run_with(
+    tmp_path: Path,
+    settings: dict[str, str] | None = None,
+    kind: BookKind = BookKind.NONFICTION,
+) -> SmokeReport:
     missing = [tool for tool in TOOLS if shutil.which(tool) is None]
     if missing:
         pytest.skip(f"the toolchain is not installed: {', '.join(missing)}")
     server: LocalServer
     with serve() as server:
-        return rehearsal(tmp_path, server.url, builder=None, settings=settings).run()
+        return rehearsal(tmp_path, server.url, builder=None, settings=settings, kind=kind).run()
 
 
 def test_the_whole_plan_ends_in_a_built_book(tmp_path: Path) -> None:
@@ -77,3 +84,22 @@ def test_a_strict_release_needs_the_authors_pricing_which_a_run_cannot_invent(
     assert report.rows[-1].stage == "build" and report.rows[-1].outcome == "failed"
     assert any("pricing" in issue for issue in report.issues)
     assert json.loads(report.artifacts["quality-report.json"])["status"] == "fail"
+
+
+def test_a_novel_run_ends_in_a_built_book_at_its_own_trim_size(tmp_path: Path) -> None:
+    report = run_with(tmp_path, kind=BookKind.NOVEL)
+    assert report.completed and report.status == "completed", report.issues
+    assert [row.stage for row in report.rows][-3:] == ["assemble", "audit", "build"]
+    files = report.artifacts
+    slug = "the-salt-road"
+    assert {
+        f"book/{slug}.pdf",
+        f"book/{slug}.epub",
+        "book/listing.md",
+        "quality-report.json",
+    } <= set(files)
+    assert json.loads(files["quality-report.json"])["status"] == "pass"
+    page = PdfReader(BytesIO(files[f"book/{slug}.pdf"])).pages[0]
+    assert (round(float(page.mediabox.width)), round(float(page.mediabox.height))) == (396, 612)
+    with zipfile.ZipFile(BytesIO(files[f"book/{slug}.epub"])) as epub:
+        assert epub.testzip() is None

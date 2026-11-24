@@ -17,7 +17,10 @@ class TextPlacementCheck(TextPlacementCheckInterface):
         """Return a problem for stray text and for text over the barcode."""
         alpha = np.asarray(layer.getchannel("A")) > 8
         allowed = np.zeros_like(alpha)
-        tol = round(0.03 * L.ppi)  # glyph overhang and anti-aliasing, well inside KDP's limits
+        # Glyph overhang and anti-aliasing. A letter at the start of a line can reach a few hundredths of an inch
+        # past the left edge (a back-cover blurb at 5.5x8.5 did, by 0.04 in). The safe areas sit about half an
+        # inch inside the trim edge, far inside KDP's own margin, so this tolerance never reaches it.
+        tol = round(0.06 * L.ppi)
         for b in (L.front_safe, L.back_safe, L.spine_safe):
             if b is not None:
                 x0, y0, x1, y1 = L.box_px(b)

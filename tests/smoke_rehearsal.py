@@ -37,6 +37,34 @@ LISTING = (
     + "".join(f"- keyword {n}\n" for n in range(7))
     + "Categories:\n- Books > Crafts, Hobbies & Home > Gardening & Landscape Design\n"
 )
+NOVEL_LISTING = (
+    "Title: The Salt Road\nSubtitle: A journey to the sea\nDescription:\n"
+    + " ".join(["Ana walks the salt road to find her brother before the winter closes it."] * 8)
+    + "\nKeywords:\n"
+    + "".join(f"- novel keyword {n}\n" for n in range(7))
+    + "Categories:\n- Books > Literature & Fiction > Historical Fiction\n"
+)
+BIBLE = json.dumps(
+    {
+        "premise": "Ana walks the salt road to find her brother.",
+        "characters": [{"name": "Ana", "aliases": [], "age": 30}],
+        "places": ["the salt road", "the sea"],
+        "timeline": [],
+        "span_years": 1,
+    }
+)
+NOVEL_OUTLINE = """## Chapter 1: Departure
+Purpose: Ana leaves home.
+Beats:
+- Ana packs
+- Ana leaves
+Leads to: The road begins.
+
+## Chapter 2: The Inn
+Purpose: Ana finds shelter.
+Beats:
+- Ana reaches the inn
+"""
 CHAPTER = re.compile(r'<untrusted name="chapter">\n(.*?)\n</untrusted>', re.DOTALL)
 NUMBER = re.compile(r"Write chapter (\d+) of")
 CATALOG = """
@@ -73,6 +101,12 @@ BRIEF = {
     "title_hint": "Herbs Indoors",
     "target_words": 400,
 }
+NOVEL_BRIEF = {
+    "idea": "A woman walks the salt road to find her brother",
+    "title_hint": "The Salt Road",
+    "target_words": 400,
+    "trim_size": "5.5x8.5",
+}
 
 
 class NoSecrets(SecretProviderInterface):
@@ -87,10 +121,15 @@ def answer(user: str) -> str:
         return "POSITIONING: calm, practical and kind to beginners."
     if user.startswith("Research the book"):
         return "RESEARCH NOTES: herbs need six hours of light and drainage."
+    novel = "novel" in user.splitlines()[0]
+    if user.startswith("Write the story bible"):
+        return BIBLE
+    if user.startswith("Write the beats"):
+        return "BEATS: Ana leaves, walks the road, and reaches the inn."
     if user.startswith("Write the chapter outline"):
-        return OUTLINE
+        return NOVEL_OUTLINE if novel else OUTLINE
     if user.startswith("Write the store listing"):
-        return LISTING
+        return NOVEL_LISTING if novel else LISTING
     if user.startswith("Summarise this chapter"):
         return "Herbs need light and drainage."
     for edit in ("Revise the structure", "Line-edit", "Copy-edit"):
@@ -136,6 +175,7 @@ def rehearsal(
     cap: int = 5_000_000,
     builder: ManuscriptBuilderInterface | None = None,
     settings: Mapping[str, str] | None = None,
+    kind: BookKind = BookKind.NONFICTION,
 ) -> SmokeRun:
     profiles, catalog, author = tmp_path / "p.toml", tmp_path / "c.toml", tmp_path / "a.toml"
     profiles.write_text(PROFILE.format(url=url), encoding="utf-8")
@@ -150,5 +190,6 @@ def rehearsal(
         "EI_AUTHOR_PROFILE": str(author),
         **(settings or {}),
     }
-    brief = BookBrief(kind=BookKind.NONFICTION, budget_micro_usd=cap, **BRIEF)  # type: ignore[arg-type]
+    fields = BRIEF if kind is BookKind.NONFICTION else NOVEL_BRIEF
+    brief = BookBrief(kind=kind, budget_micro_usd=cap, **fields)  # type: ignore[arg-type]
     return SmokeRun(environment, NoSecrets(), brief, date(2026, 11, 22), builder=builder)

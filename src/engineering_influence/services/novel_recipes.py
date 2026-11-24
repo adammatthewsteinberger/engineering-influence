@@ -11,15 +11,20 @@ from engineering_influence.models.stage_recipe import StageRecipe
 
 
 class NovelRecipes(StageRecipesInterface):
-    """Brief, story bible, beats and chapter outline are one prompt each, none with tools; ``draft`` is the loop over the chapters.
+    """Brief, story bible, beats, chapter outline and metadata are one prompt each, none with tools; ``draft`` is the loop over the chapters.
 
     A novel is not argued from sources, so there is no research stage and no tool. The story bible is JSON that
     ``StoryBibleParser`` reads and the chapter outline is the same markdown ``OutlineParser`` reads, so the stages
     after them (drafting, which checks each chapter against the bible) walk the same chapters a non-fiction book has.
-    The editing passes, assembly and the audit are not built, so the plan ends at the draft.
+    The metadata stage writes the store listing in the format ``MetadataParser`` reads, so ``assemble`` can write the
+    book's config. After the draft the plan assembles, audits and builds the book. **There are no editing passes for a
+    novel yet**: what the draft stage wrote is what is built, so the book is as good as its draft.
     """
 
     DRAFT_STAGE = "draft"
+    ASSEMBLE_STAGE = "assemble"
+    AUDIT_STAGE = "audit"
+    BUILD_STAGE = "build"
     DRAFT: ClassVar[DraftRecipe] = DraftRecipe(
         ("brief", "story_bible", "beats", "outline"),
         (("The author's brief", "brief"), ("The story bible", "story_bible")),
@@ -36,11 +41,18 @@ class NovelRecipes(StageRecipesInterface):
         StageRecipe("story_bible", "novel_story_bible", ("brief",), 4_000),
         StageRecipe("beats", "novel_beats", ("brief", "story_bible"), 3_000),
         StageRecipe("outline", "novel_outline", ("brief", "story_bible", "beats"), 5_000),
+        StageRecipe("metadata", "novel_metadata", ("brief", "story_bible", "outline"), 2_500),
     )
 
     def plan(self) -> StagePlan:
         """The stages of a novel run, in order."""
-        stages = (*(recipe.stage for recipe in self.RECIPES), self.DRAFT_STAGE)
+        stages = (
+            *(recipe.stage for recipe in self.RECIPES),
+            self.DRAFT_STAGE,
+            self.ASSEMBLE_STAGE,
+            self.AUDIT_STAGE,
+            self.BUILD_STAGE,
+        )
         return StagePlan(BookKind.NOVEL, stages)
 
     def recipe(self, stage: str) -> StageRecipe:

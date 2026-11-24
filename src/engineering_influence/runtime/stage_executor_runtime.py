@@ -129,6 +129,7 @@ from engineering_influence.services.tool_lock_verifier import ToolLockVerifier
 from engineering_influence.services.tool_registry import ToolRegistry
 from engineering_influence.services.tool_runner import ToolRunner
 from engineering_influence.services.tool_server_fleet import ToolServerFleet
+from engineering_influence.services.verbatim_dashes import VerbatimDashes
 from engineering_influence.services.web_search_tool import WebSearchTool
 
 
@@ -269,7 +270,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                 tools,
                 grants,
                 guidance,
-                NovelOutputChecks(StoryBibleParser(), outlines),
+                NovelOutputChecks(StoryBibleParser(), outlines, metadata),
                 SpendGuard,
             ),
             ContentPolicy(),
@@ -296,14 +297,29 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                     )
                     for editing in revisions.passes()
                 },
-                AssembleStageExecutor.STAGE: AssembleStageExecutor(
-                    artifacts,
-                    outlines,
-                    metadata,
-                    ChapterCleaner(dashes),
-                    BookConfigWriter(),
-                    profile,
-                    revisions.final(),
+                AssembleStageExecutor.STAGE: KindStageExecutor(
+                    {
+                        BookKind.NONFICTION: AssembleStageExecutor(
+                            artifacts,
+                            outlines,
+                            metadata,
+                            ChapterCleaner(dashes),
+                            BookConfigWriter(),
+                            profile,
+                            revisions.final(),
+                        ),
+                        # A novel has no editing passes yet, so it is assembled from the draft's own chapters,
+                        # and it keeps the dashes its prose has: only non-fiction refuses them.
+                        BookKind.NOVEL: AssembleStageExecutor(
+                            artifacts,
+                            outlines,
+                            metadata,
+                            ChapterCleaner(VerbatimDashes()),
+                            BookConfigWriter(),
+                            profile,
+                            "chapter",
+                        ),
+                    }
                 ),
                 AuditStageExecutor.STAGE: AuditStageExecutor(
                     artifacts,

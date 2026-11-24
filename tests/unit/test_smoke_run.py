@@ -16,6 +16,7 @@ from smoke_run import DEFAULT_IDEA, RUN_ID, LiveSettings, SmokeReport, SmokeRun
 
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interfaces.manuscript_builder_interface import ManuscriptBuilderInterface
+from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.manuscript_build import ManuscriptBuild
 
 
@@ -40,6 +41,13 @@ class RehearsalBuilder(ManuscriptBuilderInterface):
 
 def smoke(tmp_path: Path, url: str, cap: int = 5_000_000) -> SmokeRun:
     return rehearsal(tmp_path, url, cap, RehearsalBuilder())
+
+
+def novel_run(tmp_path: Path) -> SmokeReport:
+    with serve() as server:
+        return rehearsal(
+            tmp_path, server.url, builder=RehearsalBuilder(), kind=BookKind.NOVEL
+        ).run()
 
 
 def run(
@@ -69,6 +77,29 @@ def test_every_stage_of_the_plan_advances_and_the_run_completes(tmp_path: Path) 
     assert [row.outcome for row in report.rows] == ["advanced"] * 11 + ["completed"]
     assert {row.attempts for row in report.rows} == {1}
     assert report.issues == ()
+
+
+def test_a_novel_runs_from_its_brief_to_a_built_book(tmp_path: Path) -> None:
+    report = novel_run(tmp_path)
+    assert report.completed and report.status == "completed", report.issues
+    assert [row.stage for row in report.rows] == [
+        "brief",
+        "story_bible",
+        "beats",
+        "outline",
+        "metadata",
+        "draft",
+        "assemble",
+        "audit",
+        "build",
+    ]
+    assert [row.outcome for row in report.rows] == ["advanced"] * 8 + ["completed"]
+    files = report.artifacts
+    config = files["manuscript/books/the-salt-road.toml"].decode()
+    assert 'kind = "novel"' in config and 'trim_size = "5.5x8.5"' in config
+    assert files["manuscript/src/chapter_02.md"].startswith(b"# The Inn\n\n")
+    assert b"Status: pass" in files["audit.md"] and "quality-report.json" in files
+    assert "book/the-salt-road.pdf" in files
 
 
 def test_spend_is_counted_per_stage_and_stays_under_the_cap(tmp_path: Path) -> None:

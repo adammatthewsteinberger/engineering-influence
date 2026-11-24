@@ -4,6 +4,9 @@
 from engineering_influence.interfaces.stage_output_check_interface import (
     StageOutputCheckInterface,
 )
+from engineering_influence.services.interfaces.metadata_parser_interface import (
+    MetadataParserInterface,
+)
 from engineering_influence.services.interfaces.outline_parser_interface import (
     OutlineParserInterface,
 )
@@ -13,7 +16,7 @@ from engineering_influence.services.interfaces.story_bible_parser_interface impo
 
 
 class NovelOutputChecks(StageOutputCheckInterface):
-    """The story bible must be readable as a bible and the outline as chapters, because later stages walk them.
+    """The story bible must be readable as a bible, the outline as chapters and the listing as a listing, because later stages read them.
 
     Checking when each is written means a malformed one stops the run right there, instead of stages later
     after drafting has been paid for. The brief and the beats are prose that nothing parses.
@@ -21,10 +24,17 @@ class NovelOutputChecks(StageOutputCheckInterface):
 
     STORY_BIBLE = "story_bible"
     OUTLINE = "outline"
+    METADATA = "metadata"
 
-    def __init__(self, bibles: StoryBibleParserInterface, outlines: OutlineParserInterface) -> None:
+    def __init__(
+        self,
+        bibles: StoryBibleParserInterface,
+        outlines: OutlineParserInterface,
+        metadata: MetadataParserInterface,
+    ) -> None:
         self._bibles = bibles
         self._outlines = outlines
+        self._metadata = metadata
 
     def check(self, stage: str, text: str) -> None:
         """Return when the answer is usable; raise an ApplicationError saying what is wrong when it is not."""
@@ -32,3 +42,5 @@ class NovelOutputChecks(StageOutputCheckInterface):
             self._bibles.parse(text)
         elif stage == self.OUTLINE:
             self._outlines.parse(text)
+        elif stage == self.METADATA:
+            self._metadata.parse(text)

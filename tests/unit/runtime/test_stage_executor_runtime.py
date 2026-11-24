@@ -323,6 +323,30 @@ def assemble(tmp_path: Path, **extra: str) -> tuple[InMemoryArtifactStore, list[
     return store, seen.seen
 
 
+def test_a_novel_is_assembled_from_its_draft_and_keeps_the_dashes_its_prose_has(
+    tmp_path: Path,
+) -> None:
+    outline = "## Chapter 1: The Road\nPurpose: Ana leaves.\nBeats:\n- Ana packs\n"
+    brief = BookBrief(BookKind.NOVEL, "A walk to the sea", 5_000_000)
+    run = BookRun("run-1", brief, NovelRecipes().plan(), Budget(cap=5_000_000), stage="assemble")
+    with provider("unused") as (url, seen):
+        rt = runtime(files(tmp_path, url=url))
+        store = InMemoryArtifactStore()
+        store.put("run-1", "outline.md", outline.encode())
+        store.put("run-1", "metadata.md", LISTING.encode())
+        store.put(
+            "run-1",
+            "chapter_01.md",
+            "# Chapter 1: The Road\n\n\u201cWait\u2014\u201d she said.".encode(),
+        )
+        asyncio.run(rt.build(store, InMemoryJournal()).execute(run, 1))
+        rt.close()
+    assert seen.seen == []
+    chapter = (store.get("run-1", "manuscript/src/chapter_01.md") or b"").decode()
+    assert chapter == "# The Road\n\n\u201cWait\u2014\u201d she said.\n"
+    assert b'kind = "novel"' in (store.get("run-1", "manuscript/books/hive-mind.toml") or b"")
+
+
 def test_an_editing_stage_is_routed_to_the_reviser_and_stores_the_edited_chapter(
     tmp_path: Path,
 ) -> None:

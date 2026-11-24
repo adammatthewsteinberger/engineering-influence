@@ -12,7 +12,11 @@ runtime dispatches by kind, so a non-fiction run is untouched.
 | `story_bible` | `novel_story_bible` | one JSON object: premise, characters (name, aliases, age), places, dated events, span in years | read by `StoryBibleParser` (`STORY_BIBLE_INVALID`) |
 | `beats` | `novel_beats` | 15 to 25 numbered beats in three acts, in story order | not parsed |
 | `outline` | `novel_outline` | the chapters, in the same `## Chapter N: Title` format a non-fiction outline uses | read by `OutlineParser` (`OUTLINE_INVALID`) |
+| `metadata` | `novel_metadata` | the store listing: title, subtitle, blurb, seven keywords, one to three categories | read by `MetadataParser` (`METADATA_INVALID`) |
 | `draft` | `novel_context_pack`, `novel_summary` | each chapter in order, then a summary of it for the next; `chapter_NN.md`, `summary_NN.md`, `draft.md` | continuity, once every chapter is written |
+| `assemble` | none (no model call) | the book as a project under `manuscript/`: `src/chapter_NN.md` and `books/<slug>.toml` with `kind = "novel"` | the chapters are cleaned and any unfinished marker or the word `Draft` is refused |
+| `audit` | none | the same publish audits as `ei book audit` (`audit.md`, `audit/`) | a book that fails stops the run |
+| `build` | none | the interior PDF, EPUB, covers, listing and KDP bundle under `book/`, the reports under `build/`, `quality-report.json` and `build.md` | a book that does not pass stops the run (`BUILD_FAILED`) |
 
 The five stages are the whole plan today. The editing passes, assembly and the audit for a novel are not built, so a
 novel run stops after the draft.
@@ -55,16 +59,23 @@ outside the bible's range, and events mentioned out of order. The draft stage ca
 
 ## Trying it
 
+A novel run ends in a built book, as a non-fiction run does. The `metadata` stage comes right after the outline, so `assemble` can write the config
+from the listing and the draft's own chapters. A novel keeps its em and en dashes (only non-fiction refuses them), and its
+trim size is the brief's (`trim_size`, for example `5.5x8.5`). **There are no editing passes for a novel yet**: the book is built
+from the draft as written, so it is only as good as the draft. The build needs the TeX worker image
+([WORKER_IMAGE.md](WORKER_IMAGE.md)); `EI_BUILD_STRICT_RELEASE` works as for non-fiction ([BOOKS_AND_KDP.md](BOOKS_AND_KDP.md)).
+
 A novel is not yet runnable from the command line: `ei book create` is M8, and the paid smoke test in
 [LIVE_SMOKE_TEST.md](LIVE_SMOKE_TEST.md) drives only the non-fiction plan. What exists today is the stage code, tested
-against scripted servers. To see the prompts a novel sends without a model, read the templates named in the table above
+against scripted servers, and a scripted run of the whole plan that is built with the real toolchain
+(`tests/toolchain/test_run_builds_book.py`). To see the prompts a novel sends without a model, read the templates named in the table above
 (`src/engineering_influence/infrastructure/prompt_library/templates/novel_*.toml`); each is versioned, and its text is
 pinned in `tests/fixtures/prompt_templates.lock.toml`.
 
 ## What is not built or not checked
 
-- Revision, copy editing, assembly and the audit for a novel; the metadata and KDP listing for fiction; a repair pass that
-  asks the model to fix a continuity finding.
+- Revision and copy editing for a novel; a repair pass that asks the model to fix a continuity finding.
+- A paid check of the novel plan against a real model.
 - Nothing here has been run against a real model. The prompts are tested against scripted servers, and how well a
   20-billion-parameter local model writes a story bible as valid JSON is not known: if it often does not, the run stops
   with `STORY_BIBLE_INVALID` and the message says why.
