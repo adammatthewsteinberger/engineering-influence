@@ -17,11 +17,6 @@ ei book create --kind nonfiction "how to keep herbs alive indoors" --budget-usd 
 
 The book lands in `./my-book/run/book/`. Nothing is uploaded: you read it, then you upload it to KDP yourself.
 
-> **Status: alpha (`0.1.0a2`), and honest about it.** Every stage is built and tested, from the brief to the
-> built book. The writing has only ever run against scripted test servers, never a live model, so nobody yet
-> knows how good the books are. The install script has been run for real only as a dry run on macOS, and it
-> installs from `main`, which gets it with the next release. See [Limitations](#limitations).
-
 ## The idea in one minute
 
 > **Daniel:** I have a book idea and no free months. Everyone says an AI can write it. I asked a chatbot and got
