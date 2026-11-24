@@ -1,9 +1,40 @@
-# From postulates to a KDP-ready book
+# From an idea to a KDP-ready book
 
-**engineering-influence exists to write complete books, fiction and non-fiction, fully
-autonomously, and to hand you a package that is ready to upload to Amazon KDP.** Everything
-else in this repository (the API, MCP server, CLI, SDK, webhooks, queue and ledger) is the
-machinery that makes that run unattended, recoverably and auditably.
+**BLUF:** "KDP-ready" here means a folder Amazon's upload form will accept: an interior PDF at KDP's trim and
+margins, an EPUB, covers at the exact page count, a listing with seven keywords, and a report that says what
+passed. `ei book create` produces it from an idea, and `ei book publish` produces it from a manuscript you
+already have. It is checked by the build, and it still needs a person to read it before it is published.
+
+## What "ready" really means
+
+> **Daniel:** I uploaded my last book to KDP four times. Margins, then a font that was not embedded, then the
+> spine. Each rejection took a day. What does "ready" buy me here?
+>
+> **Professor Feynman:** What did all four rejections have in common?
+>
+> **Daniel:** They were rules I could have checked myself, if I had known the rules.
+>
+> **Professor Feynman:** There you are. An airline pilot does not find out at the runway whether the fuel cap is
+> on. There is a list, and the list is run before the engines start. The build stage is that list for a book:
+> trim size, the gutter that grows with the page count, fonts embedded, page limits, the EPUB's structure,
+> exactly seven keywords.
+>
+> **Daniel:** So if the list passes, Amazon accepts it.
+>
+> **Professor Feynman:** Careful. Which things can a list not check?
+>
+> **Daniel:** Whether the book is any good. And whatever rule Amazon changed last week.
+>
+> **Professor Feynman:** Both right. The list covers the rules written into this code, and it has not yet been
+> proven against Kindle Previewer on a book made this way. That is why the report ends `human_review: pending`
+> and why nothing is ever uploaded for you.
+>
+> **Daniel:** Then "ready" means the mechanical rejections are behind me, and the reading is still mine.
+
+**engineering-influence exists to write complete books, fiction and non-fiction, fully autonomously, and to hand
+you a package that is ready to upload to Amazon KDP.** Everything else in this repository (the API, MCP server,
+CLI, SDK, webhooks, queue and ledger) is the machinery that makes that run unattended, recoverably and
+auditably.
 
 You supply a project: a title, governing postulates (the claims and limits the book must
 stay inside) and the stages to run. The pipeline does the rest.

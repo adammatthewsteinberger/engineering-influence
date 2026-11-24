@@ -1,5 +1,27 @@
 # Examples
 
+**BLUF:** Every example here is the real thing, not a mock: real shell commands, real HTTP requests, a real MCP
+client, a real webhook server. The test suite runs all of them, so a command you copy from this page works.
+Most need the stack; `sh examples/up.sh` starts one with generated credentials. To write a book you need none
+of this: see [Getting started](../docs/GETTING_STARTED.md).
+
+> **Daniel:** Every project has an examples folder. In my experience half of them stopped working two releases
+> ago and nobody noticed.
+>
+> **Professor Feynman:** Why did nobody notice?
+>
+> **Daniel:** Because nothing ran them. They are photographs of code that worked once.
+>
+> **Professor Feynman:** So what would make an example a window instead of a photograph?
+>
+> **Daniel:** If the build ran it. If it broke, the build would break.
+>
+> **Professor Feynman:** That is the rule here: `tests/e2e/test_examples.py` runs each one and checks what it
+> prints. One caution. They prove the plumbing: a request goes in, a job comes out, a signature verifies. The
+> example worker writes placeholder text, so they do not show you a book.
+>
+> **Daniel:** Plumbing here, books in Getting started. I will keep the two apart.
+
 Each example does what you would do for real: shell commands for the CLI, `requests` and
 `curl` for HTTP, the SDK for Python, a real MCP client for MCP, and a real HTTP server for
 webhooks. The test suite runs all of them (`tests/e2e/test_examples.py`), and
@@ -20,7 +42,10 @@ examples/
 ├── mcp/client.py              an MCP client that spawns it and calls the tool
 ├── webhooks/receiver.py       a stdlib receiver that verifies signature, time and replay
 ├── webhooks/send_event.py     sends valid, replayed, tampered and stale deliveries
-└── observability/scrape.py    health, correlation id, Prometheus metrics
+├── observability/scrape.py    health, correlation id, Prometheus metrics
+├── searxng/                   a local web search for the research stage
+├── author-profile.example.toml  a starter author profile (copy it, change every value)
+└── claude-code/               the skill that lets Claude Code write a book with `ei`
 ```
 
 ## Run against the stack

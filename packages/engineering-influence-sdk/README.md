@@ -1,5 +1,9 @@
 # engineering-influence-sdk
 
+**BLUF:** A small typed Python client for the REST API of a running engineering-influence stack: start a book
+run, watch it, answer its request for more budget, and download what it made. Sync and async, same methods.
+To write one book on your own machine you do not need this; use the `ei book create` command.
+
 A small typed Python client for the REST API of
 [engineering-influence](https://github.com/adammatthewsteinberger/engineering-influence), the
 autonomous book-writing pipeline (fiction and non-fiction) that produces KDP-ready

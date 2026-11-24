@@ -1,0 +1,104 @@
+# engineering-influence: everything an agent needs to drive it
+
+engineering-influence writes a complete book (non-fiction or a novel) with nobody in the loop and produces a
+package for Amazon KDP: interior PDF, EPUB, covers, listing and a quality report. A person reviews and uploads.
+This file is for an AI agent that has a shell. It is plain instructions with no narrative. The human-facing
+pages are indexed in llms.txt.
+
+Status: alpha (0.1.0a2). Every stage is built and tested, but the writing has only run against scripted
+servers, never a live model. Do not tell a user the books are good; nobody has measured that.
+
+## Install
+
+    curl -fsSL https://raw.githubusercontent.com/adammatthewsteinberger/engineering-influence/main/install.sh | sh
+
+macOS with Homebrew, or Linux with apt-get. It downloads about 13 GB for the model and several GB for TeX, so
+let the user run it. `--dry-run` prints every command and changes nothing. Other options: `--skip-model`,
+`--skip-tex`, `--skip-search`, `--with-claude-skill`, `--version REF`. Options go after `sh -s --`.
+
+## Check the machine
+
+    ei doctor --ready
+
+Exit 0: ready. Exit 1: a check failed; each FAIL line says what is missing and what to do. Exit 2: setup
+trouble. Do not start a run while a check fails.
+
+## Write a book
+
+Ask the user for: the idea; the kind (`nonfiction` or `novel`); the path to their author profile (TOML with
+`author`, `publisher`, `edition`, `author_bio`); a budget in dollars. Never write an author profile yourself.
+
+    ei book create --kind KIND "IDEA" --budget-usd N --out ./BOOK --profile PROFILE > ./BOOK.log 2>&1
+
+Run it in the background: a book takes a long time. `--out` must be a new or empty folder. `--budget-usd` is
+required even with the free local model, where it is only a cap.
+
+Optional flags: `--title TEXT`, `--audience TEXT`, `--target-words N`, `--trim-size 5x8|5.5x8.5|6x9`,
+`--strict-release` (needs a `[pricing]` table in the profile), `--state-dir DIR` (default `OUT.state`),
+`--ignore-estimate` (start even when the budget is below the estimate; only with the user's agreement).
+
+## Exit codes of `ei book create`
+
+    0  the book is written. Files: ./BOOK/run/book/  Report: ./BOOK/run/quality-report.json
+    1  the run failed, or an extra is missing. What it made is still in ./BOOK/. Read the `issue:` lines.
+    2  it could not start: a missing idea, kind, budget or profile; a bad profile; a state folder that
+       already exists without --resume; no run to resume; a budget below the estimate.
+    3  it stopped to ask for more budget. Nothing is lost and nothing more is spent.
+
+On 3, ask the user. Only if they agree:
+
+    ei book create --out ./BOOK --resume --approve-spend
+
+To continue a run that stopped for any other reason (finished stages are never run or paid for again):
+
+    ei book create --out ./BOOK --resume
+
+## What it prints
+
+Standard output: an `estimate:` line, one `stage: outcome` line per finished stage, a summary line.
+Standard error: errors, and one `issue: CODE: detail` line per recorded issue.
+There is no `--json` flag. `quality-report.json` is the structured result: `status`, errors, warnings, the
+files with checksums, and a `spend` block.
+
+## What is in the output folder
+
+    BOOK/run/book/<slug>.pdf                   the paperback interior
+    BOOK/run/book/<slug>.epub                  the ebook
+    BOOK/run/book/<slug>-ebook.jpg             the ebook cover
+    BOOK/run/book/<slug>-paperback-wrap.pdf    the paperback cover
+    BOOK/run/book/listing.md                   title, subtitle, description, keywords
+    BOOK/run/book/MANIFEST.json                the bundle's contents and checksums
+    BOOK/run/quality-report.json               the result
+    BOOK/src/chapter_NN.md, BOOK/books/*.toml  the manuscript and its settings
+    BOOK.state/                                the run's memory, read by --resume; leave it alone
+
+## Rules
+
+- Never pass `--approve-spend` or `--ignore-estimate` unless the user agreed to that spend in this conversation.
+- Never set `EI_ALLOW_PAID` and never run `ei evaluate` unless the user asked for a paid evaluation.
+- Never invent or edit the user's author profile.
+- Report what the quality report says, warnings included. A run is finished only on exit code 0.
+- Nothing is uploaded anywhere. The user uploads to KDP.
+
+## Other commands
+
+    ei --version
+    ei doctor --local | --search | --models     one check at a time
+    ei book audit|build|epub|covers|qa|package|publish SLUG    work on an exported book project
+    ei run create BRIEF.TOML, ei run status|resume|cancel|export RUN_ID, ei run runs,
+    ei run grant RUN_ID [--micro-usd N], ei run deny RUN_ID    book runs on a running stack
+    ei serve api|worker|mcp, ei db upgrade, ei acp             the stack's processes
+    ei tools …, ei skills …, ei plugins …                     tool servers, skills and plugin bundles
+
+## With a running stack: MCP
+
+`ei serve mcp` is a stdio MCP server. It needs `EI_DATABASE_URL` and `EI_RABBITMQ_URL`, a migrated database
+(`ei db upgrade`) and a running worker (`ei serve worker`). It has no authentication and must stay local.
+
+    claude mcp add engineering-influence --env EI_DATABASE_URL=... --env EI_RABBITMQ_URL=... -- ei serve mcp
+
+Tools: `create_run` (a brief: `{"schema_version": 1, "kind": "nonfiction", "idea": "...",
+"budget_micro_usd": 5000000}`), `get_run`, `list_runs`, `resume_run`, `cancel_run`, `read_artifact` (files up
+to 1 MiB), `start_pipeline` (the older stage pipeline), and `grant_run` and `deny_run` only when the operator
+set `EI_MCP_ALLOW_SPEND`. A run started over MCP may be given at most `EI_MCP_MAX_RUN_BUDGET_MICRO_USD`
+(5,000,000 by default). Nothing is pushed: poll `get_run`.
