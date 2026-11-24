@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from engineering_influence.models.manuscript_build import ManuscriptBuild
     from engineering_influence.models.quality_issue import QualityIssue
+    from engineering_influence.models.spend_summary import SpendSummary
 
 
 class QualityReportInterface(ABC):
@@ -17,5 +18,11 @@ class QualityReportInterface(ABC):
     __slots__ = ()
 
     @abstractmethod
-    def render(self, slug: str, issues: tuple[QualityIssue, ...], build: ManuscriptBuild) -> bytes:
+    def render(
+        self,
+        slug: str,
+        issues: tuple[QualityIssue, ...],
+        build: ManuscriptBuild,
+        spend: SpendSummary | None = None,
+    ) -> bytes:
         """The ``quality-report.json`` of the book, as bytes."""

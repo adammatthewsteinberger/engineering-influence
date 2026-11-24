@@ -5,6 +5,7 @@
 import asyncio
 import json
 from collections.abc import Mapping
+from dataclasses import replace
 
 import pytest
 
@@ -631,3 +632,27 @@ def test_each_editing_pass_is_given_what_the_pass_before_it_wrote() -> None:
         b"- Chapter 1: The Hive (3 to 3 words)\n"
         b"- Chapter 2: The Site (3 to 3 words)\n"
     )
+
+
+def test_a_run_that_has_money_for_the_book_but_not_for_the_editing_still_completes() -> None:
+    world = World(Model(*GOOD))
+    stages = RECIPES.plan().stages
+    for stage in stages[: stages.index("draft") + 1]:
+        world.advance(stage)
+    drafted = world.run()
+    # the cap turns out to cover the book and nothing more
+    world.runs.save(
+        replace(drafted, budget=Budget(cap=drafted.budget.spent, spent=drafted.budget.spent))
+    )
+    calls = len(world.model.requests)
+    for stage in stages[stages.index("draft") + 1 :]:
+        assert world.advance(stage) in (AdvanceOutcome.ADVANCED, AdvanceOutcome.COMPLETED)
+    run = world.run()
+    assert run.status is RunStatus.COMPLETED and run.consent is None
+    assert len(world.model.requests) == calls  # no call was made, and none was paid for
+    assert [issue.code for issue in run.issues].count("revision-skipped-budget") == 3
+    assert not any(issue.blocking for issue in run.issues)
+    assert run.budget.spent <= run.budget.cap
+    # every chapter is assembled from the draft's own text, which the passes passed along
+    assert b"CHAPTER ONE" in (world.store.get(RUN_ID, "manuscript/src/chapter_01.md") or b"")
+    assert b"CHAPTER TWO" in (world.store.get(RUN_ID, "manuscript/src/chapter_02.md") or b"")

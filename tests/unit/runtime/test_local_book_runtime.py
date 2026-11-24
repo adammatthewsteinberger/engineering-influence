@@ -1,5 +1,6 @@
 """A whole book made in one process over a folder of state: end to end, resumable, and refused before it spends."""
 
+import json
 from datetime import date
 from pathlib import Path
 
@@ -134,3 +135,39 @@ def test_a_strict_release_needs_the_authors_pricing_before_anything_is_paid_for(
         author = Path(env["EI_AUTHOR_PROFILE"])
         author.write_text(author.read_text() + PRICING, encoding="utf-8")
         LocalBookRuntime(tmp_path / "state", env, NoSecrets(), TODAY).close()
+
+
+def test_the_plan_sets_the_brief_against_what_the_priced_model_would_charge(tmp_path: Path) -> None:
+    with serve() as server:
+        creator = made(tmp_path, server.url)
+        try:
+            plan = creator.plan(brief_for(BookKind.NONFICTION))
+        finally:
+            creator.close()
+    assert plan is not None and plan.estimate.expected() > plan.estimate.essential() > 0
+    assert plan.cap == 5_000_000 and plan.grade() in {"short", "tight", "lean", "ample"}
+    assert server.seen == []  # an estimate asks the model nothing
+
+
+def test_with_the_offline_placeholder_there_is_no_price_and_no_plan(tmp_path: Path) -> None:
+    env = environment(tmp_path, "http://127.0.0.1:1", {"EI_STAGE_EXECUTOR": "deterministic"})
+    creator = LocalBookRuntime(tmp_path / "state", env, NoSecrets(), TODAY)
+    try:
+        assert creator.plan(brief_for(BookKind.NONFICTION)) is None
+    finally:
+        creator.close()
+
+
+def test_a_finished_run_records_what_it_spent_beside_what_the_brief_was_expected_to_cost(
+    tmp_path: Path,
+) -> None:
+    with serve() as server:
+        creator = made(tmp_path, server.url)
+        try:
+            creator.start(brief_for(BookKind.NONFICTION), lambda line: None)
+            creator.export(tmp_path / "out")
+        finally:
+            creator.close()
+    spend = json.loads((tmp_path / "out" / "run" / "quality-report.json").read_text())["spend"]
+    assert spend["cap_micro_usd"] == 5_000_000 and spend["spent_micro_usd"] > 0
+    assert spend["estimated_micro_usd"] > 0 and spend["spent_over_estimated"] > 0

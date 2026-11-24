@@ -7,6 +7,7 @@ import asyncio
 import pytest
 
 from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.errors.spend_consent_needed_error import SpendConsentNeededError
 from engineering_influence.infrastructure.in_memory_artifact_store import InMemoryArtifactStore
 from engineering_influence.infrastructure.prompt_library.toml_prompt_library import (
     TomlPromptLibrary,
@@ -70,7 +71,7 @@ def cut(text: str = "partial") -> ToolLoopResult:
 class Loop(RunToolLoopInterface):
     """Answers each request with the chapter it was given plus one word, unless scripted."""
 
-    def __init__(self, *scripted: ToolLoopResult) -> None:
+    def __init__(self, *scripted: ToolLoopResult | Exception) -> None:
         self.scripted = list(scripted)
         self.calls: list[tuple[SpendGuardInterface, str, str, int, ModelRequest]] = []
 
@@ -84,7 +85,10 @@ class Loop(RunToolLoopInterface):
     ) -> ToolLoopResult:
         self.calls.append((guard, run_id, stage, attempt, request))
         if self.scripted:
-            return self.scripted.pop(0)
+            answer = self.scripted.pop(0)
+            if isinstance(answer, Exception):
+                raise answer
+            return answer
         source = next(text for text in SOURCES.values() if text in request.prompt)
         return done(source + " edited")
 
@@ -106,7 +110,7 @@ class World:
     def __init__(
         self,
         editing: RevisionPass = STRUCTURE,
-        *scripted: ToolLoopResult,
+        *scripted: ToolLoopResult | Exception,
         stored: dict[str, str] | None = None,
         window: int = 200_000,
         model_max: int = 32_000,
@@ -191,6 +195,52 @@ def test_the_list_gives_each_chapters_length_before_and_after() -> None:
         "- Chapter 2: The Site (43 to 44 words)\n"
         "- Chapter 3: The Suit (43 to 44 words)\n"
     )
+
+
+def out_of_money() -> SpendConsentNeededError:
+    return SpendConsentNeededError(250_000)
+
+
+def test_a_pass_that_runs_out_of_money_keeps_the_text_it_had_and_does_not_stop_the_run() -> None:
+    world = World(STRUCTURE, done(SOURCES[1] + " edited"), out_of_money())
+    report = world.execute()
+    assert [world.out(n) for n in (1, 2, 3)] == [SOURCES[1] + " edited", SOURCES[2], SOURCES[3]]
+    assert len(world.loop.calls) == 2  # nothing is asked of the model once the money has run out
+    assert [(issue.code, issue.blocking) for issue in report.issues] == [
+        ("revision-skipped-budget", False)
+    ]
+    assert "chapters 2 to 3 keep the text they had" in report.issues[0].detail
+    assert world.text("revise_structure.md") == (
+        "# Revision: revise_structure\n\n"
+        "- Chapter 1: The Hive (43 to 44 words)\n"
+        "- Chapter 2: The Site (43 to 43 words, not revised: out of budget)\n"
+        "- Chapter 3: The Suit (43 to 43 words, not revised: out of budget)\n"
+    )
+
+
+def test_a_pass_with_no_money_at_all_leaves_every_chapter_as_it_was() -> None:
+    world = World(STRUCTURE, out_of_money())
+    report = world.execute()
+    assert [world.out(n) for n in (1, 2, 3)] == [SOURCES[n] for n in (1, 2, 3)]
+    assert len(world.loop.calls) == 1
+    assert [issue.code for issue in report.issues] == ["revision-skipped-budget"]
+    assert "chapters 1 to 3" in report.issues[0].detail
+
+
+def test_the_chapters_that_were_skipped_are_done_so_a_redelivery_asks_the_model_for_nothing() -> (
+    None
+):
+    world = World(STRUCTURE, done(SOURCES[1] + " edited"), out_of_money())
+    world.execute()
+    calls = len(world.loop.calls)
+    world.execute(attempt=2)
+    assert len(world.loop.calls) == calls
+
+
+def test_a_failure_that_is_not_about_money_still_stops_the_stage() -> None:
+    world = World(STRUCTURE, ApplicationError(code="MODEL_BROKEN", message="no"))
+    assert world.refused().code == "MODEL_BROKEN"
+    assert world.out(1) is None
 
 
 def test_one_spend_guard_from_the_runs_budget_serves_every_call() -> None:

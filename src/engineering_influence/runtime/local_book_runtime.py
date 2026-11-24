@@ -20,12 +20,14 @@ from engineering_influence.interfaces.manuscript_builder_interface import (
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
 from engineering_influence.models.book_brief import BookBrief
 from engineering_influence.models.book_run import BookRun
+from engineering_influence.models.budget_plan import BudgetPlan
 from engineering_influence.models.export_summary import ExportSummary
 from engineering_influence.repositories.sqlmodel_artifact_store import SqlModelArtifactStore
 from engineering_influence.repositories.sqlmodel_journal import SqlModelJournal
 from engineering_influence.repositories.sqlmodel_run_repository import SqlModelRunRepository
 from engineering_influence.runtime.stage_executor_runtime import StageExecutorRuntime
 from engineering_influence.services.advance_run import AdvanceRun
+from engineering_influence.services.budget_planner import BudgetPlanner
 from engineering_influence.services.create_run import CreateRun
 from engineering_influence.services.export_run import ExportRun
 from engineering_influence.services.failure_classifier import FailureClassifier
@@ -101,6 +103,11 @@ class LocalBookRuntime(LocalBookCreatorInterface):
                 "(verified_on, source_url, ebook, paperback) to the author profile",
                 http_status=422,
             )
+
+    def plan(self, brief: BookBrief) -> BudgetPlan | None:
+        """The brief's cap set against what the book is expected to cost, or None when no model is priced."""
+        estimator = self._stages.estimator()
+        return None if estimator is None else BudgetPlanner(estimator).plan(brief)
 
     def start(self, brief: BookBrief, progress: Callable[[str], None]) -> BookRun:
         """Run the brief's plan until the run finishes or stops."""

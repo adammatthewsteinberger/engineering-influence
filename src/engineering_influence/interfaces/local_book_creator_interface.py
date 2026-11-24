@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 
     from engineering_influence.models.book_brief import BookBrief
     from engineering_influence.models.book_run import BookRun
+    from engineering_influence.models.budget_plan import BudgetPlan
     from engineering_influence.models.export_summary import ExportSummary
 
 
@@ -19,6 +20,10 @@ class LocalBookCreatorInterface(ABC):
     """Runs a book's whole plan locally and keeps the run in a folder, so it can be continued."""
 
     __slots__ = ()
+
+    @abstractmethod
+    def plan(self, brief: BookBrief) -> BudgetPlan | None:
+        """The brief's cap set against what the book is expected to cost, or None when no model is priced."""
 
     @abstractmethod
     def start(self, brief: BookBrief, progress: Callable[[str], None]) -> BookRun:
