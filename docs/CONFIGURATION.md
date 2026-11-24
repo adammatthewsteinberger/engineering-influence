@@ -190,6 +190,9 @@ and republish it by hand. Stopping the worker finishes the job in flight first.
   far: brief, positioning, research and outline. An answer that is refused, cut off or empty stops the run, and so does an
   outline that cannot be read as numbered chapters (`OUTLINE_INVALID`; see [PROMPTS.md](PROMPTS.md#the-outline-is-a-format-not-just-prose)).
   Nothing has been run against a live provider.
+- **`EI_BUILD_STRICT_RELEASE`** (optional, default off): `1`, `true` or `yes` makes a run's `build` stage build a strict release,
+  so any readiness warning (for example a missing price or its source and date) fails the run. Off, those are warnings in
+  the run's `quality-report.json`. The build needs the TeX worker image ([WORKER_IMAGE.md](WORKER_IMAGE.md)).
 - **Web search for the research stage.** The research stage gives the model two tools, `web_search`
   and `fetch_url`, so a model-backed run needs a search. Set `EI_SEARXNG_URL` to a
   [SearXNG](https://github.com/searxng/searxng) instance (free; `examples/searxng/` runs one locally,

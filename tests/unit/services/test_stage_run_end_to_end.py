@@ -3,6 +3,7 @@
 """A non-fiction run through the real AdvanceRun, CallModel and AskModel, with a scripted model."""
 
 import asyncio
+import json
 from collections.abc import Mapping
 
 import pytest
@@ -17,6 +18,7 @@ from engineering_influence.infrastructure.prompt_library.toml_prompt_library imp
 from engineering_influence.interfaces.manuscript_auditor_interface import (
     ManuscriptAuditorInterface,
 )
+from engineering_influence.interfaces.manuscript_builder_interface import ManuscriptBuilderInterface
 from engineering_influence.interfaces.model_interface import ModelInterface
 from engineering_influence.interfaces.search_provider_interface import SearchProviderInterface
 from engineering_influence.interfaces.source_fetcher_interface import SourceFetcherInterface
@@ -27,6 +29,7 @@ from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget import Budget
 from engineering_influence.models.fetched_page import FetchedPage
 from engineering_influence.models.manuscript_audit import ManuscriptAudit
+from engineering_influence.models.manuscript_build import ManuscriptBuild
 from engineering_influence.models.model_availability import ModelAvailability
 from engineering_influence.models.model_request import ModelRequest
 from engineering_influence.models.model_response import ModelResponse
@@ -42,6 +45,7 @@ from engineering_influence.services.ask_model import AskModel
 from engineering_influence.services.assemble_stage_executor import AssembleStageExecutor
 from engineering_influence.services.audit_stage_executor import AuditStageExecutor
 from engineering_influence.services.book_config_writer import BookConfigWriter
+from engineering_influence.services.build_stage_executor import BuildStageExecutor
 from engineering_influence.services.call_model import CallModel
 from engineering_influence.services.chapter_cleaner import ChapterCleaner
 from engineering_influence.services.context_assembler import ContextAssembler
@@ -50,6 +54,7 @@ from engineering_influence.services.draft_stage_executor import DraftStageExecut
 from engineering_influence.services.failure_classifier import FailureClassifier
 from engineering_influence.services.fetch_url_tool import FetchUrlTool
 from engineering_influence.services.lock_tool_grants import LockToolGrants
+from engineering_influence.services.manuscript_project import ManuscriptProject
 from engineering_influence.services.metadata_parser import MetadataParser
 from engineering_influence.services.model_stage_executor import ModelStageExecutor
 from engineering_influence.services.no_output_checks import NoOutputChecks
@@ -57,6 +62,7 @@ from engineering_influence.services.no_stage_guidance import NoStageGuidance
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 from engineering_influence.services.nonfiction_revision_passes import NonfictionRevisionPasses
 from engineering_influence.services.outline_parser import OutlineParser
+from engineering_influence.services.quality_report import QualityReport
 from engineering_influence.services.revision_stage_executor import RevisionStageExecutor
 from engineering_influence.services.run_tool_loop import RunToolLoop
 from engineering_influence.services.spend_guard import SpendGuard
@@ -119,6 +125,25 @@ class Auditor(ManuscriptAuditorInterface):
         )
 
 
+class Builder(ManuscriptBuilderInterface):
+    """Builds every book, and keeps what it was given."""
+
+    def __init__(self) -> None:
+        self.seen: list[tuple[list[str], str]] = []
+
+    def build(self, files: Mapping[str, bytes], slug: str) -> ManuscriptBuild:
+        self.seen.append((sorted(files), slug))
+        return ManuscriptBuild(
+            True,
+            "pass",
+            (),
+            (),
+            (("pdf", "pass"), ("epub", "pass")),
+            (("publication-report.json", b"{}"),),
+            (("listing.md", b"# Listing\n"), ("interior.pdf", b"%PDF-1.7")),
+        )
+
+
 class Search(SearchProviderInterface):
     def search(self, query: str, count: int) -> tuple[SearchHit, ...]:
         return (SearchHit("https://example.test/bees", "All about bees"),)
@@ -144,6 +169,7 @@ class World:
         self.queue = InMemoryQueue()
         self.fetcher = Fetcher()
         self.auditor = Auditor()
+        self.builder = Builder()
         registry = ToolRegistry((WebSearchTool(Search()), FetchUrlTool(self.fetcher)))
         limits = ToolLoopLimits()
         loop = RunToolLoop(
@@ -201,7 +227,12 @@ class World:
                     )
                     for editing in NonfictionRevisionPasses().passes()
                 },
-                AuditStageExecutor.STAGE: AuditStageExecutor(self.store, self.auditor),
+                AuditStageExecutor.STAGE: AuditStageExecutor(
+                    self.store, self.auditor, ManuscriptProject(self.store)
+                ),
+                BuildStageExecutor.STAGE: BuildStageExecutor(
+                    self.store, self.builder, ManuscriptProject(self.store), QualityReport()
+                ),
             },
         )
         self.service = AdvanceRun(
@@ -274,13 +305,17 @@ GOOD = (
 def test_a_run_goes_from_brief_to_draft_and_completes_with_each_answer_stored() -> None:
     world = World(Model(*GOOD))
     outcomes = [world.advance(stage) for stage in RECIPES.plan().stages]
-    assert outcomes == [AdvanceOutcome.ADVANCED] * 10 + [AdvanceOutcome.COMPLETED]
+    assert outcomes == [AdvanceOutcome.ADVANCED] * 11 + [AdvanceOutcome.COMPLETED]
     assert world.run().status is RunStatus.COMPLETED
     assert world.store.names(RUN_ID) == [
         "assemble.md",
         "audit.md",
         "audit/release-readiness.json",
+        "book/interior.pdf",
+        "book/listing.md",
         "brief.md",
+        "build.md",
+        "build/publication-report.json",
         "chapter_01.md",
         "chapter_02.md",
         "copy_01.md",
@@ -295,6 +330,7 @@ def test_a_run_goes_from_brief_to_draft_and_completes_with_each_answer_stored() 
         "metadata.md",
         "outline.md",
         "positioning.md",
+        "quality-report.json",
         "research.md",
         "revise_lines.md",
         "revise_structure.md",
@@ -553,6 +589,18 @@ def test_an_outline_the_drafter_cannot_read_fails_the_run_before_any_chapter_is_
     assert world.advance("draft") is AdvanceOutcome.FAILED
     assert len(world.model.requests) == asked
     assert world.run().issues[0].detail.startswith("ApplicationError: ")
+
+
+def test_the_build_is_given_the_assembled_project_and_writes_a_quality_report() -> None:
+    world = World(Model(*GOOD))
+    for stage in RECIPES.plan().stages:
+        world.advance(stage)
+    assert world.builder.seen == world.auditor.seen
+    report = json.loads(world.store.get(RUN_ID, "quality-report.json") or b"")
+    assert report["status"] == "pass" and report["slug"] == "hive-mind"
+    assert [step["name"] for step in report["steps"]] == ["pdf", "epub"]
+    assert [item["path"] for item in report["files"]] == ["book/listing.md", "book/interior.pdf"]
+    assert world.store.get(RUN_ID, "book/listing.md") == b"# Listing\n"
 
 
 def test_the_audit_is_given_the_assembled_project_and_its_warnings_do_not_stop_the_run() -> None:

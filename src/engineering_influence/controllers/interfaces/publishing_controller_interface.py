@@ -61,5 +61,9 @@ class PublishingControllerInterface(ABC):
         """Run the complete acceptance pipeline for one book."""
 
     @abstractmethod
+    def package(self, slug: str) -> str:
+        """Write the book's release bundle, after its release check; refuse a book whose check fails."""
+
+    @abstractmethod
     def book_slugs(self) -> list[str]:
         """Every book the project configures."""

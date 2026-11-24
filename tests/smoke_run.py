@@ -24,6 +24,7 @@ from engineering_influence.infrastructure.in_memory_artifact_store import InMemo
 from engineering_influence.infrastructure.in_memory_journal import InMemoryJournal
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
 from engineering_influence.infrastructure.in_memory_run_repository import InMemoryRunRepository
+from engineering_influence.interfaces.manuscript_builder_interface import ManuscriptBuilderInterface
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
 from engineering_influence.models.advance_outcome import AdvanceOutcome
 from engineering_influence.models.book_brief import BookBrief
@@ -176,8 +177,11 @@ class SmokeRun:
         secrets: SecretProviderInterface,
         brief: BookBrief,
         today: date | None = None,
+        builder: ManuscriptBuilderInterface | None = None,
     ) -> None:
-        self._runtime = StageExecutorRuntime(environment, secrets, today or date.today())
+        self._runtime = StageExecutorRuntime(
+            environment, secrets, today or date.today(), builder=builder
+        )
         self._brief = brief
 
     def run(self) -> SmokeReport:

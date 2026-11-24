@@ -15,6 +15,9 @@ from engineering_influence.infrastructure.audit.temp_project_manuscript_auditor 
 from engineering_influence.infrastructure.author.toml_author_profile_loader import (
     TomlAuthorProfileLoader,
 )
+from engineering_influence.infrastructure.book_build.temp_project_manuscript_builder import (
+    TempProjectManuscriptBuilder,
+)
 from engineering_influence.infrastructure.deterministic_stage_executor import (
     DeterministicStageExecutor,
 )
@@ -57,7 +60,9 @@ from engineering_influence.infrastructure.tools.stdio_mcp_transport_factory impo
 )
 from engineering_influence.infrastructure.tools.toml_tool_lock_store import TomlToolLockStore
 from engineering_influence.interfaces.artifact_store_interface import ArtifactStoreInterface
+from engineering_influence.interfaces.book_publisher_interface import BookPublisherInterface
 from engineering_influence.interfaces.journal_interface import JournalInterface
+from engineering_influence.interfaces.manuscript_builder_interface import ManuscriptBuilderInterface
 from engineering_influence.interfaces.model_interface import ModelInterface
 from engineering_influence.interfaces.publish_pipeline_interface import PublishPipelineInterface
 from engineering_influence.interfaces.search_provider_interface import SearchProviderInterface
@@ -72,6 +77,7 @@ from engineering_influence.models.provider_descriptor import ProviderDescriptor
 from engineering_influence.models.tool_limits import ToolLimits
 from engineering_influence.models.tool_lock import ToolLock
 from engineering_influence.models.tool_loop_limits import ToolLoopLimits
+from engineering_influence.runtime.controller_book_publisher import ControllerBookPublisher
 from engineering_influence.runtime.controller_publish_pipeline import ControllerPublishPipeline
 from engineering_influence.runtime.interfaces.stage_executor_runtime_interface import (
     StageExecutorRuntimeInterface,
@@ -80,6 +86,7 @@ from engineering_influence.services.ask_model import AskModel
 from engineering_influence.services.assemble_stage_executor import AssembleStageExecutor
 from engineering_influence.services.audit_stage_executor import AuditStageExecutor
 from engineering_influence.services.book_config_writer import BookConfigWriter
+from engineering_influence.services.build_stage_executor import BuildStageExecutor
 from engineering_influence.services.call_model import CallModel
 from engineering_influence.services.chapter_cleaner import ChapterCleaner
 from engineering_influence.services.content_policy import ContentPolicy
@@ -96,6 +103,7 @@ from engineering_influence.services.kind_stage_executor import KindStageExecutor
 from engineering_influence.services.local_default_model import LocalDefaultModel
 from engineering_influence.services.lock_stage_guidance import LockStageGuidance
 from engineering_influence.services.lock_tool_grants import LockToolGrants
+from engineering_influence.services.manuscript_project import ManuscriptProject
 from engineering_influence.services.mcp_client_factory import McpClientFactory
 from engineering_influence.services.mcp_server_launcher import McpServerLauncher
 from engineering_influence.services.mcp_tool_factory import McpToolFactory
@@ -109,6 +117,7 @@ from engineering_influence.services.novel_draft_checks import NovelDraftChecks
 from engineering_influence.services.novel_output_checks import NovelOutputChecks
 from engineering_influence.services.novel_recipes import NovelRecipes
 from engineering_influence.services.outline_parser import OutlineParser
+from engineering_influence.services.quality_report import QualityReport
 from engineering_influence.services.read_skill_tool import ReadSkillTool
 from engineering_influence.services.revision_stage_executor import RevisionStageExecutor
 from engineering_influence.services.run_tool_loop import RunToolLoop
@@ -166,11 +175,13 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         secrets: SecretProviderInterface,
         today: date,
         request_timeout_seconds: float = 600.0,
+        builder: ManuscriptBuilderInterface | None = None,
     ) -> None:
         self._environment = environment
         self._secrets = secrets
         self._today = today
         self._timeout = request_timeout_seconds
+        self._builder = builder
         self._client: httpx.Client | None = None
         self._research_client: httpx.Client | None = None
         self._runner: ToolRunner | None = None
@@ -295,7 +306,15 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                     revisions.final(),
                 ),
                 AuditStageExecutor.STAGE: AuditStageExecutor(
-                    artifacts, TempProjectManuscriptAuditor(self._pipeline)
+                    artifacts,
+                    TempProjectManuscriptAuditor(self._pipeline),
+                    ManuscriptProject(artifacts),
+                ),
+                BuildStageExecutor.STAGE: BuildStageExecutor(
+                    artifacts,
+                    self._book_builder(),
+                    ManuscriptProject(artifacts),
+                    QualityReport(),
                 ),
             },
         )
@@ -326,6 +345,35 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         )
 
         return ControllerPublishPipeline(PublishingControllerFactory().create(root))
+
+    def _book_builder(self) -> ManuscriptBuilderInterface:
+        """The builder a test injected, or the real one.
+
+        The real one builds every book as the pipeline does. It builds a strict release only when
+        ``EI_BUILD_STRICT_RELEASE`` is ``1``, ``true`` or ``yes``: a strict release needs the author's pricing inputs,
+        which a run cannot invent, so without them a missing price is a warning in the quality report.
+        """
+        if self._builder is not None:
+            return self._builder
+        strict = self._environment.get("EI_BUILD_STRICT_RELEASE", "").strip().lower() in (
+            "1",
+            "true",
+            "yes",
+        )
+        return TempProjectManuscriptBuilder(self._publisher, strict_release=strict)
+
+    @staticmethod
+    def _publisher(root: Path) -> BookPublisherInterface:
+        """The publisher for the book project at ``root``: every gate, and the release bundle.
+
+        The publishing libraries are imported here, when a book is built, so a process that never builds one does
+        not need the ``publishing`` extra, a TeX toolchain or epubcheck.
+        """
+        from engineering_influence.runtime.publishing_controller_factory import (
+            PublishingControllerFactory,
+        )
+
+        return ControllerBookPublisher(PublishingControllerFactory().create(root))
 
     def _author_profile(self) -> AuthorProfile | None:
         """The author's details from the file ``EI_AUTHOR_PROFILE`` names, if it names one.

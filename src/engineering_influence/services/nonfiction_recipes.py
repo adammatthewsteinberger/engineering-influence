@@ -15,15 +15,16 @@ class NonfictionRecipes(StageRecipesInterface):
     Research is the one stage with tools (search and page reading); the others have none. ``draft`` loops over the
     chapters (see ``DraftStageExecutor``); ``revise_structure``, ``revise_lines`` and ``copy_edit`` are editing
     passes over every chapter (see ``RevisionStageExecutor`` and ``NonfictionRevisionPasses``); ``assemble`` and
-    ``audit`` make no model call (see ``AssembleStageExecutor`` and ``AuditStageExecutor``). None of them has a
-    recipe, because none is one prompt, so all are named in the plan and routed to their own executors. The
-    PDF and EPUB build is added as it is built, and the plan grows with it.
+    ``audit`` make no model call (see ``AssembleStageExecutor`` and ``AuditStageExecutor``), and nor does ``build``
+    (see ``BuildStageExecutor``), which builds the PDF, the EPUB and the covers and packages the KDP bundle. None of
+    them has a recipe, because none is one prompt, so all are named in the plan and routed to their own executors.
     """
 
     DRAFT_STAGE = "draft"
     REVISION_STAGES = ("revise_structure", "revise_lines", "copy_edit")
     ASSEMBLE_STAGE = "assemble"
     AUDIT_STAGE = "audit"
+    BUILD_STAGE = "build"
 
     RECIPES: ClassVar[tuple[StageRecipe, ...]] = (
         StageRecipe("brief", "stage_brief", (), 1_500),
@@ -47,6 +48,7 @@ class NonfictionRecipes(StageRecipesInterface):
             *self.REVISION_STAGES,
             self.ASSEMBLE_STAGE,
             self.AUDIT_STAGE,
+            self.BUILD_STAGE,
         )
         return StagePlan(BookKind.NONFICTION, stages)
 

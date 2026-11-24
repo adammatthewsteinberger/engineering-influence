@@ -5,7 +5,7 @@ scripted servers and fakes. This page is how you find out whether the prompts, t
 with a real one, and what it costs, with a limit you set in advance.
 
 The test drives the whole non-fiction plan (brief, positioning, research, outline, metadata, draft, three editing
-passes, assemble, audit) in one process, with no database, queue or worker. It writes every artifact and a report to a
+passes, assemble, audit, build) in one process, with no database, queue or worker. It writes every artifact and a report to a
 folder you can read. It is a `paid` test: it never runs by default, and it will not start unless you say in the
 environment that you mean to spend.
 
@@ -30,6 +30,9 @@ environment that you mean to spend.
    ([CONFIGURATION.md](CONFIGURATION.md), [RESEARCH.md](RESEARCH.md)). Without one the run stops at start with a clear message, before any
    call. Check that it answers first, which sends one search per provider and asks no model anything: `ei doctor --search`.
 3. A dev install with the extras the audit and the runtime need: `uv sync --extra runtime --extra publishing`.
+4. The TeX toolchain (`latexmk`, `lualatex`, `tex4ebook`, `epubcheck`, `pdftoppm`; [WORKER_IMAGE.md](WORKER_IMAGE.md)) for the
+   last stage, `build`, which turns the run's book into a PDF, an EPUB and the KDP bundle. Without it every earlier stage
+   still runs and is reported, and `build` fails naming the missing tool.
 
 ## Run it
 
@@ -74,7 +77,9 @@ In the folder:
   its `structure_NN`, `lines_NN` and `copy_NN` versions to judge whether the editing passes helped. The report's
   `revision-unchanged` issues name chapters an edit changed nothing in or whose edit was not kept.
 - `audit.md` and `audit/`: the book's own audit. A made-up author passes it with warnings about prices.
-- `manuscript/`: the book as a project (`books/<slug>.toml`, `src/chapter_NN.md`), ready for the book commands once it has covers.
+- `manuscript/`: the book as a project (`books/<slug>.toml`, `src/chapter_NN.md`).
+- `book/`: the built book: `<slug>.pdf`, `<slug>.epub`, the covers, `listing.md` and `MANIFEST.json`. `build/` holds the
+  readiness reports and the tool logs, `quality-report.json` the status with a checksum for every file, and `build.md` a summary.
 
 ## What a pass does and does not show
 
