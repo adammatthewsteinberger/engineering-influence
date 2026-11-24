@@ -54,6 +54,7 @@ from engineering_influence.interactions.cli.book_cli import BookCli
 from engineering_influence.interactions.cli.cli_application import CliApplication
 from engineering_influence.interactions.cli.db_cli import DbCli
 from engineering_influence.interactions.cli.doctor_cli import DoctorCli
+from engineering_influence.interactions.cli.evaluate_cli import EvaluateCli
 from engineering_influence.interactions.cli.interfaces.cli_application_interface import (
     CliApplicationInterface,
 )
@@ -71,6 +72,9 @@ from engineering_influence.interfaces.mcp_remote_transport_factory_interface imp
 )
 from engineering_influence.interfaces.model_probe_interface import ModelProbeInterface
 from engineering_influence.interfaces.queue_interface import QueueInterface
+from engineering_influence.interfaces.release_evaluator_interface import (
+    ReleaseEvaluatorInterface,
+)
 from engineering_influence.interfaces.run_repository_interface import RunRepositoryInterface
 from engineering_influence.interfaces.schema_migrator_interface import SchemaMigratorInterface
 from engineering_influence.interfaces.search_provider_interface import SearchProviderInterface
@@ -187,6 +191,7 @@ class CliRuntime(CliRuntimeInterface):
             self._skills_cli(),
             self._plugins_cli(),
             AcpCli(self._acp_application, sys.stdin, sys.stdout),
+            EvaluateCli(self._release_evaluator, os.environ, __version__),
         )
 
     def _skills_cli(self) -> SkillsCli:
@@ -442,6 +447,29 @@ class CliRuntime(CliRuntimeInterface):
     def _resume_run(self) -> ResumeRunInterface:
         """Build the resume service; it queues through the broker unless a queue was injected."""
         return ResumeRun(self._run_repository(), self._broker_queue())
+
+    def _release_evaluator(
+        self,
+        work_dir: Path,
+        rubric: Path,
+        cases: Path,
+        baseline: Path | None,
+        settings: Mapping[str, str],
+    ) -> ReleaseEvaluatorInterface:
+        """Build the evaluation: the pipeline that makes the books and the judge that scores them; it needs the ``runtime`` extra."""
+        from datetime import date
+
+        from engineering_influence.runtime.evaluation_runtime import EvaluationRuntime
+
+        return EvaluationRuntime(
+            {**os.environ, **settings},
+            self._secret_provider(),
+            work_dir,
+            rubric,
+            cases,
+            baseline,
+            date.today(),
+        )
 
     def _local_book_creator(
         self, state_dir: Path, settings: Mapping[str, str]

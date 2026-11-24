@@ -774,3 +774,30 @@ def test_a_runtime_that_uses_no_model_has_no_estimate_and_one_that_does_can_say_
         build(own)
         assert isinstance(own.estimator(), CostEstimator)
         own.close()
+
+
+def test_the_model_alone_can_be_had_for_a_caller_that_only_needs_to_ask_it(tmp_path: Path) -> None:
+    rt = runtime(files(tmp_path))
+    try:
+        assert rt.model().describe().model == "m"
+        assert rt._free is False and rt._client is not None
+    finally:
+        rt.close()
+    assert rt._client is None
+
+
+def test_the_free_local_model_alone_is_the_default_one() -> None:
+    rt = runtime(local_environment("http://127.0.0.1:1"))
+    try:
+        assert rt.model().describe().model == "gpt-oss:20b"
+        assert rt._free is True
+    finally:
+        rt.close()
+
+
+@pytest.mark.parametrize("kind", ["deterministic", "mystery"])
+def test_a_placeholder_or_unknown_executor_has_no_model_to_hand_over(kind: str) -> None:
+    rt = runtime({"EI_STAGE_EXECUTOR": kind})
+    with pytest.raises(ApplicationError) as error:
+        rt.model()
+    assert error.value.code == "STAGE_EXECUTOR_UNKNOWN" and error.value.http_status == 503

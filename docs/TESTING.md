@@ -98,6 +98,8 @@ transport when a cassette-backed run is added.
 
 ## Contract snapshots
 
+The evaluation harness (`ei evaluate`, [EVALUATION.md](EVALUATION.md)) is tested end to end against a scripted writing model that also plays the judge, so no test spends money; whether a real model clears the bar is only known from a paid run.
+
 `tests/contracts/` freezes every public contract (the schemas, the OpenAPI document, the CLI tree, the SDK, the MCP tools, the error codes and the webhook catalogue) against a committed copy in `tests/contracts/snapshots/`. A failing test there means a public contract moved. If it moved on purpose, run `EI_UPDATE_CONTRACTS=1 uv run pytest tests/contracts`, read the diff, and follow [COMPATIBILITY.md](COMPATIBILITY.md). They run in the normal suite and need no extras beyond the dev install.
 
 ## The toolchain test

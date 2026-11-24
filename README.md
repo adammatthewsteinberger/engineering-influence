@@ -69,6 +69,7 @@ Optional extras: `api`, `runtime`, `cli`, `mcp`, `publishing`.
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Symptoms, causes and fixes |
 | [docs/TESTING.md](docs/TESTING.md) | The gates CI enforces and how to run them |
 | [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) | What is promised to callers, and the snapshots that catch a change to it |
+| [docs/EVALUATION.md](docs/EVALUATION.md) | `ei evaluate`: the paid evaluation that measures the 1.0 quality and cost bars |
 | [docs/RELEASING.md](docs/RELEASING.md) | Cutting and verifying a release |
 | [docs/adr/](docs/adr) | Architecture decisions |
 | [CHANGELOG.md](CHANGELOG.md) | What changed |

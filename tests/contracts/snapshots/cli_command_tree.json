@@ -735,6 +735,130 @@
         }
       ]
     },
+    "evaluate": {
+      "arguments": [
+        {
+          "choices": null,
+          "default": null,
+          "dest": "baseline",
+          "flags": [
+            "--baseline"
+          ],
+          "name": "--baseline",
+          "nargs": null,
+          "positional": false,
+          "repeatable": false,
+          "required": false,
+          "takes_value": true,
+          "type": "Path"
+        },
+        {
+          "choices": null,
+          "default": null,
+          "dest": "budget_usd",
+          "flags": [
+            "--budget-usd"
+          ],
+          "name": "--budget-usd",
+          "nargs": null,
+          "positional": false,
+          "repeatable": false,
+          "required": true,
+          "takes_value": true,
+          "type": null
+        },
+        {
+          "choices": null,
+          "default": null,
+          "dest": "judge_budget_usd",
+          "flags": [
+            "--judge-budget-usd"
+          ],
+          "name": "--judge-budget-usd",
+          "nargs": null,
+          "positional": false,
+          "repeatable": false,
+          "required": true,
+          "takes_value": true,
+          "type": null
+        },
+        {
+          "choices": null,
+          "default": null,
+          "dest": "out",
+          "flags": [
+            "--out"
+          ],
+          "name": "--out",
+          "nargs": null,
+          "positional": false,
+          "repeatable": false,
+          "required": true,
+          "takes_value": true,
+          "type": "Path"
+        },
+        {
+          "choices": null,
+          "default": null,
+          "dest": "profile",
+          "flags": [
+            "--profile"
+          ],
+          "name": "--profile",
+          "nargs": null,
+          "positional": false,
+          "repeatable": false,
+          "required": false,
+          "takes_value": true,
+          "type": "Path"
+        },
+        {
+          "choices": null,
+          "default": "0.1.0a2",
+          "dest": "release",
+          "flags": [
+            "--release"
+          ],
+          "name": "--release",
+          "nargs": null,
+          "positional": false,
+          "repeatable": false,
+          "required": false,
+          "takes_value": true,
+          "type": null
+        },
+        {
+          "choices": null,
+          "default": "evaluation/rubric.toml",
+          "dest": "rubric",
+          "flags": [
+            "--rubric"
+          ],
+          "name": "--rubric",
+          "nargs": null,
+          "positional": false,
+          "repeatable": false,
+          "required": false,
+          "takes_value": true,
+          "type": "Path"
+        },
+        {
+          "choices": null,
+          "default": "evaluation/set.toml",
+          "dest": "cases",
+          "flags": [
+            "--set"
+          ],
+          "name": "--set",
+          "nargs": null,
+          "positional": false,
+          "repeatable": false,
+          "required": false,
+          "takes_value": true,
+          "type": "Path"
+        }
+      ]
+    },
     "pipeline": {
       "arguments": [],
       "command_required": true,
