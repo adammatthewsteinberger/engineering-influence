@@ -631,6 +631,21 @@
         {
           "choices": null,
           "default": null,
+          "dest": "author_profile",
+          "flags": [
+            "--author-profile"
+          ],
+          "name": "--author-profile",
+          "nargs": null,
+          "positional": false,
+          "repeatable": false,
+          "required": false,
+          "takes_value": true,
+          "type": "Path"
+        },
+        {
+          "choices": null,
+          "default": null,
           "dest": "catalog",
           "flags": [
             "--catalog"
@@ -716,6 +731,21 @@
           "repeatable": false,
           "required": false,
           "takes_value": true,
+          "type": null
+        },
+        {
+          "choices": null,
+          "default": false,
+          "dest": "ready",
+          "flags": [
+            "--ready"
+          ],
+          "name": "--ready",
+          "nargs": 0,
+          "positional": false,
+          "repeatable": false,
+          "required": false,
+          "takes_value": false,
           "type": null
         },
         {

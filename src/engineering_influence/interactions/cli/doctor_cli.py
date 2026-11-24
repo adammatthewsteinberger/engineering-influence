@@ -17,6 +17,9 @@ from engineering_influence.services.interfaces.local_model_doctor_interface impo
 from engineering_influence.services.interfaces.model_doctor_interface import (
     ModelDoctorInterface,
 )
+from engineering_influence.services.interfaces.readiness_doctor_interface import (
+    ReadinessDoctorInterface,
+)
 from engineering_influence.services.interfaces.search_doctor_interface import (
     SearchDoctorInterface,
 )
@@ -36,6 +39,11 @@ class DoctorCli(DoctorCliInterface):
 
     ``doctor --local`` checks the free local model (docs/LOCAL_MODEL.md): the server, the model, one tiny real
     completion (free, and on this machine) and the context size Ollama loaded it with.
+
+    ``doctor --ready`` answers one question: can this machine make a book now? It checks the extras, the tools
+    the ``build`` stage calls and the author profile (``--author-profile``, else ``EI_AUTHOR_PROFILE``), sending
+    nothing, then runs the ``--local`` and ``--search`` checks. Every check is made and printed, so one run
+    shows everything that is missing.
     """
 
     DEFAULT_QUERY = "open source book publishing"
@@ -46,16 +54,24 @@ class DoctorCli(DoctorCliInterface):
         search: Callable[[], SearchDoctorInterface],
         local: Callable[[], LocalModelDoctorInterface],
         environment: Mapping[str, str],
+        ready: Callable[[], ReadinessDoctorInterface],
     ) -> None:
         self._doctor = doctor
         self._search = search
         self._local = local
         self._environment = environment
+        self._ready = ready
 
     def register(self, subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]") -> None:
-        """Add ``doctor --models``, ``doctor --search`` and ``doctor --local``."""
+        """Add ``doctor --ready``, ``doctor --models``, ``doctor --search`` and ``doctor --local``."""
         doctor = subparsers.add_parser("doctor", help="check that this installation is ready")
         what = doctor.add_mutually_exclusive_group(required=True)
+        what.add_argument(
+            "--ready",
+            action="store_true",
+            help="check everything a book needs: the extras, the tools, the author profile, "
+            "the local model and the search",
+        )
         what.add_argument("--models", action="store_true", help="check profiles")
         what.add_argument(
             "--search",
@@ -71,6 +87,11 @@ class DoctorCli(DoctorCliInterface):
             "--query",
             help=f"the search to run; default: {self.DEFAULT_QUERY!r} (it leaves this machine)",
         )
+        doctor.add_argument(
+            "--author-profile",
+            type=Path,
+            help="with --ready: the author profile to check; default: EI_AUTHOR_PROFILE",
+        )
         doctor.add_argument("--catalog", type=Path, help="default: EI_MODEL_CATALOG")
         doctor.add_argument("--profiles", type=Path, help="default: EI_MODEL_PROFILES")
         doctor.add_argument(
@@ -81,6 +102,17 @@ class DoctorCli(DoctorCliInterface):
 
     def run(self, arguments: argparse.Namespace) -> int:
         """Run the checks, print them, and return the process status."""
+        if arguments.ready:
+            profile = arguments.author_profile or self._from_environment("EI_AUTHOR_PROFILE")
+            query = arguments.query or self.DEFAULT_QUERY
+            return self._report(
+                lambda: (
+                    *self._ready().check(profile),
+                    *self._local().check(),
+                    *self._search().check(query),
+                ),
+                "one tiny completion to the local model, and one search request per provider",
+            )
         if arguments.search:
             return self._report(
                 lambda: self._search().check(arguments.query or self.DEFAULT_QUERY),

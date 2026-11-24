@@ -387,3 +387,37 @@ def test_the_cli_builds_the_evaluation_from_the_environment_and_the_settings_it_
     assert isinstance(evaluator, EvaluationRuntime)
     assert evaluator._environment["EI_EVAL_JUDGE_PROFILE"] == "judge"
     assert evaluator._environment["EI_AUTHOR_PROFILE"] == "chosen.toml"
+
+
+@pytest.mark.parametrize(
+    ("target", "module", "extras"),
+    [
+        ("mcp", "mcp", "mcp,runtime"),
+        ("api", "fastapi", "api,runtime"),
+        ("worker", "aio_pika", "api,runtime"),
+    ],
+)
+def test_a_missing_module_names_the_extras_the_chosen_target_needs(
+    monkeypatch: pytest.MonkeyPatch, target: str, module: str, extras: str
+) -> None:
+    def missing(*_: object) -> None:
+        raise ImportError(f"no {module}", name=module)
+
+    class MissingMcp:
+        def __init__(self, settings: AppSettings) -> None:
+            missing()
+
+    starter = ServeStarter(
+        MappingSecrets(REQUIRED),
+        run_api=missing,
+        run_worker=missing,
+        mcp_runtime=MissingMcp,  # type: ignore[arg-type]
+    )
+
+    status, stderr = run(ServeCli(starter), target, REQUIRED, monkeypatch)
+
+    assert status == 1
+    assert stderr == (
+        f"error: serve {target} needs the {extras.replace(',', ' and ')} extras: "
+        f"pip install 'engineering-influence[{extras}]' ({module} is missing)\n"
+    )
