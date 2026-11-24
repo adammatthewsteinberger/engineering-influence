@@ -1,5 +1,10 @@
 # Architecture
 
+**BLUF:** It is one program built in layers that only point inward: transports call controllers, controllers call
+services, and services depend on plain models and on interfaces. Everything that touches the outside world sits
+behind an interface. Tests and an import checker enforce the rules, so they cannot quietly rot. Read this before
+changing models, services or infrastructure.
+
 engineering-influence writes complete books autonomously and packages them for Amazon KDP
 ([purpose and status](BOOKS_AND_KDP.md)); this page describes the machinery that does it
 unattended. It is a **modular monolith**. Interactions call controllers; controllers
@@ -8,12 +13,34 @@ infrastructure adapters implement those interfaces and point inward; and only `r
 wires concrete classes together. [ADR 0006](adr/0006-onion-layers-and-interfaces.md) records
 the rules. They are enforced by tests and by `import-linter`, not by convention.
 
+## Why the layers point one way
+
+> **Daniel:** I want to swap RabbitMQ for another queue. In my last codebase that meant touching forty files.
+>
+> **Professor Feynman:** Where does the electricity in this room come from?
+>
+> **Daniel:** The wall socket. I do not know or care which power station.
+>
+> **Professor Feynman:** Because the lamp depends on the shape of the socket, not on the station. Here a service
+> asks for 'something that can queue a job', an interface. RabbitMQ is one thing plugged into that socket. Write
+> another plug and the service never notices.
+>
+> **Daniel:** And what stops someone importing RabbitMQ straight into a service on a bad day?
+>
+> **Professor Feynman:** A checker that fails the build. The inner layers are forbidden to import the outer ones,
+> and `runtime/` is where the plugging in is done. The picture stops being true in one respect: a socket hides
+> nothing important, and an interface can hide a slow or failing dependency. That is why every side effect here
+> must also be bounded and recoverable.
+>
+> **Daniel:** One new adapter, a few lines in `runtime/` where each process is wired, and the services stay as
+> they are. Not forty files.
+
 ## Layers
 
 ```text
-runtime/         composition roots (CLI, API, worker), settings loader, entry points
-interactions/    REST · MCP · CLI · webhooks in      transports: parse input, call a controller
-controllers/     ProjectController, PublishingController
+runtime/         composition roots (CLI, API, worker, MCP, local book, evaluation), settings loader, entry points
+interactions/    REST · MCP · CLI · ACP               transports: parse input, call a controller
+controllers/     ProjectController, RunController, PublishingController
 repositories/    SQLModel ledger and outbox; book and chapter loaders; release evidence files
 infrastructure/  RabbitMQ queue and consumer, LaTeX, EPUB, PDF and image tools, cover painters,
                  webhook delivery, security, observability, vibey adapters, in-memory adapters

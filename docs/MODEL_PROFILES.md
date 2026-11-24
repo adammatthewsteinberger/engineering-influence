@@ -1,5 +1,9 @@
 # Model profiles and `ei doctor --models`
 
+**BLUF:** A profile is a few lines of TOML that say how to reach one model: which adapter, which server, and which
+environment variable holds the key. You need one only to use a model you pay for. `ei doctor --models` checks
+every profile against the price catalog before a run spends anything, and sends nothing unless you add `--probe`.
+
 A **profile** says how to reach one model: which adapter speaks to it, where the server is, and
 which environment variable holds its key. You supply the file, as you do the price catalog
 ([`MODEL_CATALOG.md`](MODEL_CATALOG.md)). A hosted API and a server on your own machine are both
@@ -7,9 +11,33 @@ just profiles.
 
 `ei doctor --models` checks them before a run spends anything.
 
+## A profile is an address, not a key
+
+> **Daniel:** I put my API key in the profile file and the loader rejected it.
+>
+> **Professor Feynman:** Where do you write down a friend's address, and where do you keep your house key?
+>
+> **Daniel:** The address goes in my phone. The key stays in my pocket.
+>
+> **Professor Feynman:** A profile is the address: the server, the model's name, how to speak to it. It names the
+> pocket the key is in, an environment variable, and never holds the key itself. So the file is safe to share,
+> commit and print.
+>
+> **Daniel:** And if I misspell `api_key_env` itself?
+>
+> **Professor Feynman:** The file is refused, because an unknown line is an error here. Otherwise a typo would
+> leave the key blank and you would call the server with no credentials. Misspell the variable's name instead and
+> the file loads, but `ei doctor --models` fails its key check. The picture stops short in one place: an address
+> can be right and the house still empty. So `--probe` knocks, once per profile, by asking the server to list its
+> models.
+>
+> **Daniel:** Address in the file, key in the environment, a misspelt line refused, the doctor for a misspelt
+> variable, and `--probe` to check someone is home.
+
 ## The profile file
 
-Each `[[profile]]` has these keys. An unknown key is refused, because a misspelt `api_key_env`
+Each `[[profile]]` has these keys. A `base_url` that carries a user name or password is refused, and so is
+`reasoning_effort` on an `anthropic` profile. An unknown key is refused, because a misspelt `api_key_env`
 would otherwise leave the key blank and the profile would call a server with no credentials.
 
 | Key | Meaning |

@@ -1,5 +1,10 @@
 # Running a small book against a real model
 
+**BLUF:** This is the smallest paid run that proves the whole chain against a real model: one short non-fiction
+book, in one process, with a spending cap you set first. It never runs by default and will not start unless the
+environment says you mean to spend. Until someone runs it, nothing in the writing pipeline has ever talked to a
+live model.
+
 Until this has been done, **nothing in the writing pipeline has ever talked to a live model**. Everything is tested against
 scripted servers and fakes. This page is how you find out whether the prompts, the editing passes and the whole chain work
 with a real one, and what it costs, with a limit you set in advance.
@@ -8,6 +13,27 @@ The test drives the whole non-fiction plan (brief, positioning, research, outlin
 passes, assemble, audit, build) in one process, with no database, queue or worker. It writes every artifact and a report to a
 folder you can read. It is a `paid` test: it never runs by default, and it will not start unless you say in the
 environment that you mean to spend.
+
+## What a passing test does not prove
+
+> **Daniel:** Ten thousand tests pass. Is that not proof the writing works?
+>
+> **Professor Feynman:** A flight simulator can pass every drill. What has never happened in it?
+>
+> **Daniel:** Real weather. Real air.
+>
+> **Professor Feynman:** Every test here flies against a scripted model that answers exactly as the test wrote.
+> That proves the machinery: the stages, the budget, the resume. It cannot prove that a real model follows these
+> prompts, or what a book really costs.
+>
+> **Daniel:** So this test is the first real flight. Why is it so hedged about?
+>
+> **Professor Feynman:** Because it spends your money. You set the cap before it starts, it refuses to run without
+> an explicit yes in the environment, and it writes down what it spent. And mind the limit even of a real flight:
+> one short book on one model on one day. A pass means the chain holds together, not that the books are good.
+>
+> **Daniel:** Scripted tests prove the machine, this proves the chain, and neither proves quality. That is what
+> the evaluation is for.
 
 ## What it spends, and what stops it
 
@@ -30,7 +56,8 @@ environment that you mean to spend.
    ([CONFIGURATION.md](CONFIGURATION.md), [RESEARCH.md](RESEARCH.md)). Without one the run stops at start with a clear message, before any
    call. Check that it answers first, which sends one search per provider and asks no model anything: `ei doctor --search`.
 3. A dev install with the extras the audit and the runtime need: `uv sync --extra runtime --extra publishing`.
-4. The TeX toolchain (`latexmk`, `lualatex`, `tex4ebook`, `epubcheck`, `pdftoppm`; [WORKER_IMAGE.md](WORKER_IMAGE.md)) for the
+4. The TeX toolchain (`latexmk`, `lualatex`, `tex4ebook`, `zip`, and `pdftoppm` or `mutool`; `epubcheck` is optional
+   unless the release is strict; `ei doctor --ready` checks them all; [WORKER_IMAGE.md](WORKER_IMAGE.md)) for the
    last stage, `build`, which turns the run's book into a PDF, an EPUB and the KDP bundle. Without it every earlier stage
    still runs and is reported, and `build` fails naming the missing tool.
 

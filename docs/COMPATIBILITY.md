@@ -1,9 +1,34 @@
 # Compatibility: what is promised, and how a change to it is caught
 
+**BLUF:** Ten public contracts are frozen: each has a snapshot file, and a test fails the moment the real thing
+differs from its snapshot. Before 1.0.0 a minor version may still break one, and the changelog will say so. From
+1.0.0 a changed snapshot needs a reason, a changelog entry and, if it is not compatible, a new schema version.
+
 The package follows [ADR 0004](adr/0004-versioning-compatibility-and-deprecation.md). **Before 1.0.0 a minor version may break any
 contract below, and the changelog says so.** What exists today is the guard that makes a break visible: every contract in this
 page is committed as a snapshot in `tests/contracts/snapshots/`, and a test fails the moment the real thing differs from it. From
 1.0.0 a snapshot that changes is a change that needs a reason, a changelog entry and, if it is not compatible, a new schema version.
+
+## How a promise is kept by a file
+
+> **Daniel:** I am building on the REST API. How do I know you will not rename a field next month?
+>
+> **Professor Feynman:** How does a locksmith know a new key will still open your door?
+>
+> **Daniel:** He keeps the old key and cuts the new one against it.
+>
+> **Professor Feynman:** A snapshot is the old key. The shape of every contract is written to a file. A test
+> regenerates the shape from the code and compares. If someone renames your field, the comparison fails and the
+> build goes red before it reaches you.
+>
+> **Daniel:** They could just regenerate the file and commit it.
+>
+> **Professor Feynman:** They could, and then the change is sitting in the pull request as a diff with a name on
+> it. That is the point: a break cannot happen by accident, only on purpose and in plain sight. The limit: the
+> file records the shape, not the meaning. A field that keeps its name and changes what it means would slip past.
+>
+> **Daniel:** So I am protected from accidents, the changelog tells me about decisions, and before 1.0 I should
+> still pin a version.
 
 ## The contracts
 

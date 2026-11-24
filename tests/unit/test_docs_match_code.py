@@ -4,6 +4,7 @@
 import itertools
 import json
 import re
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -90,6 +91,19 @@ LAYERED = (
     "docs/AGENTS_DRIVING.md",
     "docs/BOOKS_AND_KDP.md",
     "examples/README.md",
+    "docs/ARCHITECTURE.md",
+    "docs/COMPATIBILITY.md",
+    "docs/CONFIGURATION.md",
+    "docs/EVALUATION.md",
+    "docs/INTERACTIONS.md",
+    "docs/LIVE_SMOKE_TEST.md",
+    "docs/LOCAL_MODEL.md",
+    "docs/MODEL_CALLS.md",
+    "docs/MODEL_CATALOG.md",
+    "docs/MODEL_PROFILES.md",
+    "docs/NOVELS.md",
+    "docs/PROMPTS.md",
+    "docs/RESEARCH.md",
 )
 PLAIN = (
     "AGENTS.md",
@@ -109,21 +123,8 @@ PLAIN = (
 # Pages still to be rewritten to the pattern. This list only ever gets shorter.
 PENDING = (
     "CONTRIBUTING.md",
-    "docs/ARCHITECTURE.md",
-    "docs/COMPATIBILITY.md",
-    "docs/CONFIGURATION.md",
-    "docs/EVALUATION.md",
-    "docs/INTERACTIONS.md",
-    "docs/LIVE_SMOKE_TEST.md",
-    "docs/LOCAL_MODEL.md",
-    "docs/MODEL_CALLS.md",
-    "docs/MODEL_CATALOG.md",
-    "docs/MODEL_PROFILES.md",
-    "docs/NOVELS.md",
     "docs/PLUGINS.md",
-    "docs/PROMPTS.md",
     "docs/RELEASING.md",
-    "docs/RESEARCH.md",
     "docs/SKILLS.md",
     "docs/TESTING.md",
     "docs/TOOL_LOCK.md",
@@ -338,3 +339,94 @@ def test_the_exit_codes_an_agent_is_told_are_the_ones_the_command_returns() -> N
         assert "--resume --approve-spend" in text, page
         for code in ("0", "1", "2", "3"):
             assert re.search(rf"(^|[|`\s]){code}(`|\s|\|)", text, re.MULTILINE), (page, code)
+
+
+def test_the_prompts_page_lists_every_template_that_ships_with_its_version() -> None:
+    folder = ROOT / "src/engineering_influence/infrastructure/prompt_library/templates"
+    text = read("docs/PROMPTS.md")
+    shipped = sorted(folder.glob("*.toml"))
+
+    for template in shipped:
+        version = re.search(
+            r"^version = (\d+)$", template.read_text(encoding="utf-8"), re.MULTILINE
+        )
+        assert version, template.name
+        assert f"| `{template.stem}` | {version.group(1)} |" in text, (
+            f"docs/PROMPTS.md must list {template.stem} at version {version.group(1)}"
+        )
+    listed = re.findall(r"^\| `([a-z_]+)` \| \d+ \|", text, re.MULTILINE)
+    assert sorted(listed) == [template.stem for template in shipped]
+
+
+def test_the_compatibility_page_says_how_many_contracts_it_lists() -> None:
+    text = read("docs/COMPATIBILITY.md")
+    table = text.split("## The contracts", 1)[1].split("\n## ", 1)[0]
+    rows = [
+        row
+        for row in table.splitlines()
+        if row.startswith("| ") and not row.startswith("| Contract")
+    ]
+    words = [
+        "Zero",
+        "One",
+        "Two",
+        "Three",
+        "Four",
+        "Five",
+        "Six",
+        "Seven",
+        "Eight",
+        "Nine",
+        "Ten",
+        "Eleven",
+        "Twelve",
+    ]
+
+    assert f"**BLUF:** {words[len(rows)]} public contracts are frozen" in text
+
+
+def flags() -> list[tuple[str, str]]:
+    tree = json.loads(read("tests/contracts/snapshots/cli_command_tree.json"))
+    found: list[tuple[str, str]] = []
+
+    def walk(name: str, spec: dict[str, object]) -> None:
+        for argument in spec.get("arguments", []):  # type: ignore[attr-defined]
+            found.extend((name, flag) for flag in argument["flags"])
+        for sub, inner in spec.get("commands", {}).items():  # type: ignore[attr-defined]
+            walk(f"{name} {sub}".strip(), inner)
+
+    walk("", tree)
+    return found
+
+
+@pytest.mark.parametrize(("command", "flag"), flags(), ids=lambda v: str(v))
+def test_every_flag_of_every_command_is_in_the_interactions_reference(
+    command: str, flag: str
+) -> None:
+    assert flag in read("docs/INTERACTIONS.md"), (
+        f"docs/INTERACTIONS.md never shows {flag} of `ei {command}`"
+    )
+
+
+def test_the_brief_table_has_a_row_for_every_field_the_contract_accepts() -> None:
+    schema = json.loads(read("tests/contracts/snapshots/brief_v1_schema.json"))
+    text = read("docs/INTERACTIONS.md")
+    table = text.split("A **book run** starts from a **brief**", 1)[1].split("\n\n", 2)[1]
+
+    for field in schema["properties"]:
+        assert f"`{field}`" in table, (
+            f"the brief table in docs/INTERACTIONS.md has no row for {field}"
+        )
+    assert (
+        schema["additionalProperties"] is False and "Any key not in this table is refused" in text
+    )
+
+
+def test_the_evaluation_page_names_every_dimension_of_the_rubric() -> None:
+    rubric = tomllib.loads(read("evaluation/rubric.toml"))
+    names = [dimension["name"] for dimension in rubric["dimension"]]
+    text = read("docs/EVALUATION.md")
+
+    assert names
+    for name in names:
+        assert f"`{name}`" in text, f"docs/EVALUATION.md does not name the rubric dimension {name}"

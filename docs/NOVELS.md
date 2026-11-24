@@ -1,8 +1,36 @@
 # Novels
 
+**BLUF:** `--kind novel` writes a novel in nine stages, from a brief to a built book. A novel has no research
+stage and no built-in tools. Instead it has a story bible, a small set of facts (who, where, when) that every
+chapter is checked against. Novels get no editing passes yet, so a novel is built from its draft as written.
+
 A novel run is a different kind of book from a non-fiction one: it is not argued from sources, so it has no research
 stage and no tools, and it has a story bible that every chapter must agree with. `BookKind.NOVEL` picks it, and the
 runtime dispatches by kind, so a non-fiction run is untouched.
+
+## Why a novel needs a bible
+
+> **Daniel:** Chapter three says Mara is nineteen. Chapter eleven says she turned thirty last spring. Why do
+> models do that?
+>
+> **Professor Feynman:** How does a television series with twelve writers keep a character's eye colour the same
+> for nine years?
+>
+> **Daniel:** Someone keeps a document. The show bible. Everybody checks it.
+>
+> **Professor Feynman:** A chapter is drafted with limited memory of the others, so the same trick is used. Before
+> any chapter exists, one stage writes the story bible: the characters with their ages, the places, the dated
+> events, how many years the story spans. It is data, not prose.
+>
+> **Daniel:** And each chapter is given it.
+>
+> **Professor Feynman:** Given it, and then the whole draft is checked against it by a continuity checker that
+> looks for a name, a place, an age or a date that does not match. Here is where the picture thins out: a human
+> script editor would also fix the slip. This one reports it and the run carries on. A repair pass for continuity
+> findings is not built, and neither are editing passes for novels.
+>
+> **Daniel:** So the bible prevents most slips, the checker finds the rest, and fixing them is still my job for
+> now.
 
 ## What is built
 

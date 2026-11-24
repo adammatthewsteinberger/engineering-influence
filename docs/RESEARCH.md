@@ -1,8 +1,37 @@
 # Research: web search and methodology skills
 
+**BLUF:** The research stage gives the model two tools: `web_search` and `fetch_url`. It is told to state a fact
+only if a page it read says it, and never to invent a source. That is an instruction, not a check: nothing yet
+compares a chapter with its sources. It needs a search provider: a SearXNG you run (free, and one ships in
+`examples/searxng/`) or a Brave Search key. `ei doctor --search` sends one real query to each and tells you which
+answer.
+
 The research stage of a non-fiction run reads the brief, the positioning and anything the author supplied, then uses two tools,
 `web_search` (titles and links) and `fetch_url` (one page), to write research notes that cite only pages it read
 ([PROMPTS.md](PROMPTS.md), [THREAT_MODEL.md](THREAT_MODEL.md)). This page is how to make that real, and how to check it.
+
+## Cite only what you read
+
+> **Daniel:** Language models invent sources. A confident footnote to a paper that does not exist. How is this any
+> different?
+>
+> **Professor Feynman:** What is the rule for a student writing an essay in a library?
+>
+> **Daniel:** You may cite a book you took off the shelf and read. Not one you remember hearing about.
+>
+> **Professor Feynman:** That rule is the stage's instruction. The model can search, which gives it titles and
+> links, and it can fetch, which reads one page. It is told to read at most six, and the hard stop is sixteen tool
+> calls. It is told to state a fact only if a page it read says it, and never to invent a source, a statistic or a
+> link.
+>
+> **Daniel:** And the page itself could be nonsense.
+>
+> **Professor Feynman:** It could. And notice what I said: told, not forced. A librarian can check your bag at
+> the door; nothing here checks the notes against the pages. That is the limit, and it is why a person still reads
+> the book. A claim checker that compares a sentence with the page it cites is not built.
+>
+> **Daniel:** So the model has real pages in front of it and firm instructions, the checking is still mine, and
+> I should confirm a search works before the run with `ei doctor --search`.
 
 ## 1. A search that answers
 
@@ -27,12 +56,13 @@ It sends **one real search to each configured provider**, one at a time (so a Se
 behind it), and prints a line each: how many links came back and the host of the first. It never prints a title or an address
 from the web. The query leaves your machine, to your SearXNG (which passes it to the engines it uses) or to Brave, so the default is
 one harmless sentence (`open source book publishing`). Exit `0` all answered, `1` one did not, `2` the setting is unusable
-(`EI_SEARXNG_URL` is not an address). With nothing configured it says how to set one up and exits `1`.
+(`EI_SEARXNG_URL` is not an address). With nothing configured it checks the SearXNG a local-model run falls back to (`http://127.0.0.1:8888`); with
+`EI_STAGE_EXECUTOR=model` and nothing configured it says how to set one up and exits `1`.
 
 What it does not check: that the results are *good*, that a page fetch works (the fetch tool is pinned to public https
 addresses and is separate), or that a Brave key has quota left beyond what one search shows.
 
-The [live smoke test](LIVE_SMOKE_TEST.md) needs this too, and a run without a provider stops at start with a clear message.
+The [live smoke test](LIVE_SMOKE_TEST.md) needs this too, and a run with `EI_STAGE_EXECUTOR=model` and no provider stops at start with a clear message. A run on the free local model falls back to the SearXNG at its default address.
 
 ## 2. Methodology skills for the research stage
 

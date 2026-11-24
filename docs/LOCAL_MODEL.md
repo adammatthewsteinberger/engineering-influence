@@ -1,7 +1,13 @@
 # The free local model
 
-With nothing configured, a run is written by an open-source model on your own machine. It costs nothing per token,
-sends nothing off the machine, and needs no key.
+**BLUF:** By default the book is written by `gpt-oss:20b`, an open-source model running on your own machine
+through Ollama. It costs nothing per word and needs no key, and your prompts and manuscript stay on the machine
+(the research stage still sends search queries out and fetches public pages). It uses about 13 GB of memory when
+loaded and needs a context of 32,768 tokens; `ei doctor --local` checks the server, the model, one tiny answer and
+the context it really loaded.
+
+With nothing configured, a run is written by an open-source model on your own machine. It costs nothing per token
+and needs no key. The model itself sends nothing off the machine; the research stage's search and page fetches do.
 
 | | |
 |---|---|
@@ -9,6 +15,27 @@ sends nothing off the machine, and needs no key.
 | Server | [Ollama](https://ollama.com) at `http://127.0.0.1:11434` |
 | Search for research | a [SearXNG](RESEARCH.md) at `http://127.0.0.1:8888` (the compose example in `examples/searxng`) |
 | Context | 32,768 tokens, which the server must really offer |
+
+## Why the context size is checked
+
+> **Daniel:** The model is pulled and it answers. Why does the doctor also fuss about a number called context?
+>
+> **Professor Feynman:** How much of a long letter can you keep in your head while you write the reply?
+>
+> **Daniel:** Most of it. If it were fifty pages I would lose the start.
+>
+> **Professor Feynman:** The context is how much the model can hold at once: its instructions, the outline, what
+> came before. This project packs a prompt to fit 32,768 tokens. If the server quietly offers fewer, it does not
+> complain. It cuts the prompt short.
+>
+> **Daniel:** And whatever was cut might be the instructions, or the outline.
+>
+> **Professor Feynman:** You would not know which. You would get a chapter that reads well and ignores part of
+> what it was given, and you would blame the model. So the doctor asks the server what it really loaded. The
+> picture is imperfect: you know when you have lost the start of a letter. The model does not.
+>
+> **Daniel:** So a wrong context fails silently, and the check is the only way I would find out. I will run it
+> before the first book.
 
 ## Set it up
 
@@ -58,8 +85,17 @@ ei doctor --local
 
 It makes four checks and stops at the first thing that makes the rest pointless:
 
+| Check | Passes when | If it fails |
+|---|---|---|
+| `server` | something answers at `EI_LOCAL_URL` | install and start Ollama, or set `EI_LOCAL_URL` |
+| `model` | the model is pulled | `ollama pull <model>` |
+| `answers` | one tiny real completion comes back non-empty | the model spent its whole cap before writing a word |
+| `context` | the loaded context is at least 32,768 tokens | set `OLLAMA_CONTEXT_LENGTH` and restart Ollama |
+
+In more detail:
+
 1. **server**: something answers at `EI_LOCAL_URL`. Ollama is recognised by `/api/tags`; another server that speaks the
-   chat shape (`llama-server`, vLLM, LM Studio) passes with a note and skips the next two checks.
+   chat shape (`llama-server`, vLLM, LM Studio) passes with a note; the `model` and `context` checks are skipped and `answers` still runs.
 2. **model**: the model is pulled; if not, it names `ollama pull <model>`.
 3. **answers**: one tiny real completion, free and on this machine. An empty reply fails, because a reasoning model
    can spend its whole cap before it writes a word.
