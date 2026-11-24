@@ -16,6 +16,7 @@ from engineering_influence.models.publishing.path_relativizer import PathRelativ
 from engineering_influence.models.publishing.project_layout import ProjectLayout
 from engineering_influence.models.typesetting.trim_size import TrimSize
 from engineering_influence.services.interfaces.package_book_interface import PackageBookInterface
+from engineering_influence.services.release.format_policy import FormatPolicy
 
 
 class PackageBook(PackageBookInterface):
@@ -45,8 +46,13 @@ class PackageBook(PackageBookInterface):
                 f"[{slug}] the release check fails; fix its errors before packaging (ei book audit {slug})"
             )
         metadata = self._metadata(slug, config)
-        hardcover = TrimSize.for_name(config.get("trim_size")).hardcover
-        artifacts = self._inventory.artifacts(slug, hardcover=hardcover)
+        # The interior is a hardcover only when the book asks for one; the cover wrap follows the trim size.
+        # The publication pipeline derives them the same way, so the bundle needs what the pipeline built.
+        hardcover = bool(FormatPolicy().of(dict(config))["hardcover"])
+        hardcover_wrap = TrimSize.for_name(config.get("trim_size")).hardcover
+        artifacts = self._inventory.artifacts(
+            slug, hardcover=hardcover, hardcover_wrap=hardcover_wrap
+        )
         problems = self._inventory.problems(artifacts)
         if problems:
             raise BookBuildError("\n".join(f"[{slug}] {problem}" for problem in problems))

@@ -28,8 +28,24 @@ Verified in the image, with the read-only filesystem and all capabilities droppe
 produces `output/demo.pdf` and `ei book epub` produces `output/demo.epub`, and both pass the built-in checks (the EPUB
 through epubcheck); `ei book covers` builds the covers. The test book was one short chapter.
 
-Not verified: a full book, the compose stack running the TeX worker, and the CI job that builds this target. The
-project's compose file still runs the slim image.
+A run's own book was built in this image too: the scripted rehearsal of the whole non-fiction plan ends in the `build`
+stage, which produced the interior PDF, the EPUB (checked by epubcheck), the ebook, paperback and hardcover covers, the
+listing and the release manifest. That check is `tests/toolchain/test_run_builds_book.py`, which the CI toolchain job runs.
+
+Not verified: a full-length book, and the CI job that builds this target.
+
+## Running a stack whose worker builds books
+
+A run's last stage, `build`, calls the TeX tools, so the worker that runs it needs this image. The default compose file
+keeps the slim one. Add the override to switch only the worker:
+
+```bash
+docker compose -f examples/docker-compose.yml -f examples/docker-compose.tex.yml \
+  --env-file examples/.env up -d --build --wait
+```
+
+A slim worker still does every writing stage. Only `build` fails (`BUILD_FAILED`), naming the missing tool, and what the
+earlier stages wrote stays in the run.
 
 ## The TeX cache
 

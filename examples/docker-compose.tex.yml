@@ -1,0 +1,19 @@
+# The same stack, with a worker that can build the book: a run's last stage, `build`, calls LuaLaTeX, tex4ebook,
+# epubcheck and pdftoppm, which the slim image does not have.
+#
+#   docker compose -f examples/docker-compose.yml -f examples/docker-compose.tex.yml \
+#     --env-file examples/.env up -d --build --wait
+#
+# Only the worker changes. The TeX image is about 2.9 GB, so the default stack (and its CI smoke test) keeps the slim one;
+# see docs/WORKER_IMAGE.md. A worker without TeX still runs every writing stage: only `build` fails, with the missing
+# tool named, and what the earlier stages wrote stays in the run.
+#
+# Set EI_BUILD_STRICT_RELEASE=1 in examples/.env to make `build` refuse a book whose release-readiness report has any
+# warning, such as the pricing warnings a run cannot fill in. The default is off.
+services:
+  worker:
+    build:
+      target: worker-tex
+    image: engineering-influence:tex
+    environment:
+      EI_BUILD_STRICT_RELEASE: ${EI_BUILD_STRICT_RELEASE:-}

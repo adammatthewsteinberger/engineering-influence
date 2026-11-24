@@ -20,6 +20,7 @@ from engineering_influence.models.budget import Budget
 from engineering_influence.models.manuscript_audit import ManuscriptAudit
 from engineering_influence.models.stage_report import StageReport
 from engineering_influence.services.audit_stage_executor import AuditStageExecutor
+from engineering_influence.services.manuscript_project import ManuscriptProject
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 
 REPORTS = (("manuscript-audit.json", b"{audit}"), ("release-readiness.json", b"{release}"))
@@ -62,7 +63,7 @@ class World:
     def __init__(self, result: ManuscriptAudit, *, files: dict[str, bytes] | None = None) -> None:
         self.store = InMemoryArtifactStore()
         self.auditor = Auditor(result)
-        self.executor = AuditStageExecutor(self.store, self.auditor)
+        self.executor = AuditStageExecutor(self.store, self.auditor, ManuscriptProject(self.store))
         self.run = BookRun(
             run_id="run-1",
             brief=BookBrief(BookKind.NONFICTION, "bees", 1_000),

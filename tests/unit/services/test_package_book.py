@@ -15,6 +15,7 @@ from engineering_influence.models.book_metadata import BookMetadata
 from engineering_influence.models.kdp_bundle_file import KdpBundleFile
 from engineering_influence.models.kdp_listing import KdpListing
 from engineering_influence.models.publishing.project_layout import ProjectLayout
+from engineering_influence.models.typesetting.trim_size import TrimSize
 from engineering_influence.services.interfaces.package_book_interface import PackageBookInterface
 from engineering_influence.services.package_book import PackageBook
 
@@ -146,20 +147,42 @@ def test_a_listing_outside_the_release_limits_is_refused_with_the_reason(
         packager(project).package("herbs", bad, "pass")
 
 
-def test_a_hardcover_trim_is_read_from_the_config(project: ProjectLayout) -> None:
-    seen: list[bool] = []
+def flags_for(project: ProjectLayout, values: dict[str, Any]) -> tuple[bool, bool]:
+    """The (interior, wrap) hardcover flags the inventory was asked about for a book."""
+    seen: list[tuple[bool, bool]] = []
 
     class Recording(Inventory):
         def artifacts(
             self, slug: str, *, hardcover: bool = False, hardcover_wrap: bool = True
         ) -> list[dict[str, Any]]:
-            seen.append(hardcover)
+            seen.append((hardcover, hardcover_wrap))
             return super().artifacts(slug, hardcover=hardcover, hardcover_wrap=hardcover_wrap)
 
     PackageBook(
         project, Recording(project, ("output/herbs.pdf", "output/herbs.epub")), DirectoryPublisher()
-    ).package("herbs", config(trim_size="6x9"), "pass")
-    assert seen == [True]
+    ).package("herbs", values, "pass")
+    [flags] = seen
+    return flags
+
+
+def test_a_book_that_does_not_ask_for_a_hardcover_is_not_asked_for_a_hardcover_interior(
+    project: ProjectLayout,
+) -> None:
+    # A 6x9 trim can be printed as a hardcover, so its cover wrap is built; the interior is not, unless asked for.
+    assert flags_for(project, config(trim_size="6x9")) == (False, True)
+
+
+def test_a_book_that_asks_for_a_hardcover_is_asked_for_the_interior_and_the_wrap(
+    project: ProjectLayout,
+) -> None:
+    assert flags_for(project, config(trim_size="6x9", formats={"hardcover": True})) == (True, True)
+
+
+def test_a_trim_that_is_not_printed_as_a_hardcover_has_no_hardcover_wrap(
+    project: ProjectLayout,
+) -> None:
+    trim = next(name for name in TrimSize.names() if not TrimSize.for_name(name).hardcover)
+    assert flags_for(project, config(trim_size=trim)) == (False, False)
 
 
 def test_the_bundle_file_is_named_by_a_plain_filename_and_has_a_real_hash() -> None:

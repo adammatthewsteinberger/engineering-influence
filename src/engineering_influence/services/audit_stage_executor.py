@@ -11,13 +11,16 @@ from engineering_influence.interfaces.manuscript_auditor_interface import (
 from engineering_influence.interfaces.stage_executor_interface import StageExecutorInterface
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.stage_report import StageReport
+from engineering_influence.services.interfaces.manuscript_project_interface import (
+    ManuscriptProjectInterface,
+)
 
 
 class AuditStageExecutor(StageExecutorInterface):
     """The ``audit`` stage: no model call, the existing gates run on what ``assemble`` wrote.
 
-    It reads the ``manuscript/`` files (the config under ``books/`` and the chapters under ``src/``), gives them
-    to a ``ManuscriptAuditorInterface`` as a project, and stores what comes back under ``audit/``: the manuscript
+    It reads the ``manuscript/`` files through ``ManuscriptProject`` (the config under ``books/`` and the chapters
+    under ``src/``), gives them to a ``ManuscriptAuditorInterface`` as a project, and stores what comes back under ``audit/``: the manuscript
     audit, the release readiness report and the publication report. It then writes ``audit.md``, the status, the
     errors and the warnings.
 
@@ -27,37 +30,20 @@ class AuditStageExecutor(StageExecutorInterface):
     """
 
     STAGE = "audit"
-    PREFIX = "manuscript/"
 
     def __init__(
-        self, artifacts: ArtifactStoreInterface, auditor: ManuscriptAuditorInterface
+        self,
+        artifacts: ArtifactStoreInterface,
+        auditor: ManuscriptAuditorInterface,
+        project: ManuscriptProjectInterface,
     ) -> None:
         self._artifacts = artifacts
         self._auditor = auditor
+        self._project = project
 
     async def execute(self, run: BookRun, attempt: int) -> StageReport:
         """Audit the assembled book and store the reports."""
-        names = await asyncio.to_thread(self._artifacts.names, run.run_id)
-        stored = [name for name in names if name.startswith(self.PREFIX)]
-        configs = [
-            name
-            for name in stored
-            if name.startswith(f"{self.PREFIX}books/") and name.endswith(".toml")
-        ]
-        if len(configs) != 1:
-            raise ApplicationError(
-                code="STAGE_INPUT_MISSING",
-                message=(
-                    f"stage {run.stage!r} needs the one book config the assemble stage writes under "
-                    f"{self.PREFIX}books/, and this run has {len(configs)}"
-                ),
-                http_status=409,
-            )
-        files: dict[str, bytes] = {}
-        for name in stored:
-            data = await asyncio.to_thread(self._artifacts.get, run.run_id, name)
-            files[name.removeprefix(self.PREFIX)] = data or b""
-        slug = configs[0].removeprefix(f"{self.PREFIX}books/").removesuffix(".toml")
+        files, slug = await self._project.load(run)
         audit = await asyncio.to_thread(self._auditor.audit, files, slug)
         for name, data in audit.files:
             await asyncio.to_thread(self._artifacts.put, run.run_id, f"audit/{name}", data)
