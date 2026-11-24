@@ -7,6 +7,8 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from contextlib import AbstractContextManager
+
     from engineering_influence.models.book_run import BookRun
 
 
@@ -22,6 +24,10 @@ class SpendCeilingInterface(ABC):
     @abstractmethod
     def admit_raise(self, run: BookRun, extra: int) -> None:
         """Return when raising this run's cap by ``extra`` fits; raise an ApplicationError when it does not."""
+
+    @abstractmethod
+    def hold(self) -> AbstractContextManager[None]:
+        """Serialize a check with the save or swap that follows it, so two callers cannot both pass against the same total."""
 
     @abstractmethod
     def outstanding(self) -> int:

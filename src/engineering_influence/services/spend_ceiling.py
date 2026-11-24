@@ -1,6 +1,10 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Holds the stack to the operator's spend ceilings."""
 
+import threading
+from collections.abc import Iterator
+from contextlib import contextmanager
+
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interfaces.run_repository_interface import RunRepositoryInterface
 from engineering_influence.models.book_run import FINISHED, BookRun
@@ -15,10 +19,16 @@ class SpendCeiling(SpendCeilingInterface):
 
     A run's **outstanding** budget is its cap less what it has spent, and only runs that have not finished count: a
     finished run can spend nothing more. A run that is parked or waiting for consent still counts, because a grant
-    would wake it. The checks are made before anything is saved or queued, so a refusal leaves no trace. Two clients
-    racing can each pass the check against the same total; the per-run ceiling is exact, and the outstanding ceiling
-    is the limit a person sets with that much slack, not a lock.
+    would wake it. The checks are made before anything is saved or queued, so a refusal leaves no trace.
+
+    **A check and the save that follows it are one step.** ``hold()`` is a lock shared by every ceiling in the process;
+    ``CreateRun`` and ``ResolveSpendConsent`` hold it from the check to the save, so many requests at once to one API or MCP
+    process cannot each pass against the same total. Two *processes* (the API and a command line, say) each hold their own
+    lock, so across processes the ceiling is a check with a window of a few milliseconds, not a lock; the per-run ceiling
+    is exact either way.
     """
+
+    _LOCK = threading.RLock()
 
     def __init__(self, runs: RunRepositoryInterface, limits: SpendLimits) -> None:
         self._runs = runs
@@ -31,6 +41,12 @@ class SpendCeiling(SpendCeilingInterface):
     def admit_raise(self, run: BookRun, extra: int) -> None:
         """Raising ``run``'s cap by ``extra``."""
         self._admit(run.budget.cap + extra, extra)
+
+    @contextmanager
+    def hold(self) -> Iterator[None]:
+        """The process-wide lock that makes a check and the save that follows it one step."""
+        with self._LOCK:
+            yield
 
     def outstanding(self) -> int:
         """The unspent budget of every unfinished run, in micro-dollars."""

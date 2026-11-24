@@ -1,5 +1,8 @@
 """The spend ceiling: one check for a new run and for a raise, made before anything is saved or queued."""
 
+import threading
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import replace
 
 import pytest
@@ -171,3 +174,135 @@ def test_a_parked_run_is_granted_only_what_the_ceiling_allows() -> None:
         resolver.grant("p", 600_000)
     assert error.value.code == "OUTSTANDING_BUDGET_EXCEEDED"
     assert resolver.grant("p", 500_000).budget.cap == 2_500_000
+
+
+class SlowToCount(InMemoryRunRepository):
+    """The first callers to count the runs wait for each other, so that if nothing serializes them they all see the same total.
+
+    A caller that is alone (because a lock keeps the others out) waits a second and a half, once, before the barrier gives up.
+    """
+
+    def __init__(self, parties: int) -> None:
+        super().__init__()
+        self._counting = threading.Barrier(parties)
+        self._storing = threading.Barrier(parties)
+
+    @staticmethod
+    def _wait(barrier: threading.Barrier) -> None:
+        try:
+            barrier.wait(timeout=1.5)
+        except threading.BrokenBarrierError:
+            pass
+
+    def run_ids(self) -> list[str]:
+        self._wait(self._counting)
+        return super().run_ids()
+
+    def swap(self, expected: BookRun, replacement: BookRun) -> bool:
+        # Nobody stores until everyone has counted, so a grant that is not serialized with its check shows itself.
+        self._wait(self._storing)
+        return super().swap(expected, replacement)
+
+
+def test_many_requests_at_once_cannot_each_pass_against_the_same_total() -> None:
+    repo, queue = SlowToCount(20), InMemoryQueue()
+    creator = CreateRun(repo, queue, ceiling=SpendCeiling(repo, SpendLimits(outstanding=5_000_000)))
+    refusals: list[str] = []
+
+    def start() -> None:
+        try:
+            creator.create(BookBrief(BookKind.NONFICTION, "bees", 1_000_000))
+        except ApplicationError as error:
+            refusals.append(error.code)
+
+    threads = [threading.Thread(target=start) for _ in range(20)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert len(repo.run_ids()) == 5 and len(queue.jobs) == 5
+    assert refusals == ["OUTSTANDING_BUDGET_EXCEEDED"] * 15
+
+
+def test_many_grants_at_once_cannot_each_pass_against_the_same_total() -> None:
+    waiting = [
+        run(f"w{n}", 1_000_000).await_consent(SpendRequest(1_000_000, "outline")) for n in range(10)
+    ]
+    repo, queue = SlowToCount(10), InMemoryQueue()
+    for item in waiting:
+        repo.save(item)
+    resolver = ResolveSpendConsent(
+        repo, queue, SpendCeiling(repo, SpendLimits(outstanding=13_000_000))
+    )
+    refusals: list[str] = []
+
+    def grant(run_id: str) -> None:
+        try:
+            resolver.grant(run_id)
+        except ApplicationError as error:
+            refusals.append(error.code)
+
+    threads = [threading.Thread(target=grant, args=(item.run_id,)) for item in waiting]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    # ten runs hold ten million; three more million fit, so exactly three grants succeed
+    assert len(queue.jobs) == 3 and refusals == ["OUTSTANDING_BUDGET_EXCEEDED"] * 7
+    assert SpendCeiling(repo, SpendLimits()).outstanding() == 13_000_000
+
+
+class Recording(SpendCeilingInterface):
+    """Notes when the ceiling is entered, checked and left, to be read beside what the repository sees."""
+
+    def __init__(self, events: list[str]) -> None:
+        self.events = events
+
+    @contextmanager
+    def hold(self) -> Iterator[None]:
+        self.events.append("enter")
+        try:
+            yield
+        finally:
+            self.events.append("exit")
+
+    def admit_new(self, cap: int) -> None:
+        self.events.append("admit_new")
+
+    def admit_raise(self, run: BookRun, extra: int) -> None:
+        self.events.append("admit_raise")
+
+    def outstanding(self) -> int:
+        return 0
+
+
+class Noting(InMemoryRunRepository):
+    def __init__(self, events: list[str]) -> None:
+        super().__init__()
+        self.events = events
+
+    def save(self, run: BookRun) -> None:
+        self.events.append("save")
+        super().save(run)
+
+    def swap(self, expected: BookRun, replacement: BookRun) -> bool:
+        self.events.append("swap")
+        return super().swap(expected, replacement)
+
+
+def test_a_new_run_is_checked_and_saved_inside_one_hold() -> None:
+    events: list[str] = []
+    repo = Noting(events)
+    CreateRun(repo, InMemoryQueue(), ceiling=Recording(events)).create(
+        BookBrief(BookKind.NONFICTION, "bees", 1_000_000)
+    )
+    assert events == ["enter", "admit_new", "save", "exit"]
+
+
+def test_a_grant_is_checked_and_stored_inside_one_hold() -> None:
+    events: list[str] = []
+    repo = Noting(events)
+    repo.save(waiting_run(2_000_000, 1_000_000))
+    events.clear()
+    ResolveSpendConsent(repo, InMemoryQueue(), Recording(events)).grant("w")
+    assert events == ["enter", "admit_raise", "swap", "exit"]

@@ -1,6 +1,8 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Grants or denies a run's request for more budget."""
 
+from contextlib import nullcontext
+
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interfaces.queue_interface import QueueInterface
 from engineering_influence.interfaces.run_repository_interface import RunRepositoryInterface
@@ -40,9 +42,10 @@ class ResolveSpendConsent(ResolveSpendConsentInterface):
             raise ApplicationError(
                 code="CONSENT_NOT_PENDING", message=str(error), http_status=409
             ) from error
-        if self._ceiling is not None:
-            self._ceiling.admit_raise(run, changed.budget.cap - run.budget.cap)
-        self._store(run, changed)
+        with nullcontext() if self._ceiling is None else self._ceiling.hold():
+            if self._ceiling is not None:
+                self._ceiling.admit_raise(run, changed.budget.cap - run.budget.cap)
+            self._store(run, changed)
         self._queue.enqueue(
             AdvanceRun.KIND, {"run_id": run_id, "stage": changed.stage, "attempt": 1}
         )

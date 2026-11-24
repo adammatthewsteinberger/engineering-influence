@@ -3,6 +3,7 @@
 
 import uuid
 from collections.abc import Callable, Mapping
+from contextlib import nullcontext
 from typing import ClassVar
 
 from engineering_influence.errors.application_error import ApplicationError
@@ -60,10 +61,11 @@ class CreateRun(CreateRunInterface):
                 message=f"this build cannot start a {brief.kind.value} book",
                 http_status=422,
             )
-        if self._ceiling is not None:
-            self._ceiling.admit_new(brief.budget_micro_usd)
-        run = BookRun(self._new_id(), brief, plan, Budget(cap=brief.budget_micro_usd))
-        self._runs.save(run)
+        with nullcontext() if self._ceiling is None else self._ceiling.hold():
+            if self._ceiling is not None:
+                self._ceiling.admit_new(brief.budget_micro_usd)
+            run = BookRun(self._new_id(), brief, plan, Budget(cap=brief.budget_micro_usd))
+            self._runs.save(run)
         self._queue.enqueue(
             AdvanceRun.KIND, {"run_id": run.run_id, "stage": run.stage, "attempt": 1}
         )
