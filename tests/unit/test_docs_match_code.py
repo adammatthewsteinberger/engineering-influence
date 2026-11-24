@@ -104,6 +104,7 @@ LAYERED = (
     "docs/NOVELS.md",
     "docs/PROMPTS.md",
     "docs/RESEARCH.md",
+    "docs/DOCUMENTATION_SITE.md",
     "CONTRIBUTING.md",
     "docs/PLUGINS.md",
     "docs/RELEASING.md",

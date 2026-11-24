@@ -47,6 +47,7 @@ Interfaces: CLI (`ei`), REST API, Python SDK, MCP server (stdio, `ei serve mcp`:
 - [Testing](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/TESTING.md): the CI gates and how to run them
 - [Compatibility](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/COMPATIBILITY.md): the public contracts, what counts as a breaking change, and the snapshots that guard them
 - [Releasing](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/RELEASING.md): cutting and verifying a release
+- [The documentation site](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/DOCUMENTATION_SITE.md): how the pages are published as a website
 - [How these documents are written](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/STYLE.md)
 - [Security policy](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/SECURITY.md)
 
