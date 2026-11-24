@@ -22,11 +22,13 @@ class BookConfigV1(BookConfigV1Interface, BaseModel):
     ``trim_size`` and ``paper`` default to 6x9 and white and decide the page size and spine width.
     ``source`` names the manuscript directory. ``front``, ``parts`` and ``back`` give the
     printed order, and ``not_in_book`` lists Markdown files the loader should not insist on.
-    Title, author, release and format tables are free-form for now and travel as extras.
+    Title, author, release and format tables are free-form for now and travel as extras. ``schema_version`` is 1; a config
+    that does not say is read as version 1, so every book written before it existed still loads.
     """
 
     model_config = ConfigDict(frozen=True, extra="allow")
 
+    schema_version: Literal[1] = 1
     source: NonBlank
     kind: BookKind = BookKind.NONFICTION
     trim_size: Literal["5x8", "5.5x8.5", "6x9"] = "6x9"

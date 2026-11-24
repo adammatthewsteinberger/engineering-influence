@@ -220,3 +220,16 @@ def test_a_brief_takes_a_known_trim_size_and_refuses_an_unknown_one() -> None:
     assert BookBriefV1.model_validate(brief(trim_size="5x8")).to_model().trim_size == "5x8"
     with pytest.raises(ValidationError):
         BookBriefV1.model_validate(brief(trim_size="7x10"))
+
+
+def test_a_book_config_with_no_schema_version_is_version_one_and_another_version_is_refused() -> (
+    None
+):
+    from pydantic import ValidationError
+
+    from engineering_influence.contracts.book_config.v1.book_config_v1 import BookConfigV1
+
+    assert BookConfigV1.model_validate({"source": "src"}).schema_version == 1
+    assert BookConfigV1.model_validate({"source": "src", "schema_version": 1}).schema_version == 1
+    with pytest.raises(ValidationError):
+        BookConfigV1.model_validate({"source": "src", "schema_version": 2})

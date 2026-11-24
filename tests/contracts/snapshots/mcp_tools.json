@@ -1,0 +1,150 @@
+{
+  "cancel_run": {
+    "properties": {
+      "run_id": {
+        "title": "Run Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "run_id"
+    ],
+    "title": "cancel_runArguments",
+    "type": "object"
+  },
+  "create_run": {
+    "properties": {
+      "brief": {
+        "additionalProperties": true,
+        "title": "Brief",
+        "type": "object"
+      }
+    },
+    "required": [
+      "brief"
+    ],
+    "title": "create_runArguments",
+    "type": "object"
+  },
+  "deny_run": {
+    "properties": {
+      "run_id": {
+        "title": "Run Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "run_id"
+    ],
+    "title": "deny_runArguments",
+    "type": "object"
+  },
+  "get_run": {
+    "properties": {
+      "run_id": {
+        "title": "Run Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "run_id"
+    ],
+    "title": "get_runArguments",
+    "type": "object"
+  },
+  "grant_run": {
+    "properties": {
+      "micro_usd": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Micro Usd"
+      },
+      "run_id": {
+        "title": "Run Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "run_id"
+    ],
+    "title": "grant_runArguments",
+    "type": "object"
+  },
+  "list_runs": {
+    "properties": {},
+    "title": "list_runsArguments",
+    "type": "object"
+  },
+  "read_artifact": {
+    "properties": {
+      "name": {
+        "title": "Name",
+        "type": "string"
+      },
+      "run_id": {
+        "title": "Run Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "run_id",
+      "name"
+    ],
+    "title": "read_artifactArguments",
+    "type": "object"
+  },
+  "resume_run": {
+    "properties": {
+      "run_id": {
+        "title": "Run Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "run_id"
+    ],
+    "title": "resume_runArguments",
+    "type": "object"
+  },
+  "start_pipeline": {
+    "properties": {
+      "postulates": {
+        "items": {
+          "type": "string"
+        },
+        "title": "Postulates",
+        "type": "array"
+      },
+      "slug": {
+        "title": "Slug",
+        "type": "string"
+      },
+      "stages": {
+        "items": {
+          "type": "string"
+        },
+        "title": "Stages",
+        "type": "array"
+      },
+      "title": {
+        "title": "Title",
+        "type": "string"
+      }
+    },
+    "required": [
+      "slug",
+      "title",
+      "postulates",
+      "stages"
+    ],
+    "title": "start_pipelineArguments",
+    "type": "object"
+  }
+}
