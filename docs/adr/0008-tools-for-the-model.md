@@ -183,7 +183,7 @@ Recorded on 2026-11-22 while building slice 5 ([SKILLS.md](../SKILLS.md)).
 - **Where the text goes (a decision the ADR left open).** At the end of the **user** part of the stage's prompt, in
   a delimited block under a fixed frame (the `skill_guidance` template), never in the system part. It is not
   wrapped as `<untrusted>`: unlike a page, it is meant to instruct, and the person approved it. The trade-off
-  is stated plainly in [SKILLS.md](SKILLS.md#what-this-does-and-does-not-give-you): **a skill that was hostile
+  is stated plainly in [SKILLS.md](../SKILLS.md#what-this-does-and-does-not-give-you): **a skill that was hostile
   when it was locked is trusted as locked.** A copy of the block's tags inside a skill is defused.
 - **What a person approved is what a model sees.** Text that renders as nothing or reorders what is shown
   (control characters, zero-width and bidirectional marks, line and paragraph separators, private-use and

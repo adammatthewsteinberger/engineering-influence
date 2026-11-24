@@ -1,100 +1,156 @@
 # engineering-influence
 
-**engineering-influence writes complete books, fiction and non-fiction, fully autonomously, and produces files and metadata that are ready to self-publish on Amazon KDP.**
+**Give it an idea. Get back a book you can publish.**
 
-You give it a project (a title, governing postulates, the stages to run). It drafts through
-ordered stages with typed gates, records every step in a ledger, survives crashes because the
-work lives on a queue, and ends with a verified KDP package: paperback and hardcover interior
-PDFs, EPUB, covers, listing metadata and a release-readiness report. See
-[docs/BOOKS_AND_KDP.md](docs/BOOKS_AND_KDP.md) for exactly what that includes.
-
-The same behavior is reachable five ways, all over one controller layer: a **REST API**,
-an **MCP server**, a **CLI**, a **Python SDK** (sync and async) and **signed webhooks**.
-
-> **Status: alpha (`0.1.0a2`).** The orchestration, the KDP packaging and verification, and the
-> writing stages are built and tested: `ei book create` takes an idea to a built KDP package with a
-> free local model or a configured one. The writing has only been run against scripted servers, never
-> a live provider, and no real model has been measured against the quality bar yet. Nothing uploads to
-> KDP for you (KDP has no API); a person reviews and uploads. See [Limitations](#limitations).
-
-This repository holds the method and the software only. Author-owned manuscripts, profiles
-and private publishing configuration live in a separate private repository.
-
-## Try it in five minutes
-
-You need Docker with the compose plugin, [`uv`](https://docs.astral.sh/uv/) and `python3`.
+**BLUF:** engineering-influence writes a complete book, non-fiction or a novel, with nobody in the loop, and
+hands you the files Amazon KDP asks for: interior PDF, EPUB, covers, listing and a quality report. One command
+installs it, one command writes a book, and a free model on your own machine does the writing.
 
 ```bash
-git clone https://github.com/adammatthewsteinberger/engineering-influence
-cd engineering-influence
-sh examples/up.sh                      # Postgres + RabbitMQ + API + worker, with generated credentials
-set -a; . examples/.env; set +a        # exports EI_BASE_URL, EI_API_KEY, EI_WEBHOOK_SECRET
-uv run examples/api/start_pipeline.py  # start a pipeline over REST
+# 1. Install everything a book needs (macOS with Homebrew, or Linux with apt-get)
+curl -fsSL https://raw.githubusercontent.com/adammatthewsteinberger/engineering-influence/main/install.sh | sh
+
+# 2. Write a book
+ei book create --kind nonfiction "how to keep herbs alive indoors" --budget-usd 5 \
+  --out ./my-book --profile ~/.config/engineering-influence/author.toml
 ```
 
-```text
-ready: 200 ready
-without a key: 401
-started: 200 {"job_id": "6c05b79f-…", "project_slug": "sample-essay"}
+The book lands in `./my-book/run/book/`. Nothing is uploaded: you read it, then you upload it to KDP yourself.
+
+> **Status: alpha (`0.1.0a2`), and honest about it.** Every stage is built and tested, from the brief to the
+> built book. The writing has only ever run against scripted test servers, never a live model, so nobody yet
+> knows how good the books are. The install script has been run for real only as a dry run on macOS, and it
+> installs from `main`, which gets it with the next release. See [Limitations](#limitations).
+
+## The idea in one minute
+
+> **Daniel:** I have a book idea and no free months. Everyone says an AI can write it. I asked a chatbot and got
+> eleven pages of mush that forgot its own first chapter.
+>
+> **Professor Feynman:** Of course it did. You asked one cook to make a wedding dinner in one go, from memory,
+> without a kitchen. What does a real kitchen have?
+>
+> **Daniel:** Stations. Somebody preps, somebody cooks, somebody checks the plate before it goes out.
+>
+> **Professor Feynman:** That is the whole design. A book here goes through stations in order: a brief, research,
+> an outline, a draft of each chapter, three editing passes, then typesetting. Each station has one job and
+> writes down what it made. So what happens if the power goes out halfway through the draft?
+>
+> **Daniel:** You would lose the night's work. Unless the finished plates were already on the shelf.
+>
+> **Professor Feynman:** They are on the shelf. Run the same command with `--resume` and it starts at the next
+> station. Nothing finished is cooked twice, and nothing is paid for twice.
+>
+> **Daniel:** And the last station is the one that checks the plate.
+>
+> **Professor Feynman:** It builds the real PDF and EPUB and refuses a book that does not pass. The comparison
+> stops there, though: a kitchen has a chef who tastes. This has checks, not taste. A person still reads the
+> book before it is published. That person is you.
+>
+> **Daniel:** So it is a kitchen that never loses a plate, and I am still the one who tastes the dinner.
+
+## What you get
+
+| In `my-book/` | What it is |
+|---|---|
+| `run/book/<slug>.pdf` | The paperback interior, typeset with LaTeX to KDP's trim, margins and gutter |
+| `run/book/<slug>.epub` | The ebook, checked for structure and links |
+| `run/book/<slug>-ebook.jpg`, `<slug>-paperback-wrap.pdf` | The ebook cover, and the paperback wrap at the exact page count |
+| `run/book/listing.md` | Title, subtitle, description and seven keywords, ready to paste |
+| `run/book/MANIFEST.json` | What is in the bundle, with a checksum of every file |
+| `run/quality-report.json` | Pass or fail, every error and warning, and what was spent against the estimate |
+| `src/chapter_NN.md`, `books/*.toml` | The manuscript and its settings, to edit and rebuild with `ei book build` |
+
+[What a KDP-ready package is, exactly](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/BOOKS_AND_KDP.md).
+
+## Three commands worth knowing
+
+```bash
+ei doctor --ready                      # can this machine make a book now? every gap, with the fix
+ei book create --out ./my-book --resume  # carry on after a crash, a closed laptop or a fixed problem
+ei book create --out ./my-book --resume --approve-spend   # allow the extra budget a stopped run asked for
 ```
 
-Then watch the worker run it: `docker compose -f examples/docker-compose.yml --env-file examples/.env logs -f worker`.
-Stop with `sh examples/down.sh --volumes`.
+`ei book create` exits `0` when the book is written, `1` when the run failed (what it made is kept), `2` when
+it could not start, and `3` when it stopped to ask for more budget.
+
+## Let another AI drive it
+
+Claude Code, or any agent with a shell, can run all of this for you. The shortest route:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/adammatthewsteinberger/engineering-influence/main/install.sh | sh -s -- --with-claude-skill
+```
+
+That adds a skill to `~/.claude/skills/`. Then say: *"Use engineering-influence to write a non-fiction book
+about indoor herbs. My author profile is at ~/.config/engineering-influence/author.toml and the budget is 5
+dollars."* The agent checks the machine, starts the run in the background, reads the exit code, and asks you
+before it approves any extra spend.
+[Driving it from an agent, step by step](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/AGENTS_DRIVING.md).
 
 ## Choose your interface
 
+One controller layer, reached six ways.
+
 | You are… | Use | Start here |
 |---|---|---|
-| Calling from any language | REST API | [`examples/api/`](examples/api) (Python `requests`, `curl`) |
-| Writing Python | SDK, sync or async | [`examples/sdk/`](examples/sdk) |
-| Wiring an AI host or agent | MCP server (stdio, `ei serve mcp`) | [`examples/mcp/`](examples/mcp) |
-| At a terminal | `ei` CLI | [`examples/cli/run.sh`](examples/cli/run.sh) |
-| Receiving events | Signed webhooks | [`examples/webhooks/`](examples/webhooks) |
-| Operating it | Health, metrics, logs | [`examples/observability/`](examples/observability) |
+| At a terminal, wanting a book | `ei book create` | The two commands above |
+| An AI agent with a shell | The CLI and the skill | [docs/AGENTS_DRIVING.md](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/AGENTS_DRIVING.md) |
+| Calling from any language | REST API | [`examples/api/`](https://github.com/adammatthewsteinberger/engineering-influence/tree/main/examples/api) |
+| Writing Python | SDK, sync or async | [`examples/sdk/`](https://github.com/adammatthewsteinberger/engineering-influence/tree/main/examples/sdk) |
+| Wiring an AI host to a running stack | MCP server (stdio, `ei serve mcp`) | [`examples/mcp/`](https://github.com/adammatthewsteinberger/engineering-influence/tree/main/examples/mcp) |
+| Receiving events | Signed webhooks | [`examples/webhooks/`](https://github.com/adammatthewsteinberger/engineering-influence/tree/main/examples/webhooks) |
+| Operating it | Health, metrics, logs | [`examples/observability/`](https://github.com/adammatthewsteinberger/engineering-influence/tree/main/examples/observability) |
 
-Install the package without the repository: `pip install "engineering-influence[api,runtime]"`
-(pre-release; PyPI publication is not enabled yet, so use the
-[GitHub release](https://github.com/adammatthewsteinberger/engineering-influence/releases) assets).
-Optional extras: `api`, `webhooks`, `runtime`, `mcp`, `publishing` (and `test` and `dev` for contributors).
+The REST API, the SDK, the MCP server and the webhooks need the stack (a database, a broker and a worker):
+`sh examples/up.sh` starts one with generated credentials
+([Getting started](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/GETTING_STARTED.md#run-the-stack)).
+`ei book create` needs none of that.
+
+Prefer to install by hand? `uv tool install "engineering-influence[runtime,publishing,mcp] @ git+https://github.com/adammatthewsteinberger/engineering-influence"`
+installs `ei` alone. It is not on PyPI yet. The extras are `api`, `webhooks`, `runtime`, `mcp` and `publishing`
+(and `test` and `dev` for contributors).
 
 ## Documentation
 
 | Read | For |
 |---|---|
-| [docs/BOOKS_AND_KDP.md](docs/BOOKS_AND_KDP.md) | What a finished book package is, what is built and what is not |
-| [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) | Install, run the stack, your first pipeline |
-| [docs/INTERACTIONS.md](docs/INTERACTIONS.md) | Reference for the REST API, SDK, MCP tool, CLI and webhooks |
-| [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Every environment variable, security setting and operational limit |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Layers, request flow, the worker, and the extension points |
-| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Symptoms, causes and fixes |
-| [docs/TESTING.md](docs/TESTING.md) | The gates CI enforces and how to run them |
-| [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) | What is promised to callers, and the snapshots that catch a change to it |
-| [docs/EVALUATION.md](docs/EVALUATION.md) | `ei evaluate`: the paid evaluation that measures the 1.0 quality and cost bars |
-| [docs/RELEASING.md](docs/RELEASING.md) | Cutting and verifying a release |
-| [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) | What is protected, from whom, and what is not |
-| [docs/NOVELS.md](docs/NOVELS.md) | The novel stages, from brief to a built book |
-| [docs/PROMPTS.md](docs/PROMPTS.md) | The prompt templates, their versions and the lock |
-| [docs/LOCAL_MODEL.md](docs/LOCAL_MODEL.md) | The free local model the worker uses by default |
-| [docs/MODEL_PROFILES.md](docs/MODEL_PROFILES.md), [docs/MODEL_CATALOG.md](docs/MODEL_CATALOG.md), [docs/MODEL_CALLS.md](docs/MODEL_CALLS.md) | Choosing, pricing and calling a model |
-| [docs/LIVE_SMOKE_TEST.md](docs/LIVE_SMOKE_TEST.md) | The capped test against a real model |
-| [docs/RESEARCH.md](docs/RESEARCH.md), [docs/TOOL_LOCK.md](docs/TOOL_LOCK.md) | Web search and fetch for the research stage, and the tool lock |
-| [docs/SKILLS.md](docs/SKILLS.md), [docs/PLUGINS.md](docs/PLUGINS.md) | Skills and plugin bundles |
-| [docs/WORKER_IMAGE.md](docs/WORKER_IMAGE.md) | The worker image and the TeX toolchain |
-| [docs/adr/](docs/adr) | Architecture decisions |
-| [CHANGELOG.md](CHANGELOG.md) | What changed |
+| [Getting started](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/GETTING_STARTED.md) | Install, check, write your first book, then run the stack |
+| [Driving it from an agent](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/AGENTS_DRIVING.md) | Claude Code or another LLM as the driver |
+| [Books and KDP](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/BOOKS_AND_KDP.md) | What a finished package is, what is built and what is not |
+| [Novels](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/NOVELS.md) | The novel stages, from brief to a built book |
+| [Interfaces](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/INTERACTIONS.md) | Reference for the REST API, SDK, MCP tools, CLI and webhooks |
+| [Configuration](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/CONFIGURATION.md) | Every environment variable, security setting and limit |
+| [The local model](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/LOCAL_MODEL.md) | The free model that writes by default |
+| [Model profiles](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/MODEL_PROFILES.md), [catalog](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/MODEL_CATALOG.md), [calls](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/MODEL_CALLS.md) | Choosing, pricing and calling a model you pay for |
+| [Research](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/RESEARCH.md), [tool lock](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/TOOL_LOCK.md) | Web search for the research stage, and approving tool servers |
+| [Skills](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/SKILLS.md), [plugins](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/PLUGINS.md), [prompts](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/PROMPTS.md) | Adding guidance to a stage, and how the prompts are versioned |
+| [Architecture](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/ARCHITECTURE.md) | Layers, request flow, the worker and the extension points |
+| [Threat model](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/THREAT_MODEL.md) | What is protected, from whom, and what is not |
+| [Evaluation](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/EVALUATION.md), [live smoke test](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/LIVE_SMOKE_TEST.md) | The paid runs that measure quality and cost |
+| [Worker image](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/WORKER_IMAGE.md) | The container and the TeX toolchain |
+| [Troubleshooting](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/TROUBLESHOOTING.md) | Symptoms, causes and fixes |
+| [Testing](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/TESTING.md), [compatibility](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/COMPATIBILITY.md), [releasing](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/RELEASING.md) | The gates, what is promised to callers, and cutting a release |
+| [How these documents are written](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/STYLE.md) | The page pattern, and who the Professor and Daniel are |
+| [Decision records](https://github.com/adammatthewsteinberger/engineering-influence/tree/main/docs/adr), [changelog](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/CHANGELOG.md) | Why it is built this way, and what changed |
 
 ## Limitations
 
-Read these before you depend on it:
+Read these before you depend on it.
 
-- The writing is built but unproven: it has run only against scripted servers, never a live provider. The placeholder runner and gate (`DeterministicRunner`, `NonEmptyArtifactGate`) apply only to the `/v1/pipelines` stage pipeline and to `EI_STAGE_EXECUTOR=deterministic`.
-- Delivery is at least once: a crash between the ledger write and the acknowledgement re-runs a stage.
-- There is no endpoint to resolve a pipeline's human gate (a run's spend consent is answered with `ei run grant` and `deny`, `POST /v1/runs/{id}/grant` and `deny`, or the MCP tools). A book run can be read with `GET /v1/runs/{id}` and `ei run status`, but pipeline progress is still only in the ledger table and the logs.
-- No service emits webhooks yet, although signing, the outbox and a verifier exist.
-- `ei pipeline start` and the example MCP server (`examples/mcp/server.py`) use in-memory adapters; they plan work but do not reach the stack. `ei serve mcp` does.
-- The schema is managed by `ei db upgrade`; run it before starting a new release. A database created before the outbox gained its `dead_at` column must be recreated, because the baseline migration does not add it.
+- **The writing is unproven.** It has run only against scripted servers, never a live model. No real model has
+  been measured against the quality bar.
+- **A person must read the book.** Checks catch a broken file, not a dull chapter or a wrong fact. There is no
+  claim checking.
+- **Nothing uploads to KDP.** KDP has no publishing API. You upload the files and paste the listing.
+- **The first run needs a big download**: about 13 GB for the model and several GB for TeX.
+- **Novels get no editing passes** yet; a novel is built from its draft.
+- **On the stack**, delivery is at least once (a crash can re-run a stage), no service emits webhooks yet
+  although signing and a verifier exist, and the example worker writes placeholder text until you point it at a
+  model. `ei pipeline start` and the example MCP server only plan work; `ei serve mcp` reaches the stack.
+- **The schema is managed by `ei db upgrade`**; run it before starting a new release on the stack.
 
-Details and the full list: [docs/CONFIGURATION.md](docs/CONFIGURATION.md#limits-to-know).
+The full list: [Configuration](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/CONFIGURATION.md).
 
 ## About the author and the vibey ecosystem
 
@@ -102,7 +158,7 @@ Details and the full list: [docs/CONFIGURATION.md](docs/CONFIGURATION.md#limits-
 
 ### Who this is for
 
-Per [ADR 0002](docs/adr/0002-audience-priority-and-sovereign-agent-doctrine.md), engineering-influence and the vibey ecosystem prioritize audiences in this strict order:
+Per [ADR 0002](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/adr/0002-audience-priority-and-sovereign-agent-doctrine.md), engineering-influence and the vibey ecosystem prioritize audiences in this strict order:
 
 1. **FOSS developers.** Free and open-source engineers building and running autonomous tools with no subscriptions or telemetry walls.
 2. **Freelancers.** Independent operators and consultants delivering Principal-grade fixed-scope client projects with sovereign tools.
@@ -113,9 +169,9 @@ Per [ADR 0002](docs/adr/0002-audience-priority-and-sovereign-agent-doctrine.md),
 
 ## Contributing, security, support
 
-[CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](SECURITY.md) (report privately) ·
-[SUPPORT.md](SUPPORT.md) · [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+[CONTRIBUTING.md](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/CONTRIBUTING.md) · [SECURITY.md](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/SECURITY.md) (report privately) ·
+[SUPPORT.md](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/SUPPORT.md) · [CODE_OF_CONDUCT.md](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/CODE_OF_CONDUCT.md)
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/LICENSE).
