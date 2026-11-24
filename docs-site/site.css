@@ -1,0 +1,9 @@
+/* The few rules this site adds to the Vibey stylesheet: the teaching scenes, and a readable measure. */
+.col-md-9 { max-width: 62rem; }
+blockquote { margin: 1.5rem 0; padding: .25rem 1.25rem; border-left: .25rem solid var(--bs-primary, #4c6ef5); }
+blockquote p { margin: .6rem 0; }
+blockquote strong:first-child { letter-spacing: .01em; }
+table { display: block; overflow-x: auto; }
+code { word-break: break-word; }
+.headerlink { opacity: 0; margin-left: .35rem; text-decoration: none; }
+:is(h1, h2, h3, h4, h5, h6):hover > .headerlink { opacity: .55; }

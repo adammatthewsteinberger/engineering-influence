@@ -131,6 +131,7 @@ installs `ei` alone. It is not on PyPI yet. The extras are `api`, `webhooks`, `r
 | [Worker image](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/WORKER_IMAGE.md) | The container and the TeX toolchain |
 | [Troubleshooting](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/TROUBLESHOOTING.md) | Symptoms, causes and fixes |
 | [Testing](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/TESTING.md), [compatibility](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/COMPATIBILITY.md), [releasing](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/RELEASING.md) | The gates, what is promised to callers, and cutting a release |
+| [The documentation site](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/DOCUMENTATION_SITE.md) | How these pages become a website, and how to publish it |
 | [How these documents are written](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/STYLE.md) | The page pattern, and who the Professor and Daniel are |
 | [Decision records](https://github.com/adammatthewsteinberger/engineering-influence/tree/main/docs/adr), [changelog](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/CHANGELOG.md) | Why it is built this way, and what changed |
 

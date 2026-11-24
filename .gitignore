@@ -11,3 +11,5 @@ build/
 .mypy_cache/
 .ruff_cache/
 htmlcov/
+.site-src/
+site/

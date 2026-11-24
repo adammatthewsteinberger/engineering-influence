@@ -131,4 +131,5 @@ measuring subprocesses.
 
 Examples in `examples/` are run by the test suite and must behave like real use: shell for the CLI,
 `requests` or `curl` for HTTP, a real MCP client for MCP. Keep [docs/INTERACTIONS.md](docs/INTERACTIONS.md)
-and the README in step with any interface change.
+and the README in step with any interface change. The documents are also published as a website from the same
+Markdown ([docs/DOCUMENTATION_SITE.md](docs/DOCUMENTATION_SITE.md)); a link that goes nowhere fails the docs check.
