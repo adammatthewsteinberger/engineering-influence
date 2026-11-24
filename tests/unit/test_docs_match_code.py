@@ -104,6 +104,14 @@ LAYERED = (
     "docs/NOVELS.md",
     "docs/PROMPTS.md",
     "docs/RESEARCH.md",
+    "CONTRIBUTING.md",
+    "docs/PLUGINS.md",
+    "docs/RELEASING.md",
+    "docs/SKILLS.md",
+    "docs/TESTING.md",
+    "docs/TOOL_LOCK.md",
+    "docs/TROUBLESHOOTING.md",
+    "docs/WORKER_IMAGE.md",
 )
 PLAIN = (
     "AGENTS.md",
@@ -120,17 +128,8 @@ PLAIN = (
     "packages/engineering-influence-sdk/README.md",
     "examples/claude-code/engineering-influence/SKILL.md",
 )
-# Pages still to be rewritten to the pattern. This list only ever gets shorter.
-PENDING = (
-    "CONTRIBUTING.md",
-    "docs/PLUGINS.md",
-    "docs/RELEASING.md",
-    "docs/SKILLS.md",
-    "docs/TESTING.md",
-    "docs/TOOL_LOCK.md",
-    "docs/TROUBLESHOOTING.md",
-    "docs/WORKER_IMAGE.md",
-)
+# Pages still to be rewritten to the pattern. Empty: every teaching page now follows it.
+PENDING: tuple[str, ...] = ()
 SPEAKERS = ("Daniel", "Professor Feynman")
 
 

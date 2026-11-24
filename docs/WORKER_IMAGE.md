@@ -1,5 +1,31 @@
 # The worker image and the TeX toolchain
 
+**BLUF:** There are two images. The slim `runtime` image runs the API and the worker. The `worker-tex` image adds
+the TeX toolchain a book's last stage, `build`, needs to make the PDF and EPUB. A slim worker still writes every
+chapter; only `build` fails, naming the missing tool, and what the earlier stages wrote stays in the run.
+
+## A kitchen with no oven
+
+> **Daniel:** I started the stack, a run went through nine stages, and then it failed at `build`. Everything
+> before it looked fine. What did I do wrong?
+>
+> **Professor Feynman:** Imagine a kitchen that can chop, mix and season, but has no oven. What can it make?
+>
+> **Daniel:** Everything up to the baking. And then it stops.
+>
+> **Professor Feynman:** That is the slim worker. It does every writing stage. The `build` stage typesets the book
+> with LaTeX and packs an EPUB, which needs the tools in the TeX image. Without them it fails with `BUILD_FAILED`
+> and names the missing tool, and the earlier work stays in the run.
+>
+> **Daniel:** So I lose nothing, I just cannot finish.
+>
+> **Professor Feynman:** You lose nothing. Switch the worker to the `worker-tex` image and run the last stage
+> again. One limit: the TeX image is about 2.9 GB, and only a short test book has been built in it. A full-length
+> book has not.
+>
+> **Daniel:** Slim for writing, TeX for building, and a failed build does not cost me the chapters.
+
+
 The `Dockerfile` has two images, and `docker build` without a target makes the slim one.
 
 | Target | Command | Size (measured) | For |

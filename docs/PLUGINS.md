@@ -1,5 +1,10 @@
 # Plugins
 
+**BLUF:** A plugin is one reviewed file that bundles skills and the definitions of tool servers, so you can look
+at everything at once, pin it by hash and install it. Installing it starts nothing, contacts nothing, grants
+nothing and enables nothing: it locks the skills (enabled for no stage) and prints the `ei tools add` command for
+each server, which you run on purpose.
+
 A **plugin** is one reviewed file that bundles [skills](SKILLS.md) and the definitions of tool servers
 (MCP servers), so a person can look at everything in it at once, pin it by hash and install it. It is slice 6
 of [ADR 0008](adr/0008-tools-for-the-model.md), built in two parts: **6a**, plugins installed from a file on
@@ -13,6 +18,42 @@ bundle's **skills** (each enabled for no stage) and it **prints** the `ei tools 
 **Status.** Built and tested against fakes and real files: the bundle format, the plugin lock, `ei plugins`.
 No plugin has been used in a run with a live model, and the downloader has only been run against a local test
 server and a scripted address, never the real internet.
+
+## Open the parcel first
+
+> **Daniel:** A plugin from a stranger bundles skills and servers. Installing that sounds like the start of a bad
+> day.
+>
+> **Professor Feynman:** A parcel arrives at your door. Do you put its contents on the shelf before you open it?
+>
+> **Daniel:** No. I open it on the table and look.
+>
+> **Professor Feynman:** `ei plugins show` is the table: it prints every skill's text and every server's command.
+> `ei plugins add` then does only two things. It locks the skills, each enabled for no stage, and it prints the
+> commands for the servers. It does not run them.
+>
+> **Daniel:** So even after `add`, nothing is running and no stage can use anything.
+>
+> **Professor Feynman:** Correct. A run never reads the plugin lock at all. What a run may do lives in the tool
+> lock and the skill lock, and a plugin changes those only when you run `ei tools add` and `ei skills enable`
+> yourself. The picture breaks at the hash: it proves you received the file the index described, not that anyone
+> vetted it.
+>
+> **Daniel:** And the command it prints could do anything its author wrote.
+>
+> **Professor Feynman:** Which is why you read it first. `ei tools add` runs a local server once to look at it.
+>
+> **Daniel:** Show, read, add, then add the tools on purpose. Four doors, and I open each myself.
+
+## Plugins at a glance
+
+| Step | What happens | What does not |
+|---|---|---|
+| `ei plugins show FILE` | Prints every skill's text and every server's command | Nothing is installed |
+| `ei plugins add FILE` | Locks the skills, enabled for no stage; prints the `ei tools add` commands | Nothing is started, granted or enabled |
+| `ei tools add …` (you run it) | Runs the local server once and locks it | Nothing is granted to a stage |
+| `ei tools grant` and `ei skills enable` (you run them) | A stage may now use the tool or see the skill | |
+
 
 ## A plugin file
 

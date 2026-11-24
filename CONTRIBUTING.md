@@ -1,7 +1,44 @@
 # Contributing
 
+**BLUF:** Read the code of conduct, set up with one `uv sync`, and run the gates before you push: ruff, the import
+rules, bandit, types, `pip-audit`, a lock check and the full suite at 100% branch coverage. Code is built in
+layers that only point inward, one class per file, and tests pass fakes instead of patching. This repository holds
+product code only, never an author's manuscripts or profiles.
+
 Thank you for helping. Read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) first; report security
 problems privately through [SECURITY.md](SECURITY.md).
+
+## Why the rules are strict
+
+> **Daniel:** Why one class per file and no patching in tests? It feels like a lot of ceremony for a pull request.
+>
+> **Professor Feynman:** When you walk into a library, how do you find a book?
+>
+> **Daniel:** By where it is shelved. If I know the rule I do not have to search.
+>
+> **Professor Feynman:** Same here. Each rule is a shelving rule that a test enforces, so nobody has to remember
+> it. One class per file means a class is where its name says. Layers that point inward mean a service never
+> imports a database adapter, so swapping the adapter touches one place. And tests pass fakes instead of patching
+> because a patched test passes even when the real wiring is wrong.
+>
+> **Daniel:** So the ceremony is what lets a stranger change the code without breaking something they cannot see.
+>
+> **Professor Feynman:** That is the idea. The limit: rules enforced by a test are only as good as the test, so a
+> new rule needs a test that can fail.
+>
+> **Daniel:** Follow the shelving, run the gates, and give any new rule a test that can fail.
+
+## The rules at a glance
+
+| Rule | How it is enforced |
+|---|---|
+| One class per file, no loose production functions | `tests/architecture/test_architecture.py` |
+| Every class has an interface in a sibling `interfaces/` folder | `tests/architecture` |
+| Layers point inward only | `lint-imports` and the layer matrix in `tests/architecture` |
+| Models import nothing effectful, only models, errors and the standard library | `tests/architecture` |
+| Tests pass fakes, never patch production code | `tests/architecture/test_no_patching.py` |
+| 100% line and branch coverage | `pytest --cov --cov-fail-under=100` |
+
 
 ## Set up
 
