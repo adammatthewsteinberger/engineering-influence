@@ -46,5 +46,13 @@ class AsyncEngineeringInfluenceClientInterface(ABC):
         """Create a project and enqueue its first pipeline stage asynchronously."""
 
     @abstractmethod
+    async def get_run(self, run_id: str) -> dict[str, Any]:
+        """A run's summary: its status, stage, budget and the names of the artifacts it has stored."""
+
+    @abstractmethod
+    async def get_artifact(self, run_id: str, name: str) -> bytes:
+        """The bytes of one artifact a run stored, such as ``book/my-book.pdf``."""
+
+    @abstractmethod
     async def close(self) -> None:
         """Close the underlying async HTTP connection pool."""

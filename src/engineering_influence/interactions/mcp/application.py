@@ -1,7 +1,8 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Model Context Protocol interaction over the shared controller."""
 
-from typing import Any
+import base64
+from typing import Any, ClassVar
 
 from engineering_influence.contracts.brief.v1.book_brief_v1 import BookBriefV1
 from engineering_influence.contracts.project_request import ProjectRequest
@@ -9,6 +10,10 @@ from engineering_influence.contracts.run.v1.run_summary_v1 import RunSummaryV1
 from engineering_influence.controllers.interfaces.project_controller_interface import (
     ProjectControllerInterface,
 )
+from engineering_influence.controllers.interfaces.run_controller_interface import (
+    RunControllerInterface,
+)
+from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interactions.mcp.interfaces.application_interface import (
     McpApplicationInterface,
 )
@@ -19,17 +24,26 @@ from engineering_influence.services.interfaces.run_management_interface import (
 
 
 class McpApplication(McpApplicationInterface):
-    """Expose pipeline tools through the official MCP SDK's `MCPServer` (mcp 2.x)."""
+    """Expose pipeline tools through the official MCP SDK's `MCPServer` (mcp 2.x).
+
+    With a run reader it also offers ``get_run`` and ``read_artifact``, so an agent that started a run can see where it
+    is and read what it made. An artifact is returned as text when it is UTF-8 and as base64 when it is not, and one
+    larger than ``MAX_ARTIFACT_BYTES`` is refused (``ARTIFACT_TOO_LARGE``) with the address that downloads any size.
+    """
+
+    MAX_ARTIFACT_BYTES: ClassVar[int] = 1_048_576
 
     def __init__(
         self,
         controller: ProjectControllerInterface,
         creator: CreateRunInterface | None = None,
         manager: RunManagementInterface | None = None,
+        reader: RunControllerInterface | None = None,
     ) -> None:
         self._controller = controller
         self._creator = creator
         self._manager = manager
+        self._reader = reader
 
     def build(self) -> Any:
         """Build a server with a typed `start_pipeline` tool."""
@@ -96,6 +110,32 @@ class McpApplication(McpApplicationInterface):
             def deny_run(run_id: str) -> dict[str, Any]:
                 """Refuse a run's request for more budget; the run parks."""
                 return RunSummaryV1.from_run(manager.deny(run_id), []).model_dump(mode="json")
+
+        if self._reader is not None:
+            reader = self._reader
+            limit = self.MAX_ARTIFACT_BYTES
+
+            @server.tool()
+            def get_run(run_id: str) -> dict[str, Any]:
+                """A run's summary: its status, stage, budget and the names of the artifacts it has stored."""
+                return reader.summary(run_id).model_dump(mode="json")
+
+            @server.tool()
+            def read_artifact(run_id: str, name: str) -> dict[str, Any]:
+                """One stored artifact of a run, as text when it is UTF-8 and as base64 when it is not."""
+                data = reader.artifact(run_id, name)
+                if len(data) > limit:
+                    raise ApplicationError(
+                        code="ARTIFACT_TOO_LARGE",
+                        message=f"artifact {name!r} is {len(data)} bytes; this tool returns at most {limit}. "
+                        f"Download it from GET /v1/runs/{run_id}/artifacts/{name}",
+                        http_status=413,
+                    )
+                try:
+                    encoding, content = "utf-8", data.decode("utf-8")
+                except UnicodeDecodeError:
+                    encoding, content = "base64", base64.b64encode(data).decode("ascii")
+                return {"name": name, "bytes": len(data), "encoding": encoding, "content": content}
 
         return server
 
