@@ -1,12 +1,11 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """The plugin lock as a TOML file a person can read and review."""
 
-import os
-import tomllib
 from pathlib import Path
 from typing import Any
 
 from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.infrastructure.toml_lock_file import TomlLockFile
 from engineering_influence.interfaces.plugin_lock_store_interface import PluginLockStoreInterface
 from engineering_influence.models.plugin_lock import PluginLock
 from engineering_influence.models.plugin_lock_entry import PluginLockEntry
@@ -30,22 +29,11 @@ class TomlPluginLockStore(PluginLockStoreInterface):
 
     def load(self, path: Path) -> PluginLock | None:
         """The lock at ``path``, or None when there is no file; an ApplicationError when it is unusable."""
-        try:
-            text = path.read_text(encoding="utf-8")
-        except FileNotFoundError:
+        data = TomlLockFile.read(
+            path, table="plugin", version=PluginLock.VERSION, code="PLUGIN_LOCK_INVALID"
+        )
+        if data is None:
             return None
-        except (OSError, UnicodeDecodeError) as error:
-            raise self._invalid(f"cannot read {path}: {type(error).__name__}") from error
-        try:
-            data = tomllib.loads(text)
-        except tomllib.TOMLDecodeError as error:
-            raise self._invalid(f"{path} is not valid TOML: {error}") from error
-        unknown = sorted(set(data) - {"version", "plugin"})
-        if unknown:
-            raise self._invalid(f"{path} has an unknown top-level key {unknown[0]!r}")
-        version = data.get("version")
-        if type(version) is not int or version != PluginLock.VERSION:  # True and 1.0 equal 1
-            raise self._invalid(f"{path} is version {version!r}; this reads {PluginLock.VERSION}")
         entries = data.get("plugin", [])
         if not isinstance(entries, list):
             raise self._invalid(f"{path} has plugin entries that are not a list of tables")
@@ -62,12 +50,7 @@ class TomlPluginLockStore(PluginLockStoreInterface):
         blocks = [self.HEADER, f"version = {PluginLock.VERSION}\n"] + [
             self._block(entry) for entry in entries
         ]
-        temporary = path.with_name(f".{path.name}.tmp")
-        temporary.unlink(missing_ok=True)
-        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
-        with os.fdopen(os.open(temporary, flags, 0o644), "w", encoding="utf-8") as handle:
-            handle.write("\n".join(blocks))
-        os.replace(temporary, path)
+        TomlLockFile.write(path, blocks)
 
     def _entry(self, entry: Any, index: int) -> PluginLockEntry:
         where = (
@@ -113,16 +96,8 @@ class TomlPluginLockStore(PluginLockStoreInterface):
 
     @staticmethod
     def _quote(text: str) -> str:
-        """A TOML basic string: quotes and backslashes escaped, control characters as \\u escapes."""
-        out = []
-        for char in text:
-            if char in '"\\':
-                out.append("\\" + char)
-            elif ord(char) < 0x20 or ord(char) == 0x7F:
-                out.append(f"\\u{ord(char):04x}")
-            else:
-                out.append(char)
-        return '"' + "".join(out) + '"'
+        """A TOML basic string."""
+        return TomlLockFile.quote(text)
 
     @staticmethod
     def _invalid(message: str) -> ApplicationError:
