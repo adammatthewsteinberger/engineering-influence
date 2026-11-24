@@ -16,6 +16,8 @@ from engineering_influence.models.book_brief import BookBrief
 from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget import Budget
+from engineering_influence.models.budget_plan import BudgetPlan
+from engineering_influence.models.cost_estimate import CostEstimate
 from engineering_influence.models.export_summary import ExportSummary
 from engineering_influence.models.quality_issue import QualityIssue
 from engineering_influence.models.run_status import RunStatus
@@ -32,8 +34,9 @@ def run_in(status: RunStatus, **changes: object) -> BookRun:
 
 
 class Creator(LocalBookCreatorInterface):
-    def __init__(self, outcome: BookRun | Exception) -> None:
+    def __init__(self, outcome: BookRun | Exception, plan: BudgetPlan | None = None) -> None:
         self.outcome = outcome
+        self.planned = plan
         self.started: list[BookBrief] = []
         self.resumed: list[bool] = []
         self.exported: list[Path] = []
@@ -43,6 +46,9 @@ class Creator(LocalBookCreatorInterface):
         if isinstance(self.outcome, Exception):
             raise self.outcome
         return self.outcome
+
+    def plan(self, brief: BookBrief) -> BudgetPlan | None:
+        return self.planned
 
     def start(self, brief: BookBrief, progress: Callable[[str], None]) -> BookRun:
         self.started.append(brief)
@@ -62,8 +68,13 @@ class Creator(LocalBookCreatorInterface):
 
 
 class Harness:
-    def __init__(self, outcome: BookRun | Exception, refuse: Exception | None = None) -> None:
-        self.creator = Creator(outcome)
+    def __init__(
+        self,
+        outcome: BookRun | Exception,
+        refuse: Exception | None = None,
+        plan: BudgetPlan | None = None,
+    ) -> None:
+        self.creator = Creator(outcome, plan)
         self.made: list[tuple[Path, Mapping[str, str]]] = []
         self._refuse = refuse
 
@@ -242,3 +253,79 @@ def test_an_error_while_the_run_goes_is_one_line_and_the_creator_is_still_closed
     assert harness.run("bees", *create(tmp_path)) == 2
     assert "error: the model was refused" in capsys.readouterr().err
     assert harness.creator.closed == 1
+
+
+ESTIMATE = CostEstimate(
+    (("brief", 1_000_000, True), ("draft", 3_000_000, True), ("copy_edit", 2_000_000, False))
+)
+
+
+def planned(cap: int) -> BudgetPlan:
+    return BudgetPlan(cap, ESTIMATE)
+
+
+def test_the_expected_cost_is_said_before_the_book_is_started(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    harness = Harness(run_in(RunStatus.COMPLETED), plan=planned(7_000_000))
+    assert harness.run("bees", *create(tmp_path)) == 0
+    out = capsys.readouterr().out
+    assert (
+        "estimate: about 6.00 USD for the whole book (4.00 before editing), against a budget of 7.00: lean"
+        in out
+    )
+    assert "editing passes that run out of money are skipped; the draft is kept" in out
+
+
+def test_a_budget_below_what_the_book_needs_is_refused_before_anything_is_spent(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    harness = Harness(run_in(RunStatus.COMPLETED), plan=planned(3_000_000))
+    assert harness.run("bees", *create(tmp_path, "--budget-usd", "3")) == 2
+    captured = capsys.readouterr()
+    assert "against a budget of 3.00: short" in captured.out
+    assert "Use --budget-usd 9.00 or more, or --ignore-estimate to start anyway" in captured.err
+    assert harness.creator.started == [] and harness.creator.closed == 1
+
+
+def test_a_person_who_knows_better_can_start_a_short_budget_anyway(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    harness = Harness(run_in(RunStatus.COMPLETED), plan=planned(3_000_000))
+    assert harness.run("bees", *create(tmp_path), "--ignore-estimate") == 0
+    out = capsys.readouterr().out
+    assert "short" in out and "the run may stop to ask for more budget" in out
+    assert len(harness.creator.started) == 1
+
+
+@pytest.mark.parametrize(
+    ("cap", "grade", "advice"),
+    [
+        (4_000_000, "tight", "the run may stop to ask for more budget"),
+        (5_000_000, "tight", "the run may stop to ask for more budget"),
+        (9_000_000, "ample", None),
+    ],
+)
+def test_a_tight_budget_warns_and_an_ample_one_says_nothing_more(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], cap: int, grade: str, advice: str | None
+) -> None:
+    harness = Harness(run_in(RunStatus.COMPLETED), plan=planned(cap))
+    assert harness.run("bees", *create(tmp_path)) == 0
+    out = capsys.readouterr().out
+    assert f"{grade}\n" in out
+    assert (advice in out) if advice else ("may stop" not in out and "skipped" not in out)
+
+
+def test_with_no_priced_model_there_is_no_estimate_and_nothing_is_refused(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    harness = Harness(run_in(RunStatus.COMPLETED), plan=None)
+    assert harness.run("bees", *create(tmp_path)) == 0
+    assert "estimate:" not in capsys.readouterr().out
+
+
+def test_resuming_makes_no_estimate(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    (tmp_path / "out.state").mkdir()
+    harness = Harness(run_in(RunStatus.COMPLETED), plan=planned(1))
+    assert harness.run("--out", str(tmp_path / "out"), "--resume") == 0
+    assert "estimate:" not in capsys.readouterr().out

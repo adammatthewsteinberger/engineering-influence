@@ -95,10 +95,15 @@ from engineering_influence.services.content_policy_stage_executor import (
 )
 from engineering_influence.services.context_assembler import ContextAssembler
 from engineering_influence.services.continuity_checker import ContinuityChecker
+from engineering_influence.services.cost_estimator import CostEstimator
+from engineering_influence.services.create_run import CreateRun
 from engineering_influence.services.dash_rewriter import DashRewriter
 from engineering_influence.services.draft_stage_executor import DraftStageExecutor
 from engineering_influence.services.fallback_search_provider import FallbackSearchProvider
 from engineering_influence.services.fetch_url_tool import FetchUrlTool
+from engineering_influence.services.interfaces.cost_estimator_interface import (
+    CostEstimatorInterface,
+)
 from engineering_influence.services.kind_stage_executor import KindStageExecutor
 from engineering_influence.services.local_default_model import LocalDefaultModel
 from engineering_influence.services.lock_stage_guidance import LockStageGuidance
@@ -188,6 +193,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         self._runner: ToolRunner | None = None
         self._fleet: ToolServerFleet | None = None
         self._free = False
+        self._estimator: CostEstimatorInterface | None = None
 
     def build(
         self, artifacts: ArtifactStoreInterface, journal: JournalInterface
@@ -219,6 +225,12 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         profile = self._author_profile()
         revisions = NonfictionRevisionPasses()
         descriptor = model.describe()
+        estimator = CostEstimator(
+            descriptor,
+            {BookKind.NONFICTION: NonfictionRecipes(), BookKind.NOVEL: NovelRecipes()},
+            CreateRun.PLANS,
+        )
+        self._estimator = estimator
         drafter = DraftStageExecutor(
             artifacts,
             prompts,
@@ -331,6 +343,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                     self._book_builder(),
                     ManuscriptProject(artifacts),
                     QualityReport(),
+                    estimator,
                 ),
             },
         )
@@ -372,6 +385,10 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         if self._builder is not None:
             return self._builder
         return TempProjectManuscriptBuilder(self._publisher, strict_release=self.strict_release())
+
+    def estimator(self) -> CostEstimatorInterface | None:
+        """What a book is expected to cost with the model this runtime built, or None when no model is used."""
+        return self._estimator
 
     def strict_release(self) -> bool:
         """Whether ``EI_BUILD_STRICT_RELEASE`` asks the build stage for a strict release (``1``, ``true`` or ``yes``)."""
