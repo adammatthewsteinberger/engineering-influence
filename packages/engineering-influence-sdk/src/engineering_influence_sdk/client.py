@@ -3,6 +3,7 @@
 
 from collections.abc import Mapping
 from typing import Any, cast
+from urllib.parse import quote
 
 import httpx
 
@@ -73,6 +74,20 @@ class EngineeringInfluenceClient(EngineeringInfluenceClientInterface):
         response = self._client.post(f"/v1/runs/{run_id}/cancel")
         response.raise_for_status()
         return cast(dict[str, Any], response.json())
+
+    def get_run(self, run_id: str) -> dict[str, Any]:
+        """A run's summary: its status, stage, budget and the names of the artifacts it has stored."""
+        response = self._client.get(f"/v1/runs/{quote(run_id, safe='')}")
+        response.raise_for_status()
+        return cast(dict[str, Any], response.json())
+
+    def get_artifact(self, run_id: str, name: str) -> bytes:
+        """The bytes of one artifact a run stored, such as ``book/my-book.pdf``."""
+        response = self._client.get(
+            f"/v1/runs/{quote(run_id, safe='')}/artifacts/{quote(name, safe='/')}"
+        )
+        response.raise_for_status()
+        return response.content
 
     def close(self) -> None:
         """Close the underlying HTTP connection pool."""

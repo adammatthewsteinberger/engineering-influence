@@ -93,7 +93,7 @@ Full scripts: [`examples/api/start_pipeline.py`](../examples/api/start_pipeline.
 
 `packages/engineering-influence-sdk` is a thin typed wrapper over `httpx` for the operations the API
 has: starting a pipeline, creating a book run from a brief (`create_run`), and listing, resuming and cancelling runs
-(`list_runs`, `resume_run`, `cancel_run`). It ships in this repository
+(`list_runs`, `resume_run`, `cancel_run`), and reading a run (`get_run`) and the files it stored (`get_artifact`, as bytes). It ships in this repository
 and in each release.
 
 ```python
@@ -111,6 +111,8 @@ run = client.create_run(
         "budget_micro_usd": 5000000,
     }
 )
+status = client.get_run(run["run_id"])  # status, stage, budget and the names of its artifacts
+pdf = client.get_artifact(run["run_id"], "book/my-book.pdf")  # bytes, once the run has built it
 client.close()
 ```
 
@@ -129,6 +131,8 @@ with one tool:
 | `list_runs` | none | every saved run as run summaries (present only with run management) |
 | `resume_run` | `run_id` | the run after un-parking it (present only with run management) |
 | `cancel_run` | `run_id` | the run after cancelling it (present only with run management) |
+| `get_run` | `run_id` | a run's `RunSummaryV1`: status, stage, budget and the names of its stored artifacts (present only when the server is built with a run reader) |
+| `read_artifact` | `run_id`, `name` (such as `book/my-book.pdf`) | `{name, bytes, encoding, content}`: the text when the file is UTF-8, base64 when it is not. A file over 1 MiB is refused (`ARTIFACT_TOO_LARGE`) and the message names the `GET /v1/runs/{id}/artifacts/{name}` address that downloads any size (present with `get_run`) |
 | `create_run` | `brief` (an object: the brief contract v1) | the new run as a `RunSummaryV1`, pending at its first stage. Present only when the server is built with a run creator |
 
 Run it over stdio with [`examples/mcp/server.py`](../examples/mcp/server.py) and point an MCP host at

@@ -3,6 +3,7 @@
 
 from collections.abc import Mapping
 from typing import Any, cast
+from urllib.parse import quote
 
 import httpx
 
@@ -75,6 +76,20 @@ class AsyncEngineeringInfluenceClient(AsyncEngineeringInfluenceClientInterface):
         response = await self._client.post(f"/v1/runs/{run_id}/cancel")
         response.raise_for_status()
         return cast(dict[str, Any], response.json())
+
+    async def get_run(self, run_id: str) -> dict[str, Any]:
+        """A run's summary: its status, stage, budget and the names of the artifacts it has stored."""
+        response = await self._client.get(f"/v1/runs/{quote(run_id, safe='')}")
+        response.raise_for_status()
+        return cast(dict[str, Any], response.json())
+
+    async def get_artifact(self, run_id: str, name: str) -> bytes:
+        """The bytes of one artifact a run stored, such as ``book/my-book.pdf``."""
+        response = await self._client.get(
+            f"/v1/runs/{quote(run_id, safe='')}/artifacts/{quote(name, safe='/')}"
+        )
+        response.raise_for_status()
+        return response.content
 
     async def close(self) -> None:
         """Close the underlying async HTTP connection pool."""

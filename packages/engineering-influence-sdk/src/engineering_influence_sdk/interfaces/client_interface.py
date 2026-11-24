@@ -46,5 +46,13 @@ class EngineeringInfluenceClientInterface(ABC):
         """Stop a run for good."""
 
     @abstractmethod
+    def get_run(self, run_id: str) -> dict[str, Any]:
+        """A run's summary: its status, stage, budget and the names of the artifacts it has stored."""
+
+    @abstractmethod
+    def get_artifact(self, run_id: str, name: str) -> bytes:
+        """The bytes of one artifact a run stored, such as ``book/my-book.pdf``."""
+
+    @abstractmethod
     def close(self) -> None:
         """Close the underlying HTTP connection pool."""
