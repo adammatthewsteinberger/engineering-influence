@@ -167,3 +167,14 @@ def test_a_request_with_no_client_address_is_still_guarded() -> None:
     scope = {"type": "http", "headers": [(b"authorization", f"Bearer {KEY}".encode())]}
 
     guard(Request(scope))  # no client in scope: falls back to a shared "unknown" bucket
+
+
+def test_a_stage_that_does_not_exist_is_a_422_that_names_the_real_ones_not_a_500() -> None:
+    response = client().post(
+        "/v1/pipelines", json={**PROJECT, "stages": ["bogus"]}, headers={"X-API-Key": KEY}
+    )
+
+    assert response.status_code == 422
+    (problem,) = response.json()["detail"]
+    assert problem["loc"] == ["body", "stages"]
+    assert "unknown stage 'bogus': use one of thesis, book" in problem["msg"]

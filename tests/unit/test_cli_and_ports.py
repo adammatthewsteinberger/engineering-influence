@@ -66,3 +66,36 @@ def test_abstract_service_body_is_fail_closed() -> None:
 
     with pytest.raises(NotImplementedError):
         ServiceProbe().start(object())
+
+
+def start(*extra: str) -> list[str]:
+    return ["pipeline", "start", "--slug", "demo", "--title", "Demo", "--postulate", "p", *extra]
+
+
+def test_a_stage_that_does_not_exist_is_a_usage_error_not_a_traceback(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    with pytest.raises(SystemExit) as stopped:
+        CliRuntime().build().run(start("--stage", "bogus"))
+
+    assert stopped.value.code == 2
+    assert "invalid choice: 'bogus'" in capsys.readouterr().err
+
+
+def test_every_real_stage_can_be_asked_for(capsys: pytest.CaptureFixture[str]) -> None:
+    assert CliRuntime().build().run(start("--stage", "thesis", "--stage", "publish")) == 0
+    assert '"project_slug": "demo"' in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(("flag", "where"), [("--slug", "slug"), ("--title", "title")])
+def test_a_blank_value_is_one_line_on_stderr_and_exit_2_not_a_traceback(
+    capsys: pytest.CaptureFixture[str], flag: str, where: str
+) -> None:
+    arguments = ["pipeline", "start", "--slug", "demo", "--title", "Demo", "--postulate", "p"]
+    arguments[arguments.index(flag) + 1] = ""
+
+    assert CliRuntime().build().run(arguments) == 2
+
+    captured = capsys.readouterr()
+    assert captured.err == f"error: {where}: String should have at least 1 character\n"
+    assert captured.out == ""

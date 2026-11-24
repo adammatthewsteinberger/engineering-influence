@@ -926,7 +926,16 @@
               "type": null
             },
             {
-              "choices": null,
+              "choices": [
+                "book",
+                "distribution",
+                "hub",
+                "novel",
+                "publish",
+                "screenplay",
+                "spokes",
+                "thesis"
+              ],
               "default": null,
               "dest": "stage",
               "flags": [

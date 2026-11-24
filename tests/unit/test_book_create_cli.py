@@ -329,3 +329,84 @@ def test_resuming_makes_no_estimate(tmp_path: Path, capsys: pytest.CaptureFixtur
     harness = Harness(run_in(RunStatus.COMPLETED), plan=planned(1))
     assert harness.run("--out", str(tmp_path / "out"), "--resume") == 0
     assert "estimate:" not in capsys.readouterr().out
+
+
+# ------------------------------------------------------------------------------ --out is checked first
+def holding_a_file(folder: Path) -> Path:
+    folder.mkdir(parents=True)
+    (folder / "notes.txt").write_text("mine")
+    return folder
+
+
+def test_an_out_folder_that_holds_something_is_refused_before_anything_is_made(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    out = holding_a_file(tmp_path / "out")
+    harness = Harness(run_in(RunStatus.COMPLETED))
+
+    assert harness.run("bees", *create(tmp_path)) == 2
+
+    assert harness.made == [] and harness.creator.started == []
+    assert capsys.readouterr().err == (
+        f"error: {out} already exists and is not an empty folder; choose a new or empty --out\n"
+    )
+    assert (out / "notes.txt").read_text() == "mine"
+
+
+def test_an_out_that_is_a_file_or_a_link_is_refused_the_same_way(tmp_path: Path) -> None:
+    (tmp_path / "out").write_text("a file")
+    assert Harness(run_in(RunStatus.COMPLETED)).run("bees", *create(tmp_path)) == 2
+
+    (tmp_path / "out").unlink()
+    (tmp_path / "elsewhere").mkdir()
+    (tmp_path / "out").symlink_to(tmp_path / "elsewhere")
+    harness = Harness(run_in(RunStatus.COMPLETED))
+    assert harness.run("bees", *create(tmp_path)) == 2
+    assert harness.made == []
+
+
+def test_an_empty_out_folder_that_already_exists_is_fine(tmp_path: Path) -> None:
+    (tmp_path / "out").mkdir()
+    harness = Harness(run_in(RunStatus.COMPLETED))
+
+    assert harness.run("bees", *create(tmp_path)) == 0
+    assert harness.creator.exported == [tmp_path / "out"]
+
+
+def test_resuming_into_a_folder_that_holds_an_earlier_export_says_how_to_keep_the_run(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    out = holding_a_file(tmp_path / "out")
+    state = tmp_path / "out.state"
+    state.mkdir()
+    harness = Harness(run_in(RunStatus.COMPLETED))
+
+    assert harness.run("--out", str(out), "--resume") == 2
+
+    assert harness.made == [] and harness.creator.resumed == []
+    assert capsys.readouterr().err == (
+        f"error: {out} already exists and is not an empty folder; the run is safe in {state}: "
+        f"continue it into a new folder with --out NEW_FOLDER --state-dir {state} --resume\n"
+    )
+
+
+def test_a_run_can_be_continued_into_a_new_folder_from_its_old_state(tmp_path: Path) -> None:
+    holding_a_file(tmp_path / "out")
+    state = tmp_path / "out.state"
+    state.mkdir()
+    harness = Harness(run_in(RunStatus.COMPLETED))
+
+    code = harness.run("--out", str(tmp_path / "new"), "--state-dir", str(state), "--resume")
+
+    assert code == 0
+    assert harness.made[0][0] == state and harness.creator.exported == [tmp_path / "new"]
+
+
+def test_a_run_that_already_exists_is_reported_before_the_out_folder_is(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    holding_a_file(tmp_path / "out")
+    (tmp_path / "out.state").mkdir()
+
+    assert Harness(run_in(RunStatus.COMPLETED)).run("bees", *create(tmp_path)) == 2
+    assert "already holds a run; add --resume" in capsys.readouterr().err

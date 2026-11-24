@@ -3,6 +3,9 @@
 
 import argparse
 import json
+import sys
+
+from pydantic import ValidationError
 
 from engineering_influence import __version__
 from engineering_influence.contracts.project_request import ProjectRequest
@@ -30,6 +33,7 @@ from engineering_influence.interactions.cli.interfaces.skills_cli_interface impo
     SkillsCliInterface,
 )
 from engineering_influence.interactions.cli.interfaces.tools_cli_interface import ToolsCliInterface
+from engineering_influence.models.pipeline_stage import PipelineStage
 
 
 class CliApplication(CliApplicationInterface):
@@ -77,7 +81,9 @@ class CliApplication(CliApplicationInterface):
         start.add_argument("--slug", required=True)
         start.add_argument("--title", required=True)
         start.add_argument("--postulate", action="append", required=True)
-        start.add_argument("--stage", action="append")
+        start.add_argument(
+            "--stage", action="append", choices=[stage.value for stage in PipelineStage]
+        )
         self._book_cli.register(subparsers)
         self._serve_cli.register(subparsers)
         self._db_cli.register(subparsers)
@@ -114,12 +120,18 @@ class CliApplication(CliApplicationInterface):
         if arguments.command == "evaluate":
             return self._evaluate_cli.run(arguments)
         if arguments.command == "pipeline" and arguments.pipeline_command == "start":
-            request = ProjectRequest(
-                slug=arguments.slug,
-                title=arguments.title,
-                postulates=tuple(arguments.postulate),
-                stages=tuple(arguments.stage or ["thesis"]),
-            )
+            try:
+                request = ProjectRequest(
+                    slug=arguments.slug,
+                    title=arguments.title,
+                    postulates=tuple(arguments.postulate),
+                    stages=tuple(arguments.stage or ["thesis"]),
+                )
+            except ValidationError as error:
+                for problem in error.errors():
+                    where = ".".join(str(part) for part in problem["loc"])
+                    print(f"error: {where}: {problem['msg']}", file=sys.stderr)
+                return 2
             response = self._controller.start(request)
             print(json.dumps(response.model_dump(), sort_keys=True))
         return 0
