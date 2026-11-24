@@ -29,6 +29,9 @@ class McpApplication(McpApplicationInterface):
     With a run reader it also offers ``get_run`` and ``read_artifact``, so an agent that started a run can see where it
     is and read what it made. An artifact is returned as text when it is UTF-8 and as base64 when it is not, and one
     larger than ``MAX_ARTIFACT_BYTES`` is refused (``ARTIFACT_TOO_LARGE``) with the address that downloads any size.
+
+    ``grant_run`` and ``deny_run`` spend or withhold the person's money, so a server built with ``allow_spend=False``
+    does not offer them: an agent can start a run and read it, but only a person can give it more budget.
     """
 
     MAX_ARTIFACT_BYTES: ClassVar[int] = 1_048_576
@@ -39,11 +42,13 @@ class McpApplication(McpApplicationInterface):
         creator: CreateRunInterface | None = None,
         manager: RunManagementInterface | None = None,
         reader: RunControllerInterface | None = None,
+        allow_spend: bool = True,
     ) -> None:
         self._controller = controller
         self._creator = creator
         self._manager = manager
         self._reader = reader
+        self._allow_spend = allow_spend
 
     def build(self) -> Any:
         """Build a server with a typed `start_pipeline` tool."""
@@ -99,17 +104,19 @@ class McpApplication(McpApplicationInterface):
                 """Stop a run for good."""
                 return RunSummaryV1.from_run(manager.cancel(run_id), []).model_dump(mode="json")
 
-            @server.tool()
-            def grant_run(run_id: str, micro_usd: int | None = None) -> dict[str, Any]:
-                """Give a run more budget and continue it: the amount it asked for, or micro_usd for a parked run."""
-                return RunSummaryV1.from_run(manager.grant(run_id, micro_usd), []).model_dump(
-                    mode="json"
-                )
+            if self._allow_spend:
 
-            @server.tool()
-            def deny_run(run_id: str) -> dict[str, Any]:
-                """Refuse a run's request for more budget; the run parks."""
-                return RunSummaryV1.from_run(manager.deny(run_id), []).model_dump(mode="json")
+                @server.tool()
+                def grant_run(run_id: str, micro_usd: int | None = None) -> dict[str, Any]:
+                    """Give a run more budget and continue it: the amount it asked for, or micro_usd for a parked run."""
+                    return RunSummaryV1.from_run(manager.grant(run_id, micro_usd), []).model_dump(
+                        mode="json"
+                    )
+
+                @server.tool()
+                def deny_run(run_id: str) -> dict[str, Any]:
+                    """Refuse a run's request for more budget; the run parks."""
+                    return RunSummaryV1.from_run(manager.deny(run_id), []).model_dump(mode="json")
 
         if self._reader is not None:
             reader = self._reader

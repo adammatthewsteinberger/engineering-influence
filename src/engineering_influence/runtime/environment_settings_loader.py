@@ -16,6 +16,9 @@ _LEVELS = frozenset({"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"})
 class EnvironmentSettingsLoader(EnvironmentSettingsLoaderInterface):
     """``EI_DATABASE_URL`` and ``EI_RABBITMQ_URL`` are required; the rest have safe defaults.
 
+    ``EI_MCP_ALLOW_SPEND`` (``1``, ``true`` or ``yes``) lets the MCP server grant and deny a run's budget requests; off by
+    default, so an agent cannot spend more than a run's cap.
+
     The API binds to loopback unless ``EI_HOST`` says otherwise, so a bare run is never
     reachable from the network by accident.
     """
@@ -40,6 +43,7 @@ class EnvironmentSettingsLoader(EnvironmentSettingsLoaderInterface):
             port=self._port(),
             rate_burst=self._positive("EI_RATE_BURST", 30.0),
             rate_per_second=self._positive("EI_RATE_PER_SECOND", 10.0),
+            mcp_allow_spend=self._text("EI_MCP_ALLOW_SPEND", "").lower() in ("1", "true", "yes"),
         )
 
     def _text(self, name: str, default: str) -> str:

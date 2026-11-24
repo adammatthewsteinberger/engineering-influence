@@ -122,8 +122,23 @@ Any non-2xx answer raises `httpx.HTTPStatusError`; the API's error document is i
 
 ## MCP server
 
+`ei serve mcp` runs the stack's MCP server over stdio, for an MCP host (Claude Desktop, an agent runtime) to start as a child
+process. It needs `EI_DATABASE_URL` and `EI_RABBITMQ_URL` like the API (and a migrated database: `ei db upgrade`), offers the
+same runs the REST API does, and needs no API key because the host that starts it already holds the stack's credentials. Standard
+output carries the protocol, so logs (JSON) go to standard error only. A host entry looks like:
+
+```json
+{"mcpServers": {"engineering-influence": {"command": "ei", "args": ["serve", "mcp"],
+  "env": {"EI_DATABASE_URL": "postgresql+psycopg://...", "EI_RABBITMQ_URL": "amqp://..."}}}}
+```
+
+**The server does not offer `grant_run` or `deny_run` unless the operator sets `EI_MCP_ALLOW_SPEND=1`.** Granting a run budget is
+the person's decision, and an agent that could raise its own run's cap would have no cap. Without the setting an agent can
+start a run, watch it, resume or cancel it and read what it made; a run that needs more budget shows as `awaiting_consent` in
+`get_run`, and the person answers it with `ei run grant`.
+
 `McpApplication(controller).build()` returns an `MCPServer` (from the official `mcp` 2.x SDK)
-with one tool:
+with one tool when built bare, and the rest when it is given the services:
 
 | Tool | Arguments | Returns |
 |---|---|---|
@@ -135,10 +150,9 @@ with one tool:
 | `read_artifact` | `run_id`, `name` (such as `book/my-book.pdf`) | `{name, bytes, encoding, content}`: the text when the file is UTF-8, base64 when it is not. A file over 1 MiB is refused (`ARTIFACT_TOO_LARGE`) and the message names the `GET /v1/runs/{id}/artifacts/{name}` address that downloads any size (present with `get_run`) |
 | `create_run` | `brief` (an object: the brief contract v1) | the new run as a `RunSummaryV1`, pending at its first stage. Present only when the server is built with a run creator |
 
-Run it over stdio with [`examples/mcp/server.py`](../examples/mcp/server.py) and point an MCP host at
-that command (the file shows a Claude Desktop entry). [`examples/mcp/client.py`](../examples/mcp/client.py)
-is a client that spawns it, lists the tools and calls one. The server is a local process: it
-is not authenticated and the example uses in-memory adapters, so do not expose it on a network.
+[`examples/mcp/server.py`](../examples/mcp/server.py) is the bare server over in-memory adapters, for trying the tool shapes
+without a stack, and [`examples/mcp/client.py`](../examples/mcp/client.py) is a client that spawns it, lists the tools and calls one.
+The server is a local process: it is not authenticated, so do not expose it on a network.
 
 ## CLI
 

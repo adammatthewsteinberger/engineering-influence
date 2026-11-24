@@ -21,6 +21,7 @@ class AppSettings(AppSettingsInterface):
     port: int = 8000
     rate_burst: float = 30.0
     rate_per_second: float = 10.0
+    mcp_allow_spend: bool = False
 
     def __repr__(self) -> str:
         return (

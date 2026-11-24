@@ -125,6 +125,7 @@ never prints a traceback, which could carry a connection string.
 | `EI_HOST`, `EI_PORT` | API | Default `127.0.0.1` and `8000`. A bare run is never reachable from the network. |
 | `EI_LOG_LEVEL` | both | `DEBUG` to `CRITICAL`. Default `INFO`. |
 | `EI_RATE_BURST`, `EI_RATE_PER_SECOND` | API | Token-bucket limits, default 30 and 10. |
+| `EI_MCP_ALLOW_SPEND` | MCP server | `1`, `true` or `yes` lets `ei serve mcp` offer `grant_run` and `deny_run`, so an agent can answer a run's request for more budget. Off by default: an agent can then start, watch, resume, cancel and read runs, but cannot raise a run's cap. |
 
 ```bash
 cp examples/.env.example examples/.env     # fill in the three blank values
