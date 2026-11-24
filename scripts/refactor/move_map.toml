@@ -11679,9 +11679,9 @@ interface_style = "port"
 decision = "curated"
 
 [[class]]
-old = "engineering_influence.infrastructure.build.temp_project_manuscript_builder"
+old = "engineering_influence.infrastructure.book_build.temp_project_manuscript_builder"
 name = "TempProjectManuscriptBuilder"
-new = "engineering_influence.infrastructure.build.temp_project_manuscript_builder"
+new = "engineering_influence.infrastructure.book_build.temp_project_manuscript_builder"
 new_name = "TempProjectManuscriptBuilder"
 layer = "infrastructure"
 kind = "plain"

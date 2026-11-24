@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 
 from engineering_influence.errors.application_error import ApplicationError
-from engineering_influence.infrastructure.build.temp_project_manuscript_builder import (
+from engineering_influence.infrastructure.book_build.temp_project_manuscript_builder import (
     TempProjectManuscriptBuilder,
 )
 from engineering_influence.infrastructure.scratch_project import ScratchProject

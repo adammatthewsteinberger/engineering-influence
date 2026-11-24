@@ -15,7 +15,7 @@ from engineering_influence.infrastructure.audit.temp_project_manuscript_auditor 
 from engineering_influence.infrastructure.author.toml_author_profile_loader import (
     TomlAuthorProfileLoader,
 )
-from engineering_influence.infrastructure.build.temp_project_manuscript_builder import (
+from engineering_influence.infrastructure.book_build.temp_project_manuscript_builder import (
     TempProjectManuscriptBuilder,
 )
 from engineering_influence.infrastructure.deterministic_stage_executor import (

@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
-from engineering_influence.infrastructure.build.temp_project_manuscript_builder import (
+from engineering_influence.infrastructure.book_build.temp_project_manuscript_builder import (
     TempProjectManuscriptBuilder,
 )
 from engineering_influence.interfaces.book_publisher_interface import BookPublisherInterface
