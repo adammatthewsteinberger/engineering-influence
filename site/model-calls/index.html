@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://adammatthewsteinberger.github.io/engineering-influence/model-calls/">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Model calls - engineering-influence</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../stylesheets/vibey.css" rel="stylesheet">
+        <link href="../stylesheets/site.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+        <meta name="description" content="BLUF: Every model call goes through two services. CallModel makes one call at most once: it reserves the worst-case cost before sending, and replays a…">
+    <meta property="og:title" content="Model calls - engineering-influence">
+    <meta property="og:description" content="BLUF: Every model call goes through two services. CallModel makes one call at most once: it reserves the worst-case cost before sending, and replays a…">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://adammatthewsteinberger.github.io/engineering-influence/model-calls/">
+    <meta property="og:site_name" content="engineering-influence">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Model calls - engineering-influence">
+    <meta name="twitter:description" content="BLUF: Every model call goes through two services. CallModel makes one call at most once: it reserves the worst-case cost before sending, and replays a…">
+</head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">engineering-influence</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href=".." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Start</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../getting-started/" class="dropdown-item">Getting started</a>
+</li>
+                                    
+<li>
+    <a href="../agents-driving/" class="dropdown-item">Driving it from another AI</a>
+</li>
+                                    
+<li>
+    <a href="../books-and-kdp/" class="dropdown-item">Books and KDP</a>
+</li>
+                                    
+<li>
+    <a href="../novels/" class="dropdown-item">Novels</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Writing books</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../local-model/" class="dropdown-item">The local model</a>
+</li>
+                                    
+<li>
+    <a href="../model-profiles/" class="dropdown-item">Model profiles</a>
+</li>
+                                    
+<li>
+    <a href="../model-catalog/" class="dropdown-item">Model catalog</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Model calls</a>
+</li>
+                                    
+<li>
+    <a href="../research/" class="dropdown-item">Research</a>
+</li>
+                                    
+<li>
+    <a href="../prompts/" class="dropdown-item">Prompts</a>
+</li>
+                                    
+<li>
+    <a href="../skills/" class="dropdown-item">Skills</a>
+</li>
+                                    
+<li>
+    <a href="../plugins/" class="dropdown-item">Plugins</a>
+</li>
+                                    
+<li>
+    <a href="../tool-lock/" class="dropdown-item">Tool lock</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../interactions/" class="dropdown-item">Interfaces</a>
+</li>
+                                    
+<li>
+    <a href="../configuration/" class="dropdown-item">Configuration</a>
+</li>
+                                    
+<li>
+    <a href="../compatibility/" class="dropdown-item">Compatibility</a>
+</li>
+                                    
+<li>
+    <a href="../architecture/" class="dropdown-item">Architecture</a>
+</li>
+                                    
+<li>
+    <a href="../threat-model/" class="dropdown-item">Threat model</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Operating</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../worker-image/" class="dropdown-item">Worker image</a>
+</li>
+                                    
+<li>
+    <a href="../troubleshooting/" class="dropdown-item">Troubleshooting</a>
+</li>
+                                    
+<li>
+    <a href="../releasing/" class="dropdown-item">Releasing</a>
+</li>
+                                    
+<li>
+    <a href="../documentation-site/" class="dropdown-item">Documentation site</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Quality</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../testing/" class="dropdown-item">Testing</a>
+</li>
+                                    
+<li>
+    <a href="../evaluation/" class="dropdown-item">Evaluation</a>
+</li>
+                                    
+<li>
+    <a href="../live-smoke-test/" class="dropdown-item">Live smoke test</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Project</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../contributing/" class="dropdown-item">Contributing</a>
+</li>
+                                    
+<li>
+    <a href="../style/" class="dropdown-item">How these documents are written</a>
+</li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Decision records</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../adr/" class="dropdown-item">Overview</a>
+</li>
+            
+<li>
+    <a href="../adr/0001-vibey-integration-boundary/" class="dropdown-item">ADR 0001: Isolate vibey behind ports</a>
+</li>
+            
+<li>
+    <a href="../adr/0002-audience-priority-and-sovereign-agent-doctrine/" class="dropdown-item">ADR 0002: Audience priority and sovereign agent doctrine</a>
+</li>
+            
+<li>
+    <a href="../adr/0003-definition-of-1-0/" class="dropdown-item">ADR 0003: Definition of 1.0</a>
+</li>
+            
+<li>
+    <a href="../adr/0004-versioning-compatibility-and-deprecation/" class="dropdown-item">ADR 0004: Versioning, compatibility and deprecation</a>
+</li>
+            
+<li>
+    <a href="../adr/0005-release-flow-and-changelog-fragments/" class="dropdown-item">ADR 0005: Release flow and changelog fragments</a>
+</li>
+            
+<li>
+    <a href="../adr/0006-onion-layers-and-interfaces/" class="dropdown-item">ADR 0006: Onion layers, interfaces and one class per file</a>
+</li>
+            
+<li>
+    <a href="../adr/0007-model-transport-plain-httpx/" class="dropdown-item">ADR 0007: Models are called over plain httpx, behind `ModelInterface`</a>
+</li>
+            
+<li>
+    <a href="../adr/0008-tools-for-the-model/" class="dropdown-item">ADR 0008: The model gets tools, each stage gets only the ones it names</a>
+</li>
+            
+<li>
+    <a href="../adr/0009-branch-driven-publishing/" class="dropdown-item">ADR 0009: Publishing follows the branch: develop to TestPyPI, main to PyPI</a>
+</li>
+            
+<li>
+    <a href="../adr/0010-chapters-are-drafted-in-order-in-one-stage/" class="dropdown-item">ADR 0010: Chapters are drafted in order, inside one stage</a>
+</li>
+            
+<li>
+    <a href="../adr/0011-run-inputs/" class="dropdown-item">ADR 0011: Run inputs are untrusted text carried inside the brief</a>
+</li>
+    </ul>
+  </li>
+                                    
+<li>
+    <a href="../changelog/" class="dropdown-item">Changelog</a>
+</li>
+                                    
+<li>
+    <a href="../security/" class="dropdown-item">Security</a>
+</li>
+                                    
+<li>
+    <a href="../support/" class="dropdown-item">Support</a>
+</li>
+                                    
+<li>
+    <a href="../code-of-conduct/" class="dropdown-item">Code of conduct</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#properdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../model-catalog/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../research/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/adammatthewsteinberger/engineering-influence/edit/develop/model-calls.md" class="nav-link">Edit on adammatthewsteinberger/engineering-influence
+                                    </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#asking-a-model" class="nav-link">Asking a model</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#reserve-first-then-spend" class="nav-link">Reserve first, then spend</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#callmodel-one-call-at-most-once" class="nav-link">CallModel: one call, at most once</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#askmodel-what-to-do-when-the-answer-is-not-complete" class="nav-link">AskModel: what to do when the answer is not complete</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#tools-in-the-model-port-slices-1-and-2-of-adr-0008" class="nav-link">Tools in the model port (slices 1 and 2 of ADR 0008)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="asking-a-model">Asking a model<a class="headerlink" href="#asking-a-model" title="Permanent link">&para;</a></h1>
+<p><strong>BLUF:</strong> Every model call goes through two services. <code>CallModel</code> makes one call at most once: it reserves the
+worst-case cost before sending, and replays a finished answer from the journal for nothing. <code>AskModel</code> decides
+what to do when an answer comes back cut off, refused or empty. Together they are why a run never starts a call it
+cannot afford, and never pays twice for the same answer.</p>
+<p>A stage never talks to a provider directly. It goes through two services, one above the other.</p>
+<h2 id="reserve-first-then-spend">Reserve first, then spend<a class="headerlink" href="#reserve-first-then-spend" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><strong>Daniel:</strong> A run has a five dollar cap. What stops ten chapters being drafted at once and spending eight?</p>
+<p><strong>Professor Feynman:</strong> You are at a restaurant with fifty dollars and no card. When do you check that you can
+afford the dish?</p>
+<p><strong>Daniel:</strong> Before I order. Not when the bill comes.</p>
+<p><strong>Professor Feynman:</strong> Each call does the same. Before anything is sent, it sets aside the most that call could
+possibly cost. If that does not fit under the cap, the call is refused and nothing is sent. When the answer
+arrives, the real cost is booked and the rest is handed back.</p>
+<p><strong>Daniel:</strong> So no call starts unless its worst case fits, even with other calls in flight.</p>
+<p><strong>Professor Feynman:</strong> And a second habit saves money: an answer already paid for is written in a journal. Ask
+the same question in the same run and stage and you get the journal's copy, free. One limit to the dinner
+picture: if a call costs more than the worst case it reserved, the run books what it reserved and stops as over
+budget. The journal still holds the true figure.</p>
+<p><strong>Daniel:</strong> Reserve the worst case, book the real cost, replay what is already paid for. That is why resuming a
+run costs nothing for finished work.</p>
+</blockquote>
+<h2 id="callmodel-one-call-at-most-once"><code>CallModel</code>: one call, at most once<a class="headerlink" href="#callmodel-one-call-at-most-once" title="Permanent link">&para;</a></h2>
+<ol>
+<li>A request already answered <strong>in this run and stage</strong> is replayed from the run journal for nothing.</li>
+<li>Otherwise the worst-case cost is reserved from the run's <code>SpendGuard</code> before anything is sent. A
+   call that does not fit raises <code>SpendConsentNeededError</code> (a <code>BudgetExceededError</code> that carries the amount
+   needed) having sent nothing.</li>
+<li>The call is made. If it raises, the reservation is released and nothing is journaled.</li>
+<li>The answer is journaled with its real cost before the reservation is settled.</li>
+</ol>
+<p>A replay is always a <em>complete</em> answer. A cut-off or declined answer is journaled too, because it was
+billed, but under a key that includes the outcome and the attempt, so it is never mistaken for a good one.</p>
+<h2 id="askmodel-what-to-do-when-the-answer-is-not-complete"><code>AskModel</code>: what to do when the answer is not complete<a class="headerlink" href="#askmodel-what-to-do-when-the-answer-is-not-complete" title="Permanent link">&para;</a></h2>
+<p>A stage calls <code>AskModel.ask(guard, run_id, stage, attempt, request)</code> and gets a <code>ModelAnswer</code>: the text,
+whether it is <code>complete</code>, the <code>issues</code> if it is not, and what it cost.</p>
+<table>
+<thead>
+<tr>
+<th>What happened</th>
+<th>What <code>AskModel</code> does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The model finished</td>
+<td>Returns the answer.</td>
+</tr>
+<tr>
+<td>It hit its output cap</td>
+<td>Asks again with the cap <strong>doubled</strong>, up to the model's own limit. At the limit there is nothing more to try.</td>
+</tr>
+<tr>
+<td>It declined</td>
+<td>Asks the <strong>identical</strong> request again, up to <code>refusal_retries</code> times (default 1).</td>
+</tr>
+<tr>
+<td>It runs out of attempts (default 4 calls in all)</td>
+<td>Returns the best text it has and one <strong>blocking</strong> <code>QualityIssue</code> per defect: <code>TRUNCATED</code> (the text ends part-way) and/or <code>REFUSED</code> (the model's own words, trimmed to one line of 300 characters). The stage carries on.</td>
+</tr>
+<tr>
+<td>The run is out of money, or the provider is down or at capacity</td>
+<td>Nothing is caught here; each goes to the run. Out of money (<code>SpendConsentNeededError</code>) stops the run in <code>awaiting_consent</code> until someone grants or denies more. A provider that is down (<code>TransientStageError</code>) is retried, three times at most. One at capacity (<code>CapacityExhaustedError</code>) parks the run.</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>A refusal is never reworded, pressed or disguised.</strong> It is the model's decision; a retry only covers a
+  refusal that was a fluke. If it keeps declining, the stage gets no text and a <code>REFUSED</code> issue, and decides
+  what to do (a later stage can step down a <code>DegradeLadder</code>, or the run records the section as missing).</li>
+<li><strong>Both issues are blocking</strong>, so <code>--strict-release</code> refuses a book with a cut-off or missing section.
+  An autonomous run still finishes and says what is wrong.</li>
+<li><strong>A resumed run does not pay twice.</strong> Before any live call, <code>AskModel</code> looks for a complete answer at
+  every output cap it could have reached, so a run that already has its answer replays it for nothing,
+  without re-paying the cut-off attempts that led to it. An incomplete answer is never replayed: a resume
+  tries again.</li>
+<li><strong>Every call is counted.</strong> Each live call is journaled under <code>attempt * max_attempts + i</code>, so a stage's own
+  retries and these attempts never share a journal key and no cost is lost.</li>
+<li>The issue detail quotes the model's own words, so treat it as untrusted text wherever it is shown.</li>
+</ul>
+<h2 id="tools-in-the-model-port-slices-1-and-2-of-adr-0008">Tools in the model port (slices 1 and 2 of ADR 0008)<a class="headerlink" href="#tools-in-the-model-port-slices-1-and-2-of-adr-0008" title="Permanent link">&para;</a></h2>
+<p>A <code>ModelRequest</code> can offer <code>tools</code> (a <code>ToolDefinition</code>: a name, a description and a JSON schema) and carry a
+<code>transcript</code> of earlier rounds (<code>ModelTurn</code>: what the model said, the <code>ToolCall</code>s it made and the <code>ToolResult</code>
+of each). A <code>ModelResponse</code> can come back with <code>calls</code> and the stop reason <code>tool_use</code>, which goes with calls
+and only with them. Each adapter speaks its provider's format: <code>tool_use</code> and <code>tool_result</code> content blocks
+for Anthropic, <code>tool_calls</code> and <code>role: tool</code> messages for OpenAI-compatible servers. Some local servers
+report <code>stop</code> next to a tool call; that is read as <code>tool_use</code>. A tool call nobody offered, a malformed
+call, or <code>tool_use</code> with no call is refused as an unexpected reply.</p>
+<p>An adapter never runs a tool. It returns what the model asked for.</p>
+<h3 id="the-tool-loop">The tool loop<a class="headerlink" href="#the-tool-loop" title="Permanent link">&para;</a></h3>
+<p><code>RunToolLoop</code> sits above <code>AskModel</code> and is how every model-backed stage is run; a stage with no tools is a
+loop of one turn. Each turn is one <code>AskModel</code> call, so a cut-off or declined answer, a replay and the spend
+cap work as they do without tools. When the model answers with tool calls, each is run through the
+<code>ToolRunner</code> and the round (what the model said, what it called, what came back) is added to the transcript
+the next request carries.</p>
+<ul>
+<li><strong>Only the tools a stage names exist for it.</strong> A <code>StageRecipe</code> lists its tools (none by default). The
+  executor offers exactly those, and the runner runs only those. A call to any other name, registered or
+  not, is answered with <code>no tool named '…' is available here</code> and nothing runs. A recipe that names a tool
+  nobody registered stops the stage before anything is asked (<code>STAGE_TOOL_UNKNOWN</code>).</li>
+<li><strong>Arguments are checked first</strong> against the tool's schema (<code>required</code>, each property's <code>type</code> and <code>enum</code>,
+  and <code>additionalProperties: false</code>). A bad call is answered with what is wrong and nothing runs.</li>
+<li><strong>A tool call is made once.</strong> Its result is journaled by tool and canonical arguments, per run and stage,
+  at no cost. A resumed run, a retry, or a model that asks the same thing twice gets the stored result and
+  the web is not asked again. A failure the model can work around (<code>ApplicationError</code>) is stored as an error
+  result; a transient or capacity failure is not stored and goes up to the run.</li>
+<li><strong>A model turn is journaled whole.</strong> A request with tools is keyed by the tools offered and by the whole
+  transcript so far (every call's id, name and arguments, every result and its error flag), and its answer
+  is stored as the text and the calls together. A <code>tool_use</code> and an <code>end_turn</code> both replay. A request with
+  no tools is keyed and stored exactly as before, so existing journals still replay. A run that stopped in
+  the middle of a conversation replays the finished turns and calls and goes on from the first unfinished
+  one.</li>
+<li><strong>It is bounded.</strong> <code>ToolLoopLimits</code> caps turns (8), tool calls (16), the characters of a result (20,000,
+  cut with a note of how many were dropped) and the seconds of a call (60). Past the turn cap the loop ends
+  with a blocking <code>TOOL_LOOP_EXHAUSTED</code> issue and the stage stops. A call past the call cap is not run; its
+  result tells the model to answer with what it has. Every turn reserves against the <code>SpendGuard</code>.</li>
+<li>
+<p><strong>A call that outlives its deadline is a transient failure.</strong> The tool's thread cannot be killed, so a
+  tool should bound itself too; the runner's pool is small (4), so a tool that never returns fills it and
+  later calls time out.</p>
+</li>
+<li>
+<p><strong>Whatever a tool says is untrusted.</strong> <code>ToolRunner</code> wraps a tool's text, and the text of an error it
+  raises, in an <code>&lt;untrusted name="tool:..."&gt;</code> block, after cutting it to the limit and before it is stored,
+  so a replay shows the model the same wrapped text. A copy of the tag inside the text is defused, so a
+  page cannot close the block and speak outside it. The runner's own refusals are ours and are not wrapped.
+  The research prompt tells the model that everything a tool returns is evidence, never instructions.</p>
+</li>
+</ul>
+<h3 id="the-tools-that-exist">The tools that exist<a class="headerlink" href="#the-tools-that-exist" title="Permanent link">&para;</a></h3>
+<p>The runtime registers <code>web_search</code> and <code>fetch_url</code> (model-backed runs only), and only the research stage
+names them. A run given a tool lock (<code>EI_TOOL_LOCK</code>) also registers the tools of each locked MCP server as
+<code>&lt;server&gt;__&lt;tool&gt;</code>, and a stage is offered one only if the lock grants it that stage (<a href="../tool-lock/#in-a-run">TOOL_LOCK.md</a>).</p>
+<ul>
+<li><strong><code>web_search</code></strong> lists titles and links, best first, with no page text (a hit carries no snippet), so
+  nothing is quoted until it has been read. The provider is SearXNG, with Brave behind it when both are
+  configured (see <a href="../configuration/">CONFIGURATION.md</a>).</li>
+<li><strong><code>fetch_url</code></strong> reads one page through the source fetcher, which only reads public https, checks every
+  redirect, limits size and encoding, and drops hidden text. It only reads an address the model was shown,
+  copied exactly: one in the stage's prompt, a link line of an earlier successful search, or the <code>Source:</code>
+  header of an earlier successful fetch. A tool can refuse a call by what the model has seen
+  (<code>ToolInterface.refuses</code>) and says what counts as shown (<code>ToolInterface.shown</code>, nothing by default); the
+  runner builds the evidence from the prompt and those parts of successful results only, never from an
+  error message or page text, and checks it before the journal, so a refusal is never stored. This stops a
+  hostile page steering the model to an address with the brief in it. It returns the final address, the title, a
+  SHA-256 of the text and the text. That header is the pin a later claim check will use; the journal keeps
+  it, but it is not yet stored as a separate source record.</li>
+</ul>
+<p>Neither the model nor either adapter has been run against a live provider, search service or website.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://properdocs.org/">ProperDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="properdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="properdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="properdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="properdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

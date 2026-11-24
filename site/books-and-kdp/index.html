@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://adammatthewsteinberger.github.io/engineering-influence/books-and-kdp/">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Books and KDP - engineering-influence</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../stylesheets/vibey.css" rel="stylesheet">
+        <link href="../stylesheets/site.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+        <meta name="description" content="BLUF: &quot;KDP-ready&quot; here means a folder Amazon's upload form will accept: an interior PDF at KDP's trim and margins, an EPUB, covers at the exact page…">
+    <meta property="og:title" content="Books and KDP - engineering-influence">
+    <meta property="og:description" content="BLUF: &quot;KDP-ready&quot; here means a folder Amazon's upload form will accept: an interior PDF at KDP's trim and margins, an EPUB, covers at the exact page…">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://adammatthewsteinberger.github.io/engineering-influence/books-and-kdp/">
+    <meta property="og:site_name" content="engineering-influence">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Books and KDP - engineering-influence">
+    <meta name="twitter:description" content="BLUF: &quot;KDP-ready&quot; here means a folder Amazon's upload form will accept: an interior PDF at KDP's trim and margins, an EPUB, covers at the exact page…">
+</head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">engineering-influence</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href=".." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Start</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../getting-started/" class="dropdown-item">Getting started</a>
+</li>
+                                    
+<li>
+    <a href="../agents-driving/" class="dropdown-item">Driving it from another AI</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Books and KDP</a>
+</li>
+                                    
+<li>
+    <a href="../novels/" class="dropdown-item">Novels</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Writing books</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../local-model/" class="dropdown-item">The local model</a>
+</li>
+                                    
+<li>
+    <a href="../model-profiles/" class="dropdown-item">Model profiles</a>
+</li>
+                                    
+<li>
+    <a href="../model-catalog/" class="dropdown-item">Model catalog</a>
+</li>
+                                    
+<li>
+    <a href="../model-calls/" class="dropdown-item">Model calls</a>
+</li>
+                                    
+<li>
+    <a href="../research/" class="dropdown-item">Research</a>
+</li>
+                                    
+<li>
+    <a href="../prompts/" class="dropdown-item">Prompts</a>
+</li>
+                                    
+<li>
+    <a href="../skills/" class="dropdown-item">Skills</a>
+</li>
+                                    
+<li>
+    <a href="../plugins/" class="dropdown-item">Plugins</a>
+</li>
+                                    
+<li>
+    <a href="../tool-lock/" class="dropdown-item">Tool lock</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../interactions/" class="dropdown-item">Interfaces</a>
+</li>
+                                    
+<li>
+    <a href="../configuration/" class="dropdown-item">Configuration</a>
+</li>
+                                    
+<li>
+    <a href="../compatibility/" class="dropdown-item">Compatibility</a>
+</li>
+                                    
+<li>
+    <a href="../architecture/" class="dropdown-item">Architecture</a>
+</li>
+                                    
+<li>
+    <a href="../threat-model/" class="dropdown-item">Threat model</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Operating</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../worker-image/" class="dropdown-item">Worker image</a>
+</li>
+                                    
+<li>
+    <a href="../troubleshooting/" class="dropdown-item">Troubleshooting</a>
+</li>
+                                    
+<li>
+    <a href="../releasing/" class="dropdown-item">Releasing</a>
+</li>
+                                    
+<li>
+    <a href="../documentation-site/" class="dropdown-item">Documentation site</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Quality</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../testing/" class="dropdown-item">Testing</a>
+</li>
+                                    
+<li>
+    <a href="../evaluation/" class="dropdown-item">Evaluation</a>
+</li>
+                                    
+<li>
+    <a href="../live-smoke-test/" class="dropdown-item">Live smoke test</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Project</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../contributing/" class="dropdown-item">Contributing</a>
+</li>
+                                    
+<li>
+    <a href="../style/" class="dropdown-item">How these documents are written</a>
+</li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Decision records</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../adr/" class="dropdown-item">Overview</a>
+</li>
+            
+<li>
+    <a href="../adr/0001-vibey-integration-boundary/" class="dropdown-item">ADR 0001: Isolate vibey behind ports</a>
+</li>
+            
+<li>
+    <a href="../adr/0002-audience-priority-and-sovereign-agent-doctrine/" class="dropdown-item">ADR 0002: Audience priority and sovereign agent doctrine</a>
+</li>
+            
+<li>
+    <a href="../adr/0003-definition-of-1-0/" class="dropdown-item">ADR 0003: Definition of 1.0</a>
+</li>
+            
+<li>
+    <a href="../adr/0004-versioning-compatibility-and-deprecation/" class="dropdown-item">ADR 0004: Versioning, compatibility and deprecation</a>
+</li>
+            
+<li>
+    <a href="../adr/0005-release-flow-and-changelog-fragments/" class="dropdown-item">ADR 0005: Release flow and changelog fragments</a>
+</li>
+            
+<li>
+    <a href="../adr/0006-onion-layers-and-interfaces/" class="dropdown-item">ADR 0006: Onion layers, interfaces and one class per file</a>
+</li>
+            
+<li>
+    <a href="../adr/0007-model-transport-plain-httpx/" class="dropdown-item">ADR 0007: Models are called over plain httpx, behind `ModelInterface`</a>
+</li>
+            
+<li>
+    <a href="../adr/0008-tools-for-the-model/" class="dropdown-item">ADR 0008: The model gets tools, each stage gets only the ones it names</a>
+</li>
+            
+<li>
+    <a href="../adr/0009-branch-driven-publishing/" class="dropdown-item">ADR 0009: Publishing follows the branch: develop to TestPyPI, main to PyPI</a>
+</li>
+            
+<li>
+    <a href="../adr/0010-chapters-are-drafted-in-order-in-one-stage/" class="dropdown-item">ADR 0010: Chapters are drafted in order, inside one stage</a>
+</li>
+            
+<li>
+    <a href="../adr/0011-run-inputs/" class="dropdown-item">ADR 0011: Run inputs are untrusted text carried inside the brief</a>
+</li>
+    </ul>
+  </li>
+                                    
+<li>
+    <a href="../changelog/" class="dropdown-item">Changelog</a>
+</li>
+                                    
+<li>
+    <a href="../security/" class="dropdown-item">Security</a>
+</li>
+                                    
+<li>
+    <a href="../support/" class="dropdown-item">Support</a>
+</li>
+                                    
+<li>
+    <a href="../code-of-conduct/" class="dropdown-item">Code of conduct</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#properdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../agents-driving/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../novels/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/adammatthewsteinberger/engineering-influence/edit/develop/books-and-kdp.md" class="nav-link">Edit on adammatthewsteinberger/engineering-influence
+                                    </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#from-an-idea-to-a-kdp-ready-book" class="nav-link">From an idea to a KDP-ready book</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#what-ready-really-means" class="nav-link">What "ready" really means</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-kdp-ready-means-here" class="nav-link">What "KDP-ready" means here</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-is-built-and-what-is-not" class="nav-link">What is built, and what is not</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#fiction-and-non-fiction" class="nav-link">Fiction and non-fiction</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#where-to-go-next" class="nav-link">Where to go next</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="from-an-idea-to-a-kdp-ready-book">From an idea to a KDP-ready book<a class="headerlink" href="#from-an-idea-to-a-kdp-ready-book" title="Permanent link">&para;</a></h1>
+<p><strong>BLUF:</strong> "KDP-ready" here means a folder Amazon's upload form will accept: an interior PDF at KDP's trim and
+margins, an EPUB, covers at the exact page count, a listing with seven keywords, and a report that says what
+passed. <code>ei book create</code> produces it from an idea, and <code>ei book publish</code> produces it from a manuscript you
+already have. It is checked by the build, and it still needs a person to read it before it is published.</p>
+<h2 id="what-ready-really-means">What "ready" really means<a class="headerlink" href="#what-ready-really-means" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><strong>Daniel:</strong> I uploaded my last book to KDP four times. Margins, then a font that was not embedded, then the
+spine. Each rejection took a day. What does "ready" buy me here?</p>
+<p><strong>Professor Feynman:</strong> What did all four rejections have in common?</p>
+<p><strong>Daniel:</strong> They were rules I could have checked myself, if I had known the rules.</p>
+<p><strong>Professor Feynman:</strong> There you are. An airline pilot does not find out at the runway whether the fuel cap is
+on. There is a list, and the list is run before the engines start. The build stage is that list for a book:
+trim size, the gutter that grows with the page count, fonts embedded, page limits, the EPUB's structure,
+exactly seven keywords.</p>
+<p><strong>Daniel:</strong> So if the list passes, Amazon accepts it.</p>
+<p><strong>Professor Feynman:</strong> Careful. Which things can a list not check?</p>
+<p><strong>Daniel:</strong> Whether the book is any good. And whatever rule Amazon changed last week.</p>
+<p><strong>Professor Feynman:</strong> Both right. The list covers the rules written into this code, and it has not yet been
+proven against Kindle Previewer on a book made this way. That is why the report ends <code>human_review: pending</code>
+and why nothing is ever uploaded for you.</p>
+<p><strong>Daniel:</strong> Then "ready" means the mechanical rejections are behind me, and the reading is still mine.</p>
+</blockquote>
+<p><strong>engineering-influence exists to write complete books, fiction and non-fiction, fully autonomously, and to hand
+you a package that is ready to upload to Amazon KDP.</strong> Everything else in this repository (the API, MCP server,
+CLI, SDK, webhooks, queue and ledger) is the machinery that makes that run unattended, recoverably and
+auditably.</p>
+<p>You supply a project: a title, governing postulates (the claims and limits the book must
+stay inside) and the stages to run. The pipeline does the rest.</p>
+<pre><code class="language-text">postulates ─▶ thesis ─▶ book | novel | screenplay ─▶ hub ─▶ spokes ─▶ distribution ─▶ publish
+                              │
+                              └─ each stage: runner writes · gate accepts or rejects · ledger records
+publish stage ─▶ audit · interior PDF · EPUB · covers · page QA · release-readiness report
+</code></pre>
+<h2 id="what-kdp-ready-means-here">What "KDP-ready" means here<a class="headerlink" href="#what-kdp-ready-means-here" title="Permanent link">&para;</a></h2>
+<p>The publish stage (<code>ei book publish</code>) produces, and verifies, the files and decisions KDP asks for:</p>
+<table>
+<thead>
+<tr>
+<th>KDP requirement</th>
+<th>What the toolchain does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Paperback interior</td>
+<td>6 × 9 in PDF typeset with LaTeX; margins and the page-count-dependent gutter checked against KDP's table; fonts embedded; page count against KDP's limits</td>
+</tr>
+<tr>
+<td>Hardcover interior</td>
+<td>Compact hardcover build; page limit checked, or an explicit external-provider decision required</td>
+</tr>
+<tr>
+<td>eBook</td>
+<td>EPUB built and validated (structure, links, <code>epubcheck</code>)</td>
+</tr>
+<tr>
+<td>Covers</td>
+<td>Front, back and spine/wrap for print at the exact trim and page count, plus the eBook cover; image, quiet-zone and layout checks</td>
+</tr>
+<tr>
+<td>Listing metadata</td>
+<td>Title, subtitle, author, description size, <strong>exactly seven unique keywords</strong> (categories are checked for count, shape and uniqueness, not against Amazon's category tree)</td>
+</tr>
+<tr>
+<td>Pricing</td>
+<td>List-price policy, freshness and source of the inputs, estimated print cost and royalty</td>
+</tr>
+<tr>
+<td>Manuscript quality</td>
+<td>Forbidden-content, scaffold-leak, chapter-opening, contents, research-apparatus and formula checks</td>
+</tr>
+<tr>
+<td>Evidence</td>
+<td>A machine-readable release report with file digests, tool versions and git state</td>
+</tr>
+</tbody>
+</table>
+<p>A book is <strong>release-ready</strong> only when every audit passes. The report ends with
+<code>human_review: pending</code>: a person signs off before anything is published.</p>
+<h2 id="what-is-built-and-what-is-not">What is built, and what is not<a class="headerlink" href="#what-is-built-and-what-is-not" title="Permanent link">&para;</a></h2>
+<p>Be exact about today's state (alpha <code>0.1.0a2</code>):</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Orchestration: queue, worker, ledger, gates, dead-letter, API, MCP, CLI, SDK, webhooks</td>
+<td>Built and tested</td>
+</tr>
+<tr>
+<td>KDP packaging and verification (<code>ei book …</code>): audits, PDF, EPUB, covers, QA, readiness report</td>
+<td>Built, tested, used to build ten real books</td>
+</tr>
+<tr>
+<td><strong>The writing itself</strong></td>
+<td><strong>Built, not yet proven.</strong> With <code>EI_STAGE_EXECUTOR=model</code> a non-fiction run goes brief, positioning, research, outline, metadata, draft, three editing passes, assemble, audit and build. It has only been run against scripted servers; a capped test against a real model is in <a href="../live-smoke-test/">LIVE_SMOKE_TEST.md</a>. With no setting the same stages run on the free local model (<a href="../local-model/">LOCAL_MODEL.md</a>); <code>EI_STAGE_EXECUTOR=deterministic</code> is the placeholder that returns fixed text</td>
+</tr>
+<tr>
+<td>Web search and page fetch</td>
+<td>Built as model tools and used by the research stage: SearXNG first (a local one ships in <code>examples/searxng/</code>), Brave Search as backup, and a safe fetcher with a hidden-text-stripping extractor. Tested against local servers and fakes only; they have never touched the live internet</td>
+</tr>
+<tr>
+<td>Non-fiction stages</td>
+<td>Built through the finished book: brief, positioning, research, outline, metadata, draft, structure, line and copy edits, assemble, audit and <strong>build</strong>, never yet run against a live provider. <code>build</code> runs the same publish pipeline as <code>ei book publish</code> on the run's own manuscript, in a scratch folder, and packages the KDP bundle. It stores the interior PDF, EPUB, covers, listing and manifest under <code>book/</code>, the readiness reports and tool logs under <code>build/</code>, a <code>quality-report.json</code> (status, errors, warnings, and a checksum for every file) and <code>build.md</code>. <strong>Money:</strong> the editing passes are optional, so a pass that runs out of budget does not stop the run: that chapter and the rest of the pass keep the text they had, one tolerated issue (<code>revision-skipped-budget</code>) goes into the quality report, and nothing more is paid for. The planning stages and the draft are essential, so a cap that runs out there still stops the run to ask for more. <code>quality-report.json</code> has a <code>spend</code> block (the cap, what was spent, and what the brief was expected to cost, from a first-pass estimate whose constants are to be calibrated against real runs: <code>spent_over_estimated</code> is the figure to watch). It needs the TeX worker image (<a href="../worker-image/">WORKER_IMAGE.md</a>); a failed build still stores what it produced, then fails the run. Pricing and sales-source details are the author's, so by default a missing price is a warning in the report; set <code>EI_BUILD_STRICT_RELEASE=1</code> to make any such warning fail the build. A whole book is made from an idea with <code>ei book create</code> (<a href="../interactions/">INTERACTIONS.md</a>). Not built: claim checking, a fact tracker across chapters, and a cover from the author's own design (the covers a run builds use the book's configuration only)</td>
+</tr>
+<tr>
+<td>Novel stages</td>
+<td>Built through the finished book, without editing passes: brief, story bible, beats, outline, metadata, draft, assemble, audit and build, never yet run against a live provider. A novel keeps its dashes and uses the brief's trim size; <code>build</code> is the same stage as for non-fiction. Not built: revision and copy editing for a novel, and a repair pass for continuity findings (<a href="../novels/">NOVELS.md</a>)</td>
+</tr>
+<tr>
+<td>Methodology stages (P1 to P14), autonomy modes</td>
+<td>Not built</td>
+</tr>
+<tr>
+<td>Budget caps, and retry of a run's transient stage failures</td>
+<td>Built and tested against scripted servers, including a budget stop and a retry through the real HTTP adapter; not yet exercised by a live model run</td>
+</tr>
+<tr>
+<td>Uploading to KDP</td>
+<td>Never automatic: KDP has no publishing API. You upload the verified files and paste the verified metadata yourself</td>
+</tr>
+</tbody>
+</table>
+<p>So today you can run the full orchestration end to end and produce KDP-ready packaging from
+a manuscript; drafting is built but unproven against a live model, and <code>ei book create</code> is the entry point. The
+<code>/v1/pipelines</code> stage pipeline still uses the placeholder runner. This page is updated as each row changes.</p>
+<h2 id="fiction-and-non-fiction">Fiction and non-fiction<a class="headerlink" href="#fiction-and-non-fiction" title="Permanent link">&para;</a></h2>
+<p>Both use the same stages and the same publish step. Non-fiction is bounded by its postulates
+and research apparatus (claims need sources; the research check enforces it). Fiction adds the
+<code>novel</code> and <code>screenplay</code> stages. Choose the stages in the request, for example
+<code>["thesis", "book"]</code> or <code>["novel", "distribution", "publish"]</code>.</p>
+<h3 id="book-kind-and-the-text-rules">Book kind and the text rules<a class="headerlink" href="#book-kind-and-the-text-rules" title="Permanent link">&para;</a></h3>
+<p>A book's config (<code>books/&lt;slug&gt;.toml</code>) may say <code>kind = "novel"</code>; without it the book is
+non-fiction. The kind picks the text rules the typesetter and the checks apply. An unknown kind
+stops the build with a message naming the two valid ones.</p>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th><code>nonfiction</code> (the default)</th>
+<th><code>novel</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Em dash (<code>—</code>) in the text</td>
+<td>Refused, in the manuscript, the PDF and the EPUB</td>
+<td>Allowed</td>
+</tr>
+<tr>
+<td>En dash (<code>–</code>)</td>
+<td>Refused</td>
+<td>Refused</td>
+</tr>
+<tr>
+<td>A <code>---</code> line inside a chapter</td>
+<td>Prints nothing</td>
+<td>Prints a scene break: a centred <code>* * *</code>, and the next paragraph is not indented. A rule that opens or ends a passage, sits beside another rule, or is inside a quote or list prints nothing</td>
+</tr>
+<tr>
+<td>The word <code>Draft</code></td>
+<td>Refused anywhere</td>
+<td>Refused in narration; allowed inside curly quotation marks, so a character may say it</td>
+</tr>
+<tr>
+<td>Unfinished markers such as <code>[TODO]</code></td>
+<td>Refused</td>
+<td>Refused</td>
+</tr>
+</tbody>
+</table>
+<p>A quoted span for the <code>Draft</code> rule is at most 500 characters, so an opening quote that never
+closes cannot hide a stray <code>Draft</code> later in the text. Narration that legitimately starts a
+sentence with <code>Draft</code> still has to be reworded. <code>tests/fixtures/fixture_novel/</code> is a small novel
+that shows each rule and is built with the real toolchain in CI.</p>
+<h3 id="listing-metadata">Listing metadata<a class="headerlink" href="#listing-metadata" title="Permanent link">&para;</a></h3>
+<p>The release contract (<code>[release]</code> in the book's config) is checked before anything is built.
+Beyond the title, subtitle and author, it covers the listing:</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Rule</th>
+<th>Finding</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>description</code> (top level)</td>
+<td>at least 80 words (<code>release.minimum_description_words</code>), at most 4,000 characters (<code>release.maximum_description_characters</code>, which can only lower KDP's limit in practice)</td>
+<td><code>description-too-short</code>, <code>description-too-long</code></td>
+</tr>
+<tr>
+<td><code>release.keywords</code></td>
+<td>exactly seven, unique, none empty</td>
+<td><code>keyword-count</code>, <code>duplicate-keyword</code>, <code>empty-keyword</code></td>
+</tr>
+<tr>
+<td><code>release.categories</code></td>
+<td>up to three Amazon browse paths such as <code>Books &gt; Literature &amp; Fiction &gt; Mystery</code>; unique; at least two levels</td>
+<td><code>too-many-categories</code>, <code>category-not-a-path</code>, <code>duplicate-category</code>, <code>categories-invalid</code></td>
+</tr>
+</tbody>
+</table>
+<p>Categories are Amazon's browse tree, not BISAC subject codes (<code>FIC009000</code>), which are a different
+scheme: a BISAC code in <code>categories</code> is refused as <code>category-is-bisac</code>. The check cannot know
+Amazon's tree, which changes and has no API. It checks the count, the shape and the uniqueness; you
+confirm the names when you upload. A book with no categories gets the warning
+<code>categories-not-declared</code>, never an error, so books written before this check keep passing a strict
+release. The 4,000-character and three-category limits are KDP's published limits as I understand
+them; confirm them against KDP's current help pages.</p>
+<h3 id="the-release-bundle">The release bundle<a class="headerlink" href="#the-release-bundle" title="Permanent link">&para;</a></h3>
+<p><code>ei book package SLUG</code> writes <code>build/SLUG/release/kdp/</code>, the folder you upload from:</p>
+<ul>
+<li><code>listing.md</code>: the title, subtitle, description, the seven keywords and the categories, the way you paste them into
+  KDP, then a table of the files with their sizes and SHA-256 hashes.</li>
+<li><code>MANIFEST.json</code>: the same files as data, with the release status the bundle was made under.</li>
+<li>A copy of each finished file the release requires: the interior PDF, the EPUB, the cover images and the wraps.</li>
+</ul>
+<p>It refuses, and writes nothing, when the release check <strong>fails</strong>, when a required file is missing, or when the listing
+is outside the limits the release check applies (a message names the field). A book whose release check only warns is
+packaged, and its manifest says so. Nothing is uploaded: KDP has no publishing API, so you upload these files and paste
+the listing yourself, then check the hashes against what you uploaded. The command overwrites its own files and leaves
+any other file in the folder alone; a symbolic link is refused, so the bundle is only ever what was checked.</p>
+<h3 id="the-back-cover-and-the-barcode-area">The back cover and the barcode area<a class="headerlink" href="#the-back-cover-and-the-barcode-area" title="Permanent link">&para;</a></h3>
+<p>The back cover carries the description and the author note, and KDP keeps a 2 x 1.2 in area clear
+for the barcode it adds. The description is set above that area, shrinking until it fits, down to a
+smallest size. If it still does not fit, the build stops with <code>BackCoverTextTooLongError</code>, which
+reports how many characters the description has, how many fit at this trim size and how far it
+overflows, instead of drawing text into the barcode area. The limit on the cover is lower than
+KDP's 4,000-character listing limit and depends on the trim size and the cover style: with the
+default style, about 3,000 characters fit at 6x9 and 5.5x8.5 and about 2,200 at 5x8, and the error
+gives the exact figure for your book. Text, and any ink, in the barcode area is also caught after
+rendering, at every trim size, for the paperback and the hardcover.</p>
+<h3 id="what-the-typesetter-refuses">What the typesetter refuses<a class="headerlink" href="#what-the-typesetter-refuses" title="Permanent link">&para;</a></h3>
+<p>Text that reaches TeX may be written by a model, so the typesetter escapes it and refuses a few
+things it cannot make safe (the full picture is in <a href="../threat-model/">THREAT_MODEL.md</a>):</p>
+<ul>
+<li>A <strong>code block that contains <code>\end{verbatim}</code></strong> stops the build with a message, because TeX would
+  end the code environment there and read the rest of the line as TeX.</li>
+<li>A <strong><code>website</code> that is not an http or https address</strong> stops the build: write <code>https://pub.example</code>
+  or a bare host name such as <code>pub.example</code>. Another scheme (<code>javascript:</code>, <code>data:</code>), a space, or a
+  <code>host:port</code> is refused; write a port with its scheme (<code>https://pub.example:8080</code>).</li>
+<li>Any URL, including a <code>website</code> and an <code>email</code>, is printed with every character outside the
+  ordinary URL set percent-encoded, so a space, a quote or an accented letter appears as <code>%20</code>, <code>%22</code>
+  or <code>%C3%A9</code>.</li>
+<li>An <strong>ebook title</strong> with any of <code>&amp; &lt; &gt; " # % \ { } ~ ^ $ _</code> is refused.</li>
+<li>The title, subtitle, author and edition also go into the PDF's metadata, where the characters
+  <code>\ { } % # ^ ~</code>, control characters and unbalanced parentheses are dropped. An ordinary title,
+  including balanced parentheses, is unchanged.</li>
+</ul>
+<h3 id="a-build-that-runs-too-long-or-uses-too-much">A build that runs too long, or uses too much<a class="headerlink" href="#a-build-that-runs-too-long-or-uses-too-much" title="Permanent link">&para;</a></h3>
+<p>Each build tool has limits, and a tool that passes one is stopped, together with everything it started:</p>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Time</th>
+<th>Memory</th>
+<th>Disk written</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>latexmk</code> and <code>tex4ebook</code></td>
+<td>30 minutes</td>
+<td>8 GiB</td>
+<td>4 GiB</td>
+</tr>
+<tr>
+<td><code>epubcheck</code></td>
+<td>10 minutes</td>
+<td>4 GiB</td>
+<td>not measured</td>
+</tr>
+<tr>
+<td>the page renderer</td>
+<td>10 minutes</td>
+<td>2 GiB</td>
+<td>4 GiB</td>
+</tr>
+</tbody>
+</table>
+<p>Memory is the resident size of the tool and everything it started. Disk is the size of the directory it
+writes into. The build then fails with a message such as
+<code>latexmk did not finish within 1800 seconds and was stopped</code>,
+<code>latexmk used 8300 MiB of memory, over its limit of 8192 MiB and was stopped</code> or
+<code>latexmk wrote 4300 MiB to disk, over its limit of 4096 MiB and was stopped</code>, followed by the tool's last
+output so you can see where it stopped. Memory and disk are checked twice a second, so the figure in the
+message can be a little over the limit. A normal book is far below all of these (the fixture books peak
+at about 400 MiB). The limits are fixed in the code, not settings, and a book that legitimately needs
+more than this is not supported yet.</p>
+<h3 id="trim-size-and-paper">Trim size and paper<a class="headerlink" href="#trim-size-and-paper" title="Permanent link">&para;</a></h3>
+<p>A book's config sets the page size and the interior paper. Both default to what every book used
+before they existed, so a config that says nothing builds exactly the same files as before.</p>
+<table>
+<thead>
+<tr>
+<th><code>trim_size</code></th>
+<th>Page (in)</th>
+<th>Hardcover</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>6x9</code> (default)</td>
+<td>6 x 9</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>5.5x8.5</code></td>
+<td>5.5 x 8.5</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>5x8</code></td>
+<td>5 x 8</td>
+<td><strong>no</strong>: KDP does not print a hardcover at this size</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th><code>paper</code></th>
+<th>Spine width per page</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>white</code> (default)</td>
+<td>0.002252 in</td>
+</tr>
+<tr>
+<td><code>cream</code></td>
+<td>0.0025 in</td>
+</tr>
+</tbody>
+</table>
+<p>The trim size sets the interior's page size (the PDF check refuses any other), the cover layouts
+and the ebook cover's proportions. The paper sets the spine width of the paperback and hardcover
+wraps, so a cream book's spine is wider than a white book's of the same length. An unknown value
+stops the build with a message listing the valid ones.</p>
+<p>A <code>5x8</code> book is paperback and ebook only. It gets no hardcover interior and no hardcover wrap, a
+<code>[formats] hardcover = true</code> or <code>release.formats.kdp_hardcover = true</code> is refused, and its
+<code>[release.pricing]</code> needs no hardcover price. If you add one anyway it is still checked, and
+selling a hardcover through another provider still needs <code>hardcover_provider</code> as before. The
+hardcover column follows KDP's published hardcover sizes as I understand them today; KDP changes
+what it offers, so confirm against its current list before relying on it.</p>
+<h2 id="where-to-go-next">Where to go next<a class="headerlink" href="#where-to-go-next" title="Permanent link">&para;</a></h2>
+<p><a href="../getting-started/">Getting started</a> · <a href="../interactions/">Interfaces</a> ·
+<a href="../architecture/">Architecture</a> · <a href="../configuration/">Configuration</a></p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://properdocs.org/">ProperDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="properdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="properdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="properdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="properdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

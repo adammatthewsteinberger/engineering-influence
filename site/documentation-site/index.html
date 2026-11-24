@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://adammatthewsteinberger.github.io/engineering-influence/documentation-site/">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Documentation site - engineering-influence</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../stylesheets/vibey.css" rel="stylesheet">
+        <link href="../stylesheets/site.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+        <meta name="description" content="BLUF: These documents are also published as a website, from the same Markdown, so there is one copy to keep true. scripts/build_docs_site.py assembles the…">
+    <meta property="og:title" content="Documentation site - engineering-influence">
+    <meta property="og:description" content="BLUF: These documents are also published as a website, from the same Markdown, so there is one copy to keep true. scripts/build_docs_site.py assembles the…">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://adammatthewsteinberger.github.io/engineering-influence/documentation-site/">
+    <meta property="og:site_name" content="engineering-influence">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Documentation site - engineering-influence">
+    <meta name="twitter:description" content="BLUF: These documents are also published as a website, from the same Markdown, so there is one copy to keep true. scripts/build_docs_site.py assembles the…">
+</head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">engineering-influence</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href=".." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Start</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../getting-started/" class="dropdown-item">Getting started</a>
+</li>
+                                    
+<li>
+    <a href="../agents-driving/" class="dropdown-item">Driving it from another AI</a>
+</li>
+                                    
+<li>
+    <a href="../books-and-kdp/" class="dropdown-item">Books and KDP</a>
+</li>
+                                    
+<li>
+    <a href="../novels/" class="dropdown-item">Novels</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Writing books</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../local-model/" class="dropdown-item">The local model</a>
+</li>
+                                    
+<li>
+    <a href="../model-profiles/" class="dropdown-item">Model profiles</a>
+</li>
+                                    
+<li>
+    <a href="../model-catalog/" class="dropdown-item">Model catalog</a>
+</li>
+                                    
+<li>
+    <a href="../model-calls/" class="dropdown-item">Model calls</a>
+</li>
+                                    
+<li>
+    <a href="../research/" class="dropdown-item">Research</a>
+</li>
+                                    
+<li>
+    <a href="../prompts/" class="dropdown-item">Prompts</a>
+</li>
+                                    
+<li>
+    <a href="../skills/" class="dropdown-item">Skills</a>
+</li>
+                                    
+<li>
+    <a href="../plugins/" class="dropdown-item">Plugins</a>
+</li>
+                                    
+<li>
+    <a href="../tool-lock/" class="dropdown-item">Tool lock</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../interactions/" class="dropdown-item">Interfaces</a>
+</li>
+                                    
+<li>
+    <a href="../configuration/" class="dropdown-item">Configuration</a>
+</li>
+                                    
+<li>
+    <a href="../compatibility/" class="dropdown-item">Compatibility</a>
+</li>
+                                    
+<li>
+    <a href="../architecture/" class="dropdown-item">Architecture</a>
+</li>
+                                    
+<li>
+    <a href="../threat-model/" class="dropdown-item">Threat model</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Operating</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../worker-image/" class="dropdown-item">Worker image</a>
+</li>
+                                    
+<li>
+    <a href="../troubleshooting/" class="dropdown-item">Troubleshooting</a>
+</li>
+                                    
+<li>
+    <a href="../releasing/" class="dropdown-item">Releasing</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Documentation site</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Quality</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../testing/" class="dropdown-item">Testing</a>
+</li>
+                                    
+<li>
+    <a href="../evaluation/" class="dropdown-item">Evaluation</a>
+</li>
+                                    
+<li>
+    <a href="../live-smoke-test/" class="dropdown-item">Live smoke test</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Project</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../contributing/" class="dropdown-item">Contributing</a>
+</li>
+                                    
+<li>
+    <a href="../style/" class="dropdown-item">How these documents are written</a>
+</li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Decision records</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../adr/" class="dropdown-item">Overview</a>
+</li>
+            
+<li>
+    <a href="../adr/0001-vibey-integration-boundary/" class="dropdown-item">ADR 0001: Isolate vibey behind ports</a>
+</li>
+            
+<li>
+    <a href="../adr/0002-audience-priority-and-sovereign-agent-doctrine/" class="dropdown-item">ADR 0002: Audience priority and sovereign agent doctrine</a>
+</li>
+            
+<li>
+    <a href="../adr/0003-definition-of-1-0/" class="dropdown-item">ADR 0003: Definition of 1.0</a>
+</li>
+            
+<li>
+    <a href="../adr/0004-versioning-compatibility-and-deprecation/" class="dropdown-item">ADR 0004: Versioning, compatibility and deprecation</a>
+</li>
+            
+<li>
+    <a href="../adr/0005-release-flow-and-changelog-fragments/" class="dropdown-item">ADR 0005: Release flow and changelog fragments</a>
+</li>
+            
+<li>
+    <a href="../adr/0006-onion-layers-and-interfaces/" class="dropdown-item">ADR 0006: Onion layers, interfaces and one class per file</a>
+</li>
+            
+<li>
+    <a href="../adr/0007-model-transport-plain-httpx/" class="dropdown-item">ADR 0007: Models are called over plain httpx, behind `ModelInterface`</a>
+</li>
+            
+<li>
+    <a href="../adr/0008-tools-for-the-model/" class="dropdown-item">ADR 0008: The model gets tools, each stage gets only the ones it names</a>
+</li>
+            
+<li>
+    <a href="../adr/0009-branch-driven-publishing/" class="dropdown-item">ADR 0009: Publishing follows the branch: develop to TestPyPI, main to PyPI</a>
+</li>
+            
+<li>
+    <a href="../adr/0010-chapters-are-drafted-in-order-in-one-stage/" class="dropdown-item">ADR 0010: Chapters are drafted in order, inside one stage</a>
+</li>
+            
+<li>
+    <a href="../adr/0011-run-inputs/" class="dropdown-item">ADR 0011: Run inputs are untrusted text carried inside the brief</a>
+</li>
+    </ul>
+  </li>
+                                    
+<li>
+    <a href="../changelog/" class="dropdown-item">Changelog</a>
+</li>
+                                    
+<li>
+    <a href="../security/" class="dropdown-item">Security</a>
+</li>
+                                    
+<li>
+    <a href="../support/" class="dropdown-item">Support</a>
+</li>
+                                    
+<li>
+    <a href="../code-of-conduct/" class="dropdown-item">Code of conduct</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#properdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../releasing/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../testing/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/adammatthewsteinberger/engineering-influence/edit/develop/documentation-site.md" class="nav-link">Edit on adammatthewsteinberger/engineering-influence
+                                    </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#the-documentation-site" class="nav-link">The documentation site</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#one-source-two-readers" class="nav-link">One source, two readers</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#how-it-fits-together" class="nav-link">How it fits together</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#build-it-yourself" class="nav-link">Build it yourself</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#publishing-it" class="nav-link">Publishing it</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-is-not-verified" class="nav-link">What is not verified</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="the-documentation-site">The documentation site<a class="headerlink" href="#the-documentation-site" title="Permanent link">&para;</a></h1>
+<p><strong>BLUF:</strong> These documents are also published as a website, from the same Markdown, so there is one copy to keep
+true. <code>scripts/build_docs_site.py</code> assembles the pages, ProperDocs builds them, and the build fails on any link that
+goes nowhere. It publishes only when you turn it on: set the repository variable <code>PUBLISH_DOCS</code> to <code>true</code> and switch
+GitHub Pages to "GitHub Actions". The site has no analytics and no tracking, and it has never been published yet.</p>
+<h2 id="one-source-two-readers">One source, two readers<a class="headerlink" href="#one-source-two-readers" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><strong>Daniel:</strong> A website means a second copy of every page, and a second copy means two things that disagree. I have
+been burned by that before.</p>
+<p><strong>Professor Feynman:</strong> What if there were no second copy? Think of a translator at a border. The speaker says one
+thing, and each listener hears it in their own language.</p>
+<p><strong>Daniel:</strong> So the Markdown is the speaker.</p>
+<p><strong>Professor Feynman:</strong> Yes. On GitHub a link says <code>../examples</code>, because it is read from inside the repository. On
+a website that means nothing. So before the build, a script walks every page and translates each link: a link to
+another page becomes a link between the site's pages, and a link to anything else, an example or a source file,
+becomes a link to that file on GitHub.</p>
+<p><strong>Daniel:</strong> And if a link points at something that is not there?</p>
+<p><strong>Professor Feynman:</strong> The build stops. Warnings are errors here, so a link that goes nowhere cannot be published.
+The limit of the picture: the translator can tell that a heading exists, not that the sentence around the link still
+makes sense.</p>
+<p><strong>Daniel:</strong> One source, a translator, and a build that refuses a broken link. I will edit the Markdown and nothing
+else.</p>
+</blockquote>
+<h2 id="how-it-fits-together">How it fits together<a class="headerlink" href="#how-it-fits-together" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Piece</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scripts/build_docs_site.py</code></td>
+<td>Copies each page into <code>.site-src/</code> under a clean address (<code>GETTING_STARTED.md</code> becomes <code>getting-started/</code>), rewrites its links, and builds the page that lists the decision records</td>
+</tr>
+<tr>
+<td><code>properdocs.yml</code></td>
+<td>The site's name, description, address and navigation. A page that is not in the navigation is an error</td>
+</tr>
+<tr>
+<td><code>docs-site/site.css</code></td>
+<td>The few rules this site adds to the Vibey stylesheet: the scenes, and a readable width</td>
+</tr>
+<tr>
+<td>The Vibey stylesheet</td>
+<td>Taken from the locked <code>vibey-engine</code> package at build time, so no copy of it is committed</td>
+</tr>
+<tr>
+<td><code>scripts/inject_docs_meta.py</code></td>
+<td>Adds each page's description, canonical address and Open Graph and Twitter tags, and the home page's <code>SoftwareApplication</code> description. It adds an image tag only if the site has <code>img/social-preview.png</code></td>
+</tr>
+<tr>
+<td><code>.github/workflows/docs.yml</code></td>
+<td>On a pull request, builds strictly and publishes nothing. On <code>develop</code>, builds and, if <code>PUBLISH_DOCS</code> is <code>true</code>, publishes</td>
+</tr>
+</tbody>
+</table>
+<p>The site shows the <code>develop</code> branch, which documents what is built today. Links to files that are not pages point at
+<code>develop</code> too, so they match the pages beside them.</p>
+<h2 id="build-it-yourself">Build it yourself<a class="headerlink" href="#build-it-yourself" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash">uv sync --extra runtime
+uv run python scripts/build_docs_site.py --out .site-src
+uv run --with 'properdocs==1.6.7' --with 'properdocs-theme-mkdocs==1.6.7' properdocs build --strict
+uv run python scripts/inject_docs_meta.py --site-dir site
+python3 -m http.server --directory site 8000     # then open http://127.0.0.1:8000
+</code></pre>
+<p><code>.site-src/</code> and <code>site/</code> are not committed. Without the <code>runtime</code> extra the site builds with no Vibey stylesheet and
+says so.</p>
+<h2 id="publishing-it">Publishing it<a class="headerlink" href="#publishing-it" title="Permanent link">&para;</a></h2>
+<ol>
+<li>In the repository settings, open <strong>Pages</strong> and set the source to <strong>GitHub Actions</strong>.</li>
+<li>Set the repository variable <code>PUBLISH_DOCS</code> to <code>true</code>.</li>
+<li>Merge to <code>develop</code>, or run the <strong>Docs</strong> workflow by hand. The site appears at
+   <code>https://adammatthewsteinberger.github.io/engineering-influence/</code>.</li>
+</ol>
+<p>The <code>github-pages</code> environment may carry required reviewers, as the upload environments do.</p>
+<h2 id="what-is-not-verified">What is not verified<a class="headerlink" href="#what-is-not-verified" title="Permanent link">&para;</a></h2>
+<ul>
+<li>The workflow has never run on GitHub, and nothing is published. The build and the metadata step were run locally
+  against ProperDocs 1.6.7, and the pages were looked at in a browser; the deploy step has not been exercised.</li>
+<li>There is no social preview image yet, so shared links show a title and description and no picture.</li>
+<li>The site has not been checked with a screen reader, and its colours are the Vibey stylesheet's, not audited here.</li>
+<li>The home page is the README, whose first screen is written for GitHub and PyPI.</li>
+</ul></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://properdocs.org/">ProperDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="properdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="properdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="properdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="properdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://adammatthewsteinberger.github.io/engineering-influence/troubleshooting/">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Troubleshooting - engineering-influence</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../stylesheets/vibey.css" rel="stylesheet">
+        <link href="../stylesheets/site.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+        <meta name="description" content="BLUF: Ask the machine first: ei doctor --ready checks the extras, the build tools, the author profile, the local model (when EI_STAGE_EXECUTOR is local)…">
+    <meta property="og:title" content="Troubleshooting - engineering-influence">
+    <meta property="og:description" content="BLUF: Ask the machine first: ei doctor --ready checks the extras, the build tools, the author profile, the local model (when EI_STAGE_EXECUTOR is local)…">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://adammatthewsteinberger.github.io/engineering-influence/troubleshooting/">
+    <meta property="og:site_name" content="engineering-influence">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Troubleshooting - engineering-influence">
+    <meta name="twitter:description" content="BLUF: Ask the machine first: ei doctor --ready checks the extras, the build tools, the author profile, the local model (when EI_STAGE_EXECUTOR is local)…">
+</head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">engineering-influence</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href=".." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Start</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../getting-started/" class="dropdown-item">Getting started</a>
+</li>
+                                    
+<li>
+    <a href="../agents-driving/" class="dropdown-item">Driving it from another AI</a>
+</li>
+                                    
+<li>
+    <a href="../books-and-kdp/" class="dropdown-item">Books and KDP</a>
+</li>
+                                    
+<li>
+    <a href="../novels/" class="dropdown-item">Novels</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Writing books</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../local-model/" class="dropdown-item">The local model</a>
+</li>
+                                    
+<li>
+    <a href="../model-profiles/" class="dropdown-item">Model profiles</a>
+</li>
+                                    
+<li>
+    <a href="../model-catalog/" class="dropdown-item">Model catalog</a>
+</li>
+                                    
+<li>
+    <a href="../model-calls/" class="dropdown-item">Model calls</a>
+</li>
+                                    
+<li>
+    <a href="../research/" class="dropdown-item">Research</a>
+</li>
+                                    
+<li>
+    <a href="../prompts/" class="dropdown-item">Prompts</a>
+</li>
+                                    
+<li>
+    <a href="../skills/" class="dropdown-item">Skills</a>
+</li>
+                                    
+<li>
+    <a href="../plugins/" class="dropdown-item">Plugins</a>
+</li>
+                                    
+<li>
+    <a href="../tool-lock/" class="dropdown-item">Tool lock</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../interactions/" class="dropdown-item">Interfaces</a>
+</li>
+                                    
+<li>
+    <a href="../configuration/" class="dropdown-item">Configuration</a>
+</li>
+                                    
+<li>
+    <a href="../compatibility/" class="dropdown-item">Compatibility</a>
+</li>
+                                    
+<li>
+    <a href="../architecture/" class="dropdown-item">Architecture</a>
+</li>
+                                    
+<li>
+    <a href="../threat-model/" class="dropdown-item">Threat model</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Operating</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../worker-image/" class="dropdown-item">Worker image</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Troubleshooting</a>
+</li>
+                                    
+<li>
+    <a href="../releasing/" class="dropdown-item">Releasing</a>
+</li>
+                                    
+<li>
+    <a href="../documentation-site/" class="dropdown-item">Documentation site</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Quality</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../testing/" class="dropdown-item">Testing</a>
+</li>
+                                    
+<li>
+    <a href="../evaluation/" class="dropdown-item">Evaluation</a>
+</li>
+                                    
+<li>
+    <a href="../live-smoke-test/" class="dropdown-item">Live smoke test</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Project</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../contributing/" class="dropdown-item">Contributing</a>
+</li>
+                                    
+<li>
+    <a href="../style/" class="dropdown-item">How these documents are written</a>
+</li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Decision records</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../adr/" class="dropdown-item">Overview</a>
+</li>
+            
+<li>
+    <a href="../adr/0001-vibey-integration-boundary/" class="dropdown-item">ADR 0001: Isolate vibey behind ports</a>
+</li>
+            
+<li>
+    <a href="../adr/0002-audience-priority-and-sovereign-agent-doctrine/" class="dropdown-item">ADR 0002: Audience priority and sovereign agent doctrine</a>
+</li>
+            
+<li>
+    <a href="../adr/0003-definition-of-1-0/" class="dropdown-item">ADR 0003: Definition of 1.0</a>
+</li>
+            
+<li>
+    <a href="../adr/0004-versioning-compatibility-and-deprecation/" class="dropdown-item">ADR 0004: Versioning, compatibility and deprecation</a>
+</li>
+            
+<li>
+    <a href="../adr/0005-release-flow-and-changelog-fragments/" class="dropdown-item">ADR 0005: Release flow and changelog fragments</a>
+</li>
+            
+<li>
+    <a href="../adr/0006-onion-layers-and-interfaces/" class="dropdown-item">ADR 0006: Onion layers, interfaces and one class per file</a>
+</li>
+            
+<li>
+    <a href="../adr/0007-model-transport-plain-httpx/" class="dropdown-item">ADR 0007: Models are called over plain httpx, behind `ModelInterface`</a>
+</li>
+            
+<li>
+    <a href="../adr/0008-tools-for-the-model/" class="dropdown-item">ADR 0008: The model gets tools, each stage gets only the ones it names</a>
+</li>
+            
+<li>
+    <a href="../adr/0009-branch-driven-publishing/" class="dropdown-item">ADR 0009: Publishing follows the branch: develop to TestPyPI, main to PyPI</a>
+</li>
+            
+<li>
+    <a href="../adr/0010-chapters-are-drafted-in-order-in-one-stage/" class="dropdown-item">ADR 0010: Chapters are drafted in order, inside one stage</a>
+</li>
+            
+<li>
+    <a href="../adr/0011-run-inputs/" class="dropdown-item">ADR 0011: Run inputs are untrusted text carried inside the brief</a>
+</li>
+    </ul>
+  </li>
+                                    
+<li>
+    <a href="../changelog/" class="dropdown-item">Changelog</a>
+</li>
+                                    
+<li>
+    <a href="../security/" class="dropdown-item">Security</a>
+</li>
+                                    
+<li>
+    <a href="../support/" class="dropdown-item">Support</a>
+</li>
+                                    
+<li>
+    <a href="../code-of-conduct/" class="dropdown-item">Code of conduct</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#properdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../worker-image/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../releasing/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/adammatthewsteinberger/engineering-influence/edit/develop/troubleshooting.md" class="nav-link">Edit on adammatthewsteinberger/engineering-influence
+                                    </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#troubleshooting" class="nav-link">Troubleshooting</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#ask-before-you-guess" class="nav-link">Ask before you guess</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#collecting-evidence-for-a-bug-report" class="nav-link">Collecting evidence for a bug report</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h1>
+<p><strong>BLUF:</strong> Ask the machine first: <code>ei doctor --ready</code> checks the extras, the build tools, the author profile, the
+local model (when <code>EI_STAGE_EXECUTOR</code> is <code>local</code>) and the search, and says what to do about each failure. It makes
+one tiny request to the local model and one real search request, and it does not look at the database or the
+broker. If the machine is fine and the stack is not, find the symptom in the table below. The rows about the stack
+assume you ran <code>set -a; . examples/.env; set +a</code>.</p>
+<h2 id="ask-before-you-guess">Ask before you guess<a class="headerlink" href="#ask-before-you-guess" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><strong>Daniel:</strong> Something failed and I have forty log lines. I do not know where to start.</p>
+<p><strong>Professor Feynman:</strong> A car will not start. What is the first thing a mechanic does?</p>
+<p><strong>Daniel:</strong> Plugs in the diagnostic computer.</p>
+<p><strong>Professor Feynman:</strong> Ask the machine. <code>ei doctor --ready</code> is yours: one line per thing a book needs, <code>ok</code> or
+<code>FAIL</code>, and each <code>FAIL</code> says what to do. It finds the author profile you forgot and the TeX tool that is missing
+before you spend an hour on a log.</p>
+<p><strong>Daniel:</strong> And if it all says <code>ok</code> and the stack still misbehaves?</p>
+<p><strong>Professor Feynman:</strong> Then the machine is fine and the fault is elsewhere. The doctor checks this computer's
+own files and tools, the local model and the search, and not the stack: it does not look at the database or the
+broker. Look your symptom up below, and collect the evidence the last section lists before you ask for help.</p>
+<p><strong>Daniel:</strong> Doctor for the machine, the table for the stack, and the evidence block for a bug report.</p>
+</blockquote>
+<p>Find the symptom, then the cause. Commands assume you ran <code>set -a; . examples/.env; set +a</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>docker compose</code> says <code>set POSTGRES_PASSWORD in examples/.env</code></td>
+<td>Compose has no default credentials by design</td>
+<td><code>sh examples/up.sh</code> generates <code>examples/.env</code>, or copy <code>.env.example</code> and fill every blank</td>
+</tr>
+<tr>
+<td><code>error: required secret EI_DATABASE_URL is not configured</code> (exit 2)</td>
+<td><code>ei serve</code> fails closed without settings</td>
+<td>Export the variables in <a href="../configuration/#running-the-stack">CONFIGURATION.md</a></td>
+</tr>
+<tr>
+<td>API or worker exits with <code>the database schema is not at the latest revision</code></td>
+<td>The database was never migrated, or a new release added migrations</td>
+<td>Run <code>ei db upgrade</code> (compose does this in its <code>migrate</code> service), then start the process</td>
+</tr>
+<tr>
+<td><code>ei run resume</code> prints <code>ConnectionError while talking to the stack</code></td>
+<td>The broker was unreachable after the run was un-parked, so its stage was not queued</td>
+<td>Run the same command again: resuming a running run queues its stage</td>
+</tr>
+<tr>
+<td><code>ei run …</code> prints <code>error: run 'x' is already completed</code> (exit 1)</td>
+<td>Completed and failed runs cannot be resumed or cancelled</td>
+<td>Nothing to do; a cancelled run can be cancelled again, which changes nothing</td>
+</tr>
+<tr>
+<td><code>ei db upgrade</code> prints <code>cannot reach or migrate the database (OperationalError)</code></td>
+<td>The URL is wrong or the database is down; the message never includes the password</td>
+<td>Check <code>EI_DATABASE_URL</code> and that Postgres is reachable from where you run it</td>
+</tr>
+<tr>
+<td><code>ei serve api</code> or <code>worker</code> prints <code>needs the api and runtime extras</code>; <code>ei serve mcp</code> names the <code>mcp</code> and <code>runtime</code> extras</td>
+<td>Optional dependencies missing</td>
+<td><code>pip install "engineering-influence[api,runtime]"</code> (or <code>[mcp,runtime]</code>), or <code>uv sync</code> with those extras</td>
+</tr>
+<tr>
+<td><code>ei book …</code> prints <code>book commands need the publishing extra</code>; <code>ei book create</code> prints <code>book create needs the runtime and publishing extras</code></td>
+<td>Pillow, numpy and the PDF libraries are optional</td>
+<td><code>pip install "engineering-influence[publishing]"</code> (and <code>[runtime]</code> for <code>book create</code>)</td>
+</tr>
+<tr>
+<td><code>ei book create</code> stops at once with <code>already exists and is not an empty folder</code> (exit 2)</td>
+<td><code>--out</code> holds something, and a book is written only into a new or empty folder</td>
+<td>Choose a new <code>--out</code>. To keep a run you were resuming, <code>--out NEW_FOLDER --state-dir OLD.state --resume</code></td>
+</tr>
+<tr>
+<td><code>ei book create</code> exits 1 and prints <code>issue: stage-failed: …the book 'SLUG' did not build…</code>, naming a step or tool</td>
+<td>The <code>build</code> stage could not make the PDF or EPUB, usually because a TeX tool is not installed. Every chapter was still written and is in <code>--out</code></td>
+<td><code>ei doctor --ready</code> lists each missing tool. Install it. <strong>A failed run is final: <code>--resume</code> does not retry it.</strong> Build the exported project with <code>ei book --root OUT build SLUG</code> (or <code>publish</code>), or start a new run with a new <code>--out</code>. Rebuilding the export has not been tried end to end</td>
+</tr>
+<tr>
+<td><code>ei book create</code> exits 2 and prints <code>a book needs the author's details to be typeset</code> (code <code>AUTHOR_PROFILE_REQUIRED</code>)</td>
+<td>A book needs the author's details to be typeset, and none was named</td>
+<td>Pass <code>--profile FILE</code> or set <code>EI_AUTHOR_PROFILE</code>; <code>examples/author-profile.example.toml</code> is a starting point. (<code>ei doctor --ready</code> takes <code>--author-profile</code>.)</td>
+</tr>
+<tr>
+<td><code>ei book create</code> exits 3</td>
+<td>The run stopped to ask for more budget. Nothing is lost</td>
+<td>Decide, then <code>ei book create --out DIR --resume --approve-spend</code></td>
+</tr>
+<tr>
+<td><code>ei doctor --ready</code> fails <code>local: server</code></td>
+<td>Ollama is not running at <code>EI_LOCAL_URL</code></td>
+<td>Start Ollama, or set <code>EI_LOCAL_URL</code>; see <a href="../local-model/">LOCAL_MODEL.md</a></td>
+</tr>
+<tr>
+<td><code>ei doctor --ready</code> fails <code>local: context</code></td>
+<td>The server loaded the model with fewer than 32,768 tokens</td>
+<td>Set <code>OLLAMA_CONTEXT_LENGTH=32768</code> where you start Ollama and restart it</td>
+</tr>
+<tr>
+<td><code>ei doctor --ready</code> prints <code>FAIL searxng at its default address: search: …</code></td>
+<td>Nothing answered a real test search at <code>http://127.0.0.1:8888</code>, or at the <code>EI_SEARXNG_URL</code> or Brave you set</td>
+<td>Start the SearXNG in <code>examples/searxng/</code> (see <a href="../research/">RESEARCH.md</a>) or set <code>EI_SEARXNG_URL</code> or <code>BRAVE_SEARCH_API_KEY</code></td>
+</tr>
+<tr>
+<td><code>ei doctor --ready</code> prints <code>FAIL install: tool &lt;name&gt;</code> or <code>FAIL install: extra &lt;name&gt;</code></td>
+<td>The build stage needs that tool, or the run needs that extra</td>
+<td>Install it; <a href="../worker-image/">WORKER_IMAGE.md</a> lists the TeX packages</td>
+</tr>
+<tr>
+<td><code>ei doctor --ready</code> fails <code>local: model</code> or <code>local: answers</code></td>
+<td>The model is not pulled, or it returned an empty answer</td>
+<td><code>ollama pull gpt-oss:20b</code>; see <a href="../local-model/">LOCAL_MODEL.md</a></td>
+</tr>
+<tr>
+<td>API will not start; mentions API keys</td>
+<td><code>EI_API_KEYS</code> unset or a key shorter than 24 characters</td>
+<td><code>openssl rand -hex 24</code> per key</td>
+</tr>
+<tr>
+<td><code>401 UNAUTHORIZED</code></td>
+<td>Missing or wrong key</td>
+<td><code>Authorization: Bearer $EI_API_KEY</code> or <code>X-API-Key</code>; the key is the one in <code>EI_API_KEYS</code></td>
+</tr>
+<tr>
+<td><code>429 RATE_LIMITED</code></td>
+<td>Budget spent (default burst 30, 10 per second)</td>
+<td>Back off; raise <code>EI_RATE_BURST</code> / <code>EI_RATE_PER_SECOND</code> for trusted clients</td>
+</tr>
+<tr>
+<td><code>422</code> on <code>POST /v1/pipelines</code></td>
+<td>A required field is missing or a stage name is unknown; the answer names the valid stages</td>
+<td>Valid stages: <code>thesis book novel screenplay hub spokes distribution publish</code></td>
+</tr>
+<tr>
+<td><code>GET /health/ready</code> returns 503</td>
+<td>A dependency is unreachable; the body never says which</td>
+<td>Read <code>/metrics</code> (needs a key) and the API log</td>
+</tr>
+<tr>
+<td><code>Connection refused</code> on port 8000</td>
+<td>Stack not up, or <code>EI_API_PORT</code> changed</td>
+<td><code>docker compose -f examples/docker-compose.yml --env-file examples/.env ps</code></td>
+</tr>
+<tr>
+<td>Postgres container unhealthy, exits at start (Postgres 18 image)</td>
+<td>The volume is mounted at <code>/var/lib/postgresql/data</code>; 18+ images keep a versioned directory under <code>/var/lib/postgresql</code></td>
+<td>Mount <code>/var/lib/postgresql</code> (the shipped compose file does) and delete the old volume: <code>sh examples/down.sh --volumes</code></td>
+</tr>
+<tr>
+<td>A job sits in <code>engineering-influence.jobs.dead</code></td>
+<td>The job was malformed or failed; nothing retries it</td>
+<td>Inspect it in the RabbitMQ UI or <code>rabbitmqctl</code>, fix the cause, republish by hand</td>
+</tr>
+<tr>
+<td>A stage ran twice</td>
+<td>At-least-once delivery: the worker died between the ledger write and the acknowledgement</td>
+<td>Make downstream consumers idempotent on <code>job_id</code></td>
+</tr>
+<tr>
+<td>Pipeline stops at <code>gate.awaiting</code></td>
+<td>A human gate (or a rejecting gate) parked it; no endpoint resolves gates yet</td>
+<td>Not recoverable through the API yet</td>
+</tr>
+<tr>
+<td>MCP host shows no tools</td>
+<td>It launched the wrong command or directory</td>
+<td>Run <code>uv run python examples/mcp/client.py</code> to prove the server; give the host the same command and <code>cwd</code></td>
+</tr>
+<tr>
+<td>Webhook receiver answers 401</td>
+<td>Wrong secret, body re-serialised before verifying, or clock skew over 300 seconds</td>
+<td>Sign and verify the <strong>raw bytes</strong>; sync the clock</td>
+</tr>
+<tr>
+<td>Webhook receiver answers 409</td>
+<td>Replay: the same signature arrived twice</td>
+<td>Expected on retries after your <code>2xx</code>; treat as already processed</td>
+</tr>
+<tr>
+<td><code>ModuleNotFoundError: mcp.server.mcpserver</code></td>
+<td>You installed <code>mcp</code> 1.x with this release</td>
+<td>This project needs <code>mcp&gt;=2,&lt;3</code>; <code>pip install -U "mcp&gt;=2,&lt;3"</code></td>
+</tr>
+<tr>
+<td><code>ruff</code>, <code>mypy</code> or <code>pytest</code> not found</td>
+<td>Wrong extras</td>
+<td><code>uv sync --extra test --extra runtime --extra dev --extra publishing</code></td>
+</tr>
+<tr>
+<td>Coverage drops below 100% only for <code>book_cli</code> / <code>serve_cli</code></td>
+<td>Child-process coverage not enabled (pytest-cov 7+)</td>
+<td>Keep <code>patch = ["subprocess"]</code> and <code>parallel = true</code> in <code>[tool.coverage.run]</code></td>
+</tr>
+<tr>
+<td>Pushed a Dependabot-style commit and <code>provenance</code> fails</td>
+<td>The commit has no <code>Made-With:</code> trailer</td>
+<td><code>vibey-gh install</code> adds the commit hook; amend the commit message</td>
+</tr>
+</tbody>
+</table>
+<h2 id="collecting-evidence-for-a-bug-report">Collecting evidence for a bug report<a class="headerlink" href="#collecting-evidence-for-a-bug-report" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash">uv run ei --version
+docker compose -f examples/docker-compose.yml --env-file examples/.env ps
+docker compose -f examples/docker-compose.yml --env-file examples/.env logs --no-color --tail 100 api worker
+</code></pre>
+<p>Logs are JSON lines with a <code>correlation_id</code>; search for the id from your <code>X-Request-ID</code>.
+Secrets are masked by field name, but check before pasting. Report security issues privately
+through <a href="../security/">SECURITY.md</a>, not in a public issue.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://properdocs.org/">ProperDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="properdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="properdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="properdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="properdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

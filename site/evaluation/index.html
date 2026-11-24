@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://adammatthewsteinberger.github.io/engineering-influence/evaluation/">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Evaluation - engineering-influence</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../stylesheets/vibey.css" rel="stylesheet">
+        <link href="../stylesheets/site.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+        <meta name="description" content="BLUF: ei evaluate measures whether a release is good enough: it makes five books, has a separately named judge model score each one against a rubric, and…">
+    <meta property="og:title" content="Evaluation - engineering-influence">
+    <meta property="og:description" content="BLUF: ei evaluate measures whether a release is good enough: it makes five books, has a separately named judge model score each one against a rubric, and…">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://adammatthewsteinberger.github.io/engineering-influence/evaluation/">
+    <meta property="og:site_name" content="engineering-influence">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Evaluation - engineering-influence">
+    <meta name="twitter:description" content="BLUF: ei evaluate measures whether a release is good enough: it makes five books, has a separately named judge model score each one against a rubric, and…">
+</head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">engineering-influence</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href=".." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Start</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../getting-started/" class="dropdown-item">Getting started</a>
+</li>
+                                    
+<li>
+    <a href="../agents-driving/" class="dropdown-item">Driving it from another AI</a>
+</li>
+                                    
+<li>
+    <a href="../books-and-kdp/" class="dropdown-item">Books and KDP</a>
+</li>
+                                    
+<li>
+    <a href="../novels/" class="dropdown-item">Novels</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Writing books</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../local-model/" class="dropdown-item">The local model</a>
+</li>
+                                    
+<li>
+    <a href="../model-profiles/" class="dropdown-item">Model profiles</a>
+</li>
+                                    
+<li>
+    <a href="../model-catalog/" class="dropdown-item">Model catalog</a>
+</li>
+                                    
+<li>
+    <a href="../model-calls/" class="dropdown-item">Model calls</a>
+</li>
+                                    
+<li>
+    <a href="../research/" class="dropdown-item">Research</a>
+</li>
+                                    
+<li>
+    <a href="../prompts/" class="dropdown-item">Prompts</a>
+</li>
+                                    
+<li>
+    <a href="../skills/" class="dropdown-item">Skills</a>
+</li>
+                                    
+<li>
+    <a href="../plugins/" class="dropdown-item">Plugins</a>
+</li>
+                                    
+<li>
+    <a href="../tool-lock/" class="dropdown-item">Tool lock</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../interactions/" class="dropdown-item">Interfaces</a>
+</li>
+                                    
+<li>
+    <a href="../configuration/" class="dropdown-item">Configuration</a>
+</li>
+                                    
+<li>
+    <a href="../compatibility/" class="dropdown-item">Compatibility</a>
+</li>
+                                    
+<li>
+    <a href="../architecture/" class="dropdown-item">Architecture</a>
+</li>
+                                    
+<li>
+    <a href="../threat-model/" class="dropdown-item">Threat model</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Operating</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../worker-image/" class="dropdown-item">Worker image</a>
+</li>
+                                    
+<li>
+    <a href="../troubleshooting/" class="dropdown-item">Troubleshooting</a>
+</li>
+                                    
+<li>
+    <a href="../releasing/" class="dropdown-item">Releasing</a>
+</li>
+                                    
+<li>
+    <a href="../documentation-site/" class="dropdown-item">Documentation site</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Quality</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../testing/" class="dropdown-item">Testing</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Evaluation</a>
+</li>
+                                    
+<li>
+    <a href="../live-smoke-test/" class="dropdown-item">Live smoke test</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Project</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../contributing/" class="dropdown-item">Contributing</a>
+</li>
+                                    
+<li>
+    <a href="../style/" class="dropdown-item">How these documents are written</a>
+</li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Decision records</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../adr/" class="dropdown-item">Overview</a>
+</li>
+            
+<li>
+    <a href="../adr/0001-vibey-integration-boundary/" class="dropdown-item">ADR 0001: Isolate vibey behind ports</a>
+</li>
+            
+<li>
+    <a href="../adr/0002-audience-priority-and-sovereign-agent-doctrine/" class="dropdown-item">ADR 0002: Audience priority and sovereign agent doctrine</a>
+</li>
+            
+<li>
+    <a href="../adr/0003-definition-of-1-0/" class="dropdown-item">ADR 0003: Definition of 1.0</a>
+</li>
+            
+<li>
+    <a href="../adr/0004-versioning-compatibility-and-deprecation/" class="dropdown-item">ADR 0004: Versioning, compatibility and deprecation</a>
+</li>
+            
+<li>
+    <a href="../adr/0005-release-flow-and-changelog-fragments/" class="dropdown-item">ADR 0005: Release flow and changelog fragments</a>
+</li>
+            
+<li>
+    <a href="../adr/0006-onion-layers-and-interfaces/" class="dropdown-item">ADR 0006: Onion layers, interfaces and one class per file</a>
+</li>
+            
+<li>
+    <a href="../adr/0007-model-transport-plain-httpx/" class="dropdown-item">ADR 0007: Models are called over plain httpx, behind `ModelInterface`</a>
+</li>
+            
+<li>
+    <a href="../adr/0008-tools-for-the-model/" class="dropdown-item">ADR 0008: The model gets tools, each stage gets only the ones it names</a>
+</li>
+            
+<li>
+    <a href="../adr/0009-branch-driven-publishing/" class="dropdown-item">ADR 0009: Publishing follows the branch: develop to TestPyPI, main to PyPI</a>
+</li>
+            
+<li>
+    <a href="../adr/0010-chapters-are-drafted-in-order-in-one-stage/" class="dropdown-item">ADR 0010: Chapters are drafted in order, inside one stage</a>
+</li>
+            
+<li>
+    <a href="../adr/0011-run-inputs/" class="dropdown-item">ADR 0011: Run inputs are untrusted text carried inside the brief</a>
+</li>
+    </ul>
+  </li>
+                                    
+<li>
+    <a href="../changelog/" class="dropdown-item">Changelog</a>
+</li>
+                                    
+<li>
+    <a href="../security/" class="dropdown-item">Security</a>
+</li>
+                                    
+<li>
+    <a href="../support/" class="dropdown-item">Support</a>
+</li>
+                                    
+<li>
+    <a href="../code-of-conduct/" class="dropdown-item">Code of conduct</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#properdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../testing/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../live-smoke-test/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/adammatthewsteinberger/engineering-influence/edit/develop/evaluation.md" class="nav-link">Edit on adammatthewsteinberger/engineering-influence
+                                    </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#the-evaluation" class="nav-link">The evaluation</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#why-the-judge-must-be-someone-else" class="nav-link">Why the judge must be someone else</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-is-in-evaluation" class="nav-link">What is in evaluation/</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#running-it" class="nav-link">Running it</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-judge" class="nav-link">The judge</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-bar" class="nav-link">The bar</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-report" class="nav-link">The report</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-it-does-not-tell-you" class="nav-link">What it does not tell you</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#nightly" class="nav-link">Nightly</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="the-evaluation">The evaluation<a class="headerlink" href="#the-evaluation" title="Permanent link">&para;</a></h1>
+<p><strong>BLUF:</strong> <code>ei evaluate</code> measures whether a release is good enough: it makes five books, has a separately named
+judge model score each one against a rubric, and passes only if every book finished, every dimension's mean is at
+least 3.5 of 5, none has dropped by more than 0.2, and the cost estimate was within 30% of the real cost. It
+spends real money and refuses to start without <code>EI_ALLOW_PAID=1</code>. It has never been run against a real model.</p>
+<p>ADR 0003 defines 1.0 by criteria that can be measured. Two of them are measured by one command, <code>ei evaluate</code>:</p>
+<ul>
+<li><strong>A5</strong> — the pre-flight cost estimate is within 30% of what the books really cost.</li>
+<li><strong>A6</strong> — a judge's mean score is at least 3.5 of 5 on every rubric dimension, and no dimension falls by more than 0.2 from the previous release.</li>
+</ul>
+<p><code>ei evaluate</code> makes every book of a fixed set with the stack's own pipeline, has a separately configured model score each finished book, and applies the bar. <strong>It spends real money</strong>, on the writing model and on the judge.</p>
+<p><strong>Status.</strong> The harness is built and tested against scripted models. It has not been run against a real model, so nothing here says the stack clears the bar. The first paid run is what produces the first baseline.</p>
+<h2 id="why-the-judge-must-be-someone-else">Why the judge must be someone else<a class="headerlink" href="#why-the-judge-must-be-someone-else" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><strong>Daniel:</strong> Could the writing model not just rate its own books? It would save a second model.</p>
+<p><strong>Professor Feynman:</strong> Would you let a student mark his own exam?</p>
+<p><strong>Daniel:</strong> No. He would be generous, and he would miss exactly the mistakes he made.</p>
+<p><strong>Professor Feynman:</strong> So the judge is named separately, and the command refuses to start without one. Nothing
+stops you naming the writer's own profile as the judge, so do not. It gets a fixed rubric with written anchors
+for 1, 3 and 5, and it must give a reason for every score.</p>
+<p><strong>Daniel:</strong> One strict marker can still have a bad day.</p>
+<p><strong>Professor Feynman:</strong> Which is why the bar is on the mean of each dimension across the books, at 3.5 or more,
+and why no dimension may fall more than 0.2 below the last release. The second catches a slow slide that a fixed
+bar would miss. Every book must also finish, and the cost estimate must be within 30%. Here the picture gives
+out: a human examiner knows the subject. This one reads carefully, and it has not yet been checked against human
+readers.</p>
+<p><strong>Daniel:</strong> A judge I name separately, a floor on every mean, and no backsliding. And until someone pays for the
+first run, there is no baseline at all.</p>
+</blockquote>
+<h2 id="what-is-in-evaluation">What is in <code>evaluation/</code><a class="headerlink" href="#what-is-in-evaluation" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>evaluation/set.toml</code></td>
+<td>The books made on every release: three non-fiction ideas and two novels, each a short book (<code>target_words = 10000</code>) so a run stays affordable</td>
+</tr>
+<tr>
+<td><code>evaluation/rubric.toml</code></td>
+<td>The dimensions, the question the judge asks for each, what a 1, a 3 and a 5 look like, which kinds of book each applies to, and the bar (<code>pass_mean = 3.5</code>, <code>max_drop = 0.2</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>The rubric's dimensions:</p>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Applies to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>structure</code>, <code>prose</code>, <code>voice</code></td>
+<td>both kinds</td>
+</tr>
+<tr>
+<td><code>accuracy</code>, <code>usefulness</code></td>
+<td>non-fiction</td>
+</tr>
+<tr>
+<td><code>continuity</code>, <code>character</code>, <code>pacing</code></td>
+<td>novels</td>
+</tr>
+</tbody>
+</table>
+<p>The set is the benchmark. Changing an idea changes what is measured, so edit the set only together with a new baseline. The ideas are generic on purpose: this repository holds no author's own material.</p>
+<h2 id="running-it">Running it<a class="headerlink" href="#running-it" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash">EI_ALLOW_PAID=1 \
+EI_STAGE_EXECUTOR=model EI_STAGE_MODEL_PROFILE=writer \
+EI_EVAL_JUDGE_PROFILE=judge \
+EI_MODEL_PROFILES=profiles.toml EI_MODEL_CATALOG=catalog.toml \
+EI_AUTHOR_PROFILE=author.toml \
+ei evaluate --out eval-out --budget-usd 5 --judge-budget-usd 3 --baseline previous/evaluation.json
+</code></pre>
+<ul>
+<li>Also accepted: <code>--profile FILE</code> (the author profile, as an alternative to <code>EI_AUTHOR_PROFILE</code>), <code>--set FILE</code> (default <code>evaluation/set.toml</code>), <code>--rubric FILE</code> (default <code>evaluation/rubric.toml</code>) and <code>--release LABEL</code> (recorded in the report).</li>
+<li><code>EI_ALLOW_PAID=1</code> is required. Without it the command refuses before it reads a file or calls a model.</li>
+<li><code>--budget-usd</code> is the most <strong>each book</strong> may spend; <code>--judge-budget-usd</code> is the most the <strong>judge may spend in all</strong>. Both are required and have no default.</li>
+<li><code>--out</code> must be a new or empty folder, so one evaluation never mixes with another. Each book is made under it (<code>&lt;case&gt;/</code> and <code>&lt;case&gt;.state/</code>), and <code>evaluation.json</code> is written beside them.</li>
+<li><code>--baseline</code> is an earlier <code>evaluation.json</code>. Without one only the pass mark applies; with one a fall of more than 0.2 on any dimension fails.</li>
+<li>The books are built for real, so the worker needs the TeX toolchain: run it from the <code>worker-tex</code> image (<a href="../worker-image/">WORKER_IMAGE.md</a>).</li>
+</ul>
+<p>Exit status: <code>0</code> the release meets the bar, <code>1</code> it does not (every reason is printed and is in the report), <code>2</code> the command could not run.</p>
+<h2 id="the-judge">The judge<a class="headerlink" href="#the-judge" title="Permanent link">&para;</a></h2>
+<p>The judge is a different configuration from the writer: <code>EI_EVAL_JUDGE_PROFILE</code> names a profile in the same <code>EI_MODEL_PROFILES</code> file, and the command refuses to start without it. A model that grades its own writing is the least informative judge, and pinning the judge's profile is what makes this release's scores and the last release's the same measurement.</p>
+<ul>
+<li>It is called once per finished book, with the whole book, using the <code>eval_judge</code> prompt (<a href="../prompts/">PROMPTS.md</a>). The book is an untrusted blank: a book that tells the judge to score it highly is data, not an instruction.</li>
+<li>It sees the text only: not the brief, what the run cost, or any earlier score.</li>
+<li>It answers one JSON object, a whole score from 1 to 5 and a reason for each dimension. An answer that is not exactly the rubric's dimensions with whole scores is refused (<code>JUDGE_ANSWER_INVALID</code>) and asked for once more; two refusals stop the evaluation, because scores from a judge that sometimes could not answer would not be comparable.</li>
+<li>It has a budget of its own, reserved call by call before anything is sent, so it cannot spend past <code>--judge-budget-usd</code>. A call that does not fit is refused (<code>JUDGE_BUDGET_EXHAUSTED</code>).</li>
+<li>A book too long for the judge's window is refused (<code>JUDGE_INPUT_TOO_LARGE</code>), not cut: a judge that read half a book scores half a book.</li>
+</ul>
+<h2 id="the-bar">The bar<a class="headerlink" href="#the-bar" title="Permanent link">&para;</a></h2>
+<p>A release meets the bar when none of these is found. Each one that is found is listed in <code>evaluation.json</code> and printed.</p>
+<ol>
+<li><strong>Every book finished.</strong> A book whose run failed, stopped for money or did not build is a failure of the release, not a missing data point: leaving it out would let a pipeline that breaks on hard ideas pass by scoring only the easy ones. Only a finished book is judged.</li>
+<li><strong>Every dimension's mean reaches the pass mark.</strong> The mean is over the books the dimension applies to (<code>kinds</code> in the rubric).</li>
+<li><strong>No dimension fell by more than the allowed drop</strong> since the baseline. A dimension the baseline had and this evaluation did not measure is a failure.</li>
+<li><strong>The cost estimate was within 30% of what was spent</strong>, over the whole set. Money spent with no estimate recorded is a failure, because the check cannot be made.</li>
+</ol>
+<h2 id="the-report">The report<a class="headerlink" href="#the-report" title="Permanent link">&para;</a></h2>
+<p><code>evaluation.json</code> is stable (the same inputs give the same bytes) and is its own baseline: commit it, and pass it as <code>--baseline</code> to the next release's evaluation. It holds the rubric version and bar, <code>dimension_means</code>, the spend (making, estimated, the estimate's error, judging), the verdict, and for each case the title, the run's status, how many chapters and words, what it cost, and every score with its reason. Read the reasons: a mean says how far, not why.</p>
+<h2 id="what-it-does-not-tell-you">What it does not tell you<a class="headerlink" href="#what-it-does-not-tell-you" title="Permanent link">&para;</a></h2>
+<ul>
+<li>It cannot show that a real model clears 3.5. Only a paid run can.</li>
+<li>A judge is a model. Its scores are comparable from release to release only while the judge's profile and the rubric stay the same; change either and take a new baseline.</li>
+<li>The estimate's tolerance is measured on five short books. The estimator's constants are first guesses until real runs calibrate them.</li>
+<li>Five books are a small sample. A pass is evidence, not a guarantee.</li>
+</ul>
+<h2 id="nightly">Nightly<a class="headerlink" href="#nightly" title="Permanent link">&para;</a></h2>
+<p><code>.github/workflows/nightly-eval.yml</code> runs the evaluation each night. It is <strong>off</strong> until the repository variable <code>RUN_NIGHTLY_EVAL</code> is <code>true</code>, and it runs in the <code>evaluation</code> environment, which holds the model key and whose reviewers approve each run. It has not run yet. The maintainer provides the secrets, the profiles and the committed baseline; see the comments in the workflow.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://properdocs.org/">ProperDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="properdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="properdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="properdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="properdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://adammatthewsteinberger.github.io/engineering-influence/plugins/">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Plugins - engineering-influence</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../stylesheets/vibey.css" rel="stylesheet">
+        <link href="../stylesheets/site.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+        <meta name="description" content="BLUF: A plugin is one reviewed file that bundles skills and the definitions of tool servers, so you can look at everything at once, pin it by hash and…">
+    <meta property="og:title" content="Plugins - engineering-influence">
+    <meta property="og:description" content="BLUF: A plugin is one reviewed file that bundles skills and the definitions of tool servers, so you can look at everything at once, pin it by hash and…">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://adammatthewsteinberger.github.io/engineering-influence/plugins/">
+    <meta property="og:site_name" content="engineering-influence">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Plugins - engineering-influence">
+    <meta name="twitter:description" content="BLUF: A plugin is one reviewed file that bundles skills and the definitions of tool servers, so you can look at everything at once, pin it by hash and…">
+</head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">engineering-influence</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href=".." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Start</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../getting-started/" class="dropdown-item">Getting started</a>
+</li>
+                                    
+<li>
+    <a href="../agents-driving/" class="dropdown-item">Driving it from another AI</a>
+</li>
+                                    
+<li>
+    <a href="../books-and-kdp/" class="dropdown-item">Books and KDP</a>
+</li>
+                                    
+<li>
+    <a href="../novels/" class="dropdown-item">Novels</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Writing books</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../local-model/" class="dropdown-item">The local model</a>
+</li>
+                                    
+<li>
+    <a href="../model-profiles/" class="dropdown-item">Model profiles</a>
+</li>
+                                    
+<li>
+    <a href="../model-catalog/" class="dropdown-item">Model catalog</a>
+</li>
+                                    
+<li>
+    <a href="../model-calls/" class="dropdown-item">Model calls</a>
+</li>
+                                    
+<li>
+    <a href="../research/" class="dropdown-item">Research</a>
+</li>
+                                    
+<li>
+    <a href="../prompts/" class="dropdown-item">Prompts</a>
+</li>
+                                    
+<li>
+    <a href="../skills/" class="dropdown-item">Skills</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Plugins</a>
+</li>
+                                    
+<li>
+    <a href="../tool-lock/" class="dropdown-item">Tool lock</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../interactions/" class="dropdown-item">Interfaces</a>
+</li>
+                                    
+<li>
+    <a href="../configuration/" class="dropdown-item">Configuration</a>
+</li>
+                                    
+<li>
+    <a href="../compatibility/" class="dropdown-item">Compatibility</a>
+</li>
+                                    
+<li>
+    <a href="../architecture/" class="dropdown-item">Architecture</a>
+</li>
+                                    
+<li>
+    <a href="../threat-model/" class="dropdown-item">Threat model</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Operating</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../worker-image/" class="dropdown-item">Worker image</a>
+</li>
+                                    
+<li>
+    <a href="../troubleshooting/" class="dropdown-item">Troubleshooting</a>
+</li>
+                                    
+<li>
+    <a href="../releasing/" class="dropdown-item">Releasing</a>
+</li>
+                                    
+<li>
+    <a href="../documentation-site/" class="dropdown-item">Documentation site</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Quality</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../testing/" class="dropdown-item">Testing</a>
+</li>
+                                    
+<li>
+    <a href="../evaluation/" class="dropdown-item">Evaluation</a>
+</li>
+                                    
+<li>
+    <a href="../live-smoke-test/" class="dropdown-item">Live smoke test</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Project</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../contributing/" class="dropdown-item">Contributing</a>
+</li>
+                                    
+<li>
+    <a href="../style/" class="dropdown-item">How these documents are written</a>
+</li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Decision records</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../adr/" class="dropdown-item">Overview</a>
+</li>
+            
+<li>
+    <a href="../adr/0001-vibey-integration-boundary/" class="dropdown-item">ADR 0001: Isolate vibey behind ports</a>
+</li>
+            
+<li>
+    <a href="../adr/0002-audience-priority-and-sovereign-agent-doctrine/" class="dropdown-item">ADR 0002: Audience priority and sovereign agent doctrine</a>
+</li>
+            
+<li>
+    <a href="../adr/0003-definition-of-1-0/" class="dropdown-item">ADR 0003: Definition of 1.0</a>
+</li>
+            
+<li>
+    <a href="../adr/0004-versioning-compatibility-and-deprecation/" class="dropdown-item">ADR 0004: Versioning, compatibility and deprecation</a>
+</li>
+            
+<li>
+    <a href="../adr/0005-release-flow-and-changelog-fragments/" class="dropdown-item">ADR 0005: Release flow and changelog fragments</a>
+</li>
+            
+<li>
+    <a href="../adr/0006-onion-layers-and-interfaces/" class="dropdown-item">ADR 0006: Onion layers, interfaces and one class per file</a>
+</li>
+            
+<li>
+    <a href="../adr/0007-model-transport-plain-httpx/" class="dropdown-item">ADR 0007: Models are called over plain httpx, behind `ModelInterface`</a>
+</li>
+            
+<li>
+    <a href="../adr/0008-tools-for-the-model/" class="dropdown-item">ADR 0008: The model gets tools, each stage gets only the ones it names</a>
+</li>
+            
+<li>
+    <a href="../adr/0009-branch-driven-publishing/" class="dropdown-item">ADR 0009: Publishing follows the branch: develop to TestPyPI, main to PyPI</a>
+</li>
+            
+<li>
+    <a href="../adr/0010-chapters-are-drafted-in-order-in-one-stage/" class="dropdown-item">ADR 0010: Chapters are drafted in order, inside one stage</a>
+</li>
+            
+<li>
+    <a href="../adr/0011-run-inputs/" class="dropdown-item">ADR 0011: Run inputs are untrusted text carried inside the brief</a>
+</li>
+    </ul>
+  </li>
+                                    
+<li>
+    <a href="../changelog/" class="dropdown-item">Changelog</a>
+</li>
+                                    
+<li>
+    <a href="../security/" class="dropdown-item">Security</a>
+</li>
+                                    
+<li>
+    <a href="../support/" class="dropdown-item">Support</a>
+</li>
+                                    
+<li>
+    <a href="../code-of-conduct/" class="dropdown-item">Code of conduct</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#properdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../skills/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../tool-lock/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/adammatthewsteinberger/engineering-influence/edit/develop/plugins.md" class="nav-link">Edit on adammatthewsteinberger/engineering-influence
+                                    </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#plugins" class="nav-link">Plugins</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#open-the-parcel-first" class="nav-link">Open the parcel first</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#plugins-at-a-glance" class="nav-link">Plugins at a glance</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#a-plugin-file" class="nav-link">A plugin file</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#commands" class="nav-link">Commands</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#importing-a-claude-code-plugin" class="nav-link">Importing a Claude Code plugin</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-plugin-lock" class="nav-link">The plugin lock</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#marketplace-indexes" class="nav-link">Marketplace indexes</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-this-does-and-does-not-give-you" class="nav-link">What this does and does not give you</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-is-not-built" class="nav-link">What is not built</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="plugins">Plugins<a class="headerlink" href="#plugins" title="Permanent link">&para;</a></h1>
+<p><strong>BLUF:</strong> A plugin is one reviewed file that bundles skills and the definitions of tool servers, so you can look
+at everything at once, pin it by hash and install it. Installing it starts nothing, contacts nothing, grants
+nothing and enables nothing: it locks the skills (enabled for no stage) and prints the <code>ei tools add</code> command for
+each server, which you run on purpose.</p>
+<p>A <strong>plugin</strong> is one reviewed file that bundles <a href="../skills/">skills</a> and the definitions of tool servers
+(MCP servers), so a person can look at everything in it at once, pin it by hash and install it. It is slice 6
+of <a href="../adr/0008-tools-for-the-model/">ADR 0008</a>, built in two parts: <strong>6a</strong>, plugins installed from a file on
+disk, and <strong>6b</strong>, marketplace indexes, which list plugin files and let a person download one.</p>
+<p><strong>Installing a plugin starts nothing, contacts nothing, grants nothing and enables nothing.</strong> That is the
+whole design. A bundle is text from someone else, and the step that starts a tool server is <code>ei tools add</code>,
+which a person runs on purpose. So <code>ei plugins add</code> does only two things with what it finds: it locks the
+bundle's <strong>skills</strong> (each enabled for no stage) and it <strong>prints</strong> the <code>ei tools add</code> command for each server.</p>
+<p><strong>Status.</strong> Built and tested against fakes and real files: the bundle format, the plugin lock, <code>ei plugins</code>.
+No plugin has been used in a run with a live model, and the downloader has only been run against a local test
+server and a scripted address, never the real internet.</p>
+<h2 id="open-the-parcel-first">Open the parcel first<a class="headerlink" href="#open-the-parcel-first" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><strong>Daniel:</strong> A plugin from a stranger bundles skills and servers. Installing that sounds like the start of a bad
+day.</p>
+<p><strong>Professor Feynman:</strong> A parcel arrives at your door. Do you put its contents on the shelf before you open it?</p>
+<p><strong>Daniel:</strong> No. I open it on the table and look.</p>
+<p><strong>Professor Feynman:</strong> <code>ei plugins show</code> is the table: it prints each server's command in full, and the first
+100 characters of each skill's text for each stage. It does not print a skill's reference sections at all, so
+open the bundle file itself to read the rest. <code>ei plugins add</code> then does only two things. It locks the skills,
+each enabled for no stage, and it prints the commands for the servers. It does not run them.</p>
+<p><strong>Daniel:</strong> So even after <code>add</code>, nothing is running and no stage can use anything.</p>
+<p><strong>Professor Feynman:</strong> Correct. A run never reads the plugin lock at all. What a run may do lives in the tool
+lock and the skill lock, and a plugin changes those only when you run <code>ei tools add</code> and <code>ei skills enable</code>
+yourself. The picture breaks at the hash: it proves you received the file the index described, not that anyone
+vetted it.</p>
+<p><strong>Daniel:</strong> And the command it prints could do anything its author wrote.</p>
+<p><strong>Professor Feynman:</strong> Which is why you read it first. <code>ei tools add</code> runs a local server once to look at it.</p>
+<p><strong>Daniel:</strong> Show, read, add, then add the tools on purpose. Four doors, and I open each myself.</p>
+</blockquote>
+<h2 id="plugins-at-a-glance">Plugins at a glance<a class="headerlink" href="#plugins-at-a-glance" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>What happens</th>
+<th>What does not</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ei plugins show FILE</code></td>
+<td>Prints every server's command, and each skill's text for each stage cut to 100 characters; reference sections are not shown</td>
+<td>Nothing is installed</td>
+</tr>
+<tr>
+<td><code>ei plugins add FILE</code></td>
+<td>Locks the skills, enabled for no stage; prints the <code>ei tools add</code> commands</td>
+<td>Nothing is started, granted or enabled</td>
+</tr>
+<tr>
+<td><code>ei tools add …</code> (you run it)</td>
+<td>Runs the local server once and locks it</td>
+<td>Nothing is granted to a stage</td>
+</tr>
+<tr>
+<td><code>ei tools grant</code> and <code>ei skills enable</code> (you run them)</td>
+<td>A stage may now use the tool or see the skill</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="a-plugin-file">A plugin file<a class="headerlink" href="#a-plugin-file" title="Permanent link">&para;</a></h2>
+<p>One TOML file, named like the plugin:</p>
+<pre><code class="language-toml"># research_pack.toml
+name = &quot;research_pack&quot;            # the same as the file name, without .toml
+version = 1                       # a whole number from 1
+description = &quot;Sources and style for research.&quot;   # optional, one line, at most 300 characters
+
+[[server]]                        # a remote server: an address, and the variable that holds its token
+name = &quot;docs&quot;
+url = &quot;https://mcp.example.com/v1/mcp&quot;
+bearer_env = &quot;DOCS_TOKEN&quot;
+
+[[server]]                        # a local server: an absolute command, and the variables it is given
+name = &quot;files&quot;
+command = [&quot;/usr/local/bin/files-server&quot;, &quot;/opt/files/server.js&quot;]
+env = [&quot;FILES_ROOT&quot;]
+
+[[skill]]                         # a skill file's contents, as a table
+name = &quot;plain_style&quot;
+version = 2
+description = &quot;Short, plain sentences.&quot;
+
+[skill.parts]
+research = &quot;Say where you read it.&quot;
+outline = &quot;Prefer short chapters.&quot;
+</code></pre>
+<ul>
+<li>A <strong>server</strong> has a <code>name</code> (as in the tool lock) and <strong>either</strong> a <code>command</code> (with an optional <code>env</code> list) <strong>or</strong> a
+  <code>url</code> (with an optional <code>bearer_env</code>). It is checked by the same rules the tool lock uses, so a plugin cannot
+  describe a server the lock would refuse: the executable is an absolute path and not a launcher such as <code>npx</code>
+  or <code>uvx</code>, the address is https with no user, query or fragment, and names are what the lock accepts. A
+  command's parts must be printable text, at most 64 of them and 1,000 characters each.</li>
+<li>A <strong>skill</strong> is read by the same strict parser as a skill file, so everything in <a href="../skills/">SKILLS.md</a> applies:
+  no invisible or control characters, parts capped at 8,000 characters, and no key but <code>name</code>, <code>version</code>,
+  <code>description</code> and <code>parts</code>.</li>
+<li><strong>There is no key for a grant, for a stage to enable a skill for, or for anything else that would let a
+  bundle decide what a model may do.</strong> Any other key, anywhere, is refused and named.</li>
+<li>At most 16 servers and 16 skills, each named once, and at least one of either. A file is at most 512 KiB.</li>
+</ul>
+<h2 id="commands">Commands<a class="headerlink" href="#commands" title="Permanent link">&para;</a></h2>
+<pre><code class="language-text">ei plugins import FOLDER [--name NAME] [--version N] [--out FILE]
+ei plugins show FILE
+ei plugins add [--lock PATH] [--skill-lock PATH] FILE
+ei plugins list [--lock PATH]
+ei plugins verify [--lock PATH] [--skill-lock PATH]
+ei plugins remove [--lock PATH] [--skill-lock PATH] NAME
+ei plugins search INDEX_OR_MARKETPLACE_JSON [TEXT]
+ei plugins fetch INDEX NAME [--output DIR]
+</code></pre>
+<p>The plugin lock is <code>--lock</code>, else <code>EI_PLUGIN_LOCK</code>, else <code>ei-plugins.lock.toml</code>; the skill lock is
+<code>--skill-lock</code>, else <code>EI_SKILL_LOCK</code>, else <code>ei-skills.lock.toml</code>.</p>
+<ul>
+<li><strong><code>import</code></strong> reads a Claude Code plugin folder and writes a bundle to review (see below). It installs nothing.</li>
+<li><strong><code>show</code></strong> reads a bundle and says what installing it would do, changing nothing. Read this first.</li>
+<li><strong><code>add</code></strong> reads the file once, hashes those bytes and checks them strictly. Each skill goes into the skill lock
+  through the same code <code>ei skills add</code> uses, enabled for no stage. A copy of the bundle is kept in <code>plugins/</code>
+  beside the plugin lock, and the plugin lock records its SHA-256, the names of the servers it described and the
+  hash each skill was locked under. It then prints each server as the command to run, for example
+  <code>ei tools add --bearer-env DOCS_TOKEN --url https://mcp.example.com/v1/mcp docs</code>.
+  It refuses a plugin that is already installed and skills that are already locked, <strong>before writing anything</strong>;
+  to install a newer version, <code>remove</code> the old one first.</li>
+<li><strong><code>list</code></strong> shows the installed plugins with their short hash, the skills installed and the servers described.</li>
+<li><strong><code>verify</code></strong> re-hashes each kept bundle and checks that each skill it installed is still locked under the hash it
+  was installed with. Exit <code>0</code> all match, <code>1</code> something does not, <code>2</code> setup trouble.</li>
+<li><strong><code>remove</code></strong> deletes the bundle's copy and the skills it installed that are <strong>still exactly what it installed</strong>. A
+  skill locked again with other text since belongs to the person now and is left, and named. A server it
+  described stays in the tool lock if you locked it.</li>
+</ul>
+<h2 id="importing-a-claude-code-plugin">Importing a Claude Code plugin<a class="headerlink" href="#importing-a-claude-code-plugin" title="Permanent link">&para;</a></h2>
+<p><code>ei plugins import FOLDER</code> turns a plugin folder written for Claude Code into the bundle format above, so it can be
+read and then installed with <code>show</code> and <code>add</code>. It reads three things and lists the rest:</p>
+<ul>
+<li><code>.claude-plugin/plugin.json</code> for the name and description (the folder's name if there is none);</li>
+<li><code>.mcp.json</code> (or an <code>mcpServers</code> table inside <code>plugin.json</code>) for servers;</li>
+<li><code>skills/*/SKILL.md</code>, each converted exactly as <code>ei skills import --reference</code> converts one: the sections become
+  reference read through <code>read_skill</code>, and a skill is enabled for no stage.</li>
+</ul>
+<p>Commands, agents, hooks, output styles, monitors and <code>.lsp.json</code> are <strong>set aside and named</strong>: a bundle grants
+nothing and runs nothing, so none of them is read or executed. A server is carried over only if the tool lock would
+accept it: a command with an absolute path that is not a launcher (<code>npx</code>, <code>uvx</code>, <code>docker</code> and the like are skipped,
+because what they fetch cannot be hashed; install the server and write its real path), or a streamable-HTTP address
+over https. A <code>${...}</code> placeholder in a command is never expanded, so that server is skipped. <strong>Environment values
+and headers are never copied</strong>: only the <em>names</em> of environment variables are kept (you export them yourself), and
+a header <code>Authorization: Bearer ${NAME}</code> becomes <code>bearer_env = "NAME"</code>; any other header skips the server. Every
+skipped server or skill is printed with the reason, and an import that leaves nothing is refused.</p>
+<p>The file is written new beside where you ran it (<code>NAME.toml</code>) and never replaces one; a bundle's name is its file's
+name, so <code>--out</code> must end in <code>NAME.toml</code> (use <code>--name</code> to change the name). The bytes are parsed again before they
+are written, so a file this command writes is a file <code>show</code> accepts. Read it: its text will be added to prompts
+and its servers would be started, and it was written by whoever made the plugin.</p>
+<h2 id="the-plugin-lock">The plugin lock<a class="headerlink" href="#the-plugin-lock" title="Permanent link">&para;</a></h2>
+<p><code>ei-plugins.lock.toml</code> records what was installed so it can be checked and undone:</p>
+<pre><code class="language-toml">version = 1
+
+[[plugin]]
+name = &quot;research_pack&quot;
+version = 1
+sha256 = &quot;5d1c…&quot;               # of the bundle's bytes
+servers = [&quot;docs&quot;, &quot;files&quot;]    # described, not installed
+
+[plugin.skills]
+plain_style = &quot;9f2c…&quot;          # the hash each skill was locked under
+</code></pre>
+<p><strong>A run never reads it.</strong> What a run may do is in the tool lock and the skill lock, which a plugin only adds
+skills to (enabled for no stage) or prints commands for. Nothing about a plugin changes a run until a person
+runs <code>ei tools add</code> and <code>ei tools grant</code>, or <code>ei skills enable</code>, and reviews that change like any other commit.</p>
+<h2 id="marketplace-indexes">Marketplace indexes<a class="headerlink" href="#marketplace-indexes" title="Permanent link">&para;</a></h2>
+<p>A marketplace is <strong>only an index</strong>: a TOML file that lists plugin files, each with an address and the SHA-256
+the file must have. It has no code, no skill text and no server definition, so reading one cannot lead to any of
+them, and any key beyond these is refused:</p>
+<pre><code class="language-toml">version = 1
+
+[[plugin]]
+name = &quot;research_pack&quot;
+version = 1
+description = &quot;Sources and style for research.&quot;
+url = &quot;https://plugins.example.com/v1/research_pack.toml&quot;
+sha256 = &quot;5d1c…&quot;                  # of the plugin file's bytes
+</code></pre>
+<p><code>INDEX</code> is <strong>a file on disk or an <code>https://</code> address</strong>; any other kind of address is refused before anything is
+contacted. An index lists at most 500 plugins and may be up to 512 KiB.</p>
+<ul>
+<li><strong><code>search INDEX [TEXT]</code></strong> lists the plugins in an index, or those whose name or description contains the text,
+  with each one's short hash and address. It installs nothing.</li>
+<li><strong><code>fetch INDEX NAME [--output DIR]</code></strong> downloads one plugin file to <code>DIR</code> (default: here) as <code>NAME.toml</code>, and
+  <strong>installs nothing</strong>. The bytes are hashed <strong>before they are read as anything</strong>, and a file whose SHA-256 is not
+  the index's is discarded and never saved. Only then is it read as a plugin, which must be the plugin the index
+  named at the version it named. It never overwrites an existing file. It ends by telling you to read the file
+  with <code>ei plugins show</code> and install it with <code>ei plugins add</code>, which is the offline step described above.</li>
+</ul>
+<p>What the download is held to: https only, to a public address (the URL policy <code>fetch_url</code> uses, asked each time,
+so a name that resolves to this machine or its network is refused), sent to <strong>the address that was checked</strong> with
+the name in TLS so the certificate is still verified, <strong>no redirects, no cookies, no compression</strong>, at most 512 KiB
+and 30 seconds, and no credentials of any kind. An address in an index has no user, password, query string or
+fragment, so nothing secret can be carried in one.</p>
+<p><strong>A run never contacts a marketplace, and neither does <code>add</code>, <code>show</code>, <code>verify</code> or <code>remove</code>.</strong> <code>search</code> and <code>fetch</code>
+are the only commands that can use a network, only when a person runs them, and only with the <code>runtime</code> extra for
+an <code>https://</code> address (a local index file needs nothing extra).</p>
+<h3 id="claude-code-marketplaces-marketplacejson">Claude Code marketplaces (<code>marketplace.json</code>)<a class="headerlink" href="#claude-code-marketplaces-marketplacejson" title="Permanent link">&para;</a></h3>
+<p><code>ei plugins search FILE.json [TEXT]</code> (a path or an <code>https://</code> address ending in <code>.json</code>) reads a Claude Code
+<code>marketplace.json</code> and <strong>lists</strong> what it names. It reads four things from each plugin (<code>name</code>, <code>description</code>,
+<code>version</code>, <code>source</code>) and ignores every other key. A source is classified and printed, never followed:
+<code>./folder</code> is a <code>path</code> inside the marketplace, <code>{"source": "github"}</code> a repository, <code>{"source": "url"}</code> or <code>git</code> an
+address, anything else (or a <code>./</code> path that climbs out with <code>..</code>) <code>other</code>. For a marketplace on disk a <code>path</code>
+source also prints the exact <code>ei plugins import FOLDER</code> command for the folder on this machine.</p>
+<p><strong>Nothing is fetched, cloned or installed.</strong> Unlike an index, a marketplace names folders and repositories, not one
+file with a hash, so there is nothing here to verify a download against: you get a copy yourself, read it, and
+<code>ei plugins import</code> it, which is where the bundle is checked. An entry that cannot be read is counted and left
+out, not hidden; a duplicate name keeps the first. <code>plugins fetch</code> still works only with this project's TOML
+indexes.</p>
+<h2 id="what-this-does-and-does-not-give-you">What this does and does not give you<a class="headerlink" href="#what-this-does-and-does-not-give-you" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>It gives you one thing to review and one hash to pin</strong> for a set of skills and server definitions, and a
+  way to undo the install. <code>show</code> lists every part of a bundle: each server's command in full and the first 100 characters of each skill's stage text. Read the bundle file for the rest.</li>
+<li><strong>It does not vouch for anything.</strong> A plugin's skills are trusted as installed once you enable them
+  (<a href="../skills/#what-this-does-and-does-not-give-you">SKILLS.md</a>), and a server it describes is exactly as
+  trustworthy as <code>ei tools add</code> makes it (<a href="../tool-lock/">TOOL_LOCK.md</a>), which for a local server pins the
+  files it runs and for a remote server pins only its address and what it advertises.</li>
+<li><strong>The hash proves you got the file the index described, not that anyone vetted it.</strong> An index is only as
+  trustworthy as whoever controls the host it came from, and so is every file it points to. What stands between
+  you and a hostile plugin is that you read it (<code>ei plugins show</code> prints the first 100 characters of each skill's stage text and every server's
+  command) before <code>add</code>, and that installing it enables nothing.</li>
+<li>The printed command is shell-quoted, so what you see is what would be typed. Read it before you run it:
+  <code>ei tools add</code> <strong>runs a local server once</strong>, and a command a stranger wrote can do anything its user can.</li>
+<li>The kept copy is read through no link and refused if it is a link, a folder or too large, and the install
+  writes it first and undoes everything if a later step fails. Nothing prevents a person with write access to
+  the folder from changing a file; the hash is what turns that into a failure of <code>verify</code>.</li>
+</ul>
+<h2 id="what-is-not-built">What is not built<a class="headerlink" href="#what-is-not-built" title="Permanent link">&para;</a></h2>
+<p>Whatever a Claude Code plugin does beyond skills and MCP servers: its commands, agents, hooks and output styles are not
+imported. Servers that need a launcher or a placeholder are not converted (they are named, so a person can install
+them by hand). A <code>marketplace.json</code> is listed, not fetched: plugins named by a repository or an address are not downloaded, pinned
+by commit or hash-checked. An index is still this project's own TOML.</p>
+<p>Anything that vouches for a publisher: indexes and plugin files are not signed, so the hash is the only
+integrity check. Nothing updates itself or checks an index for newer versions, a plugin cannot name another
+plugin it depends on, and there is no registry service: an index is a file somebody publishes.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://properdocs.org/">ProperDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="properdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="properdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="properdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="properdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

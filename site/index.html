@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="engineering-influence writes a complete book, non-fiction or a novel, with nobody in the loop, and produces the files Amazon KDP asks for: interior PDF, EPUB, covers, listing and a quality report. One command installs it and one command writes a book, on a free local model by default.">
+        
+        <link rel="canonical" href="https://adammatthewsteinberger.github.io/engineering-influence/">
+        <link rel="shortcut icon" href="img/favicon.ico">
+        <title>engineering-influence</title>
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/fontawesome.min.css" rel="stylesheet">
+        <link href="css/brands.min.css" rel="stylesheet">
+        <link href="css/solid.min.css" rel="stylesheet">
+        <link href="css/v4-font-face.min.css" rel="stylesheet">
+        <link href="css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="stylesheets/vibey.css" rel="stylesheet">
+        <link href="stylesheets/site.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+        <meta property="og:title" content="engineering-influence">
+    <meta property="og:description" content="Give it an idea. Get back a book you can publish.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://adammatthewsteinberger.github.io/engineering-influence/">
+    <meta property="og:site_name" content="engineering-influence">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="engineering-influence">
+    <meta name="twitter:description" content="Give it an idea. Get back a book you can publish.">
+    <script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "engineering-influence", "description": "Give it an idea. Get back a book you can publish.", "url": "https://adammatthewsteinberger.github.io/engineering-influence/", "applicationCategory": "DeveloperApplication", "operatingSystem": "Linux, macOS", "license": "https://github.com/adammatthewsteinberger/engineering-influence/blob/main/LICENSE", "codeRepository": "https://github.com/adammatthewsteinberger/engineering-influence", "programmingLanguage": "Python", "author": {"@type": "Person", "name": "Adam Matthew Steinberger", "url": "https://github.com/adammatthewsteinberger"}}</script>
+</head>
+
+    <body class="homepage">
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href=".">engineering-influence</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="." class="nav-link active" aria-current="page">Home</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Start</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="getting-started/" class="dropdown-item">Getting started</a>
+</li>
+                                    
+<li>
+    <a href="agents-driving/" class="dropdown-item">Driving it from another AI</a>
+</li>
+                                    
+<li>
+    <a href="books-and-kdp/" class="dropdown-item">Books and KDP</a>
+</li>
+                                    
+<li>
+    <a href="novels/" class="dropdown-item">Novels</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Writing books</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="local-model/" class="dropdown-item">The local model</a>
+</li>
+                                    
+<li>
+    <a href="model-profiles/" class="dropdown-item">Model profiles</a>
+</li>
+                                    
+<li>
+    <a href="model-catalog/" class="dropdown-item">Model catalog</a>
+</li>
+                                    
+<li>
+    <a href="model-calls/" class="dropdown-item">Model calls</a>
+</li>
+                                    
+<li>
+    <a href="research/" class="dropdown-item">Research</a>
+</li>
+                                    
+<li>
+    <a href="prompts/" class="dropdown-item">Prompts</a>
+</li>
+                                    
+<li>
+    <a href="skills/" class="dropdown-item">Skills</a>
+</li>
+                                    
+<li>
+    <a href="plugins/" class="dropdown-item">Plugins</a>
+</li>
+                                    
+<li>
+    <a href="tool-lock/" class="dropdown-item">Tool lock</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="interactions/" class="dropdown-item">Interfaces</a>
+</li>
+                                    
+<li>
+    <a href="configuration/" class="dropdown-item">Configuration</a>
+</li>
+                                    
+<li>
+    <a href="compatibility/" class="dropdown-item">Compatibility</a>
+</li>
+                                    
+<li>
+    <a href="architecture/" class="dropdown-item">Architecture</a>
+</li>
+                                    
+<li>
+    <a href="threat-model/" class="dropdown-item">Threat model</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Operating</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="worker-image/" class="dropdown-item">Worker image</a>
+</li>
+                                    
+<li>
+    <a href="troubleshooting/" class="dropdown-item">Troubleshooting</a>
+</li>
+                                    
+<li>
+    <a href="releasing/" class="dropdown-item">Releasing</a>
+</li>
+                                    
+<li>
+    <a href="documentation-site/" class="dropdown-item">Documentation site</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Quality</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="testing/" class="dropdown-item">Testing</a>
+</li>
+                                    
+<li>
+    <a href="evaluation/" class="dropdown-item">Evaluation</a>
+</li>
+                                    
+<li>
+    <a href="live-smoke-test/" class="dropdown-item">Live smoke test</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Project</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="contributing/" class="dropdown-item">Contributing</a>
+</li>
+                                    
+<li>
+    <a href="style/" class="dropdown-item">How these documents are written</a>
+</li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Decision records</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="adr/" class="dropdown-item">Overview</a>
+</li>
+            
+<li>
+    <a href="adr/0001-vibey-integration-boundary/" class="dropdown-item">ADR 0001: Isolate vibey behind ports</a>
+</li>
+            
+<li>
+    <a href="adr/0002-audience-priority-and-sovereign-agent-doctrine/" class="dropdown-item">ADR 0002: Audience priority and sovereign agent doctrine</a>
+</li>
+            
+<li>
+    <a href="adr/0003-definition-of-1-0/" class="dropdown-item">ADR 0003: Definition of 1.0</a>
+</li>
+            
+<li>
+    <a href="adr/0004-versioning-compatibility-and-deprecation/" class="dropdown-item">ADR 0004: Versioning, compatibility and deprecation</a>
+</li>
+            
+<li>
+    <a href="adr/0005-release-flow-and-changelog-fragments/" class="dropdown-item">ADR 0005: Release flow and changelog fragments</a>
+</li>
+            
+<li>
+    <a href="adr/0006-onion-layers-and-interfaces/" class="dropdown-item">ADR 0006: Onion layers, interfaces and one class per file</a>
+</li>
+            
+<li>
+    <a href="adr/0007-model-transport-plain-httpx/" class="dropdown-item">ADR 0007: Models are called over plain httpx, behind `ModelInterface`</a>
+</li>
+            
+<li>
+    <a href="adr/0008-tools-for-the-model/" class="dropdown-item">ADR 0008: The model gets tools, each stage gets only the ones it names</a>
+</li>
+            
+<li>
+    <a href="adr/0009-branch-driven-publishing/" class="dropdown-item">ADR 0009: Publishing follows the branch: develop to TestPyPI, main to PyPI</a>
+</li>
+            
+<li>
+    <a href="adr/0010-chapters-are-drafted-in-order-in-one-stage/" class="dropdown-item">ADR 0010: Chapters are drafted in order, inside one stage</a>
+</li>
+            
+<li>
+    <a href="adr/0011-run-inputs/" class="dropdown-item">ADR 0011: Run inputs are untrusted text carried inside the brief</a>
+</li>
+    </ul>
+  </li>
+                                    
+<li>
+    <a href="changelog/" class="dropdown-item">Changelog</a>
+</li>
+                                    
+<li>
+    <a href="security/" class="dropdown-item">Security</a>
+</li>
+                                    
+<li>
+    <a href="support/" class="dropdown-item">Support</a>
+</li>
+                                    
+<li>
+    <a href="code-of-conduct/" class="dropdown-item">Code of conduct</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#properdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" class="nav-link disabled">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="getting-started/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/adammatthewsteinberger/engineering-influence/edit/develop/index.md" class="nav-link">Edit on adammatthewsteinberger/engineering-influence
+                                    </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#engineering-influence" class="nav-link">engineering-influence</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#the-idea-in-one-minute" class="nav-link">The idea in one minute</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-you-get" class="nav-link">What you get</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#three-commands-worth-knowing" class="nav-link">Three commands worth knowing</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#let-another-ai-drive-it" class="nav-link">Let another AI drive it</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#choose-your-interface" class="nav-link">Choose your interface</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#documentation" class="nav-link">Documentation</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#limitations" class="nav-link">Limitations</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#about-the-author-and-the-vibey-ecosystem" class="nav-link">About the author and the vibey ecosystem</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#contributing-security-support" class="nav-link">Contributing, security, support</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#license" class="nav-link">License</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="engineering-influence">engineering-influence<a class="headerlink" href="#engineering-influence" title="Permanent link">&para;</a></h1>
+<p><strong>Give it an idea. Get back a book you can publish.</strong></p>
+<p><strong>BLUF:</strong> engineering-influence writes a complete book, non-fiction or a novel, with nobody in the loop, and
+hands you the files Amazon KDP asks for: interior PDF, EPUB, covers, listing and a quality report. One command
+installs it, one command writes a book, and a free model on your own machine does the writing.</p>
+<pre><code class="language-bash"># 1. Install everything a book needs (macOS with Homebrew, or Linux with apt-get)
+curl -fsSL https://raw.githubusercontent.com/adammatthewsteinberger/engineering-influence/main/install.sh | sh
+
+# 2. Write a book
+ei book create --kind nonfiction &quot;how to keep herbs alive indoors&quot; --budget-usd 5 \
+  --out ./my-book --profile ~/.config/engineering-influence/author.toml
+</code></pre>
+<p>The book lands in <code>./my-book/run/book/</code>. Nothing is uploaded: you read it, then you upload it to KDP yourself.</p>
+<blockquote>
+<p><strong>Status: alpha (<code>0.1.0a2</code>), and honest about it.</strong> Every stage is built and tested, from the brief to the
+built book. The writing has only ever run against scripted test servers, never a live model, so nobody yet
+knows how good the books are. The install script has been run for real only as a dry run on macOS, and it
+installs from <code>main</code>, which gets it with the next release. See <a href="#limitations">Limitations</a>.</p>
+</blockquote>
+<h2 id="the-idea-in-one-minute">The idea in one minute<a class="headerlink" href="#the-idea-in-one-minute" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><strong>Daniel:</strong> I have a book idea and no free months. Everyone says an AI can write it. I asked a chatbot and got
+eleven pages of mush that forgot its own first chapter.</p>
+<p><strong>Professor Feynman:</strong> Of course it did. You asked one cook to make a wedding dinner in one go, from memory,
+without a kitchen. What does a real kitchen have?</p>
+<p><strong>Daniel:</strong> Stations. Somebody preps, somebody cooks, somebody checks the plate before it goes out.</p>
+<p><strong>Professor Feynman:</strong> That is the whole design. A book here goes through stations in order: a brief, research,
+an outline, a draft of each chapter, three editing passes, then typesetting. Each station has one job and
+writes down what it made. So what happens if the power goes out halfway through the draft?</p>
+<p><strong>Daniel:</strong> You would lose the night's work. Unless the finished plates were already on the shelf.</p>
+<p><strong>Professor Feynman:</strong> They are on the shelf. Run the same command with <code>--resume</code> and it starts at the next
+station. Nothing finished is cooked twice, and nothing is paid for twice.</p>
+<p><strong>Daniel:</strong> And the last station is the one that checks the plate.</p>
+<p><strong>Professor Feynman:</strong> It builds the real PDF and EPUB and refuses a book that does not pass. The comparison
+stops there, though: a kitchen has a chef who tastes. This has checks, not taste. A person still reads the
+book before it is published. That person is you.</p>
+<p><strong>Daniel:</strong> So it is a kitchen that never loses a plate, and I am still the one who tastes the dinner.</p>
+</blockquote>
+<h2 id="what-you-get">What you get<a class="headerlink" href="#what-you-get" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>In <code>my-book/</code></th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>run/book/&lt;slug&gt;.pdf</code></td>
+<td>The paperback interior, typeset with LaTeX to KDP's trim, margins and gutter</td>
+</tr>
+<tr>
+<td><code>run/book/&lt;slug&gt;.epub</code></td>
+<td>The ebook, checked for structure and links</td>
+</tr>
+<tr>
+<td><code>run/book/&lt;slug&gt;-ebook.jpg</code>, <code>&lt;slug&gt;-paperback-wrap.pdf</code></td>
+<td>The ebook cover, and the paperback wrap at the exact page count</td>
+</tr>
+<tr>
+<td><code>run/book/listing.md</code></td>
+<td>Title, subtitle, description and seven keywords, ready to paste</td>
+</tr>
+<tr>
+<td><code>run/book/MANIFEST.json</code></td>
+<td>What is in the bundle, with a checksum of every file</td>
+</tr>
+<tr>
+<td><code>run/quality-report.json</code></td>
+<td>Pass or fail, every error and warning, and what was spent against the estimate</td>
+</tr>
+<tr>
+<td><code>src/chapter_NN.md</code>, <code>books/*.toml</code></td>
+<td>The manuscript and its settings, to edit and rebuild with <code>ei book build</code></td>
+</tr>
+</tbody>
+</table>
+<p><a href="books-and-kdp/">What a KDP-ready package is, exactly</a>.</p>
+<h2 id="three-commands-worth-knowing">Three commands worth knowing<a class="headerlink" href="#three-commands-worth-knowing" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash">ei doctor --ready                      # can this machine make a book now? every gap, with the fix
+ei book create --out ./my-book --resume  # carry on after a crash, a closed laptop or a provider at capacity
+ei book create --out ./my-book --resume --approve-spend   # allow the extra budget a stopped run asked for
+</code></pre>
+<p><code>ei book create</code> exits <code>0</code> when the book is written, <code>1</code> when the run failed (what it made is kept, and a failed run is final), <code>2</code> when
+it could not start, and <code>3</code> when it stopped to ask for more budget.</p>
+<h2 id="let-another-ai-drive-it">Let another AI drive it<a class="headerlink" href="#let-another-ai-drive-it" title="Permanent link">&para;</a></h2>
+<p>Claude Code, or any agent with a shell, can run all of this for you. The shortest route:</p>
+<pre><code class="language-bash">curl -fsSL https://raw.githubusercontent.com/adammatthewsteinberger/engineering-influence/main/install.sh | sh -s -- --with-claude-skill
+</code></pre>
+<p>That adds a skill to <code>~/.claude/skills/</code>. Then say: <em>"Use engineering-influence to write a non-fiction book
+about indoor herbs. My author profile is at ~/.config/engineering-influence/author.toml and the budget is 5
+dollars."</em> The agent checks the machine, starts the run in the background, reads the exit code, and asks you
+before it approves any extra spend.
+<a href="agents-driving/">Driving it from an agent, step by step</a>.</p>
+<h2 id="choose-your-interface">Choose your interface<a class="headerlink" href="#choose-your-interface" title="Permanent link">&para;</a></h2>
+<p>One controller layer, reached six ways.</p>
+<table>
+<thead>
+<tr>
+<th>You are…</th>
+<th>Use</th>
+<th>Start here</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>At a terminal, wanting a book</td>
+<td><code>ei book create</code></td>
+<td>The two commands above</td>
+</tr>
+<tr>
+<td>An AI agent with a shell</td>
+<td>The CLI and the skill</td>
+<td><a href="agents-driving/">docs/AGENTS_DRIVING.md</a></td>
+</tr>
+<tr>
+<td>Calling from any language</td>
+<td>REST API</td>
+<td><a href="https://github.com/adammatthewsteinberger/engineering-influence/tree/main/examples/api"><code>examples/api/</code></a></td>
+</tr>
+<tr>
+<td>Writing Python</td>
+<td>SDK, sync or async</td>
+<td><a href="https://github.com/adammatthewsteinberger/engineering-influence/tree/main/examples/sdk"><code>examples/sdk/</code></a></td>
+</tr>
+<tr>
+<td>Wiring an AI host to a running stack</td>
+<td>MCP server (stdio, <code>ei serve mcp</code>)</td>
+<td><a href="https://github.com/adammatthewsteinberger/engineering-influence/tree/main/examples/mcp"><code>examples/mcp/</code></a></td>
+</tr>
+<tr>
+<td>Receiving events</td>
+<td>Signed webhooks</td>
+<td><a href="https://github.com/adammatthewsteinberger/engineering-influence/tree/main/examples/webhooks"><code>examples/webhooks/</code></a></td>
+</tr>
+<tr>
+<td>Operating it</td>
+<td>Health, metrics, logs</td>
+<td><a href="https://github.com/adammatthewsteinberger/engineering-influence/tree/main/examples/observability"><code>examples/observability/</code></a></td>
+</tr>
+</tbody>
+</table>
+<p>The REST API, the SDK, the MCP server and the webhooks need the stack (a database, a broker and a worker):
+<code>sh examples/up.sh</code> starts one with generated credentials
+(<a href="getting-started/#run-the-stack">Getting started</a>).
+<code>ei book create</code> needs none of that.</p>
+<p>Prefer to install by hand? <code>uv tool install "engineering-influence[runtime,publishing,mcp] @ git+https://github.com/adammatthewsteinberger/engineering-influence"</code>
+installs <code>ei</code> alone. It is not on PyPI yet. The extras are <code>api</code>, <code>webhooks</code>, <code>runtime</code>, <code>mcp</code> and <code>publishing</code>
+(and <code>test</code> and <code>dev</code> for contributors).</p>
+<h2 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Read</th>
+<th>For</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="getting-started/">Getting started</a></td>
+<td>Install, check, write your first book, then run the stack</td>
+</tr>
+<tr>
+<td><a href="agents-driving/">Driving it from an agent</a></td>
+<td>Claude Code or another LLM as the driver</td>
+</tr>
+<tr>
+<td><a href="books-and-kdp/">Books and KDP</a></td>
+<td>What a finished package is, what is built and what is not</td>
+</tr>
+<tr>
+<td><a href="novels/">Novels</a></td>
+<td>The novel stages, from brief to a built book</td>
+</tr>
+<tr>
+<td><a href="interactions/">Interfaces</a></td>
+<td>Reference for the REST API, SDK, MCP tools, CLI and webhooks</td>
+</tr>
+<tr>
+<td><a href="configuration/">Configuration</a></td>
+<td>Every environment variable, security setting and limit</td>
+</tr>
+<tr>
+<td><a href="local-model/">The local model</a></td>
+<td>The free model that writes by default</td>
+</tr>
+<tr>
+<td><a href="model-profiles/">Model profiles</a>, <a href="model-catalog/">catalog</a>, <a href="model-calls/">calls</a></td>
+<td>Choosing, pricing and calling a model you pay for</td>
+</tr>
+<tr>
+<td><a href="research/">Research</a>, <a href="tool-lock/">tool lock</a></td>
+<td>Web search for the research stage, and approving tool servers</td>
+</tr>
+<tr>
+<td><a href="skills/">Skills</a>, <a href="plugins/">plugins</a>, <a href="prompts/">prompts</a></td>
+<td>Adding guidance to a stage, and how the prompts are versioned</td>
+</tr>
+<tr>
+<td><a href="architecture/">Architecture</a></td>
+<td>Layers, request flow, the worker and the extension points</td>
+</tr>
+<tr>
+<td><a href="threat-model/">Threat model</a></td>
+<td>What is protected, from whom, and what is not</td>
+</tr>
+<tr>
+<td><a href="evaluation/">Evaluation</a>, <a href="live-smoke-test/">live smoke test</a></td>
+<td>The paid runs that measure quality and cost</td>
+</tr>
+<tr>
+<td><a href="worker-image/">Worker image</a></td>
+<td>The container and the TeX toolchain</td>
+</tr>
+<tr>
+<td><a href="troubleshooting/">Troubleshooting</a></td>
+<td>Symptoms, causes and fixes</td>
+</tr>
+<tr>
+<td><a href="testing/">Testing</a>, <a href="compatibility/">compatibility</a>, <a href="releasing/">releasing</a></td>
+<td>The gates, what is promised to callers, and cutting a release</td>
+</tr>
+<tr>
+<td><a href="documentation-site/">The documentation site</a></td>
+<td>How these pages become a website, and how to publish it</td>
+</tr>
+<tr>
+<td><a href="style/">How these documents are written</a></td>
+<td>The page pattern, and who the Professor and Daniel are</td>
+</tr>
+<tr>
+<td><a href="adr/">Decision records</a>, <a href="changelog/">changelog</a></td>
+<td>Why it is built this way, and what changed</td>
+</tr>
+</tbody>
+</table>
+<h2 id="limitations">Limitations<a class="headerlink" href="#limitations" title="Permanent link">&para;</a></h2>
+<p>Read these before you depend on it.</p>
+<ul>
+<li><strong>The writing is unproven.</strong> It has run only against scripted servers, never a live model. No real model has
+  been measured against the quality bar.</li>
+<li><strong>A person must read the book.</strong> Checks catch a broken file, not a dull chapter or a wrong fact. There is no
+  claim checking.</li>
+<li><strong>Nothing uploads to KDP.</strong> KDP has no publishing API. You upload the files and paste the listing.</li>
+<li><strong>The first run needs a big download</strong>: about 13 GB for the model and several GB for TeX.</li>
+<li><strong>Novels get no editing passes</strong> yet; a novel is built from its draft.</li>
+<li><strong>On the stack</strong>, delivery is at least once (a crash can re-run a stage), no service emits webhooks yet
+  although signing and a verifier exist, and the example worker writes placeholder text until you point it at a
+  model. <code>ei pipeline start</code> and the example MCP server only plan work; <code>ei serve mcp</code> reaches the stack.</li>
+<li><strong>The schema is managed by <code>ei db upgrade</code></strong>; run it before starting a new release on the stack.</li>
+</ul>
+<p>The full list: <a href="configuration/">Configuration</a>.</p>
+<h2 id="about-the-author-and-the-vibey-ecosystem">About the author and the vibey ecosystem<a class="headerlink" href="#about-the-author-and-the-vibey-ecosystem" title="Permanent link">&para;</a></h2>
+<p><strong>BLUF: Krypton and the vibey engine are an open-source Claude Code and OpenAI Codex killer—engineered to replace both completely free of charge, 100% open to everyone, and censorship-free.</strong> Unlike agents that produce unvetted AI slop, the vibey toolchain writes and verifies code the way a Principal Software Engineer does: architected with rigor, backed by 100% branch test coverage, sealed in an append-only cryptographic ledger, and built on an architecture designed for sovereign AGI with superintelligence coming soon.</p>
+<h3 id="who-this-is-for">Who this is for<a class="headerlink" href="#who-this-is-for" title="Permanent link">&para;</a></h3>
+<p>Per <a href="adr/0002-audience-priority-and-sovereign-agent-doctrine/">ADR 0002</a>, engineering-influence and the vibey ecosystem prioritize audiences in this strict order:</p>
+<ol>
+<li><strong>FOSS developers.</strong> Free and open-source engineers building and running autonomous tools with no subscriptions or telemetry walls.</li>
+<li><strong>Freelancers.</strong> Independent operators and consultants delivering Principal-grade fixed-scope client projects with sovereign tools.</li>
+<li><strong>Universities and academia.</strong> Researchers and scholars using open, verifiable, and cited methodologies.</li>
+<li><strong>Governments and militaries.</strong> Public-sector and defense teams needing air-gapped models, verifiable provenance, and tamper-evident audit trails.</li>
+<li><strong>Non-profit orgs.</strong> Mission-driven teams that need budget-preserving, durable software.</li>
+<li><strong>Industry teams.</strong> Commercial teams and enterprises seeking production-grade agent infrastructure.</li>
+</ol>
+<h2 id="contributing-security-support">Contributing, security, support<a class="headerlink" href="#contributing-security-support" title="Permanent link">&para;</a></h2>
+<p><a href="contributing/">CONTRIBUTING.md</a> · <a href="security/">SECURITY.md</a> (report privately) ·
+<a href="support/">SUPPORT.md</a> · <a href="code-of-conduct/">CODE_OF_CONDUCT.md</a></p>
+<h2 id="license">License<a class="headerlink" href="#license" title="Permanent link">&para;</a></h2>
+<p>MIT. See <a href="https://github.com/adammatthewsteinberger/engineering-influence/blob/main/LICENSE">LICENSE</a>.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://properdocs.org/">ProperDocs</a>.</p>
+        </footer>
+        <script src="js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = ".",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="js/base.js"></script>
+        <script src="search/main.js"></script>
+
+        <div class="modal" id="properdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="properdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="properdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="properdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>
+
+<!--
+ProperDocs version : ProperDocs 1.6.7
+Build Date UTC : 2026-11-24 16:27:53.919652+00:00
+-->

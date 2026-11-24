@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://adammatthewsteinberger.github.io/engineering-influence/tool-lock/">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Tool lock - engineering-influence</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../stylesheets/vibey.css" rel="stylesheet">
+        <link href="../stylesheets/site.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+        <meta name="description" content="BLUF: A tool server (an MCP server) runs in a book run only if a person approved it, and only while it is still what was approved. The approval is the…">
+    <meta property="og:title" content="Tool lock - engineering-influence">
+    <meta property="og:description" content="BLUF: A tool server (an MCP server) runs in a book run only if a person approved it, and only while it is still what was approved. The approval is the…">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://adammatthewsteinberger.github.io/engineering-influence/tool-lock/">
+    <meta property="og:site_name" content="engineering-influence">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Tool lock - engineering-influence">
+    <meta name="twitter:description" content="BLUF: A tool server (an MCP server) runs in a book run only if a person approved it, and only while it is still what was approved. The approval is the…">
+</head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">engineering-influence</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href=".." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Start</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../getting-started/" class="dropdown-item">Getting started</a>
+</li>
+                                    
+<li>
+    <a href="../agents-driving/" class="dropdown-item">Driving it from another AI</a>
+</li>
+                                    
+<li>
+    <a href="../books-and-kdp/" class="dropdown-item">Books and KDP</a>
+</li>
+                                    
+<li>
+    <a href="../novels/" class="dropdown-item">Novels</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Writing books</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../local-model/" class="dropdown-item">The local model</a>
+</li>
+                                    
+<li>
+    <a href="../model-profiles/" class="dropdown-item">Model profiles</a>
+</li>
+                                    
+<li>
+    <a href="../model-catalog/" class="dropdown-item">Model catalog</a>
+</li>
+                                    
+<li>
+    <a href="../model-calls/" class="dropdown-item">Model calls</a>
+</li>
+                                    
+<li>
+    <a href="../research/" class="dropdown-item">Research</a>
+</li>
+                                    
+<li>
+    <a href="../prompts/" class="dropdown-item">Prompts</a>
+</li>
+                                    
+<li>
+    <a href="../skills/" class="dropdown-item">Skills</a>
+</li>
+                                    
+<li>
+    <a href="../plugins/" class="dropdown-item">Plugins</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Tool lock</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../interactions/" class="dropdown-item">Interfaces</a>
+</li>
+                                    
+<li>
+    <a href="../configuration/" class="dropdown-item">Configuration</a>
+</li>
+                                    
+<li>
+    <a href="../compatibility/" class="dropdown-item">Compatibility</a>
+</li>
+                                    
+<li>
+    <a href="../architecture/" class="dropdown-item">Architecture</a>
+</li>
+                                    
+<li>
+    <a href="../threat-model/" class="dropdown-item">Threat model</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Operating</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../worker-image/" class="dropdown-item">Worker image</a>
+</li>
+                                    
+<li>
+    <a href="../troubleshooting/" class="dropdown-item">Troubleshooting</a>
+</li>
+                                    
+<li>
+    <a href="../releasing/" class="dropdown-item">Releasing</a>
+</li>
+                                    
+<li>
+    <a href="../documentation-site/" class="dropdown-item">Documentation site</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Quality</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../testing/" class="dropdown-item">Testing</a>
+</li>
+                                    
+<li>
+    <a href="../evaluation/" class="dropdown-item">Evaluation</a>
+</li>
+                                    
+<li>
+    <a href="../live-smoke-test/" class="dropdown-item">Live smoke test</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Project</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../contributing/" class="dropdown-item">Contributing</a>
+</li>
+                                    
+<li>
+    <a href="../style/" class="dropdown-item">How these documents are written</a>
+</li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Decision records</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../adr/" class="dropdown-item">Overview</a>
+</li>
+            
+<li>
+    <a href="../adr/0001-vibey-integration-boundary/" class="dropdown-item">ADR 0001: Isolate vibey behind ports</a>
+</li>
+            
+<li>
+    <a href="../adr/0002-audience-priority-and-sovereign-agent-doctrine/" class="dropdown-item">ADR 0002: Audience priority and sovereign agent doctrine</a>
+</li>
+            
+<li>
+    <a href="../adr/0003-definition-of-1-0/" class="dropdown-item">ADR 0003: Definition of 1.0</a>
+</li>
+            
+<li>
+    <a href="../adr/0004-versioning-compatibility-and-deprecation/" class="dropdown-item">ADR 0004: Versioning, compatibility and deprecation</a>
+</li>
+            
+<li>
+    <a href="../adr/0005-release-flow-and-changelog-fragments/" class="dropdown-item">ADR 0005: Release flow and changelog fragments</a>
+</li>
+            
+<li>
+    <a href="../adr/0006-onion-layers-and-interfaces/" class="dropdown-item">ADR 0006: Onion layers, interfaces and one class per file</a>
+</li>
+            
+<li>
+    <a href="../adr/0007-model-transport-plain-httpx/" class="dropdown-item">ADR 0007: Models are called over plain httpx, behind `ModelInterface`</a>
+</li>
+            
+<li>
+    <a href="../adr/0008-tools-for-the-model/" class="dropdown-item">ADR 0008: The model gets tools, each stage gets only the ones it names</a>
+</li>
+            
+<li>
+    <a href="../adr/0009-branch-driven-publishing/" class="dropdown-item">ADR 0009: Publishing follows the branch: develop to TestPyPI, main to PyPI</a>
+</li>
+            
+<li>
+    <a href="../adr/0010-chapters-are-drafted-in-order-in-one-stage/" class="dropdown-item">ADR 0010: Chapters are drafted in order, inside one stage</a>
+</li>
+            
+<li>
+    <a href="../adr/0011-run-inputs/" class="dropdown-item">ADR 0011: Run inputs are untrusted text carried inside the brief</a>
+</li>
+    </ul>
+  </li>
+                                    
+<li>
+    <a href="../changelog/" class="dropdown-item">Changelog</a>
+</li>
+                                    
+<li>
+    <a href="../security/" class="dropdown-item">Security</a>
+</li>
+                                    
+<li>
+    <a href="../support/" class="dropdown-item">Support</a>
+</li>
+                                    
+<li>
+    <a href="../code-of-conduct/" class="dropdown-item">Code of conduct</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#properdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../plugins/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../interactions/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/adammatthewsteinberger/engineering-influence/edit/develop/tool-lock.md" class="nav-link">Edit on adammatthewsteinberger/engineering-influence
+                                    </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#the-tool-lock" class="nav-link">The tool lock</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#a-guest-list-with-a-photograph" class="nav-link">A guest list with a photograph</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-lock-at-a-glance" class="nav-link">The lock at a glance</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#in-a-run" class="nav-link">In a run</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#grants" class="nav-link">Grants</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-ei-tools-commands" class="nav-link">The ei tools commands</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#how-a-server-is-run" class="nav-link">How a server is run</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#remote-servers-http" class="nav-link">Remote servers (HTTP)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-file" class="nav-link">The file</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-is-checked" class="nav-link">What is checked</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-a-lock-does-not-protect-and-what-is-refused" class="nav-link">What a lock does not protect, and what is refused</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#resources" class="nav-link">Resources</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-mcp-client" class="nav-link">The MCP client</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="the-tool-lock">The tool lock<a class="headerlink" href="#the-tool-lock" title="Permanent link">&para;</a></h1>
+<p><strong>BLUF:</strong> A tool server (an MCP server) runs in a book run only if a person approved it, and only while it is
+still what was approved. The approval is the tool lock, a TOML file you review like any other commit. It pins the
+server's files, its name and version, and a hash of every tool it advertises, and it says which stage may call
+which tool. A run reads a lock only when <code>EI_TOOL_LOCK</code> names one.</p>
+<p>Third-party tool servers (MCP servers) run only if a person has approved them, and only while they
+are still what was approved. The approval is the <strong>tool lock</strong>, a TOML file you review like any other
+commit. This is slice 4 of <a href="../adr/0008-tools-for-the-model/">ADR 0008</a>, built in parts.</p>
+<p><strong>Status.</strong> Built and tested: the lock's models and file format, a strict reader and writer, the MCP
+client, the verifier, a <strong>stdio transport that runs a server as a child process under limits</strong>, and the
+<code>ei tools add</code>, <code>list</code>, <code>verify</code>, <code>grant</code> and <code>revoke</code> commands, and (slice 4c) <strong>the wiring into a run</strong>:
+a run that is given a lock starts and verifies each server, registers its tools, and offers a stage only
+the tools the lock grants it, and (slice 4d) <strong>remote servers over HTTP</strong>. No third-party server has been
+run by a live model, and no server other than small ones written for the tests has been run at all; the
+HTTP transport has only been run against a scripted server, never over a real network.</p>
+<h2 id="a-guest-list-with-a-photograph">A guest list with a photograph<a class="headerlink" href="#a-guest-list-with-a-photograph" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><strong>Daniel:</strong> I want the research stage to use a tool server I found. Why can I not just point it at the server
+and let it go?</p>
+<p><strong>Professor Feynman:</strong> You are the caretaker of a building. A visitor says he is from the gas company. What do
+you check?</p>
+<p><strong>Daniel:</strong> His name on the list. And his badge.</p>
+<p><strong>Professor Feynman:</strong> Two checks, then. The lock is both. First, the list: which server, and which of its tools
+a stage may call, written down in a file you reviewed. Second, the badge: a hash of the server's files, and of
+every tool it advertises (name, description and schema), checked every time it starts. If either changed, it
+does not come in.</p>
+<p><strong>Daniel:</strong> A hash of its tool descriptions? Why would that matter?</p>
+<p><strong>Professor Feynman:</strong> Because a tool's description is where a hostile server hides instructions for the model.
+Reword one word and the hash changes, and the run stops at start with <code>TOOL_LOCK_MISMATCH</code> naming the server.</p>
+<p><strong>Daniel:</strong> So a lock means the server is safe.</p>
+<p><strong>Professor Feynman:</strong> No, and this is where the picture breaks. A badge proves it is the person you approved.
+It does not prove that person is honest. Dependencies are not hashed, a remote server is pinned only by its
+address and by what it advertises (its name, version and tools), and what a server returns is still untrusted
+text. You decide whether to approve; the lock makes sure it stays what you approved.</p>
+<p><strong>Daniel:</strong> The lock keeps it the same as what I approved, and the approving is still my job. I will read the
+server before I add it.</p>
+</blockquote>
+<h2 id="the-lock-at-a-glance">The lock at a glance<a class="headerlink" href="#the-lock-at-a-glance" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Where is it read from?</td>
+<td>In a run, only the file <code>EI_TOOL_LOCK</code> names, and a file in the current directory is ignored. The <code>ei tools</code> commands use <code>--lock</code>, else <code>EI_TOOL_LOCK</code>, else <code>./ei-tools.lock.toml</code></td>
+</tr>
+<tr>
+<td>What is pinned for a local server?</td>
+<td>Its files by hash, its name, its version and a hash of its tools</td>
+</tr>
+<tr>
+<td>What is pinned for a remote server?</td>
+<td>Its address and what it advertises, and nothing else</td>
+</tr>
+<tr>
+<td>Who may call a tool?</td>
+<td>Only a stage the lock grants it to, with no wildcards</td>
+</tr>
+<tr>
+<td>What if anything differs?</td>
+<td>The process stops at start: <code>TOOL_LOCK_MISMATCH</code>, or <code>TOOL_SERVER_UNAVAILABLE</code></td>
+</tr>
+<tr>
+<td>Is it proven against a live model?</td>
+<td>No. Only small servers written for the tests have been run</td>
+</tr>
+</tbody>
+</table>
+<h2 id="in-a-run">In a run<a class="headerlink" href="#in-a-run" title="Permanent link">&para;</a></h2>
+<p>A model-backed run reads a lock only when <strong><code>EI_TOOL_LOCK</code></strong> names one. The file in the current directory
+is not read, so a stray <code>ei-tools.lock.toml</code> starts nothing. At start, for each locked server in name order:</p>
+<ol>
+<li>the locked <strong>files</strong> are compared, and a server whose files changed is <strong>never started</strong>;</li>
+<li>the server is started with only the variables the lock names, and asked who it is and what it offers;</li>
+<li>its <strong>name, version and tools</strong> are compared with the lock, and a <strong>granted tool that cannot be offered</strong>
+   to a model (its schema is not an object) is refused;</li>
+<li>each tool that can be offered is registered as <code>&lt;server&gt;__&lt;tool&gt;</code>.</li>
+</ol>
+<p>Any difference stops the process at start with <code>TOOL_LOCK_MISMATCH</code> (naming the server and every problem),
+and <strong>stops every server already started</strong>. A server that cannot be started or does not answer is
+<code>TOOL_SERVER_UNAVAILABLE</code>. A run does not begin with a tool it was promised and cannot have.</p>
+<p><strong>Registering a tool does not offer it.</strong> A stage is offered its recipe's own tools plus the tools the lock
+<strong>grants that stage</strong>, and the tool runner runs only what was offered, so a tool that exists but was not
+granted is refused as "no tool named ..." even if the model asks for it. A stage the lock does not mention
+gets none. Everything a locked tool returns goes through the same runner as the built-in tools: its
+arguments are checked against the schema the server advertised, its answer (and the text of an error it
+reports) is cut and wrapped as untrusted text, and it is journaled.</p>
+<p><strong>The journal remembers which server answered.</strong> A stored tool result is keyed by the tool, its arguments
+and the tool's <em>revision</em>, which for a locked tool is the hash of the server's tools. A server that is updated
+and locked again is asked again; a resumed run does not replay the old server's answers.</p>
+<p>Servers stay running for the life of the process, one call at a time per server, and are stopped when the
+runtime is closed. A server's session is limited to <strong>four hours, 2 GiB of memory and 1 GiB of disk</strong>
+(fixed, not settings). A server that is stopped for passing a limit fails its later calls; it is not restarted.
+A remote server has the four hours and the 30-second request limit; memory and disk are the other
+machine's, not ours. For a remote server step 1 has nothing to compare, and step 2 is a connection to its
+address instead of a process.</p>
+<h2 id="grants">Grants<a class="headerlink" href="#grants" title="Permanent link">&para;</a></h2>
+<p>A grant says which stage may call which of a server's tools. It lives in the lock, so it is reviewed in the
+same commit as the server it applies to:</p>
+<pre><code class="language-text">ei tools grant [--lock PATH] NAME STAGE TOOL [TOOL …]
+ei tools revoke [--lock PATH] NAME STAGE [TOOL …]
+</code></pre>
+<ul>
+<li><code>grant</code> adds tools to a stage's list; it runs nothing. The tools must be ones the lock lists, and must be
+  able to be offered under <code>&lt;server&gt;__&lt;tool&gt;</code>. There are <strong>no wildcards</strong>.</li>
+<li><code>revoke</code> takes the named tools back, or all of the stage's if none are named. Revoking from a stage that
+  has no grant is an error, so a misspelt stage is noticed.</li>
+<li>A stage name that no recipe uses is not an error here: the lock does not know the recipes, so the grant
+  would simply never be used. <code>ei tools list</code> shows every stage's grants.</li>
+</ul>
+<h2 id="the-ei-tools-commands">The <code>ei tools</code> commands<a class="headerlink" href="#the-ei-tools-commands" title="Permanent link">&para;</a></h2>
+<pre><code class="language-text">ei tools add [--lock PATH] [--env VAR …] [--replace] NAME -- COMMAND [ARG …]
+ei tools add [--lock PATH] [--bearer-env VAR] [--replace] --url URL NAME
+ei tools list [--lock PATH]
+ei tools verify [--lock PATH] [NAME …]
+</code></pre>
+<ul>
+<li><strong><code>add</code> runs the server.</strong> Everything that can be refused is refused first: a bad name, a name already
+  locked (unless <code>--replace</code>), a bad environment name, a command that does not exist, a launcher, an
+  executable that cannot be read, and a script given by a relative path (give an absolute path, so the
+  file locked is the file run). Then the server is started once, asked who it is and what it offers, and
+  stopped, and the entry is written. It prints every tool and its description, cut and with control
+  characters removed, because <strong>the descriptions are written by the server: read them before you commit
+  the lock.</strong> Options go before <code>NAME</code>; an option after it gets a clear error.</li>
+<li><strong><code>add --url</code></strong> contacts a remote server once instead of running a command. The address, the name and the
+  variable's name are checked first, then the server is asked who it is and what it offers and the entry is
+  written. It takes no command and no <code>--env</code>, and <code>--bearer-env</code> goes only with <code>--url</code>. The output says
+  plainly that <strong>only the address and what the server advertises are locked, not its code</strong>.</li>
+<li><strong><code>list</code></strong> shows what is locked and starts nothing. A remote server shows its <code>url:</code> and, if it has one,
+  its <code>bearer:</code> variable.</li>
+<li><strong><code>verify</code> runs each locked server</strong>, but a server whose files changed is <strong>never started</strong>. It then
+  compares the name, version and tools. A server that cannot be started or does not answer is a failed
+  check, not a crash, so every server is reported. Exit <code>1</code> if any no longer matches, <code>2</code> for setup
+  trouble or a name that is not locked.</li>
+</ul>
+<h2 id="how-a-server-is-run">How a server is run<a class="headerlink" href="#how-a-server-is-run" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A child process in its own session. Closing it kills the whole process group, then reaps the leader;
+  the leader is never reaped earlier, so its id is still ours when the group is killed.</li>
+<li><strong>A bare environment:</strong> <code>PATH</code>, <code>LANG</code>, <code>TZ</code>, <code>SYSTEMROOT</code> and <code>LC_*</code>, plus the variables the lock names
+  (a name that is not set is an error). <code>HOME</code> and the temporary-directory variables point at the server's
+  own throwaway directory (mode 0700), which is also its working directory and is removed when it stops.
+  No API key or token reaches it unless the lock names it.</li>
+<li><strong>Limits, as for the build tools:</strong> resident memory of the whole group, the size of that directory and the
+  session's time are sampled every half second, and the server is stopped when it passes one. A limit is
+  enforced to within what the server can use in one interval. Only the working directory counts for disk.</li>
+<li><strong>A line is bounded</strong> (4 MiB) and a server that talks faster than it is read is slowed by a short queue.
+  A line that is not a JSON object is refused. Its last 2,000 bytes of error output are quoted if it dies.</li>
+<li><strong>This is not a sandbox.</strong> A server can still read any file the user can read, by absolute path, and use
+  the network. Linux and macOS only (it needs process groups).</li>
+</ul>
+<h2 id="remote-servers-http">Remote servers (HTTP)<a class="headerlink" href="#remote-servers-http" title="Permanent link">&para;</a></h2>
+<p>A server can also be reached at an address, over the <em>Streamable HTTP</em> transport of MCP: one POST per
+message, the answer coming back as JSON or as server-sent events. A remote entry has a <code>url</code> and no command,
+files or <code>env</code>; it may name one variable, <code>bearer_env</code>, whose value is sent as <code>Authorization: Bearer …</code>.</p>
+<p><strong>What is pinned is weaker than for a local server, and this is stated rather than hidden.</strong> A local
+server's files are hashed, so changed code is not started. A remote server's code is somebody else's and can
+change on any day, so what the lock pins is the <strong>address</strong> and what the server <strong>advertises</strong> (its name,
+version and a hash of its tools). The start-up check is the only check there is. A server that behaved when it
+was locked and changes later is caught only if it changes what it advertises, and one that was hostile when it
+was locked is trusted as locked. Prefer a local server whenever there is one.</p>
+<p>The rules a remote server is held to:</p>
+<ul>
+<li><strong>https only, and only to a public address.</strong> The address is checked by the same URL policy as <code>fetch_url</code>
+  (<code>PublicHttpsUrlPolicy</code>), <strong>before every request</strong>, so a name that has come to resolve to the machine's own
+  network, a private range or a cloud metadata address is refused. <strong>A server on this machine or this network
+  cannot be reached this way</strong>; run it over stdio instead.</li>
+<li><strong>No redirects, ever.</strong> A 3xx is an error. A server cannot send the client, or its token, anywhere else.</li>
+<li><strong>Nothing that could hold a secret is in the address.</strong> The lock refuses a user and password, a query string
+  and a fragment, because the lock is committed. The credential is a named environment variable, read when the
+  connection is made; a variable that is unset, or whose value is not a printable token with no spaces, refuses
+  the server rather than sending a blank or broken header. It is never written into an error message, which
+  names the host alone.</li>
+<li><strong>No cookies</strong>, no compression, a generic user agent.</li>
+<li><strong>Every reply is bounded:</strong> at most 4 MiB, at most 128 messages per request, and 30 seconds from the first
+  byte sent; a stream is read until the answer to the request has come, and the rest is not read.</li>
+<li><strong>The session</strong> is the server's <code>Mcp-Session-Id</code>, kept from the first reply, and the protocol version it
+  agreed, sent on later requests. Closing the session sends a DELETE whose failure is ignored.</li>
+<li><strong>The client opens no stream of its own</strong>, so messages a server starts (sampling, roots, notifications) have
+  nowhere to arrive; as for a local server, the client offers nothing, and a request that comes inside a reply
+  is refused (or answered, for <code>ping</code>).</li>
+</ul>
+<p>Failures keep a stable code: <code>MCP_URL_REFUSED</code> (the policy), <code>MCP_REDIRECT_REFUSED</code>, <code>MCP_AUTH_REFUSED</code> (401 or
+403), <code>MCP_SESSION_ENDED</code> (the server forgot the session), <code>MCP_SESSION_EXPIRED</code> (our four hours),
+<code>MCP_REPLY_INVALID</code> (too long, not JSON, compressed, the wrong type), <code>MCP_HTTP_ERROR</code> (any other status).
+A timeout, a dropped connection, 408, 425, 429 and 5xx are transient. At run start they all arrive as
+<code>TOOL_SERVER_UNAVAILABLE</code>, or keep their own code where the failure has one.</p>
+<h2 id="the-file">The file<a class="headerlink" href="#the-file" title="Permanent link">&para;</a></h2>
+<pre><code class="language-toml"># Locked MCP tool servers. Written by `ei tools add`; review a change to this file like any commit.
+# Nothing a run does changes it. A server whose files or advertised tools differ is not started.
+version = 1
+
+[[server]]
+name = &quot;files&quot;
+command = [&quot;/usr/local/bin/node&quot;, &quot;/opt/mcp/files/index.js&quot;]
+env = [&quot;FILES_ROOT&quot;]
+server_name = &quot;files-server&quot;
+server_version = &quot;1.2.0&quot;
+tool_names = [&quot;read_file&quot;, &quot;write_file&quot;]
+tools_hash = &quot;&lt;SHA-256 of every tool the server advertised&gt;&quot;
+
+[server.files]
+&quot;/opt/mcp/files/index.js&quot; = &quot;&lt;SHA-256&gt;&quot;
+&quot;/usr/local/bin/node&quot; = &quot;&lt;SHA-256&gt;&quot;
+
+[server.grants]
+research = [&quot;read_file&quot;]
+</code></pre>
+<p>A remote server's entry has an address in place of the command and no files table:</p>
+<pre><code class="language-toml">[[server]]
+name = &quot;docs&quot;
+url = &quot;https://mcp.example.com/v1/mcp&quot;
+bearer_env = &quot;DOCS_TOKEN&quot;
+server_name = &quot;docs-server&quot;
+server_version = &quot;2.0.0&quot;
+tool_names = [&quot;search&quot;]
+tools_hash = &quot;&lt;SHA-256 of every tool the server advertised&gt;&quot;
+
+[server.grants]
+research = [&quot;search&quot;]
+</code></pre>
+<ul>
+<li><strong><code>name</code></strong> is lowercase letters, digits and <code>-</code>, from a letter, up to 32 characters. A tool is offered
+  to the model as <code>&lt;name&gt;__&lt;tool&gt;</code>, so <code>files__read_file</code>; the double underscore is why the server name
+  has none. A tool whose name does not fit what the model providers accept (letters, digits, <code>-</code> and <code>_</code>,
+  64 in all), or that does not take an object, is not offered.</li>
+<li><strong><code>command</code></strong> starts with the absolute path of the executable. <strong><code>[server.files]</code></strong> holds the SHA-256 of
+  that executable and of every file named in the arguments (the script it runs).</li>
+<li><strong><code>url</code></strong> (instead of <code>command</code>, <code>env</code> and <code>[server.files]</code>) is an <code>https</code> address with a host and a path,
+  at most 2048 printable characters, <strong>no user, password, query or fragment</strong>. <strong><code>bearer_env</code></strong> is the name of
+  the variable that holds its token, optional, and only with <code>url</code>. Exactly one of <code>command</code> and <code>url</code>.</li>
+<li><strong><code>env</code></strong> is the <em>names</em> of the variables the server is given, never their values. Values come from
+  the environment when the server starts. Everything else is dropped by the allow-list environment.</li>
+<li><strong><code>server_name</code>, <code>server_version</code>, <code>tools_hash</code></strong> are what the server reported when it was added.
+  <code>tool_names</code> is the same list in words, so a refusal can say which tool was added or removed.</li>
+<li><strong><code>[server.grants]</code></strong> is optional: for each stage, the tools it may call (sorted, each once, each one in
+  <code>tool_names</code>). Without it no stage gets any of the server's tools. A lock written before grants existed
+  is read as having none, and a lock with none is written without the table.</li>
+</ul>
+<p>The file is read strictly: an unknown key, a missing one, a wrong or non-integer <code>version</code> or an entry
+the model refuses is an error naming the entry, never something skipped. It is written whole to a
+temporary name and renamed, with servers in name order, so two saves of one lock give the same bytes.</p>
+<h2 id="what-is-checked">What is checked<a class="headerlink" href="#what-is-checked" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>The files, before anything is started.</strong> Each locked file must exist and hash the same, and each
+   file named in the command must be locked, so a script added to the arguments is noticed. Nothing
+   is run to find this out.</li>
+<li><strong>The server's report, after it starts.</strong> Its name, its version and the hash of the tools it
+   advertises must match. The hash covers every tool's name, description and schema, so a reworded
+   description is a changed server. That matters because a description is where a hostile server
+   hides instructions for the model.</li>
+</ol>
+<h2 id="what-a-lock-does-not-protect-and-what-is-refused">What a lock does not protect, and what is refused<a class="headerlink" href="#what-a-lock-does-not-protect-and-what-is-refused" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Installed dependencies</strong> (<code>node_modules</code>, <code>site-packages</code>) are not hashed, and neither is anything
+  the server downloads or reads while it runs. A locked script is trusted code.</li>
+<li><strong>The check and the start are separate moments.</strong> A file could change between them.</li>
+<li><strong>A remote server is pinned by its address and what it advertises, and nothing else.</strong> See above.</li>
+<li><strong>The connection is pinned to the address that was checked.</strong> The name is resolved once, every address is
+  judged by the URL policy, and the request goes to the first one with the name in the <code>Host</code> header and in
+  TLS, so the certificate is still checked against the name. A name that resolves differently a moment later
+  cannot send a request inward (DNS rebinding). Only one address is tried: if it is down the request fails
+  and is transient, rather than falling back to another. A proxy named in the environment receives the
+  address, not the name.</li>
+<li><strong>Launchers are refused</strong>: <code>npx</code>, <code>pnpx</code>, <code>bunx</code>, <code>uvx</code>, <code>pipx</code>, <code>npm</code>, <code>pnpm</code>, <code>yarn</code>, <code>docker</code>,
+  <code>podman</code> and <code>env</code> fetch or choose code that cannot be hashed here. Install the server, then lock the
+  executable or script it really runs.</li>
+<li>A lock proves the server is the one that was approved. It does not make a server safe to approve.
+  What a server's tools return is untrusted text like any other tool's, and the stage's tool allowlist
+  still decides which tools a stage can call.</li>
+</ul>
+<h2 id="resources">Resources<a class="headerlink" href="#resources" title="Permanent link">&para;</a></h2>
+<p>A server that declares the MCP <code>resources</code> capability gets <strong>two tools added by this client</strong>, <code>list_resources</code> and
+<code>read_resource</code>. Their descriptions and schemas are fixed in this project's code and are not the server's, so a server
+cannot put instructions in them. They are in the tool list, which means everything above applies to them unchanged:
+they are pinned by the lock's tools hash, appear in <code>ei tools list</code> and <code>verify</code>, are offered to <strong>no stage unless
+granted by name</strong> (<code>ei tools grant files research list_resources read_resource</code>), and their results are wrapped as
+untrusted tool output like any other.</p>
+<ul>
+<li><code>list_resources</code> sends <code>resources/list</code> and returns one line per resource (uri, then name and type), at most 200, with the
+  rest counted. <code>read_resource</code> takes a <code>uri</code> of one line and at most 2,000 characters and sends <code>resources/read</code>, and
+  returns the <strong>text</strong> of what comes back; a binary resource is noted as left out and its bytes are never passed on.</li>
+<li>A server that already has a tool named <code>list_resources</code> or <code>read_resource</code> gets neither of ours, and its own tool is
+  called as any tool.</li>
+<li><strong>Nothing is subscribed to</strong>, and no resource is read unless a granted stage's model asks for it by uri. A resource's
+  content can change between reads, so unlike the tool list it is not pinned.</li>
+<li><strong>A server that declares resources and was locked before this change no longer matches its lock</strong>, because its tool
+  list now has two more tools: <code>ei tools verify</code> names them, and <code>ei tools add --replace</code> locks it again.</li>
+<li>This is the way a model reads a server's resources; it is not yet a way to give a run a resource as an input.</li>
+</ul>
+<h2 id="the-mcp-client">The MCP client<a class="headerlink" href="#the-mcp-client" title="Permanent link">&para;</a></h2>
+<p><code>McpClient</code> speaks JSON-RPC 2.0 for <code>initialize</code>, <code>tools/list</code>, <code>tools/call</code> and, for the two resource tools above,
+<code>resources/list</code> and <code>resources/read</code>, written from the
+protocol's published shape. It has been run against a small server written for the tests, over a real
+process and pipes. <strong>It has not been run against third-party MCP servers.</strong></p>
+<ul>
+<li><strong>It offers the server nothing.</strong> It announces no capabilities. A request the server sends anyway is
+  refused with <code>-32601</code>, except <code>ping</code>, so a server cannot ask this client to sample the model, read a
+  root or prompt a person.</li>
+<li><strong>Everything a server sends is untrusted and bounded.</strong> A malformed reply is an error. A tool list
+  is cut off at 500 tools and 20 pages, and a server that sends more than 100 messages that are not the
+  answer is cut off. A tool's answer is reduced to its text, and any other content is replaced by a
+  note that it was left out.</li>
+<li>It speaks protocol versions <code>2025-06-18</code>, <code>2025-03-26</code> and <code>2024-11-05</code>.</li>
+</ul></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://properdocs.org/">ProperDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="properdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="properdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="properdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="properdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

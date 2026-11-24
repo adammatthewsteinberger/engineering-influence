@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://adammatthewsteinberger.github.io/engineering-influence/model-catalog/">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Model catalog - engineering-influence</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../stylesheets/vibey.css" rel="stylesheet">
+        <link href="../stylesheets/site.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+        <meta name="description" content="BLUF: The catalog is a TOML file you supply that says what each model costs. A run needs it because it sets money aside before every call. This package…">
+    <meta property="og:title" content="Model catalog - engineering-influence">
+    <meta property="og:description" content="BLUF: The catalog is a TOML file you supply that says what each model costs. A run needs it because it sets money aside before every call. This package…">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://adammatthewsteinberger.github.io/engineering-influence/model-catalog/">
+    <meta property="og:site_name" content="engineering-influence">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Model catalog - engineering-influence">
+    <meta name="twitter:description" content="BLUF: The catalog is a TOML file you supply that says what each model costs. A run needs it because it sets money aside before every call. This package…">
+</head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">engineering-influence</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href=".." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Start</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../getting-started/" class="dropdown-item">Getting started</a>
+</li>
+                                    
+<li>
+    <a href="../agents-driving/" class="dropdown-item">Driving it from another AI</a>
+</li>
+                                    
+<li>
+    <a href="../books-and-kdp/" class="dropdown-item">Books and KDP</a>
+</li>
+                                    
+<li>
+    <a href="../novels/" class="dropdown-item">Novels</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Writing books</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../local-model/" class="dropdown-item">The local model</a>
+</li>
+                                    
+<li>
+    <a href="../model-profiles/" class="dropdown-item">Model profiles</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Model catalog</a>
+</li>
+                                    
+<li>
+    <a href="../model-calls/" class="dropdown-item">Model calls</a>
+</li>
+                                    
+<li>
+    <a href="../research/" class="dropdown-item">Research</a>
+</li>
+                                    
+<li>
+    <a href="../prompts/" class="dropdown-item">Prompts</a>
+</li>
+                                    
+<li>
+    <a href="../skills/" class="dropdown-item">Skills</a>
+</li>
+                                    
+<li>
+    <a href="../plugins/" class="dropdown-item">Plugins</a>
+</li>
+                                    
+<li>
+    <a href="../tool-lock/" class="dropdown-item">Tool lock</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../interactions/" class="dropdown-item">Interfaces</a>
+</li>
+                                    
+<li>
+    <a href="../configuration/" class="dropdown-item">Configuration</a>
+</li>
+                                    
+<li>
+    <a href="../compatibility/" class="dropdown-item">Compatibility</a>
+</li>
+                                    
+<li>
+    <a href="../architecture/" class="dropdown-item">Architecture</a>
+</li>
+                                    
+<li>
+    <a href="../threat-model/" class="dropdown-item">Threat model</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Operating</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../worker-image/" class="dropdown-item">Worker image</a>
+</li>
+                                    
+<li>
+    <a href="../troubleshooting/" class="dropdown-item">Troubleshooting</a>
+</li>
+                                    
+<li>
+    <a href="../releasing/" class="dropdown-item">Releasing</a>
+</li>
+                                    
+<li>
+    <a href="../documentation-site/" class="dropdown-item">Documentation site</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Quality</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../testing/" class="dropdown-item">Testing</a>
+</li>
+                                    
+<li>
+    <a href="../evaluation/" class="dropdown-item">Evaluation</a>
+</li>
+                                    
+<li>
+    <a href="../live-smoke-test/" class="dropdown-item">Live smoke test</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Project</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../contributing/" class="dropdown-item">Contributing</a>
+</li>
+                                    
+<li>
+    <a href="../style/" class="dropdown-item">How these documents are written</a>
+</li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Decision records</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../adr/" class="dropdown-item">Overview</a>
+</li>
+            
+<li>
+    <a href="../adr/0001-vibey-integration-boundary/" class="dropdown-item">ADR 0001: Isolate vibey behind ports</a>
+</li>
+            
+<li>
+    <a href="../adr/0002-audience-priority-and-sovereign-agent-doctrine/" class="dropdown-item">ADR 0002: Audience priority and sovereign agent doctrine</a>
+</li>
+            
+<li>
+    <a href="../adr/0003-definition-of-1-0/" class="dropdown-item">ADR 0003: Definition of 1.0</a>
+</li>
+            
+<li>
+    <a href="../adr/0004-versioning-compatibility-and-deprecation/" class="dropdown-item">ADR 0004: Versioning, compatibility and deprecation</a>
+</li>
+            
+<li>
+    <a href="../adr/0005-release-flow-and-changelog-fragments/" class="dropdown-item">ADR 0005: Release flow and changelog fragments</a>
+</li>
+            
+<li>
+    <a href="../adr/0006-onion-layers-and-interfaces/" class="dropdown-item">ADR 0006: Onion layers, interfaces and one class per file</a>
+</li>
+            
+<li>
+    <a href="../adr/0007-model-transport-plain-httpx/" class="dropdown-item">ADR 0007: Models are called over plain httpx, behind `ModelInterface`</a>
+</li>
+            
+<li>
+    <a href="../adr/0008-tools-for-the-model/" class="dropdown-item">ADR 0008: The model gets tools, each stage gets only the ones it names</a>
+</li>
+            
+<li>
+    <a href="../adr/0009-branch-driven-publishing/" class="dropdown-item">ADR 0009: Publishing follows the branch: develop to TestPyPI, main to PyPI</a>
+</li>
+            
+<li>
+    <a href="../adr/0010-chapters-are-drafted-in-order-in-one-stage/" class="dropdown-item">ADR 0010: Chapters are drafted in order, inside one stage</a>
+</li>
+            
+<li>
+    <a href="../adr/0011-run-inputs/" class="dropdown-item">ADR 0011: Run inputs are untrusted text carried inside the brief</a>
+</li>
+    </ul>
+  </li>
+                                    
+<li>
+    <a href="../changelog/" class="dropdown-item">Changelog</a>
+</li>
+                                    
+<li>
+    <a href="../security/" class="dropdown-item">Security</a>
+</li>
+                                    
+<li>
+    <a href="../support/" class="dropdown-item">Support</a>
+</li>
+                                    
+<li>
+    <a href="../code-of-conduct/" class="dropdown-item">Code of conduct</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#properdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../model-profiles/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../model-calls/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/adammatthewsteinberger/engineering-influence/edit/develop/model-catalog.md" class="nav-link">Edit on adammatthewsteinberger/engineering-influence
+                                    </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#the-model-catalog" class="nav-link">The model catalog</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#why-it-ships-no-prices" class="nav-link">Why it ships no prices</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#units" class="nav-link">Units</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#example" class="nav-link">Example</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#content-levels" class="nav-link">Content levels</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-goes-wrong" class="nav-link">What goes wrong</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="the-model-catalog">The model catalog<a class="headerlink" href="#the-model-catalog" title="Permanent link">&para;</a></h1>
+<p><strong>BLUF:</strong> The catalog is a TOML file you supply that says what each model costs. A run needs it because it sets
+money aside before every call. This package ships no prices, since they change and it cannot vouch for them, and a
+model with no price in force when the process starts is refused (<code>MODEL_UNPRICED</code>), never guessed. The free local
+model needs no catalog.</p>
+<p>A run reserves money before every model call, so it must know what a call costs. The catalog
+is the file that says. <strong>You supply it</strong>: prices change, and this package cannot vouch for any
+vendor's current prices, so it ships none. A model with no price in force on a date is refused
+(<code>MODEL_UNPRICED</code>), never guessed.</p>
+<p><code>TomlModelCatalogLoader</code> reads the file. Each <code>[[model]]</code> names a model and its limits, and
+each <code>[[model.price]]</code> under it is a set of prices that takes effect on a date. The run uses
+the latest entry whose <code>effective</code> date is on or before the day the worker (or <code>ei book create</code>) started, so you
+keep old entries and add a new one when a vendor changes prices. The price is looked up once, at start: restart a
+long-running worker when a new price takes effect.</p>
+<p>A <code>[[model]]</code> needs <code>provider</code>, <code>model</code>, <code>family</code>, <code>context_window</code>, <code>max_output_tokens</code>, <code>usage_policy_url</code> and at
+least one <code>[[model.price]]</code>.</p>
+<h2 id="why-it-ships-no-prices">Why it ships no prices<a class="headerlink" href="#why-it-ships-no-prices" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><strong>Daniel:</strong> It would be friendlier to ship a price list. Why make me type in what my provider charges?</p>
+<p><strong>Professor Feynman:</strong> Suppose I handed you last year's train timetable and you missed your train. Whose fault?</p>
+<p><strong>Daniel:</strong> Yours, for handing it to me as if it were current.</p>
+<p><strong>Professor Feynman:</strong> A price list in a package is last year's timetable the day it ships. If it were low, your
+five dollar cap would quietly let eight dollars through. So the file is yours, each price has the date it took
+effect, and you add a new entry when a price changes instead of editing the old one.</p>
+<p><strong>Daniel:</strong> And if I forget to add this year's price?</p>
+<p><strong>Professor Feynman:</strong> Then the latest entry that is not in the future is used, which is what you last told it.
+With no entry at all the model is refused before a cent is spent. The limit of the picture: a timetable is wrong
+in an obvious way. A slightly wrong price is not, so check the estimate against your first real bill.</p>
+<p><strong>Daniel:</strong> My prices, dated, never guessed. And nothing here applies to the local model, which is free.</p>
+</blockquote>
+<h2 id="units">Units<a class="headerlink" href="#units" title="Permanent link">&para;</a></h2>
+<p>Prices are whole <strong>micro-dollars per million tokens</strong>: <code>3000000</code> means $3.00 per million
+tokens. They are integers so that no cost is ever rounded on the way in; the arithmetic after
+that always rounds up, so a run is never charged less than it owes.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>input</code>, <code>output</code></td>
+<td>the plain input and output rates</td>
+</tr>
+<tr>
+<td><code>cache_read</code>, <code>cache_write</code></td>
+<td>the rates for prompt tokens read from or written to the cache</td>
+</tr>
+<tr>
+<td><code>batch_discount_percent</code></td>
+<td>the percentage taken off a batch call, 0 to 100</td>
+</tr>
+<tr>
+<td><code>long_context_threshold_tokens</code></td>
+<td>a prompt longer than this is billed at the long-context rates; omit for none</td>
+</tr>
+<tr>
+<td><code>long_context_input_percent</code>, <code>long_context_output_percent</code></td>
+<td>those rates as a percentage of the standard ones, never below 100</td>
+</tr>
+</tbody>
+</table>
+<h2 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h2>
+<p>These numbers are made up. They show the shape and nothing else: replace the provider, the
+model and every price with the values from your provider's price list.</p>
+<pre><code class="language-toml">[[model]]
+provider = &quot;example&quot;
+model = &quot;example-model&quot;
+family = &quot;example&quot;
+context_window = 200000
+max_output_tokens = 8000
+usage_policy_url = &quot;https://example.com/usage-policy&quot;
+
+[[model.price]]
+effective = &quot;2026-01-01&quot;
+input = 3000000
+output = 15000000
+cache_read = 300000
+cache_write = 3750000
+batch_discount_percent = 50
+
+[[model.price]]
+effective = &quot;2026-07-01&quot;
+input = 2000000
+output = 10000000
+cache_read = 200000
+cache_write = 2500000
+batch_discount_percent = 50
+long_context_threshold_tokens = 200000
+long_context_input_percent = 200
+long_context_output_percent = 150
+</code></pre>
+<h2 id="content-levels">Content levels<a class="headerlink" href="#content-levels" title="Permanent link">&para;</a></h2>
+<p>A novel's brief may set <code>violence</code> (<code>none</code>, <code>mild</code>, <code>moderate</code>, <code>graphic</code>) and <code>heat</code> (<code>none</code>, <code>sweet</code>, <code>steamy</code>,
+<code>explicit</code>), mildest first. This project does not know any provider's usage policy and does not claim to, so the
+ceiling for a model is something <strong>you</strong> record, after reading the <code>usage_policy_url</code> you already give it:</p>
+<pre><code class="language-toml">[[model]]
+# ...the keys above...
+max_violence = &quot;moderate&quot;
+max_heat = &quot;sweet&quot;
+</code></pre>
+<p>A model with no ceiling recorded is held to <code>mild</code> violence and <code>sweet</code> heat, so a brief that asks for more is refused
+before anything is spent, with a message that names the setting to change. A brief that sets no level is never
+refused. A model on your own machine is the same: you record what you are willing to ask of it. The check is the
+<code>ContentPolicy</code> service; the novel stages (M7.3) call it before their first paid call. It is a guard against asking a
+model for what its provider has said it will not write, not a content filter and not legal advice.</p>
+<h2 id="what-goes-wrong">What goes wrong<a class="headerlink" href="#what-goes-wrong" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>MODEL_CATALOG_INVALID</code> names the entry (<code>model #2 (example/example-model) is missing 'family'</code>).
+  A price entry needs all of <code>effective</code>, <code>input</code>, <code>output</code>, <code>cache_read</code>, <code>cache_write</code> and
+  <code>batch_discount_percent</code>.</li>
+<li>Two prices for one model with the same <code>effective</code> date are refused, because the run could not
+  tell which one applies.</li>
+<li><code>MODEL_UNPRICED</code> means the day of the call is before the model's first <code>effective</code> date, or the
+  model is not in the catalog at all.</li>
+</ul></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://properdocs.org/">ProperDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="properdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="properdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="properdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="properdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

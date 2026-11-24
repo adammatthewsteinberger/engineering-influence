@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://adammatthewsteinberger.github.io/engineering-influence/testing/">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Testing - engineering-influence</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../stylesheets/vibey.css" rel="stylesheet">
+        <link href="../stylesheets/site.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+        <meta name="description" content="BLUF: CI is the source of truth: lint, import rules, types, security lint, tests with 100% branch coverage, the toolchain build, an integration run…">
+    <meta property="og:title" content="Testing - engineering-influence">
+    <meta property="og:description" content="BLUF: CI is the source of truth: lint, import rules, types, security lint, tests with 100% branch coverage, the toolchain build, an integration run…">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://adammatthewsteinberger.github.io/engineering-influence/testing/">
+    <meta property="og:site_name" content="engineering-influence">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Testing - engineering-influence">
+    <meta name="twitter:description" content="BLUF: CI is the source of truth: lint, import rules, types, security lint, tests with 100% branch coverage, the toolchain build, an integration run…">
+</head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">engineering-influence</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href=".." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Start</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../getting-started/" class="dropdown-item">Getting started</a>
+</li>
+                                    
+<li>
+    <a href="../agents-driving/" class="dropdown-item">Driving it from another AI</a>
+</li>
+                                    
+<li>
+    <a href="../books-and-kdp/" class="dropdown-item">Books and KDP</a>
+</li>
+                                    
+<li>
+    <a href="../novels/" class="dropdown-item">Novels</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Writing books</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../local-model/" class="dropdown-item">The local model</a>
+</li>
+                                    
+<li>
+    <a href="../model-profiles/" class="dropdown-item">Model profiles</a>
+</li>
+                                    
+<li>
+    <a href="../model-catalog/" class="dropdown-item">Model catalog</a>
+</li>
+                                    
+<li>
+    <a href="../model-calls/" class="dropdown-item">Model calls</a>
+</li>
+                                    
+<li>
+    <a href="../research/" class="dropdown-item">Research</a>
+</li>
+                                    
+<li>
+    <a href="../prompts/" class="dropdown-item">Prompts</a>
+</li>
+                                    
+<li>
+    <a href="../skills/" class="dropdown-item">Skills</a>
+</li>
+                                    
+<li>
+    <a href="../plugins/" class="dropdown-item">Plugins</a>
+</li>
+                                    
+<li>
+    <a href="../tool-lock/" class="dropdown-item">Tool lock</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../interactions/" class="dropdown-item">Interfaces</a>
+</li>
+                                    
+<li>
+    <a href="../configuration/" class="dropdown-item">Configuration</a>
+</li>
+                                    
+<li>
+    <a href="../compatibility/" class="dropdown-item">Compatibility</a>
+</li>
+                                    
+<li>
+    <a href="../architecture/" class="dropdown-item">Architecture</a>
+</li>
+                                    
+<li>
+    <a href="../threat-model/" class="dropdown-item">Threat model</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Operating</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../worker-image/" class="dropdown-item">Worker image</a>
+</li>
+                                    
+<li>
+    <a href="../troubleshooting/" class="dropdown-item">Troubleshooting</a>
+</li>
+                                    
+<li>
+    <a href="../releasing/" class="dropdown-item">Releasing</a>
+</li>
+                                    
+<li>
+    <a href="../documentation-site/" class="dropdown-item">Documentation site</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Quality</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Testing</a>
+</li>
+                                    
+<li>
+    <a href="../evaluation/" class="dropdown-item">Evaluation</a>
+</li>
+                                    
+<li>
+    <a href="../live-smoke-test/" class="dropdown-item">Live smoke test</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Project</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../contributing/" class="dropdown-item">Contributing</a>
+</li>
+                                    
+<li>
+    <a href="../style/" class="dropdown-item">How these documents are written</a>
+</li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Decision records</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../adr/" class="dropdown-item">Overview</a>
+</li>
+            
+<li>
+    <a href="../adr/0001-vibey-integration-boundary/" class="dropdown-item">ADR 0001: Isolate vibey behind ports</a>
+</li>
+            
+<li>
+    <a href="../adr/0002-audience-priority-and-sovereign-agent-doctrine/" class="dropdown-item">ADR 0002: Audience priority and sovereign agent doctrine</a>
+</li>
+            
+<li>
+    <a href="../adr/0003-definition-of-1-0/" class="dropdown-item">ADR 0003: Definition of 1.0</a>
+</li>
+            
+<li>
+    <a href="../adr/0004-versioning-compatibility-and-deprecation/" class="dropdown-item">ADR 0004: Versioning, compatibility and deprecation</a>
+</li>
+            
+<li>
+    <a href="../adr/0005-release-flow-and-changelog-fragments/" class="dropdown-item">ADR 0005: Release flow and changelog fragments</a>
+</li>
+            
+<li>
+    <a href="../adr/0006-onion-layers-and-interfaces/" class="dropdown-item">ADR 0006: Onion layers, interfaces and one class per file</a>
+</li>
+            
+<li>
+    <a href="../adr/0007-model-transport-plain-httpx/" class="dropdown-item">ADR 0007: Models are called over plain httpx, behind `ModelInterface`</a>
+</li>
+            
+<li>
+    <a href="../adr/0008-tools-for-the-model/" class="dropdown-item">ADR 0008: The model gets tools, each stage gets only the ones it names</a>
+</li>
+            
+<li>
+    <a href="../adr/0009-branch-driven-publishing/" class="dropdown-item">ADR 0009: Publishing follows the branch: develop to TestPyPI, main to PyPI</a>
+</li>
+            
+<li>
+    <a href="../adr/0010-chapters-are-drafted-in-order-in-one-stage/" class="dropdown-item">ADR 0010: Chapters are drafted in order, inside one stage</a>
+</li>
+            
+<li>
+    <a href="../adr/0011-run-inputs/" class="dropdown-item">ADR 0011: Run inputs are untrusted text carried inside the brief</a>
+</li>
+    </ul>
+  </li>
+                                    
+<li>
+    <a href="../changelog/" class="dropdown-item">Changelog</a>
+</li>
+                                    
+<li>
+    <a href="../security/" class="dropdown-item">Security</a>
+</li>
+                                    
+<li>
+    <a href="../support/" class="dropdown-item">Support</a>
+</li>
+                                    
+<li>
+    <a href="../code-of-conduct/" class="dropdown-item">Code of conduct</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#properdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../documentation-site/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../evaluation/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/adammatthewsteinberger/engineering-influence/edit/develop/testing.md" class="nav-link">Edit on adammatthewsteinberger/engineering-influence
+                                    </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#testing" class="nav-link">Testing</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#what-100-does-not-mean" class="nav-link">What 100% does not mean</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#test-layout" class="nav-link">Test layout</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-examples-are-tests" class="nav-link">The examples are tests</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#coverage-notes" class="nav-link">Coverage notes</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#architecture-rules" class="nav-link">Architecture rules</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#cassettes-and-paid-tests" class="nav-link">Cassettes and paid tests</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#contract-snapshots" class="nav-link">Contract snapshots</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-toolchain-test" class="nav-link">The toolchain test</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#writing-tests" class="nav-link">Writing tests</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-integration-tests" class="nav-link">The integration tests</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="testing">Testing<a class="headerlink" href="#testing" title="Permanent link">&para;</a></h1>
+<p><strong>BLUF:</strong> CI is the source of truth: lint, import rules, types, security lint, tests with 100% branch coverage,
+the toolchain build, an integration run against real PostgreSQL and RabbitMQ, workflow and secret scans. Almost
+every command is on this page so you can run it before you push; the leak scan, <code>gitleaks</code>, <code>actionlint</code> and
+<code>zizmor</code> run only in CI. Most tests use scripted fakes, so they prove the machinery, not that a real model writes
+well.</p>
+<p>CI (<code>.github/workflows/ci.yml</code>) is the source of truth. These are its jobs and how to run each locally.</p>
+<pre><code class="language-bash">uv sync --extra test --extra runtime --extra dev --extra publishing
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Gate</th>
+<th>Command</th>
+<th>What it enforces</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lint</td>
+<td><code>uv run ruff check .</code></td>
+<td>style and common errors, including <code>examples/</code></td>
+</tr>
+<tr>
+<td>Architecture</td>
+<td><code>uv run lint-imports</code></td>
+<td>inward-only layers; services and controllers never touch adapters or transports</td>
+</tr>
+<tr>
+<td>Security lint</td>
+<td><code>uv run bandit -q -r src packages</code></td>
+<td>common insecure patterns</td>
+</tr>
+<tr>
+<td>Dependencies</td>
+<td><code>uv run pip-audit</code></td>
+<td>known vulnerabilities (the two local packages are reported as unauditable; that is expected)</td>
+</tr>
+<tr>
+<td>Types</td>
+<td><code>uv run mypy --strict src packages</code></td>
+<td>strict typing</td>
+</tr>
+<tr>
+<td>Format</td>
+<td><code>uv run ruff format --check .</code></td>
+<td>one formatting, no drift</td>
+</tr>
+<tr>
+<td>Tests</td>
+<td><code>uv run pytest --cov --cov-branch --cov-fail-under=100</code></td>
+<td>all tests and <strong>100% branch coverage</strong>, on Python 3.12, 3.13 and 3.14</td>
+</tr>
+<tr>
+<td>Integration</td>
+<td><code>eval "$(sh tests/integration/stack.sh up)"</code>, then <code>uv run pytest -m integration tests/integration</code></td>
+<td>the migrations on PostgreSQL, the stores under concurrent writers, jobs through RabbitMQ, and a book run that finishes through the stack however its workers die</td>
+</tr>
+<tr>
+<td>Compose smoke</td>
+<td><code>sh examples/compose_smoke.sh</code></td>
+<td>the real stack: credentials refused, a two-stage pipeline completes, a malformed message is dead-lettered, the curl example works</td>
+</tr>
+<tr>
+<td>Provenance</td>
+<td><code>vibey-gh check --ci</code>; on pull requests <code>vibey-gh provenance-check</code> and <code>conventional-check</code></td>
+<td>file headers, <code>Made-With:</code> trailers, Conventional Commit subjects</td>
+</tr>
+<tr>
+<td>Leak scan</td>
+<td>gitleaks plus a path check</td>
+<td>no secrets and no private-content paths in history</td>
+</tr>
+<tr>
+<td>Workflows</td>
+<td><code>actionlint</code>, <code>zizmor</code></td>
+<td>workflow correctness and security</td>
+</tr>
+<tr>
+<td>Distribution</td>
+<td>built in CI</td>
+<td>wheel and sdist install and run; <code>py.typed</code> ships</td>
+</tr>
+<tr>
+<td>Toolchain</td>
+<td><code>uv run pytest -m toolchain</code> (the CI <code>toolchain</code> job)</td>
+<td>real LuaLaTeX, epubcheck and the book build end to end</td>
+</tr>
+<tr>
+<td>Canary</td>
+<td><code>.github/workflows/canary.yml</code></td>
+<td>a daily fresh dependency resolve, to catch an upstream break early</td>
+</tr>
+<tr>
+<td>Nightly evaluation</td>
+<td><code>.github/workflows/nightly-eval.yml</code></td>
+<td><code>ei evaluate</code> against a real model; <strong>paid</strong>, off until <code>RUN_NIGHTLY_EVAL</code> is <code>true</code>, and never run</td>
+</tr>
+</tbody>
+</table>
+<h2 id="what-100-does-not-mean">What 100% does not mean<a class="headerlink" href="#what-100-does-not-mean" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><strong>Daniel:</strong> The project insists on one hundred percent coverage. So there are no bugs.</p>
+<p><strong>Professor Feynman:</strong> A smoke detector is installed in every room. Does that mean nothing can burn?</p>
+<p><strong>Daniel:</strong> It means every room is wired. Not that it would go off.</p>
+<p><strong>Professor Feynman:</strong> Coverage says every line ran during a test. It does not say anything checked the result.
+A test that runs a line and asserts nothing makes the number go up and protects nothing. The test of a test is
+whether it can fail.</p>
+<p><strong>Daniel:</strong> How do I find out?</p>
+<p><strong>Professor Feynman:</strong> Break the code on purpose and watch. Change a comparison, delete a check, and see whether
+a test goes red. If none does, the line is covered and unprotected. CI does not do this for you; it is something
+to do when you add a rule that matters.</p>
+<p><strong>Daniel:</strong> So the number is the floor and not the proof, and I should break my own change before I trust its
+tests.</p>
+</blockquote>
+<h2 id="test-layout">Test layout<a class="headerlink" href="#test-layout" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Directory</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tests/unit</code></td>
+<td>one module at a time, with in-memory adapters</td>
+</tr>
+<tr>
+<td><code>tests/architecture</code></td>
+<td>the structural rules: one class per file, interfaces folders, no loose functions</td>
+</tr>
+<tr>
+<td><code>tests/parity</code></td>
+<td>every interface (API, MCP, CLI, SDK) gives the same result for the same input</td>
+</tr>
+<tr>
+<td><code>tests/integration</code></td>
+<td>a real PostgreSQL and RabbitMQ, started by <code>stack.sh</code>; each test gets its own schema and queues</td>
+</tr>
+<tr>
+<td><code>tests/e2e</code></td>
+<td>real processes: the CLI, the examples against a live uvicorn server, wheel installation</td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-examples-are-tests">The examples are tests<a class="headerlink" href="#the-examples-are-tests" title="Permanent link">&para;</a></h2>
+<p><code>tests/e2e/test_examples.py</code> runs every script in <code>examples/</code> as a subprocess. The API,
+SDK, curl and observability scripts hit a real uvicorn server on a free port; the MCP client
+spawns the real stdio server; the webhook sender talks to the real receiver. The compose smoke test then
+runs the curl example against the full stack. If you change an interface, the examples fail first.</p>
+<h2 id="coverage-notes">Coverage notes<a class="headerlink" href="#coverage-notes" title="Permanent link">&para;</a></h2>
+<ul>
+<li>The 100% gate includes branches. Code that only runs in a fresh interpreter (missing optional
+  extras) is measured through <code>patch = ["subprocess"]</code> in <code>[tool.coverage.run]</code>; do not remove it.</li>
+<li>The <code>distribution</code>, <code>toolchain</code>, <code>integration</code> and <code>paid</code> markers are deselected by default. The default suite
+  builds no real PDF or EPUB (the <code>toolchain</code> job, below, does) and makes no paid model call.</li>
+</ul>
+<h2 id="architecture-rules">Architecture rules<a class="headerlink" href="#architecture-rules" title="Permanent link">&para;</a></h2>
+<p><code>tests/architecture/</code> enforces the structure of ADR 0006, and every rule holds everywhere with no
+allowance for violations (<code>test_rules.py</code> asserts each count is zero, so a new class without an
+interface, an import that crosses layers or a file outside the layers fails the build).
+<code>tests/architecture/test_move_map.py</code> keeps <code>scripts/refactor/move_map.toml</code> complete against the
+tree, and <code>scripts/refactor/inventory.py</code> prints the facts the map is built from.
+Alembic scripts in <code>infrastructure/migrations/</code> are the one exempt folder (ADR 0006); a test builds
+the schema from them and fails if it differs from the SQLModel models.
+<code>tests/architecture/test_enum_protocols.py</code> checks each enum against its <code>runtime_checkable</code>
+Protocol, because an enum cannot inherit an ABC, and <code>tests/architecture/test_sdk_interfaces.py</code>
+holds the SDK package to the same interface rules.
+<code>tests/architecture/test_no_patching.py</code> keeps tests from patching production code: classes take their
+collaborators through their constructors, so a test passes a fake. The only patches left are
+standard-library calls at the system boundary (<code>subprocess.run</code>, <code>sys.argv</code>, <code>sys.path</code>,
+<code>zipfile.ZipFile.testzip</code>) and one class the test defines itself; they are listed there, and a new
+patch of anything else fails the build.</p>
+<h2 id="cassettes-and-paid-tests">Cassettes and paid tests<a class="headerlink" href="#cassettes-and-paid-tests" title="Permanent link">&para;</a></h2>
+<p>A model adapter takes its <code>httpx.Client</code> through its constructor (ADR 0007), so a test hands it a
+client built on a cassette transport instead of the network. The classes are in
+<code>engineering_influence/infrastructure/cassettes/</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CassetteReplayTransport</code></td>
+<td>Answers from a cassette, in order. A request must match the next recorded one in method, path (with query) and JSON body, or it raises <code>CASSETTE_MISMATCH</code>. That is an <code>ApplicationError</code>, not an httpx error, so an adapter cannot take it for a network failure and retry. <code>finish()</code> fails if the code stopped asking before the cassette ran out.</td>
+</tr>
+<tr>
+<td><code>CassetteRecordingTransport</code></td>
+<td>Wraps a real transport. The caller gets the real answer. The cassette gets a masked copy of the method, path, JSON bodies and status, and no headers, because the API key is one. A body that is not JSON stops the recording.</td>
+</tr>
+<tr>
+<td><code>CassetteRedactor</code></td>
+<td>Replaces each key it is told about, and anything shaped like <code>sk-</code> plus sixteen more characters, with <code>[REDACTED]</code>. The replay masks the request the same way, so a cassette recorded under one key replays under another and a refusal never prints a key.</td>
+</tr>
+<tr>
+<td><code>JsonCassetteStore</code></td>
+<td>One JSON file per cassette in <code>tests/cassettes/</code>, written the same way every time. It refuses to save, and to load, a cassette that still looks like it holds a secret.</td>
+</tr>
+</tbody>
+</table>
+<p>Matching the body is deliberate. A replay that ignored the request would pass while the prompt
+changed underneath it. The cost is that changing a prompt or a request field means re-recording
+the cassettes that use it, and recording is the paid step.</p>
+<p>Cassettes are made only from synthetic briefs (<code>CONTRIBUTING.md</code>). <code>tests/cassettes/</code> holds none
+yet: recording spends money, so the first one waits for the maintainer's go-ahead. The cassettes
+under <code>tests/fixtures/model_cassettes/</code> are different: they are hand-written from each API's
+documented response shape (each says so in its <code>note</code>), and test how an adapter classifies a
+reply, not what a real model said.</p>
+<p>The <code>paid</code> marker is for a test that calls a real provider. It is deselected by default, and
+<code>pytest -m paid</code> is still refused unless <code>EI_ALLOW_PAID=1</code> is set (<code>tests/paid_gate.py</code>), so
+nobody spends by typing one flag. Without the variable the test errors rather than skips, so a
+scheduled run that is missing it goes red. A paid test wraps its live transport in
+<code>CassetteRecordingTransport</code>, so one paid run also produces the cassette later runs replay.</p>
+<p>Two things the machinery does not do. It has not been run against a live provider, because that
+spends money. And nothing in the product composes it yet: the runtime will use the replay
+transport when a cassette-backed run is added.</p>
+<h2 id="contract-snapshots">Contract snapshots<a class="headerlink" href="#contract-snapshots" title="Permanent link">&para;</a></h2>
+<p>The evaluation harness (<code>ei evaluate</code>, <a href="../evaluation/">EVALUATION.md</a>) is tested end to end against a scripted writing model that also plays the judge, so no test spends money; whether a real model clears the bar is only known from a paid run.</p>
+<p><code>tests/contracts/</code> freezes every public contract (the schemas, the OpenAPI document, the CLI tree, the SDK, the MCP tools, the error codes and the webhook catalogue) against a committed copy in <code>tests/contracts/snapshots/</code>. A failing test there means a public contract moved. If it moved on purpose, run <code>EI_UPDATE_CONTRACTS=1 uv run pytest tests/contracts</code>, read the diff, and follow <a href="../compatibility/">COMPATIBILITY.md</a>. They run in the normal suite and need no extras beyond the dev install.</p>
+<h2 id="the-toolchain-test">The toolchain test<a class="headerlink" href="#the-toolchain-test" title="Permanent link">&para;</a></h2>
+<p><code>tests/fixtures/fixture_book/</code> is a small synthetic non-fiction book at the default 6x9 trim,
+<code>tests/fixtures/fixture_novel/</code> a small synthetic novel at 5.5x8.5 on cream paper, and
+<code>tests/fixtures/fixture_pocket/</code> a small 5x8 book with no hardcover (original text and a strict
+release contract each; the first two have a KDP hardcover). The novel has scene breaks, em-dash
+dialogue and a character who says "Draft", so it exercises the rules that differ by kind. The <code>toolchain</code> CI job installs LuaLaTeX, tex4ebook and epubcheck on a pinned
+<code>ubuntu-24.04</code> runner, builds each with <code>ei book publish &lt;slug&gt; --strict-release</code>, and compares each
+result with the <code>expected/snapshot.json</code> beside its fixture. Beyond the snapshot, a test states what
+the novel must show (three scene breaks in the PDF and in the EPUB, the em dashes, and no stray
+<code>Draft</code> complaint) and what the sizes must produce: the interior's page size, the wrap's width
+from the page count and the paper's thickness, and no hardcover files for the pocket book.</p>
+<ul>
+<li>The snapshot is structural, so no PDFs live in git: page count, page size and a hash of each
+  page's text for both interiors, the sha256 of every EPUB member (the repacker is deterministic),
+  the cover file names, and the publication report's step results.</li>
+<li>It is the no-behaviour-change oracle for refactors: a change that alters any typeset page, any
+  EPUB member or any gate result fails it.</li>
+<li>A different TeX Live release can legitimately change the snapshot, which is why the runner image is
+  pinned. To accept a deliberate change, run <code>EI_UPDATE_SNAPSHOT=1 uv run pytest -m toolchain</code> on
+  a machine with the same toolchain (or download the <code>fixture-snapshot</code> artifact from the failed CI
+  run, which holds one <code>&lt;name&gt;.json</code> per book) and commit the new file.</li>
+<li>A machine without the tools skips the test.</li>
+</ul>
+<p><code>tests/toolchain/test_hostile_book.py</code> is the second toolchain test. It builds a copy of the
+fixture book whose every text field carries a payload that would write a file if any of it reached
+TeX unescaped, and checks that no file appears and that the payload prints as text. It also feeds
+live TeX straight to LuaLaTeX and to tex4ebook to check that neither runs a shell command, with a
+control that shows the file-writing canary does detect live TeX. It needs no snapshot, so it
+cannot go stale with the TeX Live release. <code>tests/unit/publishing/typesetting/test_latex_injection.py</code>
+is its fast counterpart in the default suite: it fills every field with a tripwire and fails if a live
+macro reaches the generated TeX. See <a href="../threat-model/">THREAT_MODEL.md</a>.</p>
+<p><code>tests/toolchain/test_build_limits.py</code> is the third. It makes real <code>latexmk</code> and real <code>tex4ebook</code> hang with a
+document that loops forever, and makes real <code>lualatex</code> allocate far more memory than its limit and write far
+more disk than its limit. It checks that each build fails at its limit and that no process it started is
+left running. A hang test's document writes a marker first, so the test shows the tool reached the loop.
+<code>tests/unit/test_process_runner.py</code> and <code>tests/unit/test_process_meter.py</code> cover the same stops, and the
+measurements behind them, with real child processes in the default suite: a grandchild in the group, one
+that left it, an interrupt, memory summed over a group, and a directory's size.</p>
+<p><code>tests/unit/test_prompt_template_lock.py</code> refuses a prompt edit that has no version bump, because the version is
+part of the run journal's key (<a href="../prompts/">PROMPTS.md</a>).</p>
+<h2 id="writing-tests">Writing tests<a class="headerlink" href="#writing-tests" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Prefer a fake that implements the interface (or subclasses the class and overrides one method) over a mock or a patch.</li>
+<li>Anything that crosses a process boundary needs a failure and recovery test, not only the happy path.</li>
+<li>Property tests use <code>hypothesis</code>: the budget invariant in <code>test_run_control_models.py</code>, and a state machine over a run's whole life in <code>test_run_lifecycle_machine.py</code>. Keep strategies small, and prove a new one can fail by breaking the code it guards.</li>
+</ul>
+<h2 id="the-integration-tests">The integration tests<a class="headerlink" href="#the-integration-tests" title="Permanent link">&para;</a></h2>
+<p>They need a real PostgreSQL and RabbitMQ. <code>tests/integration/stack.sh</code> starts both in Docker with
+random credentials on random <code>127.0.0.1</code> ports and prints the two settings the tests read:</p>
+<pre><code class="language-bash">eval &quot;$(sh tests/integration/stack.sh up)&quot;     # start, then export EI_TEST_DATABASE_URL and EI_TEST_RABBITMQ_URL
+uv run pytest -m integration tests/integration
+sh tests/integration/stack.sh down             # remove both containers
+</code></pre>
+<p>Name the directory: the integration job installs only the <code>test</code> and <code>runtime</code> extras, and a bare
+<code>pytest -m integration</code> would still try to import every other test module and fail on the ones that
+need the <code>publishing</code> extra. <code>stack.sh env</code> prints the exports again for a stack that is already running. Without the settings
+the tests skip; with <code>EI_REQUIRE_INTEGRATION=1</code>, which the <code>integration</code> CI job sets, a missing stack
+fails them instead, so the job cannot pass with nothing tested. Each test gets its own PostgreSQL
+schema (dropped afterwards) and its own queue names, so they can run against one stack.</p>
+<p>What they cover that the unit tests cannot: the migrations build exactly what the models describe on
+PostgreSQL (a timezone mistake that SQLite hid was found this way), several threads racing to change
+one run, record one journal entry or store one artifact, large binary artifacts, jobs through the
+broker including dead-lettering and redelivery of a message a dead worker never acknowledged, and a
+book run driven through both services while workers die before storing a change, before queueing the
+next stage and before acknowledging. A death closes the broker connection with the message
+unacknowledged, as a killed process does. The run must finish with every artifact byte-identical, the
+spend exactly the journal's total, and nothing in the dead-letter queue.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://properdocs.org/">ProperDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="properdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="properdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="properdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="properdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

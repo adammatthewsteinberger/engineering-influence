@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://adammatthewsteinberger.github.io/engineering-influence/interactions/">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Interfaces - engineering-influence</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../stylesheets/vibey.css" rel="stylesheet">
+        <link href="../stylesheets/site.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+        <meta name="description" content="BLUF: Every interface drives the same thing, a book run that ends in a KDP-ready package, so learn one and you know them all. To write one book, use the…">
+    <meta property="og:title" content="Interfaces - engineering-influence">
+    <meta property="og:description" content="BLUF: Every interface drives the same thing, a book run that ends in a KDP-ready package, so learn one and you know them all. To write one book, use the…">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://adammatthewsteinberger.github.io/engineering-influence/interactions/">
+    <meta property="og:site_name" content="engineering-influence">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Interfaces - engineering-influence">
+    <meta name="twitter:description" content="BLUF: Every interface drives the same thing, a book run that ends in a KDP-ready package, so learn one and you know them all. To write one book, use the…">
+</head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">engineering-influence</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href=".." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Start</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../getting-started/" class="dropdown-item">Getting started</a>
+</li>
+                                    
+<li>
+    <a href="../agents-driving/" class="dropdown-item">Driving it from another AI</a>
+</li>
+                                    
+<li>
+    <a href="../books-and-kdp/" class="dropdown-item">Books and KDP</a>
+</li>
+                                    
+<li>
+    <a href="../novels/" class="dropdown-item">Novels</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Writing books</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../local-model/" class="dropdown-item">The local model</a>
+</li>
+                                    
+<li>
+    <a href="../model-profiles/" class="dropdown-item">Model profiles</a>
+</li>
+                                    
+<li>
+    <a href="../model-catalog/" class="dropdown-item">Model catalog</a>
+</li>
+                                    
+<li>
+    <a href="../model-calls/" class="dropdown-item">Model calls</a>
+</li>
+                                    
+<li>
+    <a href="../research/" class="dropdown-item">Research</a>
+</li>
+                                    
+<li>
+    <a href="../prompts/" class="dropdown-item">Prompts</a>
+</li>
+                                    
+<li>
+    <a href="../skills/" class="dropdown-item">Skills</a>
+</li>
+                                    
+<li>
+    <a href="../plugins/" class="dropdown-item">Plugins</a>
+</li>
+                                    
+<li>
+    <a href="../tool-lock/" class="dropdown-item">Tool lock</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Interfaces</a>
+</li>
+                                    
+<li>
+    <a href="../configuration/" class="dropdown-item">Configuration</a>
+</li>
+                                    
+<li>
+    <a href="../compatibility/" class="dropdown-item">Compatibility</a>
+</li>
+                                    
+<li>
+    <a href="../architecture/" class="dropdown-item">Architecture</a>
+</li>
+                                    
+<li>
+    <a href="../threat-model/" class="dropdown-item">Threat model</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Operating</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../worker-image/" class="dropdown-item">Worker image</a>
+</li>
+                                    
+<li>
+    <a href="../troubleshooting/" class="dropdown-item">Troubleshooting</a>
+</li>
+                                    
+<li>
+    <a href="../releasing/" class="dropdown-item">Releasing</a>
+</li>
+                                    
+<li>
+    <a href="../documentation-site/" class="dropdown-item">Documentation site</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Quality</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../testing/" class="dropdown-item">Testing</a>
+</li>
+                                    
+<li>
+    <a href="../evaluation/" class="dropdown-item">Evaluation</a>
+</li>
+                                    
+<li>
+    <a href="../live-smoke-test/" class="dropdown-item">Live smoke test</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Project</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../contributing/" class="dropdown-item">Contributing</a>
+</li>
+                                    
+<li>
+    <a href="../style/" class="dropdown-item">How these documents are written</a>
+</li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Decision records</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../adr/" class="dropdown-item">Overview</a>
+</li>
+            
+<li>
+    <a href="../adr/0001-vibey-integration-boundary/" class="dropdown-item">ADR 0001: Isolate vibey behind ports</a>
+</li>
+            
+<li>
+    <a href="../adr/0002-audience-priority-and-sovereign-agent-doctrine/" class="dropdown-item">ADR 0002: Audience priority and sovereign agent doctrine</a>
+</li>
+            
+<li>
+    <a href="../adr/0003-definition-of-1-0/" class="dropdown-item">ADR 0003: Definition of 1.0</a>
+</li>
+            
+<li>
+    <a href="../adr/0004-versioning-compatibility-and-deprecation/" class="dropdown-item">ADR 0004: Versioning, compatibility and deprecation</a>
+</li>
+            
+<li>
+    <a href="../adr/0005-release-flow-and-changelog-fragments/" class="dropdown-item">ADR 0005: Release flow and changelog fragments</a>
+</li>
+            
+<li>
+    <a href="../adr/0006-onion-layers-and-interfaces/" class="dropdown-item">ADR 0006: Onion layers, interfaces and one class per file</a>
+</li>
+            
+<li>
+    <a href="../adr/0007-model-transport-plain-httpx/" class="dropdown-item">ADR 0007: Models are called over plain httpx, behind `ModelInterface`</a>
+</li>
+            
+<li>
+    <a href="../adr/0008-tools-for-the-model/" class="dropdown-item">ADR 0008: The model gets tools, each stage gets only the ones it names</a>
+</li>
+            
+<li>
+    <a href="../adr/0009-branch-driven-publishing/" class="dropdown-item">ADR 0009: Publishing follows the branch: develop to TestPyPI, main to PyPI</a>
+</li>
+            
+<li>
+    <a href="../adr/0010-chapters-are-drafted-in-order-in-one-stage/" class="dropdown-item">ADR 0010: Chapters are drafted in order, inside one stage</a>
+</li>
+            
+<li>
+    <a href="../adr/0011-run-inputs/" class="dropdown-item">ADR 0011: Run inputs are untrusted text carried inside the brief</a>
+</li>
+    </ul>
+  </li>
+                                    
+<li>
+    <a href="../changelog/" class="dropdown-item">Changelog</a>
+</li>
+                                    
+<li>
+    <a href="../security/" class="dropdown-item">Security</a>
+</li>
+                                    
+<li>
+    <a href="../support/" class="dropdown-item">Support</a>
+</li>
+                                    
+<li>
+    <a href="../code-of-conduct/" class="dropdown-item">Code of conduct</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#properdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../tool-lock/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../configuration/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/adammatthewsteinberger/engineering-influence/edit/develop/interactions.md" class="nav-link">Edit on adammatthewsteinberger/engineering-influence
+                                    </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#interfaces-reference" class="nav-link">Interfaces reference</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#one-counter-several-windows" class="nav-link">One counter, several windows</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-request" class="nav-link">The request</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#rest-api" class="nav-link">REST API</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#python-sdk" class="nav-link">Python SDK</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#mcp-server" class="nav-link">MCP server</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#cli" class="nav-link">CLI</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#agent-client-protocol" class="nav-link">Agent Client Protocol</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#webhooks" class="nav-link">Webhooks</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="interfaces-reference">Interfaces reference<a class="headerlink" href="#interfaces-reference" title="Permanent link">&para;</a></h1>
+<p><strong>BLUF:</strong> Every interface drives the same thing, a book run that ends in a KDP-ready package, so learn one and you
+know them all. To write one book, use the CLI (<code>ei book create</code>). To serve many, run the stack and call it over
+REST, the SDK, MCP or the Agent Client Protocol. This page is the contract for each: requests, replies, flags,
+exit codes and the error codes a caller meets most.</p>
+<p>Every interface starts or drives the same thing: an autonomous book-writing run that ends in a
+KDP-ready package (<a href="../books-and-kdp/">details</a>). Six interfaces sit over the same controller layer, so they accept the same request and
+return the same result. Pick by who is calling.</p>
+<table>
+<thead>
+<tr>
+<th>Interface</th>
+<th>Process</th>
+<th>Authenticated</th>
+<th>Reaches the stack</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#rest-api">REST API</a></td>
+<td><code>ei serve api</code></td>
+<td>API key</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><a href="#python-sdk">Python SDK</a></td>
+<td>your code</td>
+<td>API key</td>
+<td>yes (it calls the REST API)</td>
+</tr>
+<tr>
+<td><a href="#mcp-server">MCP server</a></td>
+<td>stdio child process</td>
+<td>no (local only)</td>
+<td>yes with <code>ei serve mcp</code>; the example server is in-memory</td>
+</tr>
+<tr>
+<td><a href="#cli">CLI</a></td>
+<td><code>ei</code></td>
+<td>no (local only)</td>
+<td><code>serve</code>, <code>run</code> and <code>book</code> yes; <code>pipeline start</code> no</td>
+</tr>
+<tr>
+<td><a href="#agent-client-protocol">Agent Client Protocol</a></td>
+<td><code>ei acp</code> (stdio)</td>
+<td>no (local only)</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><a href="#webhooks">Webhooks</a></td>
+<td>outbound HTTPS</td>
+<td>HMAC signature</td>
+<td>yes</td>
+</tr>
+</tbody>
+</table>
+<h2 id="one-counter-several-windows">One counter, several windows<a class="headerlink" href="#one-counter-several-windows" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><strong>Daniel:</strong> Six ways in. REST, an SDK, MCP, a CLI, ACP, webhooks. Do I have to learn six products?</p>
+<p><strong>Professor Feynman:</strong> Think of a bank. You can walk to the counter, use the machine outside, or phone. How many
+banks is that?</p>
+<p><strong>Daniel:</strong> One. The same account, the same rules, whichever way I ask.</p>
+<p><strong>Professor Feynman:</strong> Same here. Each interface is a window; behind all of them is one counter, the controller
+layer. A window translates your request and hands it over. The rules about runs and money live behind the
+counter. A window may be stricter, never looser: the MCP window caps a run at five dollars and cannot grant more
+budget unless you allow it.</p>
+<p><strong>Daniel:</strong> So if the API refuses a budget above the operator's limit, the MCP tool refuses it too.</p>
+<p><strong>Professor Feynman:</strong> For the same reason, though not in the same words. REST gives you a code,
+<code>BUDGET_ABOVE_LIMIT</code>. MCP and ACP give you the message. Now the limit of the picture: not every window is open
+to the street. The REST API checks a key. The CLI, the MCP server and ACP check nothing, because they are meant
+to run on your own machine, so they must never be put on a network.</p>
+<p><strong>Daniel:</strong> Then I pick the window by who is calling, and I read one set of rules. I will start at the table
+below.</p>
+</blockquote>
+<h2 id="the-request">The request<a class="headerlink" href="#the-request" title="Permanent link">&para;</a></h2>
+<p>Every start request is a <strong>project</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>slug</code></td>
+<td>string</td>
+<td>required, at least 1 character</td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td>string</td>
+<td>required, at least 1 character</td>
+</tr>
+<tr>
+<td><code>postulates</code></td>
+<td>list of strings</td>
+<td>required, at least 1: the claims the pipeline must stay within</td>
+</tr>
+<tr>
+<td><code>stages</code></td>
+<td>list of strings</td>
+<td>required, at least 1, from <code>thesis</code>, <code>book</code>, <code>novel</code>, <code>screenplay</code>, <code>hub</code>, <code>spokes</code>, <code>distribution</code>, <code>publish</code></td>
+</tr>
+</tbody>
+</table>
+<p>The result is <code>{"job_id": "&lt;id&gt;", "project_slug": "&lt;slug&gt;"}</code>: the job queued for the first stage.
+The worker runs the stages in the order given.</p>
+<p>A <strong>book run</strong> starts from a <strong>brief</strong> instead (<code>POST /v1/runs</code>, <code>ei run create</code>, the SDK and MCP <code>create_run</code>, and
+<code>ei book create</code>, which builds one from its flags). Any key not in this table is refused:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>schema_version</code></td>
+<td><code>1</code>, the default</td>
+</tr>
+<tr>
+<td><code>kind</code></td>
+<td>required: <code>nonfiction</code> or <code>novel</code></td>
+</tr>
+<tr>
+<td><code>idea</code></td>
+<td>required, not blank</td>
+</tr>
+<tr>
+<td><code>budget_micro_usd</code></td>
+<td>required: a whole number above 0, in millionths of a dollar</td>
+</tr>
+<tr>
+<td><code>title_hint</code>, <code>audience</code></td>
+<td>optional, not blank</td>
+</tr>
+<tr>
+<td><code>target_words</code></td>
+<td>optional, above 0</td>
+</tr>
+<tr>
+<td><code>trim_size</code></td>
+<td>optional: <code>5x8</code>, <code>5.5x8.5</code> or <code>6x9</code></td>
+</tr>
+<tr>
+<td><code>language</code></td>
+<td>default <code>en</code></td>
+</tr>
+<tr>
+<td><code>inputs</code></td>
+<td>at most 8 of <code>{name, text, origin}</code>; <code>origin</code> is <code>pasted</code> (the default) or <code>file</code>; names unique; 200,000 characters in all</td>
+</tr>
+<tr>
+<td><code>violence</code></td>
+<td>novels only: <code>none</code>, <code>mild</code>, <code>moderate</code> or <code>graphic</code></td>
+</tr>
+<tr>
+<td><code>heat</code></td>
+<td>novels only: <code>none</code>, <code>sweet</code>, <code>steamy</code> or <code>explicit</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="rest-api">REST API<a class="headerlink" href="#rest-api" title="Permanent link">&para;</a></h2>
+<p>Run it with <code>ei serve api</code> (see <a href="../configuration/#running-the-stack">CONFIGURATION.md</a>); the
+compose stack publishes it on <code>127.0.0.1:8000</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Method and path</th>
+<th>Auth</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>POST /v1/pipelines</code></td>
+<td>key</td>
+<td>Start a pipeline. Body: a project. <code>200</code> with the result.</td>
+</tr>
+<tr>
+<td><code>GET /v1/runs</code></td>
+<td>key</td>
+<td>Every saved run, as run summaries (the artifact list is empty here; <code>GET /v1/runs/{run_id}</code> lists a run's artifacts). <code>200</code>. Present only when the API is wired with run management.</td>
+</tr>
+<tr>
+<td><code>POST /v1/runs/{run_id}/resume</code></td>
+<td>key</td>
+<td>Un-park a parked run and queue its current stage. <code>200</code> with the run; <code>404</code> unknown; <code>409</code> finished. Present only with run management.</td>
+</tr>
+<tr>
+<td><code>POST /v1/runs/{run_id}/cancel</code></td>
+<td>key</td>
+<td>Stop a run for good. <code>200</code> with the run; <code>404</code> unknown. Present only with run management.</td>
+</tr>
+<tr>
+<td><code>POST /v1/runs/{run_id}/grant</code></td>
+<td>key</td>
+<td>Give a run more budget and continue it. Body <code>{"micro_usd": N}</code> or none: a run waiting for consent gets exactly the amount it asked for (a different amount is <code>409</code>); a parked run needs <code>micro_usd</code>. <code>200</code> with the run; <code>404</code> unknown; <code>409</code> not waiting or parked, or changed meanwhile. Present only with run management.</td>
+</tr>
+<tr>
+<td><code>POST /v1/runs/{run_id}/deny</code></td>
+<td>key</td>
+<td>Refuse a run's request for more budget; the run parks and nothing is queued. <code>200</code> with the run; <code>404</code> unknown; <code>409</code> not waiting for consent. Present only with run management.</td>
+</tr>
+<tr>
+<td><code>POST /v1/runs</code></td>
+<td>key</td>
+<td>Start a book run from a brief (the brief contract v1, the same body <code>ei run create</code> reads as TOML). <code>201</code> with the new run, pending at its first stage; <code>422</code> when the body is not a brief or the kind is not one this build can start. Present only when the API is wired with run creation.</td>
+</tr>
+<tr>
+<td><code>GET /v1/runs/{run_id}</code></td>
+<td>key</td>
+<td>A book run: status, stage, plan, budget in micro-dollars, issues and the names of its artifacts. <code>200</code> with a <code>RunSummaryV1</code>.</td>
+</tr>
+<tr>
+<td><code>GET /v1/runs/{run_id}/artifacts/{name}</code></td>
+<td>key</td>
+<td>One stored artifact, byte for byte, as <code>application/octet-stream</code> with <code>nosniff</code> and <code>no-store</code>. Names may contain <code>/</code>.</td>
+</tr>
+<tr>
+<td><code>GET /health/live</code></td>
+<td>none</td>
+<td><code>{"status":"alive"}</code> while the process runs.</td>
+</tr>
+<tr>
+<td><code>GET /health/ready</code></td>
+<td>none</td>
+<td><code>200 {"status":"ready"}</code> or <code>503 {"status":"unavailable"}</code>.</td>
+</tr>
+<tr>
+<td><code>GET /metrics</code></td>
+<td>key</td>
+<td>Prometheus text format.</td>
+</tr>
+<tr>
+<td><code>GET /docs</code>, <code>/openapi.json</code></td>
+<td>none</td>
+<td>FastAPI's generated schema for this build.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Authentication.</strong> Send <code>Authorization: Bearer &lt;key&gt;</code> or <code>X-API-Key: &lt;key&gt;</code>. Keys come from
+<code>EI_API_KEYS</code>. There is no unauthenticated mode.</p>
+<p><strong>Correlation.</strong> Send <code>X-Request-ID</code> (8 to 64 characters of <code>A-Z a-z 0-9 . _ -</code>) or a W3C
+<code>traceparent</code>; otherwise one is generated. It is echoed in the <code>X-Request-ID</code> response header,
+copied into the queued job, restored by the worker and sent on outbound webhooks.</p>
+<p><strong>Errors.</strong> Application errors are <code>{"code", "message", "retryable"}</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th><code>code</code></th>
+<th>Meaning</th>
+<th>Retry?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>401</td>
+<td><code>UNAUTHORIZED</code></td>
+<td>Missing or wrong key</td>
+<td>no</td>
+</tr>
+<tr>
+<td>429</td>
+<td><code>RATE_LIMITED</code></td>
+<td>Per-address or per-key budget spent</td>
+<td>yes, with backoff</td>
+</tr>
+<tr>
+<td>404</td>
+<td><code>RUN_NOT_FOUND</code></td>
+<td>No run has that id</td>
+<td>no</td>
+</tr>
+<tr>
+<td>404</td>
+<td><code>ARTIFACT_NOT_FOUND</code></td>
+<td>The run has no such artifact; a name that could never be stored (absolute, <code>..</code>, backslash) gets the same answer</td>
+<td>no</td>
+</tr>
+<tr>
+<td>422</td>
+<td>n/a</td>
+<td>Body failed validation (FastAPI's <code>detail</code> list)</td>
+<td>no, fix the body</td>
+</tr>
+<tr>
+<td>409</td>
+<td><code>RUN_FINISHED</code></td>
+<td>The run is completed, failed or cancelled, so it cannot be resumed or cancelled</td>
+<td>no</td>
+</tr>
+<tr>
+<td>409</td>
+<td><code>RUN_CHANGED</code></td>
+<td>The run changed while it was being answered</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>409</td>
+<td><code>CONSENT_NOT_PENDING</code></td>
+<td>A grant or a denial for a run that is not waiting for one</td>
+<td>no</td>
+</tr>
+<tr>
+<td>422</td>
+<td><code>BUDGET_ABOVE_LIMIT</code></td>
+<td>The budget asked for is above the operator's limit for one run</td>
+<td>no, ask for less</td>
+</tr>
+<tr>
+<td>422</td>
+<td><code>OUTSTANDING_BUDGET_EXCEEDED</code></td>
+<td>All unfinished runs together would hold more unspent budget than the operator allows</td>
+<td>later, when runs finish</td>
+</tr>
+<tr>
+<td>422</td>
+<td><code>RUN_KIND_UNSUPPORTED</code></td>
+<td>This build cannot start that kind of book</td>
+<td>no</td>
+</tr>
+<tr>
+<td>503</td>
+<td><code>SECRET_MISSING</code></td>
+<td>A required secret is not configured</td>
+<td>after fixing configuration</td>
+</tr>
+</tbody>
+</table>
+<p>These are the codes a caller of the API meets most. Every code the package can raise is frozen in
+<code>tests/contracts/snapshots/error_codes.json</code>; most of the rest stop a process at start and are described beside the
+setting they concern in <a href="../configuration/">CONFIGURATION.md</a>.</p>
+<p>Python with <code>requests</code>:</p>
+<pre><code class="language-python">import os, requests
+
+base, key = os.environ[&quot;EI_BASE_URL&quot;], os.environ[&quot;EI_API_KEY&quot;]
+reply = requests.post(
+    f&quot;{base}/v1/pipelines&quot;,
+    headers={&quot;Authorization&quot;: f&quot;Bearer {key}&quot;},
+    json={
+        &quot;slug&quot;: &quot;sample-essay&quot;,
+        &quot;title&quot;: &quot;A Sample Essay&quot;,
+        &quot;postulates&quot;: [&quot;Claims must be supported by evidence.&quot;],
+        &quot;stages&quot;: [&quot;thesis&quot;],
+    },
+    timeout=10,
+)
+reply.raise_for_status()
+print(reply.json())  # {'job_id': '…', 'project_slug': 'sample-essay'}
+</code></pre>
+<p>Full scripts: <a href="https://github.com/adammatthewsteinberger/engineering-influence/blob/main/examples/api/start_pipeline.py"><code>examples/api/start_pipeline.py</code></a>,
+<a href="https://github.com/adammatthewsteinberger/engineering-influence/blob/main/examples/api/run.sh"><code>examples/api/run.sh</code></a>.</p>
+<h2 id="python-sdk">Python SDK<a class="headerlink" href="#python-sdk" title="Permanent link">&para;</a></h2>
+<p><code>packages/engineering-influence-sdk</code> is a thin typed wrapper over <code>httpx</code> for the operations the API
+has: starting a pipeline, creating a book run from a brief (<code>create_run</code>), and listing, resuming and cancelling runs
+(<code>list_runs</code>, <code>resume_run</code>, <code>cancel_run</code>), answering a run's request for more budget (<code>grant_run</code>, <code>deny_run</code>), and reading a run (<code>get_run</code>) and the files it stored (<code>get_artifact</code>, as bytes). It ships in this repository
+and in each release.</p>
+<pre><code class="language-python">from engineering_influence_sdk import EngineeringInfluenceClient
+
+client = EngineeringInfluenceClient(&quot;http://127.0.0.1:8000&quot;, api_key)
+started = client.start_pipeline(
+    &quot;sample-essay&quot;, &quot;A Sample Essay&quot;, (&quot;Claims must be supported by evidence.&quot;,), (&quot;thesis&quot;, &quot;book&quot;)
+)
+run = client.create_run(
+    {
+        &quot;schema_version&quot;: 1,
+        &quot;kind&quot;: &quot;nonfiction&quot;,
+        &quot;idea&quot;: &quot;Windowsill herbs&quot;,
+        &quot;budget_micro_usd&quot;: 5000000,
+    }
+)
+status = client.get_run(run[&quot;run_id&quot;])  # status, stage, budget and the names of its artifacts
+pdf = client.get_artifact(run[&quot;run_id&quot;], &quot;book/my-book.pdf&quot;)  # bytes, once the run has built it
+client.close()
+</code></pre>
+<p><code>AsyncEngineeringInfluenceClient</code> has the same signature with <code>await</code> (and <code>await client.close()</code>).
+Any non-2xx answer raises <code>httpx.HTTPStatusError</code>; the API's error document is in
+<code>error.response</code>. Scripts: <a href="https://github.com/adammatthewsteinberger/engineering-influence/tree/main/examples/sdk"><code>examples/sdk/</code></a>.</p>
+<h2 id="mcp-server">MCP server<a class="headerlink" href="#mcp-server" title="Permanent link">&para;</a></h2>
+<p><code>ei serve mcp</code> runs the stack's MCP server over stdio, for an MCP host (Claude Desktop, an agent runtime) to start as a child
+process. It needs <code>EI_DATABASE_URL</code> and <code>EI_RABBITMQ_URL</code> like the API (and a migrated database: <code>ei db upgrade</code>), offers the
+same runs the REST API does, and needs no API key because the host that starts it already holds the stack's credentials. Standard
+output carries the protocol, so logs (JSON) go to standard error only. A host entry looks like:</p>
+<pre><code class="language-json">{&quot;mcpServers&quot;: {&quot;engineering-influence&quot;: {&quot;command&quot;: &quot;ei&quot;, &quot;args&quot;: [&quot;serve&quot;, &quot;mcp&quot;],
+  &quot;env&quot;: {&quot;EI_DATABASE_URL&quot;: &quot;postgresql+psycopg://...&quot;, &quot;EI_RABBITMQ_URL&quot;: &quot;amqp://...&quot;}}}}
+</code></pre>
+<p><strong>The server does not offer <code>grant_run</code> or <code>deny_run</code> unless the operator sets <code>EI_MCP_ALLOW_SPEND=1</code>.</strong> Granting a run budget is
+the person's decision, and an agent that could raise its own run's cap would have no cap. Without the setting an agent can
+start a run, watch it, resume or cancel it and read what it made; a run that needs more budget shows as <code>awaiting_consent</code> in
+<code>get_run</code>, and the person answers it with <code>ei run grant</code>.</p>
+<p><strong>A run an agent starts is held to <code>EI_MCP_MAX_RUN_BUDGET_MICRO_USD</code></strong> (default 5,000,000, five dollars): <code>create_run</code> refuses a brief
+with a bigger <code>budget_micro_usd</code> (<code>BUDGET_ABOVE_LIMIT</code>), so an agent cannot open a run with a cap of its own choosing. That bounds one
+run, <strong>not how many runs an agent starts</strong>. For that, set the stack-wide ceilings below (<code>EI_MAX_OUTSTANDING_BUDGET_MICRO_USD</code>), which
+hold every way into the stack, MCP included.</p>
+<p><code>McpApplication(controller).build()</code> returns an <code>MCPServer</code> (from the official <code>mcp</code> 2.x SDK)
+with one tool when built bare, and the rest when it is given the services (<code>grant_run</code> and <code>deny_run</code> only with
+<code>allow_spend=True</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Arguments</th>
+<th>Returns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>start_pipeline</code></td>
+<td><code>slug</code>, <code>title</code>, <code>postulates</code> (list), <code>stages</code> (list)</td>
+<td><code>{"job_id", "project_slug"}</code></td>
+</tr>
+<tr>
+<td><code>list_runs</code></td>
+<td>none</td>
+<td>every saved run as run summaries (present only with run management)</td>
+</tr>
+<tr>
+<td><code>resume_run</code></td>
+<td><code>run_id</code></td>
+<td>the run after un-parking it (present only with run management)</td>
+</tr>
+<tr>
+<td><code>cancel_run</code></td>
+<td><code>run_id</code></td>
+<td>the run after cancelling it (present only with run management)</td>
+</tr>
+<tr>
+<td><code>get_run</code></td>
+<td><code>run_id</code></td>
+<td>a run's <code>RunSummaryV1</code>: status, stage, budget and the names of its stored artifacts (present only when the server is built with a run reader)</td>
+</tr>
+<tr>
+<td><code>read_artifact</code></td>
+<td><code>run_id</code>, <code>name</code> (such as <code>book/my-book.pdf</code>)</td>
+<td><code>{name, bytes, encoding, content}</code>: the text when the file is UTF-8, base64 when it is not. A file over 1 MiB is refused (<code>ARTIFACT_TOO_LARGE</code>) and the message names the <code>GET /v1/runs/{id}/artifacts/{name}</code> address that downloads any size (present with <code>get_run</code>)</td>
+</tr>
+<tr>
+<td><code>create_run</code></td>
+<td><code>brief</code> (an object: the brief contract v1)</td>
+<td>the new run as a <code>RunSummaryV1</code>, pending at its first stage. Present only when the server is built with a run creator</td>
+</tr>
+<tr>
+<td><code>grant_run</code></td>
+<td><code>run_id</code>, optional <code>micro_usd</code></td>
+<td>the run after allowing it more budget. Present only with <code>allow_spend=True</code> (<code>ei serve mcp</code> sets it from <code>EI_MCP_ALLOW_SPEND</code>)</td>
+</tr>
+<tr>
+<td><code>deny_run</code></td>
+<td><code>run_id</code></td>
+<td>the run after refusing it more budget; it parks. Present only with <code>allow_spend=True</code></td>
+</tr>
+</tbody>
+</table>
+<p><a href="https://github.com/adammatthewsteinberger/engineering-influence/blob/main/examples/mcp/server.py"><code>examples/mcp/server.py</code></a> is the bare server over in-memory adapters, for trying the tool shapes
+without a stack, and <a href="https://github.com/adammatthewsteinberger/engineering-influence/blob/main/examples/mcp/client.py"><code>examples/mcp/client.py</code></a> is a client that spawns it, lists the tools and calls one.
+The server is a local process: it is not authenticated, so do not expose it on a network.</p>
+<h2 id="cli">CLI<a class="headerlink" href="#cli" title="Permanent link">&para;</a></h2>
+<pre><code class="language-text">ei --version
+ei pipeline start --slug S --title T --postulate P [--postulate P …] [--stage STAGE …]
+ei serve api|worker|mcp
+ei db upgrade
+ei run status|resume|cancel RUN_ID
+ei run export RUN_ID DIRECTORY
+ei run create BRIEF.TOML
+ei run grant RUN_ID [--micro-usd N]
+ei run deny RUN_ID
+ei doctor (--ready | --models | --search | --local) [--author-profile FILE] [--catalog FILE] [--profiles FILE] [--query Q] [--probe]
+ei acp
+ei run runs
+ei book [--root DIR] audit [--json] [--strict-release] [SLUG …]
+ei book [--root DIR] build [--hardcover] [--tex-only] [--no-verify] [SLUG …]
+ei book [--root DIR] epub [--tex-only] [--no-verify] [SLUG …]
+ei book [--root DIR] covers [--preview] [--hardcover-pdf PATH] [SLUG …]
+ei book [--root DIR] qa PDF [--output DIR] [--dpi N]
+ei book [--root DIR] package [SLUG …]
+ei book [--root DIR] publish [--audit-only] [--no-render] [--strict-release] [--dpi N] [--report-dir DIR] [SLUG …]
+ei book create --kind nonfiction|novel IDEA --budget-usd N --out DIR --profile FILE [--resume]
+ei evaluate --out DIR --budget-usd N --judge-budget-usd N [--profile FILE] [--baseline FILE] [--set FILE] [--rubric FILE] [--release LABEL]
+ei tools add [--lock PATH] [--env VAR …] [--replace] NAME -- COMMAND [ARG …]
+ei tools add [--lock PATH] [--bearer-env VAR] [--replace] --url URL NAME
+ei tools list [--lock PATH]
+ei tools verify [--lock PATH] [NAME …]
+ei tools grant [--lock PATH] NAME STAGE TOOL …
+ei tools revoke [--lock PATH] NAME STAGE [TOOL …]
+ei skills add [--lock PATH] [--replace] FILE
+ei skills import SOURCE (--stage STAGE [--stage STAGE …] | --reference) [--section TITLE …] [--name NAME] [--version N] [--out FILE]
+ei skills enable|disable [--lock PATH] NAME STAGE
+ei skills remove [--lock PATH] NAME
+ei skills list|verify [--lock PATH]
+ei plugins show FILE
+ei plugins import FOLDER [--name NAME] [--version N] [--out FILE]
+ei plugins add [--lock PATH] [--skill-lock PATH] FILE
+ei plugins list [--lock PATH]
+ei plugins verify|remove … [--lock PATH] [--skill-lock PATH]
+ei plugins search INDEX [TEXT]
+ei plugins fetch INDEX NAME [--output DIR]
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+<th>Exit status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ei pipeline start</code></td>
+<td>Validates a project and prints the result as JSON. In-memory only: it does not queue work on the stack. <code>--stage</code> defaults to <code>thesis</code>.</td>
+<td><code>0</code>; <code>2</code> on a usage error</td>
+</tr>
+<tr>
+<td><code>ei serve api</code> / <code>worker</code> / <code>mcp</code></td>
+<td>Runs the API, the worker or the stdio MCP server from <code>EI_*</code> settings (see <a href="#mcp-server">MCP server</a>).</td>
+<td><code>0</code> on a clean stop; <code>1</code> an extra is missing (the message names which); <code>2</code> and one line naming the bad variable; never a traceback</td>
+</tr>
+<tr>
+<td><code>ei doctor</code></td>
+<td>Checks that this installation is ready, never asking a paid model to answer. <strong><code>--ready</code> answers whether this machine can make a book now</strong>: the extras, the tools the <code>build</code> stage calls, the author profile (<code>--author-profile FILE</code>, else <code>EI_AUTHOR_PROFILE</code>), then the local model and the search, every check made and printed in one run. The others check one thing: <code>--models</code> the model profiles and catalog (<code>--probe</code> adds one model-list request per profile), <code>--search</code> one real search through each configured provider, <code>--local</code> the free local model. See <a href="../model-profiles/">MODEL_PROFILES.md</a> and <a href="../local-model/">LOCAL_MODEL.md</a>.</td>
+<td><code>0</code> ready; <code>1</code> a check failed; <code>2</code> setup trouble</td>
+</tr>
+<tr>
+<td><code>ei db upgrade</code></td>
+<td>Applies the database migrations to <code>EI_DATABASE_URL</code> and prints the revision reached. Needs the <code>runtime</code> extra.</td>
+<td><code>0</code>; <code>1</code> extra missing; <code>2</code> and one line for a missing setting or an unreachable database</td>
+</tr>
+<tr>
+<td><code>ei run status RUN_ID</code></td>
+<td>Prints the run as one line of JSON (the same <code>RunSummaryV1</code> the API returns). Needs only <code>EI_DATABASE_URL</code>.</td>
+<td><code>0</code>; <code>1</code> unknown run, or the <code>runtime</code> extra is missing (true of every <code>ei run</code> command); <code>2</code> setup trouble</td>
+</tr>
+<tr>
+<td><code>ei run create BRIEF.TOML</code></td>
+<td>Starts a book run from a brief file (TOML, the brief contract v1: <code>kind</code>, <code>idea</code>, <code>budget_micro_usd</code> and the optional keys). The run is saved pending with the brief's cap as its budget and its first stage is queued for the worker; a file that is not a brief, or a kind this build cannot start, is refused on one line and nothing is saved. Needs the database and the broker, like <code>resume</code>.</td>
+<td><code>0</code>; <code>1</code> a file that cannot be read or is not a brief, or a kind this build cannot start; <code>2</code> setup trouble, or a budget an operator ceiling refuses</td>
+</tr>
+<tr>
+<td><code>ei run runs</code></td>
+<td>Lists every saved run, one line each: its id, status and current stage. Needs only the database.</td>
+<td><code>0</code>; <code>2</code> setup trouble</td>
+</tr>
+<tr>
+<td><code>ei run resume RUN_ID</code></td>
+<td>Moves a parked run back to running and queues its current stage; on a run that is already running it only queues the stage again, which repairs a resume that died half-way. Reads <code>EI_DATABASE_URL</code> and <code>EI_RABBITMQ_URL</code>.</td>
+<td><code>0</code>; <code>1</code> unknown run, finished run or a run that kept changing; <code>2</code> setup trouble</td>
+</tr>
+<tr>
+<td><code>ei run cancel RUN_ID</code></td>
+<td>Stops a run for good; cancelling twice is fine, and a completed or failed run is refused. Needs only <code>EI_DATABASE_URL</code>.</td>
+<td>same</td>
+</tr>
+<tr>
+<td><code>ei run grant RUN_ID [--micro-usd N]</code></td>
+<td>Gives a run more budget and continues it. A run waiting for consent gets exactly the amount it asked for (passing another amount is refused); a parked run needs <code>--micro-usd</code> and gets exactly that. The stage is queued. Needs <code>EI_DATABASE_URL</code> and <code>EI_RABBITMQ_URL</code>.</td>
+<td><code>0</code>; <code>1</code> the run is not waiting for consent or parked, or it changed while being answered; <code>2</code> setup trouble, or a grant an operator ceiling refuses</td>
+</tr>
+<tr>
+<td><code>ei run deny RUN_ID</code></td>
+<td>Refuses a run's request for more budget. The run parks, and nothing is queued; it can be granted more later. Needs only <code>EI_DATABASE_URL</code>.</td>
+<td>same</td>
+</tr>
+<tr>
+<td><code>ei run export RUN_ID DIRECTORY</code></td>
+<td>Writes what a run produced to a <strong>new or empty</strong> folder: the book as a project at the top (<code>books/&lt;slug&gt;.toml</code> and <code>src/chapter_NN.md</code>, as the book commands expect) and every other artifact under <code>run/</code> (the stage outputs and the <code>audit/</code> reports). It reads the run and changes nothing in it. Nothing is overwritten, and either every file is written or none is. A folder that holds anything is refused, as is a run that has stored nothing. Needs only <code>EI_DATABASE_URL</code>.</td>
+<td><code>0</code>; <code>1</code> unknown run, a run with nothing stored, or a folder that is not empty; <code>2</code> setup trouble</td>
+</tr>
+<tr>
+<td><code>ei book create --kind KIND IDEA --budget-usd N --out DIR --profile FILE</code></td>
+<td><strong>Makes a whole book from an idea, in this process, with nobody in the loop.</strong> It runs every stage of the plan for the kind (brief to build; see <a href="../books-and-kdp/">BOOKS_AND_KDP.md</a>) with the models and search the environment names (<code>EI_STAGE_EXECUTOR</code> and its settings, as for a worker), then writes the book to <code>--out</code> (a new or empty folder): the project at the top (<code>books/</code>, <code>src/</code>) and every artifact under <code>run/</code>, so the finished PDF, EPUB, covers, listing and manifest are in <code>run/book/</code>, the readiness reports in <code>run/build/</code>, and <code>run/quality-report.json</code> says how it came out. <code>--budget-usd</code> has no default, and <code>--profile</code> (or <code>EI_AUTHOR_PROFILE</code>) is required, because the author's details are needed to typeset the book: both are checked <strong>before anything is spent</strong>. <strong>Before anything is spent it says what the book is expected to cost with the priced model</strong> (<code>estimate: about 6.00 USD for the whole book (4.00 before editing), against a budget of 5.00: tight</code>) and grades the budget: <code>short</code> (below what the essential stages are expected to cost: refused, with the budget that would do, unless <code>--ignore-estimate</code>), <code>tight</code> (may stop to ask for more), <code>lean</code> (an editing pass that runs out of money is skipped) or <code>ample</code>. With the free local model the estimate is still printed, from a price of zero; with the offline placeholder there is no estimate. Optional: <code>--title</code>, <code>--audience</code>, <code>--target-words</code>, <code>--trim-size</code>, <code>--ignore-estimate</code>, and <code>--strict-release</code> (fails the build on any release warning; needs <code>[pricing]</code> in the profile). The run is kept in a SQLite file in <code>OUT.state/</code> (<code>--state-dir</code> to move it), so a process that dies loses nothing that was paid for: <code>--resume</code> continues it, and a model call already made is replayed, not paid for again. When the run asks for more budget it stops and writes nothing; <code>--resume --approve-spend</code> grants exactly what it asked for. A failed run is final, but what it made is still written to <code>--out</code>.</td>
+<td><code>0</code> the book is written; <code>1</code> the run failed or a needed extra is missing; <code>2</code> the command could not start (a missing idea, kind, budget or profile, a bad profile, a folder that already holds a run, or a budget below the estimate without <code>--ignore-estimate</code>); <code>3</code> the run stopped to ask for budget, or parked because the provider is at capacity</td>
+</tr>
+<tr>
+<td><code>ei book …</code></td>
+<td>Audit, build and publish books (needs the <code>publishing</code> extra and, for PDFs, a TeX toolchain). With no <code>SLUG</code> a subcommand works on every configured book. <code>--dpi</code> defaults to 90, and below 36 is refused (exit <code>2</code>). <code>package SLUG</code> writes the KDP release bundle (<code>build/SLUG/release/kdp</code>, see <a href="../books-and-kdp/#the-release-bundle">BOOKS_AND_KDP.md</a>) and refuses a failing release. Reads <code>engineering-influence.toml</code> in <code>--root</code>.</td>
+<td><code>0</code> ok; <code>1</code> a build or audit failure; <code>2</code> bad arguments</td>
+</tr>
+<tr>
+<td><code>ei evaluate --out DIR --budget-usd N --judge-budget-usd N</code></td>
+<td><strong>Spends real money.</strong> Makes every book of the evaluation set (<code>evaluation/set.toml</code>) with the stack's own pipeline, has the judge model (<code>EI_EVAL_JUDGE_PROFILE</code>) score each finished book on the rubric (<code>evaluation/rubric.toml</code>), and checks the release against the 1.0 bar: every book finished, every dimension's mean at least 3.5, none fallen by more than 0.2 from <code>--baseline</code>, and the cost estimate within 30% of what was spent. Refuses to start unless <code>EI_ALLOW_PAID=1</code>. <code>--budget-usd</code> is the most each book may spend and <code>--judge-budget-usd</code> the most the judge may spend in all; neither has a default. <code>--out</code> must be a new or empty folder; <code>evaluation.json</code> is written there beside the books, and is the next release's baseline. See <a href="../evaluation/">EVALUATION.md</a>.</td>
+<td><code>0</code> the release meets the bar; <code>1</code> it does not (each reason is printed) or a needed extra is missing; <code>2</code> the command could not run (not paid for, a bad budget, a folder that is not empty, a bad rubric or set, no judge named, or a judge that failed)</td>
+</tr>
+<tr>
+<td><code>ei tools add NAME -- COMMAND …</code></td>
+<td><strong>Runs</strong> an MCP server once, under limits and with a bare environment, and records what it is in the tool lock: its files' hashes, the name and version it reported and a hash of its tools. Options go before <code>NAME</code>. Refuses a launcher (<code>npx</code>, <code>uvx</code>, <code>docker</code>, …) and a relative script path before anything is run. See <a href="../tool-lock/">TOOL_LOCK.md</a>.</td>
+<td><code>0</code>; <code>2</code> on a refusal or an unusable lock</td>
+</tr>
+<tr>
+<td><code>ei tools add --url URL NAME</code></td>
+<td><strong>Contacts</strong> a remote MCP server once and records its address, the name and version it reported and a hash of its tools. Only https to a public address is allowed; the token, if any, is the variable named by <code>--bearer-env</code>. The server's code is not locked, only what it advertises. See <a href="../tool-lock/#remote-servers-http">TOOL_LOCK.md</a>.</td>
+<td><code>0</code>; <code>2</code> on a refusal or an unusable lock</td>
+</tr>
+<tr>
+<td><code>ei tools list</code></td>
+<td>Shows the locked servers. Starts nothing.</td>
+<td><code>0</code>; <code>2</code> an unusable lock</td>
+</tr>
+<tr>
+<td><code>ei tools verify [NAME …]</code></td>
+<td><strong>Runs</strong> each locked server (a server whose files changed is not started) and compares it with the lock.</td>
+<td><code>0</code> all match; <code>1</code> one does not; <code>2</code> setup trouble or an unknown name</td>
+</tr>
+<tr>
+<td><code>ei tools grant NAME STAGE TOOL …</code></td>
+<td>Lets a stage call some of a locked server's tools: edits the lock, runs nothing. The tools must be ones the lock lists; no wildcards. A stage with no grant gets none.</td>
+<td><code>0</code>; <code>2</code> on a refusal or an unusable lock</td>
+</tr>
+<tr>
+<td><code>ei tools revoke NAME STAGE [TOOL …]</code></td>
+<td>Takes tools back from a stage, or all of them if none are named. A stage with no grant is an error.</td>
+<td>same</td>
+</tr>
+<tr>
+<td><code>ei skills add FILE</code></td>
+<td>Reads a skill file once, checks it strictly (no key but <code>name</code>, <code>version</code>, <code>description</code> and <code>[parts]</code>; no invisible or control characters) and records the SHA-256 of its bytes in the skill lock, keeping a copy in <code>skills/</code> beside it. <strong>Enables nothing</strong>; prints each part so you can read what will be added to prompts. <code>--replace</code> locks it again and clears its stages. Starts nothing. See <a href="../skills/">SKILLS.md</a>.</td>
+<td><code>0</code>; <code>2</code> on a refusal or an unusable lock</td>
+</tr>
+<tr>
+<td><code>ei skills import SOURCE …</code></td>
+<td>Turns a <code>SKILL.md</code> (a <code>---</code> block of <code>key: value</code> lines, then markdown) into a skill file (<code>--out</code>) and prints what it kept and set aside, to be reviewed and then added. It does not touch the lock. See <a href="../skills/#importing-a-skillmd">SKILLS.md</a>.</td>
+<td><code>0</code>; <code>2</code> an unreadable source or a bad option</td>
+</tr>
+<tr>
+<td><code>ei skills enable NAME STAGE</code></td>
+<td>Lets a stage's prompt carry a skill: checks the file against its hash and refuses a stage the skill has no text for. At most four skills per stage.</td>
+<td>same</td>
+</tr>
+<tr>
+<td><code>ei skills disable NAME STAGE</code></td>
+<td>Stops a stage carrying a skill.</td>
+<td>same</td>
+</tr>
+<tr>
+<td><code>ei skills remove NAME</code></td>
+<td>Unlocks a skill and deletes its copy.</td>
+<td>same</td>
+</tr>
+<tr>
+<td><code>ei skills list</code></td>
+<td>Shows the locked skills with their short hash and stages. Reads no skill file.</td>
+<td><code>0</code>; <code>2</code> an unusable lock</td>
+</tr>
+<tr>
+<td><code>ei skills verify</code></td>
+<td>Re-hashes every locked skill, enabled or not, against the lock.</td>
+<td><code>0</code> all match; <code>1</code> one does not; <code>2</code> setup trouble</td>
+</tr>
+<tr>
+<td><code>ei plugins show FILE</code></td>
+<td>Reads a plugin file and says what installing it would do: its skills (with their text), and the <code>ei tools add</code> command for each server. Changes nothing. See <a href="../plugins/">PLUGINS.md</a>.</td>
+<td><code>0</code>; <code>2</code> on a refusal</td>
+</tr>
+<tr>
+<td><code>ei plugins import FOLDER</code></td>
+<td>Turns a plugin folder written for Claude Code into a bundle file (<code>--out</code>), to be shown and then added. It does not touch the lock. See <a href="../plugins/">PLUGINS.md</a>.</td>
+<td><code>0</code>; <code>2</code> an unreadable folder or a bad option</td>
+</tr>
+<tr>
+<td><code>ei plugins add FILE</code></td>
+<td>Locks the bundle's skills (each enabled for <strong>no</strong> stage), keeps a copy of the bundle, and records its SHA-256 in the plugin lock. <strong>Starts nothing, contacts nothing, grants nothing:</strong> the commands for its servers are printed for you to review and run. Refuses a plugin that is installed or skills that are already locked, before writing anything.</td>
+<td><code>0</code>; <code>2</code> on a refusal or an unusable lock</td>
+</tr>
+<tr>
+<td><code>ei plugins list</code></td>
+<td>Shows the installed plugins, the skills installed and the servers described.</td>
+<td><code>0</code>; <code>2</code> an unusable lock</td>
+</tr>
+<tr>
+<td><code>ei plugins verify</code></td>
+<td>Re-hashes each kept bundle and checks that its skills are still locked as installed.</td>
+<td><code>0</code> all match; <code>1</code> one does not; <code>2</code> setup trouble</td>
+</tr>
+<tr>
+<td><code>ei plugins remove NAME</code></td>
+<td>Uninstalls a plugin and the skills it installed that are still exactly what it installed; a skill locked again since is left.</td>
+<td><code>0</code>; <code>2</code> on a refusal</td>
+</tr>
+<tr>
+<td><code>ei plugins search INDEX [TEXT]</code></td>
+<td>Lists the plugins in a marketplace index (a file on disk or an <code>https://</code> address), or those whose name or description has the text. May use a network for an <code>https://</code> index; installs nothing. See <a href="../plugins/#marketplace-indexes">PLUGINS.md</a>.</td>
+<td><code>0</code>; <code>2</code> on a refusal</td>
+</tr>
+<tr>
+<td><code>ei plugins fetch INDEX NAME [--output DIR]</code></td>
+<td>Downloads one plugin file from an index, <strong>checks its SHA-256 against the index's before reading it</strong>, checks it is the plugin and version listed, and saves it as <code>NAME.toml</code> (never over an existing file). <strong>Installs nothing:</strong> it prints the <code>show</code> and <code>add</code> commands to run next.</td>
+<td><code>0</code>; <code>2</code> on a refusal, a hash that differs or a download that fails</td>
+</tr>
+<tr>
+<td><code>ei acp</code></td>
+<td>Serves the Agent Client Protocol (stable, version 1) over stdin and stdout, for an editor or agent client. Each line is one JSON-RPC message; only protocol messages go to stdout, and logs and errors go to stderr. Needs the <code>runtime</code> extra and <code>EI_DATABASE_URL</code>. See <a href="#agent-client-protocol">Agent Client Protocol</a>.</td>
+<td><code>0</code> when the input ends; <code>1</code> the runtime extra is missing; <code>2</code> setup trouble</td>
+</tr>
+</tbody>
+</table>
+<p><code>python -m engineering_influence</code> is the same program. Walk-through: <a href="https://github.com/adammatthewsteinberger/engineering-influence/blob/main/examples/cli/run.sh"><code>examples/cli/run.sh</code></a>.</p>
+<h2 id="agent-client-protocol">Agent Client Protocol<a class="headerlink" href="#agent-client-protocol" title="Permanent link">&para;</a></h2>
+<p><code>ei acp</code> speaks the Agent Client Protocol, version 1 of the stable specification, so an editor or agent client can start book runs the way <code>ei run create</code> does. Only the parts below are implemented; anything else is refused with <code>ACP_METHOD_NOT_FOUND</code>.</p>
+<ul>
+<li><code>initialize</code> agrees version 1, reports <code>loadSession: true</code> and no authentication methods.</li>
+<li><code>session/load</code> takes a <code>sessionId</code> this agent stored, and an absolute <code>cwd</code>. It re-attaches the session, so a client can reconnect to a new <code>ei acp</code> process. It sends one <code>session/update</code> notice with the run's current state (if the session has a run), then replies with no result. A run that has finished is replayed but not followed.</li>
+<li><code>session/new</code> takes an absolute <code>cwd</code> and returns a <code>sessionId</code>. <code>mcpServers</code> must be empty: this agent does not connect MCP servers yet.</li>
+<li><code>session/prompt</code> takes text content blocks, joined by newlines and read as a brief in TOML, the same contract <code>ei run create</code> reads. The first prompt of a session starts its run, a second prompt in the same session is refused, and the turn ends with <code>stopReason: end_turn</code> once the run is saved and its first stage queued. The stages themselves run in the worker, not in the session. Before the turn ends the agent sends one <code>session/update</code> notice naming the run and its stage.</li>
+<li><code>session/cancel</code> is a notification. It stops the session's run and gets no reply.</li>
+</ul>
+<p>Sessions are stored in the database beside the runs, so any <code>ei acp</code> process can load one. A run outlives its session, so <code>ei run status RUN_ID</code> and <code>ei run cancel RUN_ID</code> still work after the client disconnects. The session store needs migration <code>0002</code>: run <code>ei db upgrade</code> first. While a session is open, the agent follows its run. Every second it reads the run's saved state, and it sends a <code>session/update</code> notice when the status or the stage changes, once per change. A finished run (completed, failed or cancelled) is reported once and then no longer followed; a parked run is still followed, because it can be resumed. A notice is written between replies and never inside one. A failed read is one line on stderr, and the following goes on. A run that would spend past its cap does not fail: its next model call is refused before it spends, and the run stops in <code>awaiting_consent</code> with the amount the call needs. An open session is asked, with a <code>session/request_permission</code> request that offers <code>grant</code> (allow exactly that amount) and <code>deny</code> (the run parks). The answer decides the run; a cancelled answer leaves it waiting. The same decision is available from the command line with <code>ei run grant</code> and <code>ei run deny</code> for any run, including one with no open session. A parked run waiting for no decision continues with <code>ei run grant RUN_ID --micro-usd N</code>.</p>
+<p>Not yet implemented: MCP servers in a session.</p>
+<p>Refusals are JSON-RPC errors: <code>-32700</code> for a line that is not JSON, <code>-32600</code> for a message that is not a JSON-RPC 2.0 request, <code>-32601</code> for a method this agent does not implement, and <code>-32602</code> for invalid parameters, including a prompt that is not valid TOML (<code>BRIEF_INVALID</code>) or a kind this build cannot start. An unexpected failure is <code>-32603</code> with the message <code>internal error</code>; only the exception's class name is written to stderr, because a message can carry a connection string. A refusal with no JSON-RPC code of its own, such as a brief above <code>EI_MAX_RUN_BUDGET_MICRO_USD</code>, is also <code>-32603</code>, with the refusal's own message.</p>
+<h2 id="webhooks">Webhooks<a class="headerlink" href="#webhooks" title="Permanent link">&para;</a></h2>
+<p>Deliveries are <code>POST</code> requests with a JSON body <code>{"id", "type", "data"}</code> (compact, sorted keys) and these headers:</p>
+<table>
+<thead>
+<tr>
+<th>Header</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>X-Engineering-Influence-Signature</code></td>
+<td><code>v1=</code> + hex <code>HMAC-SHA256(secret, "&lt;timestamp&gt;." + raw body)</code></td>
+</tr>
+<tr>
+<td><code>X-Engineering-Influence-Timestamp</code></td>
+<td>Unix seconds</td>
+</tr>
+<tr>
+<td><code>X-Engineering-Influence-Event</code> / <code>-Event-Id</code></td>
+<td>event name and id</td>
+</tr>
+<tr>
+<td><code>X-Request-ID</code>, <code>traceparent</code></td>
+<td>present when the event has a correlation id</td>
+</tr>
+</tbody>
+</table>
+<p>A receiver must, in order: check the signature over the <strong>raw bytes</strong>, check the timestamp is
+within 300 seconds, and refuse a signature it has already seen. Answer <code>2xx</code> to acknowledge;
+anything else is retried and, after <code>max_attempts</code> (default 5), dead-lettered with an alert.
+Destinations must be public <code>https</code> URLs; loopback, private ranges and cloud metadata addresses are refused.</p>
+<p><a href="https://github.com/adammatthewsteinberger/engineering-influence/blob/main/examples/webhooks/receiver.py"><code>examples/webhooks/receiver.py</code></a> is a stdlib receiver and
+<a href="https://github.com/adammatthewsteinberger/engineering-influence/blob/main/examples/webhooks/send_event.py"><code>examples/webhooks/send_event.py</code></a> sends it valid, replayed,
+tampered and stale deliveries. <strong>No service emits webhooks yet</strong>; the sender reproduces the
+request the platform will make so you can build a receiver now.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://properdocs.org/">ProperDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="properdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="properdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="properdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="properdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

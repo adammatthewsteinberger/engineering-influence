@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://adammatthewsteinberger.github.io/engineering-influence/adr/0010-chapters-are-drafted-in-order-in-one-stage/">
+        <link rel="shortcut icon" href="../../img/favicon.ico">
+        <title>ADR 0010: Chapters are drafted in order, inside one stage - engineering-influence</title>
+        <link href="../../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../../css/brands.min.css" rel="stylesheet">
+        <link href="../../css/solid.min.css" rel="stylesheet">
+        <link href="../../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../../stylesheets/vibey.css" rel="stylesheet">
+        <link href="../../stylesheets/site.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+        <meta name="description" content="Status: proposed">
+    <meta property="og:title" content="ADR 0010: Chapters are drafted in order, inside one stage - engineering-influence">
+    <meta property="og:description" content="Status: proposed">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://adammatthewsteinberger.github.io/engineering-influence/adr/0010-chapters-are-drafted-in-order-in-one-stage/">
+    <meta property="og:site_name" content="engineering-influence">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="ADR 0010: Chapters are drafted in order, inside one stage - engineering-influence">
+    <meta name="twitter:description" content="Status: proposed">
+</head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../..">engineering-influence</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="../.." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Start</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../getting-started/" class="dropdown-item">Getting started</a>
+</li>
+                                    
+<li>
+    <a href="../../agents-driving/" class="dropdown-item">Driving it from another AI</a>
+</li>
+                                    
+<li>
+    <a href="../../books-and-kdp/" class="dropdown-item">Books and KDP</a>
+</li>
+                                    
+<li>
+    <a href="../../novels/" class="dropdown-item">Novels</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Writing books</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../local-model/" class="dropdown-item">The local model</a>
+</li>
+                                    
+<li>
+    <a href="../../model-profiles/" class="dropdown-item">Model profiles</a>
+</li>
+                                    
+<li>
+    <a href="../../model-catalog/" class="dropdown-item">Model catalog</a>
+</li>
+                                    
+<li>
+    <a href="../../model-calls/" class="dropdown-item">Model calls</a>
+</li>
+                                    
+<li>
+    <a href="../../research/" class="dropdown-item">Research</a>
+</li>
+                                    
+<li>
+    <a href="../../prompts/" class="dropdown-item">Prompts</a>
+</li>
+                                    
+<li>
+    <a href="../../skills/" class="dropdown-item">Skills</a>
+</li>
+                                    
+<li>
+    <a href="../../plugins/" class="dropdown-item">Plugins</a>
+</li>
+                                    
+<li>
+    <a href="../../tool-lock/" class="dropdown-item">Tool lock</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../interactions/" class="dropdown-item">Interfaces</a>
+</li>
+                                    
+<li>
+    <a href="../../configuration/" class="dropdown-item">Configuration</a>
+</li>
+                                    
+<li>
+    <a href="../../compatibility/" class="dropdown-item">Compatibility</a>
+</li>
+                                    
+<li>
+    <a href="../../architecture/" class="dropdown-item">Architecture</a>
+</li>
+                                    
+<li>
+    <a href="../../threat-model/" class="dropdown-item">Threat model</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Operating</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../worker-image/" class="dropdown-item">Worker image</a>
+</li>
+                                    
+<li>
+    <a href="../../troubleshooting/" class="dropdown-item">Troubleshooting</a>
+</li>
+                                    
+<li>
+    <a href="../../releasing/" class="dropdown-item">Releasing</a>
+</li>
+                                    
+<li>
+    <a href="../../documentation-site/" class="dropdown-item">Documentation site</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Quality</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../testing/" class="dropdown-item">Testing</a>
+</li>
+                                    
+<li>
+    <a href="../../evaluation/" class="dropdown-item">Evaluation</a>
+</li>
+                                    
+<li>
+    <a href="../../live-smoke-test/" class="dropdown-item">Live smoke test</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Project</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../contributing/" class="dropdown-item">Contributing</a>
+</li>
+                                    
+<li>
+    <a href="../../style/" class="dropdown-item">How these documents are written</a>
+</li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Decision records</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../" class="dropdown-item">Overview</a>
+</li>
+            
+<li>
+    <a href="../0001-vibey-integration-boundary/" class="dropdown-item">ADR 0001: Isolate vibey behind ports</a>
+</li>
+            
+<li>
+    <a href="../0002-audience-priority-and-sovereign-agent-doctrine/" class="dropdown-item">ADR 0002: Audience priority and sovereign agent doctrine</a>
+</li>
+            
+<li>
+    <a href="../0003-definition-of-1-0/" class="dropdown-item">ADR 0003: Definition of 1.0</a>
+</li>
+            
+<li>
+    <a href="../0004-versioning-compatibility-and-deprecation/" class="dropdown-item">ADR 0004: Versioning, compatibility and deprecation</a>
+</li>
+            
+<li>
+    <a href="../0005-release-flow-and-changelog-fragments/" class="dropdown-item">ADR 0005: Release flow and changelog fragments</a>
+</li>
+            
+<li>
+    <a href="../0006-onion-layers-and-interfaces/" class="dropdown-item">ADR 0006: Onion layers, interfaces and one class per file</a>
+</li>
+            
+<li>
+    <a href="../0007-model-transport-plain-httpx/" class="dropdown-item">ADR 0007: Models are called over plain httpx, behind `ModelInterface`</a>
+</li>
+            
+<li>
+    <a href="../0008-tools-for-the-model/" class="dropdown-item">ADR 0008: The model gets tools, each stage gets only the ones it names</a>
+</li>
+            
+<li>
+    <a href="../0009-branch-driven-publishing/" class="dropdown-item">ADR 0009: Publishing follows the branch: develop to TestPyPI, main to PyPI</a>
+</li>
+            
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">ADR 0010: Chapters are drafted in order, inside one stage</a>
+</li>
+            
+<li>
+    <a href="../0011-run-inputs/" class="dropdown-item">ADR 0011: Run inputs are untrusted text carried inside the brief</a>
+</li>
+    </ul>
+  </li>
+                                    
+<li>
+    <a href="../../changelog/" class="dropdown-item">Changelog</a>
+</li>
+                                    
+<li>
+    <a href="../../security/" class="dropdown-item">Security</a>
+</li>
+                                    
+<li>
+    <a href="../../support/" class="dropdown-item">Support</a>
+</li>
+                                    
+<li>
+    <a href="../../code-of-conduct/" class="dropdown-item">Code of conduct</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#properdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../0009-branch-driven-publishing/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../0011-run-inputs/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/adammatthewsteinberger/engineering-influence/edit/develop/adr/0010-chapters-are-drafted-in-order-in-one-stage.md" class="nav-link">Edit on adammatthewsteinberger/engineering-influence
+                                    </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#adr-0010-chapters-are-drafted-in-order-inside-one-stage" class="nav-link">ADR 0010: Chapters are drafted in order, inside one stage</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#context" class="nav-link">Context</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#decision" class="nav-link">Decision</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#not-decided-here" class="nav-link">Not decided here</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#consequences" class="nav-link">Consequences</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#amendment-the-drafting-stage-as-built-2026-11-22" class="nav-link">Amendment: the drafting stage as built (2026-11-22)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#amendment-the-assemble-stage-2026-11-22" class="nav-link">Amendment: the assemble stage (2026-11-22)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#amendment-the-listing-and-the-authors-details-2026-11-22" class="nav-link">Amendment: the listing and the author's details (2026-11-22)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#amendment-the-audit-stage-2026-11-22" class="nav-link">Amendment: the audit stage (2026-11-22)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#amendment-the-editing-passes-2026-11-22" class="nav-link">Amendment: the editing passes (2026-11-22)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="adr-0010-chapters-are-drafted-in-order-inside-one-stage">ADR 0010: Chapters are drafted in order, inside one stage<a class="headerlink" href="#adr-0010-chapters-are-drafted-in-order-inside-one-stage" title="Permanent link">&para;</a></h1>
+<p>Status: proposed</p>
+<h2 id="context">Context<a class="headerlink" href="#context" title="Permanent link">&para;</a></h2>
+<p>The plan for the non-fiction stages (M6) asks for per-chapter drafting as a <strong>fan-out with an atomic join
+counter and a concurrency cap</strong>, and also for <strong>a rolling summary and a fact tracker carried across
+chapters</strong>. Those two do not fit together: a summary of the chapters before this one needs those chapters to
+exist, so chapters drafted at the same time cannot be given each other's summaries.</p>
+<p>The machinery that exists points the same way:</p>
+<ul>
+<li>A <code>StagePlan</code> is a fixed, ordered tuple of distinct stage names, stored with the run when it starts, before the
+  outline exists and so before the number of chapters is known. <code>AdvanceRun</code> walks it one stage at a time and makes
+  duplicate deliveries safe with compare-and-swap.</li>
+<li>The M5 <code>ContextAssembler</code> was built for drafting in order: it fits the style, the grounding, the beats, as many of
+  the newest prior-chapter summaries as will fit, and the tail of the previous chapter into a token budget.</li>
+<li>Every model call is journaled by a key made from the request, so a call that is repeated with the same
+  request is replayed for nothing.</li>
+</ul>
+<p>On 2026-11-22 the maintainer chose to draft the chapters <strong>in order, in one stage</strong>, and to leave parallel
+fan-out for after 1.0.</p>
+<h2 id="decision">Decision<a class="headerlink" href="#decision" title="Permanent link">&para;</a></h2>
+<ol>
+<li>
+<p><strong>A non-fiction plan gets one <code>draft</code> stage after <code>outline</code>.</strong> It does not change how runs work: no sub-stages,
+   no plan that grows, no new queue message and no join table. The stage takes the outline's chapters in order, in a
+   single execution.</p>
+</li>
+<li>
+<p><strong>The outline is a contract.</strong> The <code>stage_outline</code> template tells the model to write each chapter as
+   <code>## Chapter N: Title</code>, then <code>Purpose:</code>, <code>Beats:</code> and <code>Claims to source:</code> (bullets) and <code>Leads to:</code>. An
+   <code>OutlineParser</code> reads that strictly into an <code>Outline</code> of <code>ChapterOutline</code>s (at most 50 chapters, numbered 1, 2, 3
+   with no gaps, one-line bounded texts), and a <strong>check run when the outline stage finishes</strong> refuses an answer it
+   cannot read, before it is stored. A malformed outline therefore stops the run at the outline, not one stage later
+   after drafting has been paid for. A model's preamble before the first heading and a closing paragraph after a blank
+   line are ignored; hidden and control characters are removed.</p>
+</li>
+<li>
+<p><strong>Each chapter is drafted from what came before it.</strong> For chapter <em>n</em> the
+   context assembler is given the book's style (from the positioning), the grounding (the outline and the research
+   notes), the chapter's beats, the summaries of chapters 1 to <em>n</em>−1 and the tail of chapter <em>n</em>−1. One model call,
+   with no tools, drafts the chapter; a second summarizes it. They are stored as <code>chapter_NN.md</code> and <code>summary_NN.md</code>
+   (two digits). Everything that came out of a model or off the web goes into a later prompt inside an <code>&lt;untrusted&gt;</code>
+   block, as every other stage does.</p>
+</li>
+<li>
+<p><strong>A chapter is done when both of its files exist, and a repeated execution skips done chapters.</strong> A stage that
+   fails or is redelivered part-way through starts over at the first chapter that is not done. Because a repeated model
+   call is replayed from the journal for nothing, even a chapter that is redrafted costs nothing if its request is
+   unchanged.</p>
+</li>
+<li>
+<p><strong>Spend is the same as for every other stage.</strong> Each call reserves against the run's budget through the stage's
+   <code>SpendGuard</code> and is journaled, so a stage with 30 chapters cannot pass the cap and its cost survives a crash.</p>
+</li>
+<li>
+<p><strong>The stage's own artifact is <code>draft.md</code></strong>, an index of the chapters drafted and their lengths, so that the stage
+   leaves the same kind of trace as the others and later stages can name one input.</p>
+</li>
+</ol>
+<h2 id="not-decided-here">Not decided here<a class="headerlink" href="#not-decided-here" title="Permanent link">&para;</a></h2>
+<p>The fact tracker, structural and line revision, copy edit, front and back matter, assembly into <code>books/&lt;slug&gt;.toml</code>
+and claim verification are separate slices, each recorded by an amendment when it is built.</p>
+<p><strong>Parallel drafting.</strong> If it is wanted after 1.0, a join counter would slot in as follows: the <code>draft</code> stage would
+enqueue one <code>run.draft_chapter</code> message per chapter and finish when an atomic counter row reaches the chapter count.
+It is not built because chapters drafted at the same time cannot see each other's summaries, so continuity would rest
+on the outline alone, and because it adds a queue message, a table and a worker-sharing rule for the spend guard
+(which today is per process) for a speed-up that a first book does not need.</p>
+<h2 id="consequences">Consequences<a class="headerlink" href="#consequences" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>The plan's fan-out, join counter and concurrency cap are dropped for 1.0.</strong> That is a deliberate change to
+  the plan, recorded here.</li>
+<li>A book takes as long as its chapters take in a row. The stage is long-running, so it must stay within the queue's
+  redelivery window; the next slice records how long, and a person can resume a run that was stopped.</li>
+<li>The outline's format is now a contract between two stages: changing the <code>stage_outline</code> template or the parser means
+  changing both, with a version bump and a new fixture.</li>
+<li>A run whose outline stage produced a malformed outline fails with <code>OUTLINE_INVALID</code>, and, because the journal
+  replays the same request, trying the same stage again with the same prompt gives the same answer. The remedy is to
+  change what the outline stage is asked (for example with a skill) and start a new run.</li>
+</ul>
+<h2 id="amendment-the-drafting-stage-as-built-2026-11-22">Amendment: the drafting stage as built (2026-11-22)<a class="headerlink" href="#amendment-the-drafting-stage-as-built-2026-11-22" title="Permanent link">&para;</a></h2>
+<p><code>DraftStageExecutor</code> does the stage, and <code>StageExecutorRouter</code> sends <code>draft</code> to it and every other stage to
+<code>ModelStageExecutor</code>. The plan names <code>draft</code> after <code>outline</code>, but there is no recipe for it, because it is not one
+prompt. What the code does where this decision left room:</p>
+<ul>
+<li><strong>A chapter written but not summarized is summarized from its stored text, never redrafted.</strong> "Done" is both files,
+  but the two calls are separate, so a stage that fails between them resumes at the summary alone.</li>
+<li><strong>How long a chapter is.</strong> The brief's <code>target_words</code> shared across the chapters, or 2,500 words when there is none,
+  never under 300 or over 6,000. The output cap is that many words as tokens (1.6 a word) plus 400, never more than the
+  model allows. The input budget is the model's window less the output cap, less a 512-token margin, less an estimate
+  for any skills enabled for the stage. A window too small for that stops the stage before the first call
+  (<code>STAGE_MODEL_TOO_SMALL</code>).</li>
+<li><strong>The instruction holds numbers only.</strong> The only plain text in the draft prompt says which chapter of how many and
+  about how many words; the voice, the grounding, the beats, the summaries and the tail are untrusted blocks, as
+  the context assembler lays them out.</li>
+<li><strong>A call that does not finish stores nothing for that chapter</strong> and fails the stage (<code>STAGE_ANSWER_UNUSABLE</code>,
+  with the model's own reasons); the chapters before it stay, and the next delivery starts at that chapter.</li>
+<li><strong>The summary of a chapter is a short note</strong> (400 tokens at most) from <code>stage_summary</code>; the draft prompt gets each
+  one on one line as <code>Chapter k: ...</code>, oldest dropped first when the window is short.</li>
+<li><strong>Not yet checked:</strong> that a chapter keeps to its beats or its length. That belongs to revision. Nothing here has run
+  against a live model.</li>
+</ul>
+<h2 id="amendment-the-assemble-stage-2026-11-22">Amendment: the assemble stage (2026-11-22)<a class="headerlink" href="#amendment-the-assemble-stage-2026-11-22" title="Permanent link">&para;</a></h2>
+<p>A non-fiction plan now ends with <code>assemble</code>, which makes no model call. <code>AssembleStageExecutor</code> reads <code>outline.md</code> and the
+<code>chapter_NN.md</code> files and writes, in the run's artifacts, the project layout <code>BookLoader</code> reads:
+<code>manuscript/src/chapter_NN.md</code> and <code>manuscript/books/&lt;slug&gt;.toml</code>, plus <code>assemble.md</code> listing them. A property test
+holds the contract: whatever a model wrote, the stage either refuses with <code>MANUSCRIPT_TEXT_REFUSED</code> or writes a manuscript that
+<code>BookLoader</code> loads in strict mode and the forbidden-content check passes.</p>
+<ul>
+<li><strong>Dashes are rewritten, unfinished work is refused.</strong> The typesetter refuses an em or en dash in non-fiction, and a
+  model's prose is full of them, so a dash between digits becomes a hyphen and any other dash becomes a comma (or nothing
+  at the start or end of a line or before punctuation). A marker such as <code>[TODO]</code>, or the word <code>Draft</code>, is refused with
+  the chapter and line, because deleting it would hide an unfinished chapter. The rewrite is a plain edit; the copy edit
+  stage is where the sentences get reworked.</li>
+<li><strong>The outline's title heads the chapter.</strong> A heading the model put at the top of its answer is dropped, and any other
+  level-1 heading in the body becomes level 2.</li>
+<li><strong>Nothing is written until every chapter has been cleaned</strong>, so a refused chapter leaves no half manuscript.</li>
+<li><strong>The config holds only what is known:</strong> the kind, the title (the brief's hint, or its idea's first line), <code>src</code>, the trim
+  size when the brief set one, and one part, <code>Part One</code>, holding every chapter. It has no author, publisher, edition, year or
+  bio. Those are the author's, so the book loads but does not build until they are added. Setting them, and real parts,
+  front and back matter belong to the front/back matter and metadata slice.</li>
+</ul>
+<h2 id="amendment-the-listing-and-the-authors-details-2026-11-22">Amendment: the listing and the author's details (2026-11-22)<a class="headerlink" href="#amendment-the-listing-and-the-authors-details-2026-11-22" title="Permanent link">&para;</a></h2>
+<p>A non-fiction plan now has a <code>metadata</code> stage after <code>outline</code> (before drafting, because it needs only the brief, the positioning and the
+outline), and <code>assemble</code> reads its result.</p>
+<ul>
+<li><strong><code>metadata</code> is one prompt</strong>, so it has a recipe and goes through the same executor as the earlier stages. It writes the title, subtitle,
+  description, seven keywords and one to three categories in a fixed format. <code>MetadataParser</code> reads it strictly and
+  <code>NonfictionOutputChecks</code> refuses an unreadable one before it is stored (<code>METADATA_INVALID</code>). <code>BookMetadata</code> holds the release contract's rules
+  (an 80 word description of at most 4,000 characters, seven distinct keywords, one to three browse paths of two levels or more), so a
+  listing that is built cannot fail the contract for its shape.</li>
+<li><strong>The author's details are not a stage.</strong> They are the author's, so they come from a file the person names with <code>EI_AUTHOR_PROFILE</code>
+  (<code>AuthorProfile</code>, read by <code>TomlAuthorProfileLoader</code>), never from a model and never into a prompt. The assemble stage writes them into the
+  config with the listing, with the release contract's <code>[release]</code> keywords and categories. A book assembled with a profile
+  passes the release contract's metadata and category checks (a test runs them). Without one, it loads but does not build.</li>
+<li><strong>Front and back matter are not Markdown files.</strong> The title page, copyright page, dedication and about-the-author page are made by the typesetter from the
+  config, so no stage writes them. Pricing and the cover are still the author's to supply.</li>
+<li><strong>The title is the listing's</strong>, which is the title the brief asked for when it gave one, and the config's file name is its slug.</li>
+</ul>
+<h2 id="amendment-the-audit-stage-2026-11-22">Amendment: the audit stage (2026-11-22)<a class="headerlink" href="#amendment-the-audit-stage-2026-11-22" title="Permanent link">&para;</a></h2>
+<p>A non-fiction plan now ends with <code>audit</code>, which makes no model call. <code>AuditStageExecutor</code> reads the <code>manuscript/</code> files, gives them to a
+<code>ManuscriptAuditorInterface</code> as a project, and stores what comes back under <code>audit/</code> (<code>manuscript-audit.json</code>, <code>release-readiness.json</code>,
+<code>publication-report.json</code>) with a summary in <code>audit.md</code>.</p>
+<ul>
+<li><strong>It runs the publishing pipeline's own audit-only gates</strong>, the manuscript audit and the release readiness check, so there is one
+  definition of a book that is ready. They need no TeX toolchain and no cover. <code>TempProjectManuscriptAuditor</code> lays the files out as a project in a
+  private temporary folder, runs <code>PublishPipeline.publish(..., audit_only=True)</code>, reads the reports back and removes the folder; nothing of
+  the book is left on disk. The publishing libraries are imported only when an audit runs.</li>
+<li><strong>Errors stop the run, warnings do not.</strong> The reports are stored first, so a failed book can be read, then the run stops with <code>AUDIT_FAILED</code>
+  and every error. A book with no prices passes with a warning for each, because prices are the author's.</li>
+<li><strong>Measured, not assumed:</strong> an assembled book passes the real audit. Without an author profile the only extra finding is <code>missing-author</code>
+  (a warning); with one, the findings are the missing prices and their date and source. A runtime test runs the real gates on a book
+  that the assemble stage made.</li>
+<li><strong>Not done:</strong> the PDF and EPUB build and the cover, which need the TeX toolchain, the cover design settings and cover art that are the
+  author's. They are the next slice.</li>
+</ul>
+<h2 id="amendment-the-editing-passes-2026-11-22">Amendment: the editing passes (2026-11-22)<a class="headerlink" href="#amendment-the-editing-passes-2026-11-22" title="Permanent link">&para;</a></h2>
+<p>A non-fiction plan now has three editing stages between <code>draft</code> and <code>assemble</code>: <code>revise_structure</code>, <code>revise_lines</code> and <code>copy_edit</code>, each a
+<code>RevisionStageExecutor</code> run with one of the passes in <code>NonfictionRevisionPasses</code>. Each is one call with no tools for each chapter, in order.</p>
+<ul>
+<li><strong>Each pass reads what the one before wrote.</strong> The first reads <code>chapter_NN.md</code>; the files are <code>structure_NN.md</code>, <code>lines_NN.md</code> and
+  <code>copy_NN.md</code>; and <code>assemble</code> now reads <code>copy_NN.md</code>. Each pass is told only what it needs: structure sees the whole outline, a line
+  on every other chapter and this chapter's plan; lines sees the voice; copy sees nothing but the chapter. They have their own templates
+  rather than the drafting assembler, whose system text says "write the chapter" and has no place for text to be revised.</li>
+<li><strong>A revision is kept only if it is plausible.</strong> An answer that did not finish stops the stage, as in drafting. One that did finish but is blank, or whose
+  length in words is outside the pass's bounds of the chapter's (a fifth for structure, a tenth for lines, a twentieth for copy), is <strong>not stored and
+  the chapter passes through unchanged</strong>. A retry would replay the same answer, so stopping would only fail the run again. The stage
+  reports each unchanged chapter as a tolerated issue (<code>revision-unchanged</code>), worked out from the stored files so a redelivery says the same,
+  and <code>&lt;stage&gt;.md</code> lists every chapter's length before and after. This is a guard against an answer that is not an edit, not a judgment of
+  whether an edit is good.</li>
+<li><strong>The window is checked, not assumed.</strong> A chapter whose prompt (estimated at three characters a token) and answer would not fit the
+  model's window stops the stage before the call (<code>STAGE_MODEL_TOO_SMALL</code>); nothing is cut to make it fit.</li>
+<li><strong>Cost:</strong> every pass is one call per chapter, so a book with <em>n</em> chapters now makes about 5<em>n</em> model calls after the outline (a draft, a summary
+  and three edits for each chapter). Every call reserves against the run's budget, and a run whose cap cannot cover the next call stops there.</li>
+<li><strong>Not known:</strong> whether the edits improve the prose. Nothing here has run against a live model, and the length bounds only catch an answer
+  that is plainly not an edit.</li>
+</ul></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://properdocs.org/">ProperDocs</a>.</p>
+        </footer>
+        <script src="../../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "../..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../../js/base.js"></script>
+        <script src="../../search/main.js"></script>
+
+        <div class="modal" id="properdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="properdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="properdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="properdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

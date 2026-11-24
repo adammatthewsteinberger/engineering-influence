@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://adammatthewsteinberger.github.io/engineering-influence/research/">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Research - engineering-influence</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../stylesheets/vibey.css" rel="stylesheet">
+        <link href="../stylesheets/site.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+        <meta name="description" content="BLUF: The research stage gives the model two tools: web_search and fetch_url. It is told to state a fact only if a page it read says it, and never to…">
+    <meta property="og:title" content="Research - engineering-influence">
+    <meta property="og:description" content="BLUF: The research stage gives the model two tools: web_search and fetch_url. It is told to state a fact only if a page it read says it, and never to…">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://adammatthewsteinberger.github.io/engineering-influence/research/">
+    <meta property="og:site_name" content="engineering-influence">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Research - engineering-influence">
+    <meta name="twitter:description" content="BLUF: The research stage gives the model two tools: web_search and fetch_url. It is told to state a fact only if a page it read says it, and never to…">
+</head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">engineering-influence</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href=".." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Start</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../getting-started/" class="dropdown-item">Getting started</a>
+</li>
+                                    
+<li>
+    <a href="../agents-driving/" class="dropdown-item">Driving it from another AI</a>
+</li>
+                                    
+<li>
+    <a href="../books-and-kdp/" class="dropdown-item">Books and KDP</a>
+</li>
+                                    
+<li>
+    <a href="../novels/" class="dropdown-item">Novels</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Writing books</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../local-model/" class="dropdown-item">The local model</a>
+</li>
+                                    
+<li>
+    <a href="../model-profiles/" class="dropdown-item">Model profiles</a>
+</li>
+                                    
+<li>
+    <a href="../model-catalog/" class="dropdown-item">Model catalog</a>
+</li>
+                                    
+<li>
+    <a href="../model-calls/" class="dropdown-item">Model calls</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Research</a>
+</li>
+                                    
+<li>
+    <a href="../prompts/" class="dropdown-item">Prompts</a>
+</li>
+                                    
+<li>
+    <a href="../skills/" class="dropdown-item">Skills</a>
+</li>
+                                    
+<li>
+    <a href="../plugins/" class="dropdown-item">Plugins</a>
+</li>
+                                    
+<li>
+    <a href="../tool-lock/" class="dropdown-item">Tool lock</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../interactions/" class="dropdown-item">Interfaces</a>
+</li>
+                                    
+<li>
+    <a href="../configuration/" class="dropdown-item">Configuration</a>
+</li>
+                                    
+<li>
+    <a href="../compatibility/" class="dropdown-item">Compatibility</a>
+</li>
+                                    
+<li>
+    <a href="../architecture/" class="dropdown-item">Architecture</a>
+</li>
+                                    
+<li>
+    <a href="../threat-model/" class="dropdown-item">Threat model</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Operating</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../worker-image/" class="dropdown-item">Worker image</a>
+</li>
+                                    
+<li>
+    <a href="../troubleshooting/" class="dropdown-item">Troubleshooting</a>
+</li>
+                                    
+<li>
+    <a href="../releasing/" class="dropdown-item">Releasing</a>
+</li>
+                                    
+<li>
+    <a href="../documentation-site/" class="dropdown-item">Documentation site</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Quality</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../testing/" class="dropdown-item">Testing</a>
+</li>
+                                    
+<li>
+    <a href="../evaluation/" class="dropdown-item">Evaluation</a>
+</li>
+                                    
+<li>
+    <a href="../live-smoke-test/" class="dropdown-item">Live smoke test</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Project</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../contributing/" class="dropdown-item">Contributing</a>
+</li>
+                                    
+<li>
+    <a href="../style/" class="dropdown-item">How these documents are written</a>
+</li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Decision records</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../adr/" class="dropdown-item">Overview</a>
+</li>
+            
+<li>
+    <a href="../adr/0001-vibey-integration-boundary/" class="dropdown-item">ADR 0001: Isolate vibey behind ports</a>
+</li>
+            
+<li>
+    <a href="../adr/0002-audience-priority-and-sovereign-agent-doctrine/" class="dropdown-item">ADR 0002: Audience priority and sovereign agent doctrine</a>
+</li>
+            
+<li>
+    <a href="../adr/0003-definition-of-1-0/" class="dropdown-item">ADR 0003: Definition of 1.0</a>
+</li>
+            
+<li>
+    <a href="../adr/0004-versioning-compatibility-and-deprecation/" class="dropdown-item">ADR 0004: Versioning, compatibility and deprecation</a>
+</li>
+            
+<li>
+    <a href="../adr/0005-release-flow-and-changelog-fragments/" class="dropdown-item">ADR 0005: Release flow and changelog fragments</a>
+</li>
+            
+<li>
+    <a href="../adr/0006-onion-layers-and-interfaces/" class="dropdown-item">ADR 0006: Onion layers, interfaces and one class per file</a>
+</li>
+            
+<li>
+    <a href="../adr/0007-model-transport-plain-httpx/" class="dropdown-item">ADR 0007: Models are called over plain httpx, behind `ModelInterface`</a>
+</li>
+            
+<li>
+    <a href="../adr/0008-tools-for-the-model/" class="dropdown-item">ADR 0008: The model gets tools, each stage gets only the ones it names</a>
+</li>
+            
+<li>
+    <a href="../adr/0009-branch-driven-publishing/" class="dropdown-item">ADR 0009: Publishing follows the branch: develop to TestPyPI, main to PyPI</a>
+</li>
+            
+<li>
+    <a href="../adr/0010-chapters-are-drafted-in-order-in-one-stage/" class="dropdown-item">ADR 0010: Chapters are drafted in order, inside one stage</a>
+</li>
+            
+<li>
+    <a href="../adr/0011-run-inputs/" class="dropdown-item">ADR 0011: Run inputs are untrusted text carried inside the brief</a>
+</li>
+    </ul>
+  </li>
+                                    
+<li>
+    <a href="../changelog/" class="dropdown-item">Changelog</a>
+</li>
+                                    
+<li>
+    <a href="../security/" class="dropdown-item">Security</a>
+</li>
+                                    
+<li>
+    <a href="../support/" class="dropdown-item">Support</a>
+</li>
+                                    
+<li>
+    <a href="../code-of-conduct/" class="dropdown-item">Code of conduct</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#properdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../model-calls/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../prompts/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/adammatthewsteinberger/engineering-influence/edit/develop/research.md" class="nav-link">Edit on adammatthewsteinberger/engineering-influence
+                                    </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#research-web-search-and-methodology-skills" class="nav-link">Research: web search and methodology skills</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#cite-only-what-you-read" class="nav-link">Cite only what you read</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#1-a-search-that-answers" class="nav-link">1. A search that answers</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#2-methodology-skills-for-the-research-stage" class="nav-link">2. Methodology skills for the research stage</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#3-putting-it-together" class="nav-link">3. Putting it together</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-is-not-built" class="nav-link">What is not built</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="research-web-search-and-methodology-skills">Research: web search and methodology skills<a class="headerlink" href="#research-web-search-and-methodology-skills" title="Permanent link">&para;</a></h1>
+<p><strong>BLUF:</strong> The research stage gives the model two tools: <code>web_search</code> and <code>fetch_url</code>. It is told to state a fact
+only if a page it read says it, and never to invent a source. That is an instruction, not a check: nothing yet
+compares a chapter with its sources. It needs a search provider: a SearXNG you run (free, and one ships in
+<code>examples/searxng/</code>) or a Brave Search key. <code>ei doctor --search</code> sends one real query to each and tells you which
+answer.</p>
+<p>The research stage of a non-fiction run reads the brief, the positioning and anything the author supplied, then uses two tools,
+<code>web_search</code> (titles and links) and <code>fetch_url</code> (one page), to write research notes that cite only pages it read
+(<a href="../prompts/">PROMPTS.md</a>, <a href="../threat-model/">THREAT_MODEL.md</a>). This page is how to make that real, and how to check it.</p>
+<h2 id="cite-only-what-you-read">Cite only what you read<a class="headerlink" href="#cite-only-what-you-read" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><strong>Daniel:</strong> Language models invent sources. A confident footnote to a paper that does not exist. How is this any
+different?</p>
+<p><strong>Professor Feynman:</strong> What is the rule for a student writing an essay in a library?</p>
+<p><strong>Daniel:</strong> You may cite a book you took off the shelf and read. Not one you remember hearing about.</p>
+<p><strong>Professor Feynman:</strong> That rule is the stage's instruction. The model can search, which gives it titles and
+links, and it can fetch, which reads one page. It is told to read at most six, and the hard stop is sixteen tool
+calls. It is told to state a fact only if a page it read says it, and never to invent a source, a statistic or a
+link.</p>
+<p><strong>Daniel:</strong> And the page itself could be nonsense.</p>
+<p><strong>Professor Feynman:</strong> It could. And notice what I said: told, not forced. A librarian can check your bag at
+the door; nothing here checks the notes against the pages. That is the limit, and it is why a person still reads
+the book. A claim checker that compares a sentence with the page it cites is not built.</p>
+<p><strong>Daniel:</strong> So the model has real pages in front of it and firm instructions, the checking is still mine, and
+I should confirm a search works before the run with <code>ei doctor --search</code>.</p>
+</blockquote>
+<h2 id="1-a-search-that-answers">1. A search that answers<a class="headerlink" href="#1-a-search-that-answers" title="Permanent link">&para;</a></h2>
+<p>The stage needs a search provider, set in the environment of the process that runs it:</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>EI_SEARXNG_URL</code></td>
+<td>A <a href="https://docs.searxng.org/">SearXNG</a> instance you run or trust, for example <code>http://127.0.0.1:8888</code> (the one in <code>examples/searxng/</code>). Tried first.</td>
+</tr>
+<tr>
+<td><code>BRAVE_SEARCH_API_KEY</code></td>
+<td>A Brave Search key, tried behind SearXNG if both are set.</td>
+</tr>
+</tbody>
+</table>
+<p><code>examples/searxng/</code> is a Docker Compose file and a <code>settings.yml</code> for a local instance with the one setting this needs:
+<code>json</code> under <code>search.formats</code>, without which SearXNG answers 403.</p>
+<p><strong>Check it before a run spends anything on a model:</strong></p>
+<pre><code class="language-bash">ei doctor --search
+ei doctor --search --query &quot;beekeeping manuals&quot;
+</code></pre>
+<p>It sends <strong>one real search to each configured provider</strong>, one at a time (so a SearXNG that is down is not hidden by a Brave key
+behind it), and prints a line each: how many links came back and the host of the first. It never prints a title or an address
+from the web. The query leaves your machine, to your SearXNG (which passes it to the engines it uses) or to Brave, so the default is
+one harmless sentence (<code>open source book publishing</code>). Exit <code>0</code> all answered, <code>1</code> one did not, <code>2</code> the setting is unusable
+(<code>EI_SEARXNG_URL</code> is not an address). With nothing configured it checks the SearXNG a local-model run falls back to (<code>http://127.0.0.1:8888</code>); with
+<code>EI_STAGE_EXECUTOR=model</code> and nothing configured it says how to set one up and exits <code>1</code>.</p>
+<p>What it does not check: that the results are <em>good</em>, that a page fetch works (the fetch tool is pinned to public https
+addresses and is separate), or that a Brave key has quota left beyond what one search shows.</p>
+<p>The <a href="../live-smoke-test/">live smoke test</a> needs this too, and a run with <code>EI_STAGE_EXECUTOR=model</code> and no provider stops at start with a clear message. A run on the free local model falls back to the SearXNG at its default address.</p>
+<h2 id="2-methodology-skills-for-the-research-stage">2. Methodology skills for the research stage<a class="headerlink" href="#2-methodology-skills-for-the-research-stage" title="Permanent link">&para;</a></h2>
+<p>A research methodology is long, which is what reference skills are for (<a href="../skills/">SKILLS.md</a>): the stage's prompt carries an index of
+section titles and the model reads a section only when it needs it, through the locked <code>read_skill</code> tool. They are <strong>not shipped with
+this project</strong>: they are the author's, so you install them from your own copies, into your own lock, pinned by hash.</p>
+<p>From a <code>SKILL.md</code> folder:</p>
+<pre><code class="language-bash">ei skills import path/to/research-methodology --reference --out research_methodology.toml
+ei skills add research_methodology.toml
+ei skills enable research_methodology research
+</code></pre>
+<p>From a Claude Code plugin folder that bundles several skills (<a href="../plugins/">PLUGINS.md</a>):</p>
+<pre><code class="language-bash">ei plugins import path/to/plugin --out my_research.toml
+ei plugins show my_research.toml          # read it
+ei plugins add my_research.toml           # locks its skills, enabled for no stage
+ei skills enable research_methodology research
+</code></pre>
+<p>Read the generated file before locking it: its text will be added to a prompt. A section longer than 20,000 characters is refused
+with the lengths listed, and you choose around it with <code>--section</code>. Enabling a skill for <code>research</code> makes the stage offer
+<code>read_skill</code> with an index, and nothing else changes: the skill grants no tool, and the stage's search and fetch tools are the same.</p>
+<h2 id="3-putting-it-together">3. Putting it together<a class="headerlink" href="#3-putting-it-together" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash">ei doctor --models --probe       # the model profile is usable
+ei doctor --search               # the search answers
+ei skills list                   # the research stage has its methodology
+</code></pre>
+<p>A test in this repository runs the research stage with a synthetic reference skill and a local search server together: the model
+reads a section, searches, and both answers come back as untrusted tool output. It has not been run with a live model, and <code>ei doctor --search</code>
+itself has only been run against local servers written for the tests (the adapter it uses was run once by hand against the compose example, see
+<a href="../configuration/">CONFIGURATION.md</a>). No methodology text is bundled to test with.</p>
+<h2 id="what-is-not-built">What is not built<a class="headerlink" href="#what-is-not-built" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A claim-checking stage and a fact tracker across chapters (the research notes list "Not found" claims for a person to source).</li>
+<li>Search for any stage but research. The metadata stage could look for comparable titles; that is a separate decision.</li>
+<li>Any check of how good a methodology skill makes the notes.</li>
+</ul></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://properdocs.org/">ProperDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="properdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="properdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="properdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="properdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

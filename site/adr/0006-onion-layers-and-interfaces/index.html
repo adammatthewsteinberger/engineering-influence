@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://adammatthewsteinberger.github.io/engineering-influence/adr/0006-onion-layers-and-interfaces/">
+        <link rel="shortcut icon" href="../../img/favicon.ico">
+        <title>ADR 0006: Onion layers, interfaces and one class per file - engineering-influence</title>
+        <link href="../../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../../css/brands.min.css" rel="stylesheet">
+        <link href="../../css/solid.min.css" rel="stylesheet">
+        <link href="../../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../../stylesheets/vibey.css" rel="stylesheet">
+        <link href="../../stylesheets/site.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+        <meta name="description" content="Status: accepted and implemented (see &quot;As built&quot;)">
+    <meta property="og:title" content="ADR 0006: Onion layers, interfaces and one class per file - engineering-influence">
+    <meta property="og:description" content="Status: accepted and implemented (see &quot;As built&quot;)">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://adammatthewsteinberger.github.io/engineering-influence/adr/0006-onion-layers-and-interfaces/">
+    <meta property="og:site_name" content="engineering-influence">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="ADR 0006: Onion layers, interfaces and one class per file - engineering-influence">
+    <meta name="twitter:description" content="Status: accepted and implemented (see &quot;As built&quot;)">
+</head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../..">engineering-influence</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="../.." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Start</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../getting-started/" class="dropdown-item">Getting started</a>
+</li>
+                                    
+<li>
+    <a href="../../agents-driving/" class="dropdown-item">Driving it from another AI</a>
+</li>
+                                    
+<li>
+    <a href="../../books-and-kdp/" class="dropdown-item">Books and KDP</a>
+</li>
+                                    
+<li>
+    <a href="../../novels/" class="dropdown-item">Novels</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Writing books</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../local-model/" class="dropdown-item">The local model</a>
+</li>
+                                    
+<li>
+    <a href="../../model-profiles/" class="dropdown-item">Model profiles</a>
+</li>
+                                    
+<li>
+    <a href="../../model-catalog/" class="dropdown-item">Model catalog</a>
+</li>
+                                    
+<li>
+    <a href="../../model-calls/" class="dropdown-item">Model calls</a>
+</li>
+                                    
+<li>
+    <a href="../../research/" class="dropdown-item">Research</a>
+</li>
+                                    
+<li>
+    <a href="../../prompts/" class="dropdown-item">Prompts</a>
+</li>
+                                    
+<li>
+    <a href="../../skills/" class="dropdown-item">Skills</a>
+</li>
+                                    
+<li>
+    <a href="../../plugins/" class="dropdown-item">Plugins</a>
+</li>
+                                    
+<li>
+    <a href="../../tool-lock/" class="dropdown-item">Tool lock</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../interactions/" class="dropdown-item">Interfaces</a>
+</li>
+                                    
+<li>
+    <a href="../../configuration/" class="dropdown-item">Configuration</a>
+</li>
+                                    
+<li>
+    <a href="../../compatibility/" class="dropdown-item">Compatibility</a>
+</li>
+                                    
+<li>
+    <a href="../../architecture/" class="dropdown-item">Architecture</a>
+</li>
+                                    
+<li>
+    <a href="../../threat-model/" class="dropdown-item">Threat model</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Operating</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../worker-image/" class="dropdown-item">Worker image</a>
+</li>
+                                    
+<li>
+    <a href="../../troubleshooting/" class="dropdown-item">Troubleshooting</a>
+</li>
+                                    
+<li>
+    <a href="../../releasing/" class="dropdown-item">Releasing</a>
+</li>
+                                    
+<li>
+    <a href="../../documentation-site/" class="dropdown-item">Documentation site</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Quality</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../testing/" class="dropdown-item">Testing</a>
+</li>
+                                    
+<li>
+    <a href="../../evaluation/" class="dropdown-item">Evaluation</a>
+</li>
+                                    
+<li>
+    <a href="../../live-smoke-test/" class="dropdown-item">Live smoke test</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Project</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../contributing/" class="dropdown-item">Contributing</a>
+</li>
+                                    
+<li>
+    <a href="../../style/" class="dropdown-item">How these documents are written</a>
+</li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Decision records</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../" class="dropdown-item">Overview</a>
+</li>
+            
+<li>
+    <a href="../0001-vibey-integration-boundary/" class="dropdown-item">ADR 0001: Isolate vibey behind ports</a>
+</li>
+            
+<li>
+    <a href="../0002-audience-priority-and-sovereign-agent-doctrine/" class="dropdown-item">ADR 0002: Audience priority and sovereign agent doctrine</a>
+</li>
+            
+<li>
+    <a href="../0003-definition-of-1-0/" class="dropdown-item">ADR 0003: Definition of 1.0</a>
+</li>
+            
+<li>
+    <a href="../0004-versioning-compatibility-and-deprecation/" class="dropdown-item">ADR 0004: Versioning, compatibility and deprecation</a>
+</li>
+            
+<li>
+    <a href="../0005-release-flow-and-changelog-fragments/" class="dropdown-item">ADR 0005: Release flow and changelog fragments</a>
+</li>
+            
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">ADR 0006: Onion layers, interfaces and one class per file</a>
+</li>
+            
+<li>
+    <a href="../0007-model-transport-plain-httpx/" class="dropdown-item">ADR 0007: Models are called over plain httpx, behind `ModelInterface`</a>
+</li>
+            
+<li>
+    <a href="../0008-tools-for-the-model/" class="dropdown-item">ADR 0008: The model gets tools, each stage gets only the ones it names</a>
+</li>
+            
+<li>
+    <a href="../0009-branch-driven-publishing/" class="dropdown-item">ADR 0009: Publishing follows the branch: develop to TestPyPI, main to PyPI</a>
+</li>
+            
+<li>
+    <a href="../0010-chapters-are-drafted-in-order-in-one-stage/" class="dropdown-item">ADR 0010: Chapters are drafted in order, inside one stage</a>
+</li>
+            
+<li>
+    <a href="../0011-run-inputs/" class="dropdown-item">ADR 0011: Run inputs are untrusted text carried inside the brief</a>
+</li>
+    </ul>
+  </li>
+                                    
+<li>
+    <a href="../../changelog/" class="dropdown-item">Changelog</a>
+</li>
+                                    
+<li>
+    <a href="../../security/" class="dropdown-item">Security</a>
+</li>
+                                    
+<li>
+    <a href="../../support/" class="dropdown-item">Support</a>
+</li>
+                                    
+<li>
+    <a href="../../code-of-conduct/" class="dropdown-item">Code of conduct</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#properdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../0005-release-flow-and-changelog-fragments/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../0007-model-transport-plain-httpx/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/adammatthewsteinberger/engineering-influence/edit/develop/adr/0006-onion-layers-and-interfaces.md" class="nav-link">Edit on adammatthewsteinberger/engineering-influence
+                                    </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#adr-0006-onion-layers-interfaces-and-one-class-per-file" class="nav-link">ADR 0006: Onion layers, interfaces and one class per file</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#context" class="nav-link">Context</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#decision" class="nav-link">Decision</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#consequences" class="nav-link">Consequences</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#as-built" class="nav-link">As built</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="adr-0006-onion-layers-interfaces-and-one-class-per-file">ADR 0006: Onion layers, interfaces and one class per file<a class="headerlink" href="#adr-0006-onion-layers-interfaces-and-one-class-per-file" title="Permanent link">&para;</a></h1>
+<p>Status: accepted and implemented (see "As built")</p>
+<h2 id="context">Context<a class="headerlink" href="#context" title="Permanent link">&para;</a></h2>
+<p>The package grew in two halves. The orchestration half (<code>services</code>, <code>controllers</code>, <code>repositories</code>,
+<code>infrastructure</code>, <code>interaction</code>, <code>runtime</code>) follows an onion, with one class per file and ABC
+interfaces in sibling <code>interfaces/</code> folders. The packaging half (<code>publishing/</code>, 138 files, 6,386 of the
+10,229 lines) is a single flat layer: 119 plain classes, models, services and adapters mixed,
+no interfaces, and a controller that imports 21 concrete classes. Several layers also break their
+own rules: composition happens in services, controllers and transports, and the architecture test
+forbids <code>domain</code> from importing <code>errors</code>, which is backwards for the innermost ring.</p>
+<p>The model-backed stages of ADR 0003 will add as much code again. They need the rules to be
+mechanical before they arrive, not after.</p>
+<h2 id="decision">Decision<a class="headerlink" href="#decision" title="Permanent link">&para;</a></h2>
+<h3 id="layers-innermost-first">Layers, innermost first<a class="headerlink" href="#layers-innermost-first" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Holds</th>
+<th>May import</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>errors</code></td>
+<td>exception classes</td>
+<td>standard library</td>
+</tr>
+<tr>
+<td><code>models</code> (was <code>domain</code>)</td>
+<td>entities and value objects, enums</td>
+<td><code>errors</code>, standard library</td>
+</tr>
+<tr>
+<td><code>contracts</code></td>
+<td>wire and config schemas (pydantic)</td>
+<td><code>errors</code>, <code>models</code>, pydantic</td>
+</tr>
+<tr>
+<td><code>interfaces</code></td>
+<td>ports shared across layers</td>
+<td>standard library and other interfaces at run time; <code>errors</code>, <code>models</code>, <code>contracts</code> only under <code>TYPE_CHECKING</code></td>
+</tr>
+<tr>
+<td><code>services</code></td>
+<td>use cases and policy</td>
+<td>the layers above, plus pure-compute libraries (numpy, markdown-it-py, defusedxml)</td>
+</tr>
+<tr>
+<td><code>controllers</code></td>
+<td>one entry point per capability</td>
+<td>the layers above, <code>services</code></td>
+</tr>
+<tr>
+<td><code>repositories</code></td>
+<td>persistence, project files and sources</td>
+<td>the layers above, <code>services.interfaces</code>; database and file libraries</td>
+</tr>
+<tr>
+<td><code>infrastructure</code></td>
+<td>adapters to tools, networks, images, PDFs, archives</td>
+<td>the layers above, <code>services.interfaces</code>; any effectful library or process</td>
+</tr>
+<tr>
+<td><code>interactions</code> (was <code>interaction</code>)</td>
+<td>transports: REST, MCP, CLI, webhooks in</td>
+<td><code>controllers</code>, the layers above, <code>services.interfaces</code>; transport libraries</td>
+</tr>
+<tr>
+<td><code>runtime</code></td>
+<td>the composition root</td>
+<td>everything</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Dependencies point inward. Only <code>runtime</code> constructs concrete classes from more than one layer.</li>
+<li>Effectful libraries (PIL, pypdf, pdfplumber, reportlab, subprocess, zipfile, entry points, git,
+  clocks, file reads and writes) never appear in <code>models</code>, <code>contracts</code> or <code>services</code>. A service that
+  needs one depends on an interface and an adapter in <code>infrastructure</code> or <code>repositories</code> provides it.</li>
+<li><code>publishing/</code> is split across these layers. Its subpackage names (<code>epub</code>, <code>covers</code>, <code>typesetting</code>,
+  <code>qa</code>, <code>release</code>) become folders inside the layers; its top-level modules go under <code>publishing/</code>.</li>
+<li><code>errors</code> is innermost. Models may import errors; the old rule that forbade it is removed.</li>
+</ul>
+<h3 id="interfaces">Interfaces<a class="headerlink" href="#interfaces" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Every folder, including every new subfolder, has an <code>interfaces/</code> folder. <code>interfaces/</code> packages and
+  <code>assets/</code> are exempt, and so is <code>infrastructure/migrations/</code> (see "As built").</li>
+<li>One class per file. <code>x/foo.py</code> defining <code>Foo</code> is paired with <code>x/interfaces/foo_interface.py</code>
+  defining <code>FooInterface</code>, and <code>Foo</code> inherits it.</li>
+<li>An interface is an ABC with <code>__slots__ = ()</code> that declares <strong>methods only</strong>, never fields or
+  abstract properties. Fields would change what pydantic and dataclasses generate.</li>
+<li>Dataclasses, pydantic models, SQLModel tables and exceptions inherit their ABC interface; this was
+  checked to leave <code>model_fields</code>, the OpenAPI schema and table metadata unchanged.</li>
+<li><strong>Enums use a protocol, not an ABC.</strong> <code>Enum</code> and <code>ABC</code> have conflicting metaclasses and mypy does not
+  catch it. An enum gets a <code>runtime_checkable</code> <code>Protocol</code> and a test that checks the enum against it.</li>
+<li>A class that already implements a top-level interface in <code>interfaces/</code> satisfies the rule. The 20
+  <code>*Port</code> classes there are renamed <code>*Interface</code>.</li>
+<li>Interface modules import only the standard library and other interfaces at run time. Types from
+  <code>models</code>, <code>contracts</code> and <code>errors</code> come in under <code>TYPE_CHECKING</code> with
+  <code>from __future__ import annotations</code>, so signatures stay exact and mypy still checks overrides.</li>
+</ul>
+<h3 id="public-api">Public API<a class="headerlink" href="#public-api" title="Permanent link">&para;</a></h3>
+<p>The cover-plugin API is public: entry-point group <code>engineering_influence.covers</code>, and the <code>books</code>
+repository imports 17 classes by their deep paths: 13 in its cover scripts, and <code>CoverBuilder</code>,
+<code>CoverPluginLoader</code>, <code>PainterRegistry</code> and <code>ProjectLayout</code> in its README (R0 counted only the 13;
+R3 corrected it). A façade <code>engineering_influence.covers</code> re-exports the cover classes with an
+<code>__all__</code>; <code>ProjectLayout</code>, a model, keeps a deprecated shim at its old path. The old <code>engineering_influence.publishing.covers.*</code> paths stay as
+shims that re-export the same class objects (the loader checks <code>isinstance(plugin, CoverPlugin)</code>) and
+emit a one-time <code>DeprecationWarning</code>, for one minor release (ADR 0004). The entry-point group does not
+change. These classes keep their names even where they do not end in <code>Interface</code>.</p>
+<h3 id="method">Method<a class="headerlink" href="#method" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>scripts/refactor/move_map.toml</code> is the plan of record: for every class, where it lives, where it goes,
+  its interface and why. A pull request that moves or reclassifies a class edits its entry. An
+  architecture test keeps the map complete against the tree.</li>
+<li><code>scripts/refactor/inventory.py</code> reports the facts the map is built from.</li>
+<li>Rules arrive as <strong>ratchets</strong>: <code>tests/architecture/ratchet.json</code> records how many violations each rule
+  has today. A rule can only improve, and the test fails if a count rises, or falls without the file
+  being lowered. Each restructuring PR lowers counts; the last one makes every count zero and the rules
+  strict.</li>
+<li>Moves use <code>git mv</code> and a codemod that rewrites imports everywhere, including strings that name
+  modules. No behaviour changes. Every restructuring PR must keep the test count, 100% coverage, the
+  OpenAPI document, the CLI help, the MCP tool list and the fixture book's structural snapshot
+  (<code>tests/fixtures/fixture_book/expected/snapshot.json</code>) unchanged.</li>
+<li>Feature work on <code>publishing/</code> and the layers being moved pauses while the restructure is in flight.</li>
+</ul>
+<h2 id="consequences">Consequences<a class="headerlink" href="#consequences" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A reader can predict where a class lives and what it may import, and CI can check it.</li>
+<li>Roughly 240 new interface files exist. They are generated, and the ratchets stop them drifting from
+  their classes.</li>
+<li>Test doubles become real implementations of the interfaces, which replaces the <code>monkeypatch.setattr</code>
+  calls that patch production classes (33 <code>setattr</code> calls today, some of them on <code>sys</code>).</li>
+<li>Moving every class changes every import path. The public cover-plugin paths are protected by shims;
+  everything else is internal.</li>
+</ul>
+<h2 id="as-built">As built<a class="headerlink" href="#as-built" title="Permanent link">&para;</a></h2>
+<p>The restructure shipped as pull requests R0 to R13 (<code>changelog.d/m1-r*.md</code> has one entry for each).
+Four things differ from the plan above, and the plan is left as written so the difference is visible:</p>
+<ul>
+<li><strong>The ratchets were retired.</strong> The plan lowered counts in <code>tests/architecture/ratchet.json</code> until
+  every rule reached zero. They did, so R11 deleted the file and <code>test_rules.py</code> now asserts that each
+  of nine metrics is zero everywhere and that none has been dropped. A violation fails the build; it
+  is not recorded.</li>
+<li><strong>The cover-plugin shims were removed in R11, with no deprecation window.</strong> <code>publishing.covers.*</code> and
+  <code>publishing.project_layout</code> re-exported the real classes for a time, then were deleted. ADR 0004
+  lets a minor version before 1.0 break a contract if the changelog says so, and the R11 entry is
+  marked <strong>Breaking</strong>. The names live on in the <code>engineering_influence.covers</code> facade.</li>
+<li><strong>Test doubles replaced the patches.</strong> The plan counted 33 <code>monkeypatch.setattr</code> calls. R12 and R13
+  injected fakes through constructors, and <code>tests/architecture/test_no_patching.py</code> now permits only
+  standard-library calls at the system boundary (<code>subprocess.run</code>, <code>sys.argv</code>, <code>sys.path</code>,
+  <code>zipfile.ZipFile.testzip</code>) and one class a test defines. A new patch of anything else fails the
+  build, and a boundary entry no test uses any more fails it too.</li>
+<li><strong>Some pure helpers are still built where they are used.</strong> <code>PublishingController</code> builds its audit
+  classes and <code>EpubVerifier</code> builds its own checks, because no test has to replace them. Anything a
+  test replaces, and every adapter, is injected.</li>
+<li><strong>Alembic migrations are exempt from the file rules.</strong> An Alembic script is a module of functions
+  and constants by contract (<code>upgrade()</code>, <code>downgrade()</code>, <code>revision</code>), so <code>infrastructure/migrations/</code>
+  is excluded from the one-class-per-file, no-loose-function, interface-folder and layer-matrix checks
+  through <code>SCRIPT_FOLDERS</code> in <code>tests/architecture/architecture_metrics.py</code>. The exemption names that
+  folder and nothing else. The scripts are still linted, type-checked with <code>mypy --strict</code> and run by
+  the tests, which also compare the schema they build with the SQLModel models, so a model change
+  without a migration fails the build. The class that drives them, <code>SchemaMigrator</code>, follows every
+  rule.</li>
+</ul></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://properdocs.org/">ProperDocs</a>.</p>
+        </footer>
+        <script src="../../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "../..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../../js/base.js"></script>
+        <script src="../../search/main.js"></script>
+
+        <div class="modal" id="properdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="properdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="properdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="properdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

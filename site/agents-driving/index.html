@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://adammatthewsteinberger.github.io/engineering-influence/agents-driving/">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Driving it from another AI - engineering-influence</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../stylesheets/vibey.css" rel="stylesheet">
+        <link href="../stylesheets/site.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+        <meta name="description" content="BLUF: Any agent with a shell (Claude Code, or another LLM that can run commands) can write a book for you with one command, ei book create. Install the…">
+    <meta property="og:title" content="Driving it from another AI - engineering-influence">
+    <meta property="og:description" content="BLUF: Any agent with a shell (Claude Code, or another LLM that can run commands) can write a book for you with one command, ei book create. Install the…">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://adammatthewsteinberger.github.io/engineering-influence/agents-driving/">
+    <meta property="og:site_name" content="engineering-influence">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Driving it from another AI - engineering-influence">
+    <meta name="twitter:description" content="BLUF: Any agent with a shell (Claude Code, or another LLM that can run commands) can write a book for you with one command, ei book create. Install the…">
+</head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">engineering-influence</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href=".." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Start</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../getting-started/" class="dropdown-item">Getting started</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Driving it from another AI</a>
+</li>
+                                    
+<li>
+    <a href="../books-and-kdp/" class="dropdown-item">Books and KDP</a>
+</li>
+                                    
+<li>
+    <a href="../novels/" class="dropdown-item">Novels</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Writing books</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../local-model/" class="dropdown-item">The local model</a>
+</li>
+                                    
+<li>
+    <a href="../model-profiles/" class="dropdown-item">Model profiles</a>
+</li>
+                                    
+<li>
+    <a href="../model-catalog/" class="dropdown-item">Model catalog</a>
+</li>
+                                    
+<li>
+    <a href="../model-calls/" class="dropdown-item">Model calls</a>
+</li>
+                                    
+<li>
+    <a href="../research/" class="dropdown-item">Research</a>
+</li>
+                                    
+<li>
+    <a href="../prompts/" class="dropdown-item">Prompts</a>
+</li>
+                                    
+<li>
+    <a href="../skills/" class="dropdown-item">Skills</a>
+</li>
+                                    
+<li>
+    <a href="../plugins/" class="dropdown-item">Plugins</a>
+</li>
+                                    
+<li>
+    <a href="../tool-lock/" class="dropdown-item">Tool lock</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../interactions/" class="dropdown-item">Interfaces</a>
+</li>
+                                    
+<li>
+    <a href="../configuration/" class="dropdown-item">Configuration</a>
+</li>
+                                    
+<li>
+    <a href="../compatibility/" class="dropdown-item">Compatibility</a>
+</li>
+                                    
+<li>
+    <a href="../architecture/" class="dropdown-item">Architecture</a>
+</li>
+                                    
+<li>
+    <a href="../threat-model/" class="dropdown-item">Threat model</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Operating</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../worker-image/" class="dropdown-item">Worker image</a>
+</li>
+                                    
+<li>
+    <a href="../troubleshooting/" class="dropdown-item">Troubleshooting</a>
+</li>
+                                    
+<li>
+    <a href="../releasing/" class="dropdown-item">Releasing</a>
+</li>
+                                    
+<li>
+    <a href="../documentation-site/" class="dropdown-item">Documentation site</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Quality</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../testing/" class="dropdown-item">Testing</a>
+</li>
+                                    
+<li>
+    <a href="../evaluation/" class="dropdown-item">Evaluation</a>
+</li>
+                                    
+<li>
+    <a href="../live-smoke-test/" class="dropdown-item">Live smoke test</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Project</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../contributing/" class="dropdown-item">Contributing</a>
+</li>
+                                    
+<li>
+    <a href="../style/" class="dropdown-item">How these documents are written</a>
+</li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Decision records</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../adr/" class="dropdown-item">Overview</a>
+</li>
+            
+<li>
+    <a href="../adr/0001-vibey-integration-boundary/" class="dropdown-item">ADR 0001: Isolate vibey behind ports</a>
+</li>
+            
+<li>
+    <a href="../adr/0002-audience-priority-and-sovereign-agent-doctrine/" class="dropdown-item">ADR 0002: Audience priority and sovereign agent doctrine</a>
+</li>
+            
+<li>
+    <a href="../adr/0003-definition-of-1-0/" class="dropdown-item">ADR 0003: Definition of 1.0</a>
+</li>
+            
+<li>
+    <a href="../adr/0004-versioning-compatibility-and-deprecation/" class="dropdown-item">ADR 0004: Versioning, compatibility and deprecation</a>
+</li>
+            
+<li>
+    <a href="../adr/0005-release-flow-and-changelog-fragments/" class="dropdown-item">ADR 0005: Release flow and changelog fragments</a>
+</li>
+            
+<li>
+    <a href="../adr/0006-onion-layers-and-interfaces/" class="dropdown-item">ADR 0006: Onion layers, interfaces and one class per file</a>
+</li>
+            
+<li>
+    <a href="../adr/0007-model-transport-plain-httpx/" class="dropdown-item">ADR 0007: Models are called over plain httpx, behind `ModelInterface`</a>
+</li>
+            
+<li>
+    <a href="../adr/0008-tools-for-the-model/" class="dropdown-item">ADR 0008: The model gets tools, each stage gets only the ones it names</a>
+</li>
+            
+<li>
+    <a href="../adr/0009-branch-driven-publishing/" class="dropdown-item">ADR 0009: Publishing follows the branch: develop to TestPyPI, main to PyPI</a>
+</li>
+            
+<li>
+    <a href="../adr/0010-chapters-are-drafted-in-order-in-one-stage/" class="dropdown-item">ADR 0010: Chapters are drafted in order, inside one stage</a>
+</li>
+            
+<li>
+    <a href="../adr/0011-run-inputs/" class="dropdown-item">ADR 0011: Run inputs are untrusted text carried inside the brief</a>
+</li>
+    </ul>
+  </li>
+                                    
+<li>
+    <a href="../changelog/" class="dropdown-item">Changelog</a>
+</li>
+                                    
+<li>
+    <a href="../security/" class="dropdown-item">Security</a>
+</li>
+                                    
+<li>
+    <a href="../support/" class="dropdown-item">Support</a>
+</li>
+                                    
+<li>
+    <a href="../code-of-conduct/" class="dropdown-item">Code of conduct</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#properdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../getting-started/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../books-and-kdp/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/adammatthewsteinberger/engineering-influence/edit/develop/agents-driving.md" class="nav-link">Edit on adammatthewsteinberger/engineering-influence
+                                    </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#driving-it-from-another-ai" class="nav-link">Driving it from another AI</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#why-the-command-line-and-not-a-server" class="nav-link">Why the command line, and not a server</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-quick-path-the-skill" class="nav-link">The quick path: the skill</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#for-any-other-agent-paste-this" class="nav-link">For any other agent: paste this</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-the-agent-sees" class="nav-link">What the agent sees</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#when-a-stack-is-running-mcp" class="nav-link">When a stack is running: MCP</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#an-editor-that-speaks-the-agent-client-protocol" class="nav-link">An editor that speaks the Agent Client Protocol</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="driving-it-from-another-ai">Driving it from another AI<a class="headerlink" href="#driving-it-from-another-ai" title="Permanent link">&para;</a></h1>
+<p><strong>BLUF:</strong> Any agent with a shell (Claude Code, or another LLM that can run commands) can write a book for you
+with one command, <code>ei book create</code>. Install the skill and ask in plain words; the agent checks the machine,
+starts the run in the background, reads the exit code, and comes back to you before it spends anything extra.
+Use the MCP server only when a stack is already running.</p>
+<pre><code class="language-bash">curl -fsSL https://raw.githubusercontent.com/adammatthewsteinberger/engineering-influence/main/install.sh | sh -s -- --with-claude-skill
+</code></pre>
+<p>Then, in Claude Code:</p>
+<blockquote>
+<p>Use engineering-influence to write a non-fiction book about keeping herbs alive indoors. My author profile is
+at ~/.config/engineering-influence/author.toml and the budget is 5 dollars.</p>
+</blockquote>
+<h2 id="why-the-command-line-and-not-a-server">Why the command line, and not a server<a class="headerlink" href="#why-the-command-line-and-not-a-server" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><strong>Daniel:</strong> I wired three MCP servers into my agent last month and spent a weekend on credentials. Is this a
+fourth weekend?</p>
+<p><strong>Professor Feynman:</strong> What does your agent already know how to do without being taught?</p>
+<p><strong>Daniel:</strong> Run a command and read what comes back.</p>
+<p><strong>Professor Feynman:</strong> Then give it a command. Think of a vending machine against a restaurant. The restaurant
+needs a kitchen, staff and a table before you get a sandwich. The machine needs a coin and a button. For one
+book, <code>ei book create</code> is the machine: one process, a file for its memory, no server, no key.</p>
+<p><strong>Daniel:</strong> A vending machine tells me nothing while it works. How does the agent know what happened?</p>
+<p><strong>Professor Feynman:</strong> By the number the command leaves behind. Zero: the book is written. One: it failed,
+and what it made is kept. Two: it never started. Three: it stopped to ask for more money. An agent can
+branch on four numbers far more reliably than it can read a paragraph.</p>
+<p><strong>Daniel:</strong> Three is the one that worries me. I do not want an agent deciding to spend.</p>
+<p><strong>Professor Feynman:</strong> Nor do I. On three, nothing more is spent until someone runs it again with
+<code>--approve-spend</code>, and the skill tells the agent to ask you first. That is the limit of the comparison, by
+the way: a machine keeps your coin. This one stops and waits.</p>
+<p><strong>Daniel:</strong> So the restaurant is for when I am feeding a crowd.</p>
+<p><strong>Professor Feynman:</strong> Many runs, several machines, other programs calling in. Then you run the stack, and
+the agent talks to it over MCP. Until then, it is a weekend you do not need to spend.</p>
+<p><strong>Daniel:</strong> One command, four numbers, and it asks me before it spends. I will start with the machine.</p>
+</blockquote>
+<h2 id="the-quick-path-the-skill">The quick path: the skill<a class="headerlink" href="#the-quick-path-the-skill" title="Permanent link">&para;</a></h2>
+<p>The skill is one Markdown file,
+<a href="https://github.com/adammatthewsteinberger/engineering-influence/blob/main/examples/claude-code/engineering-influence/SKILL.md"><code>examples/claude-code/engineering-influence/SKILL.md</code></a>.
+The installer copies it to <code>~/.claude/skills/engineering-influence/SKILL.md</code> when you pass <code>--with-claude-skill</code>.
+To add it by hand:</p>
+<pre><code class="language-bash">mkdir -p ~/.claude/skills/engineering-influence
+curl -fsSL -o ~/.claude/skills/engineering-influence/SKILL.md \
+  https://raw.githubusercontent.com/adammatthewsteinberger/engineering-influence/main/examples/claude-code/engineering-influence/SKILL.md
+</code></pre>
+<p>It teaches the agent the five steps below and four rules: never invent an author profile, never approve spend
+without your yes, never run a paid evaluation unasked, and never call a book finished unless the exit code
+was <code>0</code>.</p>
+<h2 id="for-any-other-agent-paste-this">For any other agent: paste this<a class="headerlink" href="#for-any-other-agent-paste-this" title="Permanent link">&para;</a></h2>
+<p>An agent without the skill needs only these instructions. They are complete.</p>
+<pre><code class="language-text">You can write a book with the `ei` command. Follow these steps exactly.
+
+1. Run `ei doctor --ready`. If it exits non-zero, stop and tell me each FAIL line. Do not start a run.
+2. Ask me for: the idea, the kind (nonfiction or novel), the path to my author profile, and a budget in
+   dollars. Never write an author profile yourself.
+3. Start the run in the background, because it takes a long time:
+     ei book create --kind KIND &quot;IDEA&quot; --budget-usd N --out ./BOOK --profile PROFILE &gt; ./BOOK.log 2&gt;&amp;1
+   --out must be a new or empty folder.
+4. When it ends, read the exit code:
+     0  the book is written: the files are in ./BOOK/run/book/ and the report is ./BOOK/run/quality-report.json
+     1  the run failed, and a failed run is final: tell me the `issue:` lines in ./BOOK.log. What it made is
+        still in ./BOOK/
+     2  it could not start: tell me the error message
+     3  it stopped to ask for more budget: ASK ME. Only if I say yes, run
+          ei book create --out ./BOOK --resume --approve-spend
+5. To continue a run that was interrupted (a crash, a closed terminal):
+     ei book create --out ./BOOK --resume
+   Finished stages are never run or paid for again. A run that ended in failure (exit 1) is final and
+   --resume will not retry it: tell me, and start a new run with a new --out if I ask.
+
+Never pass --approve-spend or --ignore-estimate unless I agreed to that spend in this conversation.
+Never set EI_ALLOW_PAID or run `ei evaluate` unless I asked for a paid evaluation.
+Report what the quality report says, warnings included. Nothing is uploaded anywhere.
+</code></pre>
+<h2 id="what-the-agent-sees">What the agent sees<a class="headerlink" href="#what-the-agent-sees" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Where</th>
+<th>What</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Standard output</td>
+<td>An <code>estimate:</code> line, then one <code>stage: outcome</code> line as each stage finishes, then a summary line</td>
+</tr>
+<tr>
+<td>Standard error</td>
+<td>Errors, and one <code>issue: CODE: detail</code> line for each issue the run recorded</td>
+</tr>
+<tr>
+<td><code>BOOK/run/quality-report.json</code></td>
+<td>The machine-readable result: <code>status</code>, errors, warnings, the files with checksums, and a <code>spend</code> block</td>
+</tr>
+<tr>
+<td><code>BOOK.state/</code></td>
+<td>The run's memory. It is what <code>--resume</code> reads. Leave it alone</td>
+</tr>
+</tbody>
+</table>
+<p>There is no <code>--json</code> flag on <code>ei book create</code>: the quality report is the structured output. Every flag and the
+full meaning of each exit code is in <a href="../interactions/#cli">INTERACTIONS.md</a>.</p>
+<p><strong>Long runs.</strong> A book takes longer than most agents let a foreground command run (Claude Code stops one at ten
+minutes), so the run goes in the background and the agent reads the log.</p>
+<h2 id="when-a-stack-is-running-mcp">When a stack is running: MCP<a class="headerlink" href="#when-a-stack-is-running-mcp" title="Permanent link">&para;</a></h2>
+<p><code>ei serve mcp</code> runs the stack's MCP server over stdio. It offers the same runs the REST API does.</p>
+<p><strong>What must already be true:</strong></p>
+<ol>
+<li>A database and a broker are running and reachable from the machine the agent is on.</li>
+<li>The database is migrated: <code>ei db upgrade</code>. The MCP server checks this and does not migrate.</li>
+<li>A worker is running: <code>ei serve worker</code>. The MCP server only saves a run and queues it.</li>
+<li>The worker has a model, a search, an author profile and the TeX tools, or its books will not build.</li>
+</ol>
+<p>Register it with the host. For Claude Code:</p>
+<pre><code class="language-bash">claude mcp add engineering-influence \
+  --env EI_DATABASE_URL=postgresql+psycopg://USER:PASSWORD@HOST:5432/DB \
+  --env EI_RABBITMQ_URL=amqp://USER:PASSWORD@HOST:5672/ \
+  -- ei serve mcp
+</code></pre>
+<p>For a host that reads a JSON file:</p>
+<pre><code class="language-json">{&quot;mcpServers&quot;: {&quot;engineering-influence&quot;: {&quot;command&quot;: &quot;ei&quot;, &quot;args&quot;: [&quot;serve&quot;, &quot;mcp&quot;],
+  &quot;env&quot;: {&quot;EI_DATABASE_URL&quot;: &quot;postgresql+psycopg://...&quot;, &quot;EI_RABBITMQ_URL&quot;: &quot;amqp://...&quot;}}}}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>What the agent does with it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>create_run</code></td>
+<td>Starts a book run from a brief: <code>{"schema_version": 1, "kind": "nonfiction", "idea": "…", "budget_micro_usd": 5000000}</code></td>
+</tr>
+<tr>
+<td><code>get_run</code>, <code>list_runs</code></td>
+<td>Watches a run. Nothing is pushed, so the agent polls</td>
+</tr>
+<tr>
+<td><code>resume_run</code>, <code>cancel_run</code></td>
+<td>Continues a parked run, or stops one</td>
+</tr>
+<tr>
+<td><code>read_artifact</code></td>
+<td>Reads one stored file, up to 1 MiB</td>
+</tr>
+<tr>
+<td><code>grant_run</code>, <code>deny_run</code></td>
+<td>Answers a run's request for more budget. <strong>Offered only when the operator set <code>EI_MCP_ALLOW_SPEND</code></strong></td>
+</tr>
+<tr>
+<td><code>start_pipeline</code></td>
+<td>The older stage pipeline, not a book run</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Limits to know before you choose this path:</strong></p>
+<ul>
+<li>A run started over MCP may be given at most <code>EI_MCP_MAX_RUN_BUDGET_MICRO_USD</code> (five dollars by default);
+  more is refused with <code>BUDGET_ABOVE_LIMIT</code>.</li>
+<li>A file over 1 MiB, which a book's PDF usually is, cannot be read over MCP (<code>ARTIFACT_TOO_LARGE</code>). Fetch it
+  with <code>GET /v1/runs/{id}/artifacts/{name}</code> and an API key, or with <code>ei run export RUN_ID DIRECTORY</code>.</li>
+<li>The example stack (<code>sh examples/up.sh</code>) publishes only the API's port, so a server started on your own
+  machine cannot reach its database or broker. Point the server at a database and broker you can reach.</li>
+<li>The server has no authentication. It is a local child process of the host and must never be put on a network.</li>
+<li>This path has been tested with scripted clients, not with Claude Code against a live stack.</li>
+</ul>
+<p>The full tool reference is in <a href="../interactions/#mcp-server">INTERACTIONS.md</a>, and the settings in
+<a href="../configuration/#running-the-stack">CONFIGURATION.md</a>.</p>
+<h2 id="an-editor-that-speaks-the-agent-client-protocol">An editor that speaks the Agent Client Protocol<a class="headerlink" href="#an-editor-that-speaks-the-agent-client-protocol" title="Permanent link">&para;</a></h2>
+<p><code>ei acp</code> serves the Agent Client Protocol over standard input and output, with pushed progress and a spend
+question the client answers. It also needs the database and the broker. Claude Code is an MCP host, not an ACP
+client, so this is for editors that speak ACP: <a href="../interactions/#agent-client-protocol">INTERACTIONS.md</a>.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://properdocs.org/">ProperDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="properdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="properdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="properdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="properdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

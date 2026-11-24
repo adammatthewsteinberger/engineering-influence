@@ -1,6 +1,6 @@
 # engineering-influence
 
-> Writes a complete book, non-fiction or a novel, with nobody in the loop, and produces the files Amazon KDP asks for: interior PDF, EPUB, covers, listing and a quality report. A person reviews and uploads; KDP has no publishing API. Install with one command, write a book with one command (`ei book create`), on a free local model by default. Alpha (0.1.0a2): every stage is built and tested, but the writing has only run against scripted servers, never a live model. Public software only: author-owned books and profiles are not in this repository.
+> Writes a complete book, non-fiction or a novel, with nobody in the loop, and produces the files Amazon KDP asks for: interior PDF, EPUB, covers, listing and a quality report. A person reviews and uploads; KDP has no publishing API. Install with one command, write a book with one command (`ei book create`), on a free local model by default. Public software only: author-owned books and profiles are not in this repository.
 
 Install: `curl -fsSL https://raw.githubusercontent.com/adammatthewsteinberger/engineering-influence/main/install.sh | sh`
 Check: `ei doctor --ready`

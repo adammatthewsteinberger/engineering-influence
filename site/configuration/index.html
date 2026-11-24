@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://adammatthewsteinberger.github.io/engineering-influence/configuration/">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Configuration - engineering-influence</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../stylesheets/vibey.css" rel="stylesheet">
+        <link href="../stylesheets/site.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+        <meta name="description" content="BLUF: Settings come from environment variables, a few files those variables name, and command-line flags. Every security setting fails closed: a missing…">
+    <meta property="og:title" content="Configuration - engineering-influence">
+    <meta property="og:description" content="BLUF: Settings come from environment variables, a few files those variables name, and command-line flags. Every security setting fails closed: a missing…">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://adammatthewsteinberger.github.io/engineering-influence/configuration/">
+    <meta property="og:site_name" content="engineering-influence">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Configuration - engineering-influence">
+    <meta name="twitter:description" content="BLUF: Settings come from environment variables, a few files those variables name, and command-line flags. Every security setting fails closed: a missing…">
+</head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">engineering-influence</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href=".." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Start</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../getting-started/" class="dropdown-item">Getting started</a>
+</li>
+                                    
+<li>
+    <a href="../agents-driving/" class="dropdown-item">Driving it from another AI</a>
+</li>
+                                    
+<li>
+    <a href="../books-and-kdp/" class="dropdown-item">Books and KDP</a>
+</li>
+                                    
+<li>
+    <a href="../novels/" class="dropdown-item">Novels</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Writing books</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../local-model/" class="dropdown-item">The local model</a>
+</li>
+                                    
+<li>
+    <a href="../model-profiles/" class="dropdown-item">Model profiles</a>
+</li>
+                                    
+<li>
+    <a href="../model-catalog/" class="dropdown-item">Model catalog</a>
+</li>
+                                    
+<li>
+    <a href="../model-calls/" class="dropdown-item">Model calls</a>
+</li>
+                                    
+<li>
+    <a href="../research/" class="dropdown-item">Research</a>
+</li>
+                                    
+<li>
+    <a href="../prompts/" class="dropdown-item">Prompts</a>
+</li>
+                                    
+<li>
+    <a href="../skills/" class="dropdown-item">Skills</a>
+</li>
+                                    
+<li>
+    <a href="../plugins/" class="dropdown-item">Plugins</a>
+</li>
+                                    
+<li>
+    <a href="../tool-lock/" class="dropdown-item">Tool lock</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../interactions/" class="dropdown-item">Interfaces</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Configuration</a>
+</li>
+                                    
+<li>
+    <a href="../compatibility/" class="dropdown-item">Compatibility</a>
+</li>
+                                    
+<li>
+    <a href="../architecture/" class="dropdown-item">Architecture</a>
+</li>
+                                    
+<li>
+    <a href="../threat-model/" class="dropdown-item">Threat model</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Operating</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../worker-image/" class="dropdown-item">Worker image</a>
+</li>
+                                    
+<li>
+    <a href="../troubleshooting/" class="dropdown-item">Troubleshooting</a>
+</li>
+                                    
+<li>
+    <a href="../releasing/" class="dropdown-item">Releasing</a>
+</li>
+                                    
+<li>
+    <a href="../documentation-site/" class="dropdown-item">Documentation site</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Quality</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../testing/" class="dropdown-item">Testing</a>
+</li>
+                                    
+<li>
+    <a href="../evaluation/" class="dropdown-item">Evaluation</a>
+</li>
+                                    
+<li>
+    <a href="../live-smoke-test/" class="dropdown-item">Live smoke test</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Project</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../contributing/" class="dropdown-item">Contributing</a>
+</li>
+                                    
+<li>
+    <a href="../style/" class="dropdown-item">How these documents are written</a>
+</li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Decision records</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../adr/" class="dropdown-item">Overview</a>
+</li>
+            
+<li>
+    <a href="../adr/0001-vibey-integration-boundary/" class="dropdown-item">ADR 0001: Isolate vibey behind ports</a>
+</li>
+            
+<li>
+    <a href="../adr/0002-audience-priority-and-sovereign-agent-doctrine/" class="dropdown-item">ADR 0002: Audience priority and sovereign agent doctrine</a>
+</li>
+            
+<li>
+    <a href="../adr/0003-definition-of-1-0/" class="dropdown-item">ADR 0003: Definition of 1.0</a>
+</li>
+            
+<li>
+    <a href="../adr/0004-versioning-compatibility-and-deprecation/" class="dropdown-item">ADR 0004: Versioning, compatibility and deprecation</a>
+</li>
+            
+<li>
+    <a href="../adr/0005-release-flow-and-changelog-fragments/" class="dropdown-item">ADR 0005: Release flow and changelog fragments</a>
+</li>
+            
+<li>
+    <a href="../adr/0006-onion-layers-and-interfaces/" class="dropdown-item">ADR 0006: Onion layers, interfaces and one class per file</a>
+</li>
+            
+<li>
+    <a href="../adr/0007-model-transport-plain-httpx/" class="dropdown-item">ADR 0007: Models are called over plain httpx, behind `ModelInterface`</a>
+</li>
+            
+<li>
+    <a href="../adr/0008-tools-for-the-model/" class="dropdown-item">ADR 0008: The model gets tools, each stage gets only the ones it names</a>
+</li>
+            
+<li>
+    <a href="../adr/0009-branch-driven-publishing/" class="dropdown-item">ADR 0009: Publishing follows the branch: develop to TestPyPI, main to PyPI</a>
+</li>
+            
+<li>
+    <a href="../adr/0010-chapters-are-drafted-in-order-in-one-stage/" class="dropdown-item">ADR 0010: Chapters are drafted in order, inside one stage</a>
+</li>
+            
+<li>
+    <a href="../adr/0011-run-inputs/" class="dropdown-item">ADR 0011: Run inputs are untrusted text carried inside the brief</a>
+</li>
+    </ul>
+  </li>
+                                    
+<li>
+    <a href="../changelog/" class="dropdown-item">Changelog</a>
+</li>
+                                    
+<li>
+    <a href="../security/" class="dropdown-item">Security</a>
+</li>
+                                    
+<li>
+    <a href="../support/" class="dropdown-item">Support</a>
+</li>
+                                    
+<li>
+    <a href="../code-of-conduct/" class="dropdown-item">Code of conduct</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#properdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../interactions/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../compatibility/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/adammatthewsteinberger/engineering-influence/edit/develop/configuration.md" class="nav-link">Edit on adammatthewsteinberger/engineering-influence
+                                    </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#configuration" class="nav-link">Configuration</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#why-a-missing-setting-stops-everything" class="nav-link">Why a missing setting stops everything</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#security-settings" class="nav-link">Security settings</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#webhook-signature-v1" class="nav-link">Webhook signature (v1)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#outbound-destinations" class="nav-link">Outbound destinations</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#not-covered-yet" class="nav-link">Not covered yet</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#observability" class="nav-link">Observability</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#running-the-stack" class="nav-link">Running the stack</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#a-free-local-web-search-searxng" class="nav-link">A free local web search (SearXNG)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-tool-lock-third-party-tool-servers" class="nav-link">The tool lock (third-party tool servers)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-skill-lock-installed-prompt-text" class="nav-link">The skill lock (installed prompt text)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-plugin-lock-installed-bundles" class="nav-link">The plugin lock (installed bundles)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-author-profile-your-own-details" class="nav-link">The author profile (your own details)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h1>
+<p><strong>BLUF:</strong> Settings come from environment variables, a few files those variables name, and command-line flags.
+Every security setting fails closed: a missing or weak value stops the process instead of opening it. To write one
+book you need only an author profile. To run the stack you need a database URL, a broker URL and API keys. Every
+<code>EI_*</code> variable the code reads is in one index on this page.</p>
+<p>Book configuration is intentionally separate from author profile configuration.
+The public package accepts a project title, slug, governing postulates and the
+stages to run. Target formats and an autonomy policy are planned, not accepted yet. Private books repositories may add a profile that
+fills the governing-postulates slot without changing the public domain model.</p>
+<p>The book config, the brief and the run summary schemas are versioned under <code>contracts/</code> and frozen by snapshot
+tests (<a href="../compatibility/">COMPATIBILITY.md</a>).</p>
+<h2 id="why-a-missing-setting-stops-everything">Why a missing setting stops everything<a class="headerlink" href="#why-a-missing-setting-stops-everything" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><strong>Daniel:</strong> I left the API keys blank to try it quickly and the server refused to start. Most tools just run
+open in that case. Why so strict?</p>
+<p><strong>Professor Feynman:</strong> What does a shop do when the lock on the front door is broken?</p>
+<p><strong>Daniel:</strong> A careless one props the door open. A careful one stays shut until the lock is fixed.</p>
+<p><strong>Professor Feynman:</strong> That is fail closed. An unset key could mean 'I forgot' or 'I want no security', and a
+program cannot tell which. So this one assumes you forgot, and stays shut. It also tells you which variable is
+wrong, and never prints the value.</p>
+<p><strong>Daniel:</strong> Annoying on day one.</p>
+<p><strong>Professor Feynman:</strong> And it is the reason there is no day when you discover the door was open all along. The
+picture has a limit: a closed shop loses customers, and a stopped worker loses time. So a setting that is merely
+optional, like the log level, has a default instead.</p>
+<p><strong>Daniel:</strong> Required things stop the process, optional things have defaults, and the error names the variable. I
+will look mine up in the index.</p>
+</blockquote>
+<h2 id="security-settings">Security settings<a class="headerlink" href="#security-settings" title="Permanent link">&para;</a></h2>
+<p>Every security control fails closed: a missing or weak setting stops the service
+instead of opening it.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>EI_API_KEYS</code></td>
+<td>Comma-separated API keys, each at least 24 characters. Required: the REST API cannot be built without a guard, and the guard cannot be built without a key.</td>
+</tr>
+<tr>
+<td>Rate limits</td>
+<td><code>TokenBucketRateLimiter(burst, per_second)</code>. A client address is limited before its key is compared, then each key has its own budget.</td>
+</tr>
+<tr>
+<td>Webhook secret</td>
+<td>Passed to <code>WebhookDelivery.deliver</code> and <code>WebhookSigner</code>; read it with <code>EnvSecretProvider().require(name)</code> so an absent secret raises <code>SECRET_MISSING</code> (HTTP 503).</td>
+</tr>
+<tr>
+<td>Webhook tolerance</td>
+<td><code>SignedRequestVerifier(tolerance_seconds=300)</code>: deliveries older or newer than this are refused.</td>
+</tr>
+</tbody>
+</table>
+<p>Clients send the key as <code>Authorization: Bearer &lt;key&gt;</code> (what the SDK does) or
+<code>X-API-Key: &lt;key&gt;</code>.</p>
+<h2 id="webhook-signature-v1">Webhook signature (v1)<a class="headerlink" href="#webhook-signature-v1" title="Permanent link">&para;</a></h2>
+<p><code>X-Engineering-Influence-Signature: v1=&lt;hex&gt;</code> is <code>HMAC-SHA256(secret, "&lt;timestamp&gt;." + body)</code>,
+and <code>X-Engineering-Influence-Timestamp</code> carries the Unix time. Verify the raw
+bytes, not re-serialised JSON. A receiver must check the signature, the
+timestamp window and replays, in that order: <code>SignedRequestVerifier</code> does.</p>
+<h2 id="outbound-destinations">Outbound destinations<a class="headerlink" href="#outbound-destinations" title="Permanent link">&para;</a></h2>
+<p><code>WebhookDelivery</code> requires an <code>OutboundUrlPolicyInterface</code>. <code>PublicHttpsUrlPolicy</code>
+allows only <code>https</code> URLs without embedded credentials whose every resolved
+address is publicly routable, which blocks loopback, private ranges and cloud
+metadata addresses. It resolves the name when called, so <strong>webhook delivery is still open to DNS
+rebinding</strong>; route deliveries to untrusted URLs through an egress proxy as well. <code>fetch_url</code> and remote
+MCP servers do not have this gap: they go through <code>PublicHttpsUrlPinner</code>, which resolves once and connects to
+the address it checked.</p>
+<h2 id="not-covered-yet">Not covered yet<a class="headerlink" href="#not-covered-yet" title="Permanent link">&para;</a></h2>
+<ul>
+<li>No upload or inbound-webhook HTTP route exists, so <code>AttachmentUploadInspector</code>
+  and <code>SignedRequestVerifier</code> are building blocks that no endpoint uses yet.</li>
+<li>The MCP server (stdio) and the CLI are local processes and are not
+  authenticated; do not expose them on a network.</li>
+<li>Request body size limits, TLS termination, and API key rotation are
+  deployment concerns for the reverse proxy and are not implemented here.</li>
+<li><code>AttachmentUploadInspector</code> and <code>ConfinedPathGuard</code> exist but no route uses them yet, because the service accepts no uploads.</li>
+</ul>
+<h2 id="observability">Observability<a class="headerlink" href="#observability" title="Permanent link">&para;</a></h2>
+<p>Wire these adapters in the process entry point. Nothing is global except what
+<code>vibey_bootstrap</code> itself keeps (counters, latency statistics, alert state).</p>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>JSON logs</td>
+<td><code>JsonLoggingConfigurator(level).configure()</code>: one JSON line per record on stderr, secrets masked, <code>correlation_id</code> on every line. Safe to call twice.</td>
+</tr>
+<tr>
+<td>Correlation</td>
+<td><code>ContextVarCorrelation</code> plus <code>CorrelatingQueue(queue, correlation)</code> on the API side and <code>CorrelatedPhaseHandler(handler, correlation)</code> on the worker side.</td>
+</tr>
+<tr>
+<td>Request metrics</td>
+<td><code>ApiObservability(readiness, metrics, correlation)</code> passed to <code>ApiApplication</code>.</td>
+</tr>
+<tr>
+<td>Health</td>
+<td><code>ReadinessProbe((TcpHealthCheck("postgres", host, 5432), TcpHealthCheck("rabbitmq", host, 5672)))</code>. <code>ToolchainHealthCheck()</code> exists but the API does not add it, since the runtime image has no TeX.</td>
+</tr>
+<tr>
+<td>Service spans</td>
+<td><code>TracedStartPipeline</code>, <code>TracedRunPhase</code>, <code>TracedDispatchOutbox</code> wrap the services.</td>
+</tr>
+<tr>
+<td>Crash alerts</td>
+<td><code>ProcessCrashHooks().install()</code>, once per process.</td>
+</tr>
+<tr>
+<td>Worker liveness</td>
+<td><code>WorkerHeartbeat(metrics, alerts).start()</code>, <code>.record_progress()</code> per job, <code>.stop()</code>.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="endpoints">Endpoints<a class="headerlink" href="#endpoints" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Auth</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /health/live</code></td>
+<td>none</td>
+<td>Always <code>{"status": "alive"}</code> while the process runs.</td>
+</tr>
+<tr>
+<td><code>GET /health/ready</code></td>
+<td>none</td>
+<td><code>200 {"status": "ready"}</code> or <code>503 {"status": "unavailable"}</code>. It never names the failing dependency; that is in <code>/metrics</code> and the logs.</td>
+</tr>
+<tr>
+<td><code>GET /metrics</code></td>
+<td>API key</td>
+<td>Prometheus text format. Give the scraper a bearer token.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="correlation">Correlation<a class="headerlink" href="#correlation" title="Permanent link">&para;</a></h3>
+<p>Every request gets one id. It is the trace id of an inbound <code>traceparent</code>, else a
+well-formed <code>X-Request-ID</code> (8 to 64 characters of <code>A-Z a-z 0-9 . _ -</code>), else a new
+random one. Anything else is replaced, never echoed, because the id lands in every
+log line. The id is returned in <code>X-Request-ID</code>, copied into each queued job's
+<code>correlation_id</code> (and a <code>traceparent</code> when it is a 32-hex trace id), restored by the
+worker, and sent on outbound webhooks as <code>X-Request-ID</code> and <code>traceparent</code>.</p>
+<h3 id="alerts-and-dead-letters">Alerts and dead letters<a class="headerlink" href="#alerts-and-dead-letters" title="Permanent link">&para;</a></h3>
+<p>A webhook that fails is retried on every dispatch and counted. After
+<code>max_attempts</code> (default 5) it is dead-lettered, which stops retries, increments
+<code>webhook.dead_lettered</code> and raises an <code>error</code> alert. One bad event never blocks the
+events behind it.</p>
+<p><code>vibey_bootstrap</code> sends only <code>CRITICAL</code> alerts at once, holds <code>ERROR</code> and <code>WARN</code>
+in a digest that nothing here drains, and only records alerts when no recipients
+are configured. So <code>BootstrapAlertDispatcher</code> always writes the alert to the log
+first, at its own level. <strong>Alert on those log lines</strong> (<code>message</code> starting with
+<code>alert:</code>, fields <code>alert_severity</code> and <code>dedup_key</code>) rather than relying on mail.</p>
+<p>The outbox table gained a <code>dead_at</code> column before migrations existed. <code>ei db upgrade</code> adopts an
+existing table as it is and does not add the column, so recreate any database created before that
+change.</p>
+<h3 id="what-the-observability-does-not-tell-you">What the observability does not tell you<a class="headerlink" href="#what-the-observability-does-not-tell-you" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Log masking is by field name. A secret written into the message text itself is
+  not masked, so pass values as <code>extra</code> fields.</li>
+<li>Counters and latencies are per process. Scrape every replica.</li>
+<li><code>ToolchainHealthCheck</code> and <code>TcpHealthCheck</code> check presence and reachability,
+  not that the dependency is healthy. There is no LLM-runner health check and no
+  alert on budget exhaustion; a budget stop shows as a run awaiting consent.</li>
+<li><code>ei serve api</code> and <code>ei serve worker</code> build this wiring for you. If you embed the
+  application in your own process, wire the adapters above yourself.</li>
+</ul>
+<h2 id="running-the-stack">Running the stack<a class="headerlink" href="#running-the-stack" title="Permanent link">&para;</a></h2>
+<p><code>ei serve api</code> and <code>ei serve worker</code> read their settings from the environment. A
+missing or invalid value prints which variable is wrong and exits with status 2; it
+never prints a traceback, which could carry a connection string.</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Needed by</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>EI_DATABASE_URL</code></td>
+<td>both</td>
+<td>SQLAlchemy URL, for example <code>postgresql+psycopg://user:pw@host:5432/db</code>. Required.</td>
+</tr>
+<tr>
+<td><code>EI_RABBITMQ_URL</code></td>
+<td>both</td>
+<td><code>amqp://user:pw@host:5672/</code>. Required.</td>
+</tr>
+<tr>
+<td><code>EI_API_KEYS</code></td>
+<td>API</td>
+<td>Comma-separated keys, each at least 24 characters. Required: with none, the API will not start.</td>
+</tr>
+<tr>
+<td><code>EI_QUEUE_NAME</code></td>
+<td>both</td>
+<td>Job queue name. Default <code>engineering-influence.jobs</code>; the dead-letter queue is that name plus <code>.dead</code>.</td>
+</tr>
+<tr>
+<td><code>EI_HOST</code>, <code>EI_PORT</code></td>
+<td>API</td>
+<td>Default <code>127.0.0.1</code> and <code>8000</code>. A bare run is never reachable from the network.</td>
+</tr>
+<tr>
+<td><code>EI_LOG_LEVEL</code></td>
+<td>both</td>
+<td><code>DEBUG</code> to <code>CRITICAL</code>. Default <code>INFO</code>.</td>
+</tr>
+<tr>
+<td><code>EI_RATE_BURST</code>, <code>EI_RATE_PER_SECOND</code></td>
+<td>API</td>
+<td>Token-bucket limits, default 30 and 10.</td>
+</tr>
+<tr>
+<td><code>EI_MAX_RUN_BUDGET_MICRO_USD</code></td>
+<td>API, <code>ei run</code>, MCP, ACP</td>
+<td><strong>The most any one run may be given, in micro-dollars, at its start and after every grant.</strong> Not set by default (no ceiling). A bigger brief, or a grant that would take a cap over it, is refused with <code>BUDGET_ABOVE_LIMIT</code> (HTTP 422) before anything is saved or queued.</td>
+</tr>
+<tr>
+<td><code>EI_MAX_OUTSTANDING_BUDGET_MICRO_USD</code></td>
+<td>API, <code>ei run</code>, MCP, ACP</td>
+<td><strong>The most unspent budget all runs may hold together</strong>: each unfinished run's cap less what it has spent (a parked or waiting run still counts; a completed, failed or cancelled one does not). Not set by default. A new run or a grant that would take the total over it is refused with <code>OUTSTANDING_BUDGET_EXCEEDED</code> (422). A client that starts many runs, or is granted more again and again, runs out of room instead of out of money. A check and the save that follows it are one locked step, so many requests at once to one API or MCP process cannot each pass against the same total; two <em>processes</em> (the API and a command line, say) each hold their own lock, so across processes it is a check with a window of a few milliseconds. <code>ei book create</code> runs on your own machine and is not held to it.</td>
+</tr>
+<tr>
+<td><code>EI_MCP_MAX_RUN_BUDGET_MICRO_USD</code></td>
+<td>MCP server</td>
+<td>The most a run started over MCP may be given, in micro-dollars (default 5,000,000, five dollars). A bigger brief is refused with <code>BUDGET_ABOVE_LIMIT</code>. It bounds one run, not how many an agent starts.</td>
+</tr>
+<tr>
+<td><code>EI_MCP_ALLOW_SPEND</code></td>
+<td>MCP server</td>
+<td><code>1</code>, <code>true</code> or <code>yes</code> lets <code>ei serve mcp</code> offer <code>grant_run</code> and <code>deny_run</code>, so an agent can answer a run's request for more budget. Off by default: an agent can then start, watch, resume, cancel and read runs, but cannot raise a run's cap.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="every-variable-and-where-it-is-described">Every variable, and where it is described<a class="headerlink" href="#every-variable-and-where-it-is-described" title="Permanent link">&para;</a></h3>
+<p>A test (<code>tests/unit/test_docs_match_code.py</code>) fails when the code reads an <code>EI_*</code> variable that is not in this index, or
+when this index names one nothing uses. The two <code>compose only</code> rows are read by Docker Compose, not by the program.</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>For</th>
+<th>Described in</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>EI_ALLOW_PAID</code></td>
+<td>lets <code>ei evaluate</code> spend money; without it the command refuses</td>
+<td><a href="../evaluation/">EVALUATION.md</a></td>
+</tr>
+<tr>
+<td><code>BRAVE_SEARCH_API_KEY</code> (not an <code>EI_</code> variable)</td>
+<td>a Brave Search key, the backup search</td>
+<td><a href="../research/">RESEARCH.md</a></td>
+</tr>
+<tr>
+<td><code>EI_API_KEYS</code></td>
+<td>the API's keys</td>
+<td><a href="#security-settings">Security settings</a></td>
+</tr>
+<tr>
+<td><code>EI_API_PORT</code> (compose only)</td>
+<td>the host port the API is published on, default 8000</td>
+<td><code>examples/.env.example</code>, <a href="../troubleshooting/">TROUBLESHOOTING.md</a></td>
+</tr>
+<tr>
+<td><code>EI_AUTHOR_PROFILE</code></td>
+<td>the author's own details file; a run reads it only when this names it</td>
+<td><a href="#the-author-profile-your-own-details">The author profile</a></td>
+</tr>
+<tr>
+<td><code>EI_BUILD_STRICT_RELEASE</code></td>
+<td>makes any release warning fail a run's <code>build</code> stage</td>
+<td><a href="#limits-to-know">Limits to know</a></td>
+</tr>
+<tr>
+<td><code>EI_DATABASE_URL</code></td>
+<td>the database</td>
+<td><a href="#running-the-stack">Running the stack</a></td>
+</tr>
+<tr>
+<td><code>EI_EVAL_JUDGE_PROFILE</code></td>
+<td>the model profile that judges books in <code>ei evaluate</code></td>
+<td><a href="../evaluation/">EVALUATION.md</a></td>
+</tr>
+<tr>
+<td><code>EI_HOST</code>, <code>EI_PORT</code></td>
+<td>where the API listens</td>
+<td><a href="#running-the-stack">Running the stack</a></td>
+</tr>
+<tr>
+<td><code>EI_LOCAL_MODEL</code>, <code>EI_LOCAL_URL</code></td>
+<td>the free local model's name and address</td>
+<td><a href="../local-model/">LOCAL_MODEL.md</a></td>
+</tr>
+<tr>
+<td><code>EI_LOG_LEVEL</code></td>
+<td>log verbosity</td>
+<td><a href="#running-the-stack">Running the stack</a></td>
+</tr>
+<tr>
+<td><code>EI_MAX_OUTSTANDING_BUDGET_MICRO_USD</code></td>
+<td>the most unspent budget all runs may hold together</td>
+<td><a href="#running-the-stack">Running the stack</a></td>
+</tr>
+<tr>
+<td><code>EI_MAX_RUN_BUDGET_MICRO_USD</code></td>
+<td>the most any one run may be given</td>
+<td><a href="#running-the-stack">Running the stack</a></td>
+</tr>
+<tr>
+<td><code>EI_MCP_ALLOW_SPEND</code></td>
+<td>lets <code>ei serve mcp</code> offer <code>grant_run</code> and <code>deny_run</code></td>
+<td><a href="#running-the-stack">Running the stack</a></td>
+</tr>
+<tr>
+<td><code>EI_MCP_MAX_RUN_BUDGET_MICRO_USD</code></td>
+<td>the most a run started over MCP may be given</td>
+<td><a href="#running-the-stack">Running the stack</a></td>
+</tr>
+<tr>
+<td><code>EI_MODEL_CATALOG</code>, <code>EI_MODEL_PROFILES</code></td>
+<td>the model price list and the profiles file</td>
+<td><a href="../model-profiles/">MODEL_PROFILES.md</a></td>
+</tr>
+<tr>
+<td><code>EI_PLUGIN_LOCK</code></td>
+<td>the plugin lock file</td>
+<td><a href="#the-plugin-lock-installed-bundles">The plugin lock</a></td>
+</tr>
+<tr>
+<td><code>EI_QUEUE_NAME</code></td>
+<td>the job queue's name</td>
+<td><a href="#running-the-stack">Running the stack</a></td>
+</tr>
+<tr>
+<td><code>EI_RABBITMQ_URL</code></td>
+<td>the broker</td>
+<td><a href="#running-the-stack">Running the stack</a></td>
+</tr>
+<tr>
+<td><code>EI_RATE_BURST</code>, <code>EI_RATE_PER_SECOND</code></td>
+<td>the API's rate limit</td>
+<td><a href="#running-the-stack">Running the stack</a></td>
+</tr>
+<tr>
+<td><code>EI_SEARXNG_PORT</code> (compose only)</td>
+<td>the host port of the local search container, default 8888</td>
+<td><a href="#a-free-local-web-search-searxng">A free local web search</a></td>
+</tr>
+<tr>
+<td><code>EI_SEARXNG_URL</code></td>
+<td>the SearXNG address the research stage searches through</td>
+<td><a href="#a-free-local-web-search-searxng">A free local web search</a></td>
+</tr>
+<tr>
+<td><code>EI_SKILL_LOCK</code></td>
+<td>the skill lock file</td>
+<td><a href="#the-skill-lock-installed-prompt-text">The skill lock</a></td>
+</tr>
+<tr>
+<td><code>EI_STAGE_EXECUTOR</code></td>
+<td>what writes a run's stages: <code>local</code>, <code>model</code> or <code>deterministic</code></td>
+<td><a href="#limits-to-know">Limits to know</a></td>
+</tr>
+<tr>
+<td><code>EI_STAGE_MODEL_PROFILE</code></td>
+<td>the profile the <code>model</code> executor uses</td>
+<td><a href="../model-profiles/">MODEL_PROFILES.md</a></td>
+</tr>
+<tr>
+<td><code>EI_TOOL_LOCK</code></td>
+<td>the tool lock file</td>
+<td><a href="#the-tool-lock-third-party-tool-servers">The tool lock</a></td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-bash">cp examples/.env.example examples/.env     # fill in the three blank values
+docker compose -f examples/docker-compose.yml --env-file examples/.env up -d --build --wait
+</code></pre>
+<p>The database schema is created by <code>ei db upgrade</code>, which reads <code>EI_DATABASE_URL</code> and is safe to
+run again. The compose file runs it once in a <code>migrate</code> service that the API and the worker wait
+for. Outside compose, run it yourself before starting either process; they check the schema
+revision at start-up and exit with <code>the database schema is not at the latest revision</code> if it is not
+current. Upgrade before you roll out a new release, then start the new processes.</p>
+<p><code>examples/compose_smoke.sh</code> does all of this with throwaway credentials, runs a
+two-stage pipeline, checks that a malformed message is dead-lettered, and tears the
+stack down. It needs Docker and <code>curl</code>.</p>
+<p>The compose file has no default credentials and refuses to start without them. Ports
+are published on <code>127.0.0.1</code> only, and the containers run as a non-root user with a
+read-only filesystem and no capabilities.</p>
+<h3 id="what-the-worker-does">What the worker does<a class="headerlink" href="#what-the-worker-does" title="Permanent link">&para;</a></h3>
+<p>For each <code>pipeline.&lt;stage&gt;</code> job it runs the phase, appends <code>phase.completed</code> to the
+ledger, and enqueues the next stage, or appends <code>pipeline.completed</code> after the last. A
+human gate, or an automatic gate that rejects, appends <code>gate.awaiting</code> and stops the
+pipeline there.</p>
+<p>For each <code>run.advance</code> job (payload <code>{run_id, stage, attempt}</code>) it advances a book run one
+stage: it executes the run's current stage, saves the run, and queues the next stage. Redelivered
+messages are safe. A message for a stage the run already passed is skipped, a transient failure
+re-queues the stage with the next attempt up to three, running out of credit parks the run on
+its stage, and any other failure ends the run with a blocking issue. Every change to the run is
+a compare-and-swap, so two overlapping deliveries cannot overwrite each other. The worker routes
+by the prefix before the first dot: <code>pipeline.*</code> and <code>run.*</code> are handled, and any other kind is
+dead-lettered.</p>
+<p>A run that parks for lack of credit stays parked: further <code>run.advance</code> messages for it are
+skipped until <code>ei run resume RUN_ID</code> moves it back to running and queues its stage. <code>ei run cancel
+RUN_ID</code> ends a run for good; a stage already executing is not interrupted, but its result cannot
+be stored, so the run stays cancelled and nothing more is queued. Both commands change the same
+stored run the worker does, through the same compare-and-swap, and refuse a run that is already
+completed or failed.</p>
+<p>A job that is malformed, or that fails, is rejected without requeue and lands in the
+<code>.dead</code> queue, with an alert for failures. Nothing retries it automatically: inspect it
+and republish it by hand. Stopping the worker finishes the job in flight first.</p>
+<p>A failed run carries one blocking issue that says why: <code>stage-failed</code> (a failure that cannot be retried),
+<code>retries-exhausted</code> (three transient failures in a row) or <code>budget-exceeded</code> (the journal holds more than the cap).</p>
+<h3 id="limits-to-know">Limits to know<a class="headerlink" href="#limits-to-know" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>A run starts from <code>ei run create BRIEF.TOML</code>.</strong> It saves the run and queues its first stage on the broker, and the
+  worker does the stages, as <code>resume</code> does. A run can also be started with <code>POST /v1/runs</code>, the SDK's <code>create_run</code>, the MCP <code>create_run</code> tool, or <code>ei book create</code> (in one process); <code>ei run runs</code> lists them.</li>
+<li><strong>The worker's default is a free local model.</strong> <code>EI_STAGE_EXECUTOR</code> is <code>local</code> unless set:
+  an open-source model (<code>gpt-oss:20b</code>, Apache 2.0) on this machine through Ollama, no key, no cost, and a SearXNG at
+  <code>http://127.0.0.1:8888</code> for research. Nothing is contacted when the worker starts; <a href="../local-model/">LOCAL_MODEL.md</a> says how to
+  set it up and check it (<code>ei doctor --local</code>) and how to point at another model (<code>EI_LOCAL_MODEL</code>, <code>EI_LOCAL_URL</code>). <code>deterministic</code> is the offline
+  placeholder, which writes <code>&lt;stage&gt;.md</code> from the brief's idea at no cost and calls no model; the example compose stack
+  uses it because a container cannot reach the host's <code>127.0.0.1</code>. With
+  <code>EI_STAGE_EXECUTOR=model</code> a model of your own does the stages instead, and the worker refuses to start
+  unless <code>EI_STAGE_MODEL_PROFILE</code> (a profile's name), <code>EI_MODEL_PROFILES</code> and <code>EI_MODEL_CATALOG</code>
+  (the files <code>ei doctor --models</code> checks, see <a href="../model-profiles/">MODEL_PROFILES.md</a>) are set,
+  the profile exists, a price is in force today, and its key is available. A profile file being
+  present never switches it on, because this spends money. Non-fiction and novel runs have stages from the
+  brief to a built book (<a href="../books-and-kdp/">BOOKS_AND_KDP.md</a>). An answer that is refused, cut off or empty stops the run, and so does an
+  outline that cannot be read as numbered chapters (<code>OUTLINE_INVALID</code>; see <a href="../prompts/#the-outline-is-a-format-not-just-prose">PROMPTS.md</a>).
+  Nothing has been run against a live provider.</li>
+<li><strong><code>EI_EVAL_JUDGE_PROFILE</code></strong> (required by <code>ei evaluate</code>): the name of the profile, in <code>EI_MODEL_PROFILES</code>, of the model that scores the
+  evaluation's books. It is named separately; nothing stops you naming the writer's own profile, so do not. <code>ei evaluate</code> refuses to start without it
+  (<code>EVALUATION_JUDGE_REQUIRED</code>) and spends only when <code>EI_ALLOW_PAID=1</code> (<a href="../evaluation/">EVALUATION.md</a>).</li>
+<li><strong><code>EI_BUILD_STRICT_RELEASE</code></strong> (optional, default off): <code>1</code>, <code>true</code> or <code>yes</code> makes a run's <code>build</code> stage build a strict release,
+  so any readiness warning (for example a missing price or its source and date) fails the run. Off, those are warnings in
+  the run's <code>quality-report.json</code>. The build needs the TeX worker image (<a href="../worker-image/">WORKER_IMAGE.md</a>).</li>
+<li><strong>Web search for the research stage.</strong> The research stage gives the model two tools, <code>web_search</code>
+  and <code>fetch_url</code>, so a model-backed run needs a search. Set <code>EI_SEARXNG_URL</code> to a
+  <a href="https://github.com/searxng/searxng">SearXNG</a> instance (free; <code>examples/searxng/</code> runs one locally,
+  see below) and it is tried first. Set <code>BRAVE_SEARCH_API_KEY</code> and Brave is the backup: it is asked
+  only when SearXNG fails, is refused, is rate-limited or finds nothing, so a query reaches Brave
+  only then. With only one of the two set, that one is the search. With neither, the process stops
+  at start (<code>STAGE_SEARCH_NOT_CONFIGURED</code>) before anything is spent. A search sends the query to
+  the instance (which sends it on to its engines) or to Brave. <code>fetch_url</code> reads public https
+  pages only. Neither search adapter has been run against a live service, and nothing here has
+  touched the live internet.</li>
+<li><strong>Retries are immediate.</strong> A transient failure is re-queued with no delay, because the
+  queue port has none yet.</li>
+<li><strong>The runner and gate are placeholders.</strong> <code>DeterministicRunner</code> returns a fixed line
+  of text and <code>NonEmptyArtifactGate</code> accepts anything non-blank. They let the whole
+  pipeline run offline; a model-backed runner and rubric gates implement the same interfaces.</li>
+<li><strong>Delivery is at least once.</strong> A worker that dies between writing the ledger and
+  acknowledging the job runs it again and records the stage twice.</li>
+<li><strong>Nothing resolves a human gate yet.</strong> There is no endpoint for it, so a pipeline that
+  reaches one stays parked.</li>
+<li><strong>No webhook is emitted.</strong> The outbox, signing and dispatch exist, but no service
+  creates outbox intents, and the worker does not run the dispatcher.</li>
+<li><strong>The read API covers book runs only.</strong> <code>GET /v1/runs/{id}</code> and <code>ei run status</code> show a run;
+  pipeline progress is still visible only in the ledger table and the logs.</li>
+<li><strong>The base images are tags, not digests</strong>, and the worker has no container
+  healthcheck; it logs a heartbeat and raises a critical alert if it stalls.</li>
+</ul>
+<h2 id="a-free-local-web-search-searxng">A free local web search (SearXNG)<a class="headerlink" href="#a-free-local-web-search-searxng" title="Permanent link">&para;</a></h2>
+<p><code>examples/searxng/</code> runs SearXNG on your machine, so the research stage can search without an account or
+a key. It is published on <code>127.0.0.1</code> only, refuses to start without a secret, and its <code>settings.yml</code>
+turns on the <code>json</code> format the adapter asks for (without it SearXNG answers 403).</p>
+<pre><code class="language-sh">export SEARXNG_SECRET=&quot;$(openssl rand -hex 32)&quot;
+docker compose -f examples/searxng/docker-compose.yml up -d --wait
+export EI_SEARXNG_URL=http://127.0.0.1:8888
+</code></pre>
+<p>What is and is not checked: the compose file is validated by <code>docker compose config</code> and its settings are
+pinned by tests, and it has been started once by hand: the container went healthy and the adapter ran
+against it for real (queries, validation, and the 403 a default instance gives when <code>json</code> is not enabled).
+That is not run by the project's tests or CI. The image is pinned by digest to the build it was tested with
+(2026-11-21), so it does not get SearXNG updates until someone moves the digest: pull a newer image, check a
+search works against it, then replace the digest in the compose file. SearXNG passes your queries to the
+public search engines it is set to use, and those engines can throttle or block a local instance, which is
+what the Brave backup is for. The port is <code>EI_SEARXNG_PORT</code> (default 8888).</p>
+<p>Check that it answers with <code>ei doctor --search</code> (one real search per provider; see <a href="../research/">RESEARCH.md</a>).</p>
+<h2 id="the-tool-lock-third-party-tool-servers">The tool lock (third-party tool servers)<a class="headerlink" href="#the-tool-lock-third-party-tool-servers" title="Permanent link">&para;</a></h2>
+<p><code>ei tools add</code>, <code>list</code> and <code>verify</code> read and write one lock file: <code>--lock PATH</code>, else <code>EI_TOOL_LOCK</code>, else
+<code>ei-tools.lock.toml</code> in the current directory. <strong><code>add</code> and <code>verify</code> start the server's code</strong>, so run them
+only on servers you mean to run. Each server is started with a bare environment (see
+<a href="../tool-lock/">TOOL_LOCK.md</a>) and, for one look, at most <strong>two minutes, 2 GiB of memory and 1 GiB of disk</strong>.
+These are fixed in the command, not settings. A <strong>remote</strong> server (<code>add --url</code>) is contacted, not started: it
+is held to https and a public address, with a 30-second request limit, and its token is the variable named by
+<code>--bearer-env</code>, read from the environment when the connection is made.</p>
+<p><strong>A run reads a lock only when <code>EI_TOOL_LOCK</code> names it</strong> (the file in the current directory is not read).
+Its servers are then started and verified when the stage executor is built, a changed one stops the process
+(<code>TOOL_LOCK_MISMATCH</code>), a named file that does not exist is <code>TOOL_LOCK_MISSING</code>, and a stage is offered only the
+locked tools the lock grants it (<code>ei tools grant</code>). For the life of the process each server may use four
+hours, 2 GiB of memory and 1 GiB of disk. See <a href="../tool-lock/#in-a-run">TOOL_LOCK.md</a>.</p>
+<h2 id="the-skill-lock-installed-prompt-text">The skill lock (installed prompt text)<a class="headerlink" href="#the-skill-lock-installed-prompt-text" title="Permanent link">&para;</a></h2>
+<p><code>ei skills add</code>, <code>enable</code>, <code>disable</code>, <code>remove</code>, <code>list</code> and <code>verify</code> read and write one lock file: <code>--lock PATH</code>,
+else <code>EI_SKILL_LOCK</code>, else <code>ei-skills.lock.toml</code> in the current directory, with the skill files in a <code>skills/</code>
+folder beside it. Nothing here starts a process or opens a connection; a skill is text.</p>
+<p><strong>A run reads a skill lock only when <code>EI_SKILL_LOCK</code> names it</strong> (the file in the current directory is not read).
+Each skill enabled for some stage is read and hashed once when the stage executor is built, before any tool
+server is started: a skill that changed is <code>SKILL_LOCK_MISMATCH</code>, a named file that does not exist is
+<code>SKILL_LOCK_MISSING</code>, and a stage's prompt carries only the skills the lock enables for it. A file is at most
+64 KiB, a part at most 8,000 characters, and a stage at most four skills; these are fixed in the code, not
+settings. See <a href="../skills/#in-a-run">SKILLS.md</a>.</p>
+<h2 id="the-plugin-lock-installed-bundles">The plugin lock (installed bundles)<a class="headerlink" href="#the-plugin-lock-installed-bundles" title="Permanent link">&para;</a></h2>
+<p><code>ei plugins show</code>, <code>add</code>, <code>list</code>, <code>verify</code> and <code>remove</code> read and write the plugin lock: <code>--lock PATH</code>, else
+<code>EI_PLUGIN_LOCK</code>, else <code>ei-plugins.lock.toml</code> in the current directory, with the bundles kept in a <code>plugins/</code> folder
+beside it. <code>add</code>, <code>verify</code> and <code>remove</code> also use the skill lock (<code>--skill-lock</code>, else <code>EI_SKILL_LOCK</code>, else
+<code>ei-skills.lock.toml</code>). Nothing here starts a process or opens a connection.</p>
+<p><strong>A run never reads the plugin lock.</strong> It is a record for <code>verify</code> and <code>remove</code>; what a run may do is in the tool lock
+and the skill lock. A bundle is at most 512 KiB, with at most 16 servers and 16 skills; these are fixed in the code,
+not settings. See <a href="../plugins/">PLUGINS.md</a>.</p>
+<p><code>ei plugins search INDEX</code> and <code>fetch INDEX NAME</code> take an index that is <strong>a file on disk or an <code>https://</code> address</strong>. They are
+the only commands that can use a network, only for an <code>https://</code> address, with no setting for a proxy or a
+credential. An index may be up to 512 KiB and list 500 plugins, a download is at most 512 KiB, and a request has 30
+seconds; these are fixed in the code. Downloading needs the <code>runtime</code> extra (<code>pip install 'engineering-influence[runtime]'</code>),
+which a local index file does not. A run never contacts a marketplace.</p>
+<h2 id="the-author-profile-your-own-details">The author profile (your own details)<a class="headerlink" href="#the-author-profile-your-own-details" title="Permanent link">&para;</a></h2>
+<p>A book's title page, copyright page and about-the-author page need things only the author can say. They go in a small TOML
+file you keep yourself, outside this repository, and <strong>a run reads it only when <code>EI_AUTHOR_PROFILE</code> names it</strong> (a file in
+the current directory is not read). The assemble stage writes it into the book's config; it is never sent to a model.</p>
+<pre><code class="language-toml">author = &quot;Ann Author&quot;            # required
+publisher = &quot;Pub House&quot;          # required
+edition = &quot;First Edition&quot;        # required; has to say &quot;Edition&quot;
+author_bio = &quot;Ann writes.&quot;       # required; paragraphs allowed
+year = 2031                      # optional
+website = &quot;https://pub.example&quot;  # optional
+email = &quot;ann@pub.example&quot;        # optional
+isbn = &quot;978-0-0000-0000-0&quot;       # optional
+ebook_isbn = &quot;978-0-0000-0001-7&quot; # optional
+dedication = &quot;For you.&quot;          # optional
+copyright_notes = &quot;Notes.&quot;       # optional
+also_by = [&quot;Earlier Book&quot;]       # optional, at most 20
+
+[pricing]                        # optional; needed for a strict release
+verified_on = &quot;2026-11-19&quot;       # the day you checked the prices (an ISO date)
+source_url = &quot;https://kdp.amazon.com/en_US/help/topic/G201834170&quot;  # a page that shows the print costs
+ebook = 4.99
+paperback = 12.99
+hardcover = 22.99                # optional; a price here makes the book a KDP hardcover too
+</code></pre>
+<p>The prices are yours: a run never invents them. They go into the book's <code>[release.pricing]</code>, which is what a strict release
+checks (<code>EI_BUILD_STRICT_RELEASE</code>, or <code>--strict-release</code> on <code>ei book create</code>). Without a <code>[pricing]</code> table a missing price is a
+warning in the run's <code>quality-report.json</code>, and a strict release fails.</p>
+<p>Any other key is refused, a missing file stops the process at start (<code>AUTHOR_PROFILE_MISSING</code>), and a bad one stops it with
+the reason (<code>AUTHOR_PROFILE_INVALID</code>). The file is at most 64 KiB. A one-line field is at most 200 characters with no space at either end; <code>author_bio</code>,
+<code>dedication</code> and <code>copyright_notes</code> are at most 4,000; <code>year</code> is 1000 to 9999; <code>email</code> has an <code>@</code> and no space; an ISBN
+is digits and hyphens ending in a digit or <code>X</code>; <code>also_by</code> has at most 20 titles; and no field may hold a control or
+invisible character. <code>[pricing]</code> needs <code>verified_on</code> (an ISO date), <code>source_url</code> (http or https), and <code>ebook</code> and
+<code>paperback</code> above zero; <code>hardcover</code> is optional. Without a
+profile the assembled book loads but does not build, and the build says which of these is missing. Em and en dashes are
+refused in non-fiction when the book is built, and the profile is not rewritten, so leave them out of your own text.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://properdocs.org/">ProperDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="properdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="properdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="properdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="properdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

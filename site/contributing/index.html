@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://adammatthewsteinberger.github.io/engineering-influence/contributing/">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Contributing - engineering-influence</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../stylesheets/vibey.css" rel="stylesheet">
+        <link href="../stylesheets/site.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+        <meta name="description" content="BLUF: Read the code of conduct, set up with one uv sync, and run the gates before you push: ruff, the import rules, bandit, types, pip-audit, a lock check…">
+    <meta property="og:title" content="Contributing - engineering-influence">
+    <meta property="og:description" content="BLUF: Read the code of conduct, set up with one uv sync, and run the gates before you push: ruff, the import rules, bandit, types, pip-audit, a lock check…">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://adammatthewsteinberger.github.io/engineering-influence/contributing/">
+    <meta property="og:site_name" content="engineering-influence">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Contributing - engineering-influence">
+    <meta name="twitter:description" content="BLUF: Read the code of conduct, set up with one uv sync, and run the gates before you push: ruff, the import rules, bandit, types, pip-audit, a lock check…">
+</head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">engineering-influence</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href=".." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Start</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../getting-started/" class="dropdown-item">Getting started</a>
+</li>
+                                    
+<li>
+    <a href="../agents-driving/" class="dropdown-item">Driving it from another AI</a>
+</li>
+                                    
+<li>
+    <a href="../books-and-kdp/" class="dropdown-item">Books and KDP</a>
+</li>
+                                    
+<li>
+    <a href="../novels/" class="dropdown-item">Novels</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Writing books</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../local-model/" class="dropdown-item">The local model</a>
+</li>
+                                    
+<li>
+    <a href="../model-profiles/" class="dropdown-item">Model profiles</a>
+</li>
+                                    
+<li>
+    <a href="../model-catalog/" class="dropdown-item">Model catalog</a>
+</li>
+                                    
+<li>
+    <a href="../model-calls/" class="dropdown-item">Model calls</a>
+</li>
+                                    
+<li>
+    <a href="../research/" class="dropdown-item">Research</a>
+</li>
+                                    
+<li>
+    <a href="../prompts/" class="dropdown-item">Prompts</a>
+</li>
+                                    
+<li>
+    <a href="../skills/" class="dropdown-item">Skills</a>
+</li>
+                                    
+<li>
+    <a href="../plugins/" class="dropdown-item">Plugins</a>
+</li>
+                                    
+<li>
+    <a href="../tool-lock/" class="dropdown-item">Tool lock</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../interactions/" class="dropdown-item">Interfaces</a>
+</li>
+                                    
+<li>
+    <a href="../configuration/" class="dropdown-item">Configuration</a>
+</li>
+                                    
+<li>
+    <a href="../compatibility/" class="dropdown-item">Compatibility</a>
+</li>
+                                    
+<li>
+    <a href="../architecture/" class="dropdown-item">Architecture</a>
+</li>
+                                    
+<li>
+    <a href="../threat-model/" class="dropdown-item">Threat model</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Operating</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../worker-image/" class="dropdown-item">Worker image</a>
+</li>
+                                    
+<li>
+    <a href="../troubleshooting/" class="dropdown-item">Troubleshooting</a>
+</li>
+                                    
+<li>
+    <a href="../releasing/" class="dropdown-item">Releasing</a>
+</li>
+                                    
+<li>
+    <a href="../documentation-site/" class="dropdown-item">Documentation site</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Quality</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../testing/" class="dropdown-item">Testing</a>
+</li>
+                                    
+<li>
+    <a href="../evaluation/" class="dropdown-item">Evaluation</a>
+</li>
+                                    
+<li>
+    <a href="../live-smoke-test/" class="dropdown-item">Live smoke test</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Project</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Contributing</a>
+</li>
+                                    
+<li>
+    <a href="../style/" class="dropdown-item">How these documents are written</a>
+</li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Decision records</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../adr/" class="dropdown-item">Overview</a>
+</li>
+            
+<li>
+    <a href="../adr/0001-vibey-integration-boundary/" class="dropdown-item">ADR 0001: Isolate vibey behind ports</a>
+</li>
+            
+<li>
+    <a href="../adr/0002-audience-priority-and-sovereign-agent-doctrine/" class="dropdown-item">ADR 0002: Audience priority and sovereign agent doctrine</a>
+</li>
+            
+<li>
+    <a href="../adr/0003-definition-of-1-0/" class="dropdown-item">ADR 0003: Definition of 1.0</a>
+</li>
+            
+<li>
+    <a href="../adr/0004-versioning-compatibility-and-deprecation/" class="dropdown-item">ADR 0004: Versioning, compatibility and deprecation</a>
+</li>
+            
+<li>
+    <a href="../adr/0005-release-flow-and-changelog-fragments/" class="dropdown-item">ADR 0005: Release flow and changelog fragments</a>
+</li>
+            
+<li>
+    <a href="../adr/0006-onion-layers-and-interfaces/" class="dropdown-item">ADR 0006: Onion layers, interfaces and one class per file</a>
+</li>
+            
+<li>
+    <a href="../adr/0007-model-transport-plain-httpx/" class="dropdown-item">ADR 0007: Models are called over plain httpx, behind `ModelInterface`</a>
+</li>
+            
+<li>
+    <a href="../adr/0008-tools-for-the-model/" class="dropdown-item">ADR 0008: The model gets tools, each stage gets only the ones it names</a>
+</li>
+            
+<li>
+    <a href="../adr/0009-branch-driven-publishing/" class="dropdown-item">ADR 0009: Publishing follows the branch: develop to TestPyPI, main to PyPI</a>
+</li>
+            
+<li>
+    <a href="../adr/0010-chapters-are-drafted-in-order-in-one-stage/" class="dropdown-item">ADR 0010: Chapters are drafted in order, inside one stage</a>
+</li>
+            
+<li>
+    <a href="../adr/0011-run-inputs/" class="dropdown-item">ADR 0011: Run inputs are untrusted text carried inside the brief</a>
+</li>
+    </ul>
+  </li>
+                                    
+<li>
+    <a href="../changelog/" class="dropdown-item">Changelog</a>
+</li>
+                                    
+<li>
+    <a href="../security/" class="dropdown-item">Security</a>
+</li>
+                                    
+<li>
+    <a href="../support/" class="dropdown-item">Support</a>
+</li>
+                                    
+<li>
+    <a href="../code-of-conduct/" class="dropdown-item">Code of conduct</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#properdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../live-smoke-test/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../style/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/adammatthewsteinberger/engineering-influence/edit/develop/contributing.md" class="nav-link">Edit on adammatthewsteinberger/engineering-influence
+                                    </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#contributing" class="nav-link">Contributing</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#why-the-rules-are-strict" class="nav-link">Why the rules are strict</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-rules-at-a-glance" class="nav-link">The rules at a glance</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#set-up" class="nav-link">Set up</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-checks-a-pull-request-must-pass" class="nav-link">The checks a pull request must pass</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#architecture-rules" class="nav-link">Architecture rules</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-may-live-in-this-repository" class="nav-link">What may live in this repository</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#changelog-fragments" class="nav-link">Changelog fragments</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#commits-and-branches" class="nav-link">Commits and branches</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#dependency-updates" class="nav-link">Dependency updates</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#documentation-and-examples" class="nav-link">Documentation and examples</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="contributing">Contributing<a class="headerlink" href="#contributing" title="Permanent link">&para;</a></h1>
+<p><strong>BLUF:</strong> Read the code of conduct, set up with one <code>uv sync</code>, and run the gates before you push: ruff, the import
+rules, bandit, types, <code>pip-audit</code>, a lock check and the full suite at 100% branch coverage. Code is built in
+layers that only point inward, one class per file, and tests pass fakes instead of patching. This repository holds
+product code only, never an author's manuscripts or profiles.</p>
+<p>Thank you for helping. Read <a href="../code-of-conduct/">CODE_OF_CONDUCT.md</a> first; report security
+problems privately through <a href="../security/">SECURITY.md</a>.</p>
+<h2 id="why-the-rules-are-strict">Why the rules are strict<a class="headerlink" href="#why-the-rules-are-strict" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><strong>Daniel:</strong> Why one class per file and no patching in tests? It feels like a lot of ceremony for a pull request.</p>
+<p><strong>Professor Feynman:</strong> When you walk into a library, how do you find a book?</p>
+<p><strong>Daniel:</strong> By where it is shelved. If I know the rule I do not have to search.</p>
+<p><strong>Professor Feynman:</strong> Same here. Most rules are shelving rules that a test or a tool enforces, so nobody has to
+remember them, and a couple are conventions that review holds. One class per file means a class is where its
+name says. Layers that point inward mean a service never imports a database adapter, so swapping the adapter
+touches one place. And tests pass fakes instead of patching because a patched test passes even when the real
+wiring is wrong.</p>
+<p><strong>Daniel:</strong> So the ceremony is what lets a stranger change the code without breaking something they cannot see.</p>
+<p><strong>Professor Feynman:</strong> That is the idea. The limit: rules enforced by a test are only as good as the test, so a
+new rule needs a test that can fail.</p>
+<p><strong>Daniel:</strong> Follow the shelving, run the gates, and give any new rule a test that can fail.</p>
+</blockquote>
+<h2 id="the-rules-at-a-glance">The rules at a glance<a class="headerlink" href="#the-rules-at-a-glance" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>How it is enforced</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>One class per file, no loose production functions</td>
+<td><code>tests/architecture/test_architecture.py</code></td>
+</tr>
+<tr>
+<td>Every class has an interface in a sibling <code>interfaces/</code> folder</td>
+<td><code>tests/architecture</code></td>
+</tr>
+<tr>
+<td>Layers point inward only</td>
+<td><code>lint-imports</code> and the layer matrix in <code>tests/architecture</code></td>
+</tr>
+<tr>
+<td>Models import nothing effectful, only models, errors and the standard library</td>
+<td><code>tests/architecture</code></td>
+</tr>
+<tr>
+<td>No <code>monkeypatch.setattr</code> of production code outside a short list of system-boundary calls</td>
+<td><code>tests/architecture/test_no_patching.py</code> (other ways of patching are not checked)</td>
+</tr>
+<tr>
+<td>100% line and branch coverage</td>
+<td><code>pytest --cov --cov-fail-under=100</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="set-up">Set up<a class="headerlink" href="#set-up" title="Permanent link">&para;</a></h2>
+<p>You need Python 3.12 or newer, <a href="https://docs.astral.sh/uv/"><code>uv</code></a>, and Docker for the smoke test.</p>
+<pre><code class="language-bash">git clone https://github.com/adammatthewsteinberger/engineering-influence
+cd engineering-influence
+uv sync --extra test --extra runtime --extra dev --extra publishing
+uv run vibey-gh install        # commit hooks: add the Made-With trailer, check subjects
+</code></pre>
+<h2 id="the-checks-a-pull-request-must-pass">The checks a pull request must pass<a class="headerlink" href="#the-checks-a-pull-request-must-pass" title="Permanent link">&para;</a></h2>
+<p>Run them before you push (details in <a href="../testing/">docs/TESTING.md</a>):</p>
+<pre><code class="language-bash">uv run ruff check .
+uv run ruff format --check .
+uv run lint-imports
+uv run bandit -q -r src packages
+uv run mypy --strict src packages
+uv run pip-audit
+uv lock --check
+uv run pytest --cov --cov-branch --cov-fail-under=100
+sh examples/compose_smoke.sh      # when you touch the runtime, compose file or examples
+# when you touch persistence, the broker or how runs advance (then: sh tests/integration/stack.sh down)
+eval &quot;$(sh tests/integration/stack.sh up)&quot; &amp;&amp; uv run pytest -m integration tests/integration
+</code></pre>
+<p>Coverage is 100% with branches. New code arrives with its tests.</p>
+<p>The road to 1.0 is <a href="../adr/0003-definition-of-1-0/">ADR 0003</a>; the compatibility and
+deprecation rules are <a href="../adr/0004-versioning-compatibility-and-deprecation/">ADR 0004</a>.</p>
+<h2 id="architecture-rules">Architecture rules<a class="headerlink" href="#architecture-rules" title="Permanent link">&para;</a></h2>
+<p>Interactions call controllers, controllers call services, services use models, contracts and
+interfaces, and adapters implement interfaces (<a href="../architecture/">docs/ARCHITECTURE.md</a>). The tests enforce:</p>
+<ul>
+<li>one class per file, no loose production functions;</li>
+<li>every class implements an interface, and interfaces live in sibling <code>interfaces/</code> folders;</li>
+<li>layers point inward only (<code>lint-imports</code> runs a strict layers contract);</li>
+<li>only <code>runtime/</code> composes concrete classes; everything else receives its collaborators (a convention that review holds, not a test);</li>
+<li>tests pass fakes instead of patching production code.</li>
+</ul>
+<p>A new external integration needs an <strong>interface</strong>, an <strong>adapter</strong>, an <strong>ADR</strong> when the choice is
+architectural (<code>docs/adr/</code>), and failure and recovery tests. Every pipeline side effect must be
+bounded, idempotent, observable and recoverable.</p>
+<h2 id="what-may-live-in-this-repository">What may live in this repository<a class="headerlink" href="#what-may-live-in-this-repository" title="Permanent link">&para;</a></h2>
+<p>This repository is public product code. It never holds an author's manuscripts, profiles,
+covers or built books. The <code>leak-scan</code> CI job rejects any path containing <code>manuscripts/</code>,
+<code>living-waters/</code>, <code>archive/</code>, <code>prompts/</code> or <code>chapters/</code>, a top-level <code>output/</code>, and any <code>.pdf</code> or
+<code>.docx</code> file anywhere in history.</p>
+<ul>
+<li><strong>Prompts the product sends to a model are code.</strong> They live in a package folder named
+  <code>templates/</code> (never <code>prompts/</code>), are versioned, are tested, and are written generically, with no
+  author's voice or content in them. How to write and change one: <a href="../prompts/">docs/PROMPTS.md</a>.</li>
+<li><strong>Test fixtures</strong> live in <code>tests/fixtures/&lt;name&gt;/</code> and use original, synthetic text. Built PDFs are
+  never committed; a build is checked by a structural snapshot (<code>docs/TESTING.md</code>).</li>
+<li><strong>Recorded model responses</strong> (cassettes) live in <code>tests/cassettes/</code> and are made only from
+  synthetic briefs.</li>
+<li>If a legitimate file trips the scan, move the file. Loosening the pattern needs an ADR.</li>
+</ul>
+<h2 id="changelog-fragments">Changelog fragments<a class="headerlink" href="#changelog-fragments" title="Permanent link">&para;</a></h2>
+<p>Do not edit <code>CHANGELOG.md</code> in a pull request. Add <code>changelog.d/&lt;short-slug&gt;.md</code> with one paragraph,
+the text of one bullet (see <code>changelog.d/README.md</code> and <code>docs/adr/0005-release-flow-and-changelog-fragments.md</code>).</p>
+<h2 id="commits-and-branches">Commits and branches<a class="headerlink" href="#commits-and-branches" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Branch from <code>develop</code>; open the pull request against <code>develop</code>. <code>main</code> receives releases.</li>
+<li>Conventional Commit subjects (<code>feat:</code>, <code>fix:</code>, <code>docs:</code>, <code>ci:</code>, <code>chore:</code> …).</li>
+<li>Every commit carries a <code>Made-With:</code> trailer; the installed <code>commit-msg</code> hook adds it.
+  Pull requests Dependabot opens are exempt from that one check.</li>
+<li>Use your GitHub no-reply address if you want to keep your email out of history.</li>
+<li>Restructuring commits that only move or rename files are listed in <code>.git-blame-ignore-revs</code>; GitHub honours it, and locally run <code>git config blame.ignoreRevsFile .git-blame-ignore-revs</code>.</li>
+</ul>
+<h2 id="dependency-updates">Dependency updates<a class="headerlink" href="#dependency-updates" title="Permanent link">&para;</a></h2>
+<p>Dependabot opens pull requests for major versions too. Do not merge on a green title: read the
+failing job, run the gates above on the branch, and fix the code or the version bound. Past
+examples: <code>mcp</code> 2 renamed <code>FastMCP</code>; Postgres 18 moved its data directory; pytest-cov 7 stopped
+measuring subprocesses.</p>
+<h2 id="documentation-and-examples">Documentation and examples<a class="headerlink" href="#documentation-and-examples" title="Permanent link">&para;</a></h2>
+<p>Examples in <code>examples/</code> are run by the test suite and must behave like real use: shell for the CLI,
+<code>requests</code> or <code>curl</code> for HTTP, a real MCP client for MCP. Keep <a href="../interactions/">docs/INTERACTIONS.md</a>
+and the README in step with any interface change. The documents are also published as a website from the same
+Markdown (<a href="../documentation-site/">docs/DOCUMENTATION_SITE.md</a>); a link that goes nowhere fails the docs check.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://properdocs.org/">ProperDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="properdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="properdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="properdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="properdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

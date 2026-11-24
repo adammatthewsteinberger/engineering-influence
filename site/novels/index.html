@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://adammatthewsteinberger.github.io/engineering-influence/novels/">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Novels - engineering-influence</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="../stylesheets/vibey.css" rel="stylesheet">
+        <link href="../stylesheets/site.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+        <meta name="description" content="BLUF: --kind novel writes a novel in nine stages, from a brief to a built book. A novel has no research stage and no built-in tools. Instead it has a…">
+    <meta property="og:title" content="Novels - engineering-influence">
+    <meta property="og:description" content="BLUF: --kind novel writes a novel in nine stages, from a brief to a built book. A novel has no research stage and no built-in tools. Instead it has a…">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://adammatthewsteinberger.github.io/engineering-influence/novels/">
+    <meta property="og:site_name" content="engineering-influence">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Novels - engineering-influence">
+    <meta name="twitter:description" content="BLUF: --kind novel writes a novel in nine stages, from a brief to a built book. A novel has no research stage and no built-in tools. Instead it has a…">
+</head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">engineering-influence</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href=".." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Start</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../getting-started/" class="dropdown-item">Getting started</a>
+</li>
+                                    
+<li>
+    <a href="../agents-driving/" class="dropdown-item">Driving it from another AI</a>
+</li>
+                                    
+<li>
+    <a href="../books-and-kdp/" class="dropdown-item">Books and KDP</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Novels</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Writing books</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../local-model/" class="dropdown-item">The local model</a>
+</li>
+                                    
+<li>
+    <a href="../model-profiles/" class="dropdown-item">Model profiles</a>
+</li>
+                                    
+<li>
+    <a href="../model-catalog/" class="dropdown-item">Model catalog</a>
+</li>
+                                    
+<li>
+    <a href="../model-calls/" class="dropdown-item">Model calls</a>
+</li>
+                                    
+<li>
+    <a href="../research/" class="dropdown-item">Research</a>
+</li>
+                                    
+<li>
+    <a href="../prompts/" class="dropdown-item">Prompts</a>
+</li>
+                                    
+<li>
+    <a href="../skills/" class="dropdown-item">Skills</a>
+</li>
+                                    
+<li>
+    <a href="../plugins/" class="dropdown-item">Plugins</a>
+</li>
+                                    
+<li>
+    <a href="../tool-lock/" class="dropdown-item">Tool lock</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../interactions/" class="dropdown-item">Interfaces</a>
+</li>
+                                    
+<li>
+    <a href="../configuration/" class="dropdown-item">Configuration</a>
+</li>
+                                    
+<li>
+    <a href="../compatibility/" class="dropdown-item">Compatibility</a>
+</li>
+                                    
+<li>
+    <a href="../architecture/" class="dropdown-item">Architecture</a>
+</li>
+                                    
+<li>
+    <a href="../threat-model/" class="dropdown-item">Threat model</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Operating</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../worker-image/" class="dropdown-item">Worker image</a>
+</li>
+                                    
+<li>
+    <a href="../troubleshooting/" class="dropdown-item">Troubleshooting</a>
+</li>
+                                    
+<li>
+    <a href="../releasing/" class="dropdown-item">Releasing</a>
+</li>
+                                    
+<li>
+    <a href="../documentation-site/" class="dropdown-item">Documentation site</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Quality</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../testing/" class="dropdown-item">Testing</a>
+</li>
+                                    
+<li>
+    <a href="../evaluation/" class="dropdown-item">Evaluation</a>
+</li>
+                                    
+<li>
+    <a href="../live-smoke-test/" class="dropdown-item">Live smoke test</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Project</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../contributing/" class="dropdown-item">Contributing</a>
+</li>
+                                    
+<li>
+    <a href="../style/" class="dropdown-item">How these documents are written</a>
+</li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Decision records</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../adr/" class="dropdown-item">Overview</a>
+</li>
+            
+<li>
+    <a href="../adr/0001-vibey-integration-boundary/" class="dropdown-item">ADR 0001: Isolate vibey behind ports</a>
+</li>
+            
+<li>
+    <a href="../adr/0002-audience-priority-and-sovereign-agent-doctrine/" class="dropdown-item">ADR 0002: Audience priority and sovereign agent doctrine</a>
+</li>
+            
+<li>
+    <a href="../adr/0003-definition-of-1-0/" class="dropdown-item">ADR 0003: Definition of 1.0</a>
+</li>
+            
+<li>
+    <a href="../adr/0004-versioning-compatibility-and-deprecation/" class="dropdown-item">ADR 0004: Versioning, compatibility and deprecation</a>
+</li>
+            
+<li>
+    <a href="../adr/0005-release-flow-and-changelog-fragments/" class="dropdown-item">ADR 0005: Release flow and changelog fragments</a>
+</li>
+            
+<li>
+    <a href="../adr/0006-onion-layers-and-interfaces/" class="dropdown-item">ADR 0006: Onion layers, interfaces and one class per file</a>
+</li>
+            
+<li>
+    <a href="../adr/0007-model-transport-plain-httpx/" class="dropdown-item">ADR 0007: Models are called over plain httpx, behind `ModelInterface`</a>
+</li>
+            
+<li>
+    <a href="../adr/0008-tools-for-the-model/" class="dropdown-item">ADR 0008: The model gets tools, each stage gets only the ones it names</a>
+</li>
+            
+<li>
+    <a href="../adr/0009-branch-driven-publishing/" class="dropdown-item">ADR 0009: Publishing follows the branch: develop to TestPyPI, main to PyPI</a>
+</li>
+            
+<li>
+    <a href="../adr/0010-chapters-are-drafted-in-order-in-one-stage/" class="dropdown-item">ADR 0010: Chapters are drafted in order, inside one stage</a>
+</li>
+            
+<li>
+    <a href="../adr/0011-run-inputs/" class="dropdown-item">ADR 0011: Run inputs are untrusted text carried inside the brief</a>
+</li>
+    </ul>
+  </li>
+                                    
+<li>
+    <a href="../changelog/" class="dropdown-item">Changelog</a>
+</li>
+                                    
+<li>
+    <a href="../security/" class="dropdown-item">Security</a>
+</li>
+                                    
+<li>
+    <a href="../support/" class="dropdown-item">Support</a>
+</li>
+                                    
+<li>
+    <a href="../code-of-conduct/" class="dropdown-item">Code of conduct</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#properdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../books-and-kdp/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../local-model/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/adammatthewsteinberger/engineering-influence/edit/develop/novels.md" class="nav-link">Edit on adammatthewsteinberger/engineering-influence
+                                    </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#novels" class="nav-link">Novels</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#why-a-novel-needs-a-bible" class="nav-link">Why a novel needs a bible</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-is-built" class="nav-link">What is built</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#drafting" class="nav-link">Drafting</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#content-levels" class="nav-link">Content levels</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#the-story-bible-and-the-continuity-checker" class="nav-link">The story bible and the continuity checker</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#trying-it" class="nav-link">Trying it</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-is-not-built-or-not-checked" class="nav-link">What is not built or not checked</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="novels">Novels<a class="headerlink" href="#novels" title="Permanent link">&para;</a></h1>
+<p><strong>BLUF:</strong> <code>--kind novel</code> writes a novel in nine stages, from a brief to a built book. A novel has no research
+stage and no built-in tools. Instead it has a story bible, a small set of facts (who, where, when) that every
+chapter is checked against. Novels get no editing passes yet, so a novel is built from its draft as written.</p>
+<p>A novel run is a different kind of book from a non-fiction one: it is not argued from sources, so it has no research
+stage and no tools, and it has a story bible that every chapter must agree with. <code>BookKind.NOVEL</code> picks it, and the
+runtime dispatches by kind, so a non-fiction run is untouched.</p>
+<h2 id="why-a-novel-needs-a-bible">Why a novel needs a bible<a class="headerlink" href="#why-a-novel-needs-a-bible" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><strong>Daniel:</strong> Chapter three says Mara is nineteen. Chapter eleven says she turned thirty last spring. Why do
+models do that?</p>
+<p><strong>Professor Feynman:</strong> How does a television series with twelve writers keep a character's eye colour the same
+for nine years?</p>
+<p><strong>Daniel:</strong> Someone keeps a document. The show bible. Everybody checks it.</p>
+<p><strong>Professor Feynman:</strong> A chapter is drafted with limited memory of the others, so the same trick is used. Before
+any chapter exists, one stage writes the story bible: the characters with their ages, the places, the dated
+events, how many years the story spans. It is data, not prose.</p>
+<p><strong>Daniel:</strong> And each chapter is given it.</p>
+<p><strong>Professor Feynman:</strong> Given it, and then the whole draft is checked against it by a continuity checker that
+looks for a name, a place, an age or a date that does not match. Here is where the picture thins out: a human
+script editor would also fix the slip. This one reports it and the run carries on. A repair pass for continuity
+findings is not built, and neither are editing passes for novels.</p>
+<p><strong>Daniel:</strong> So the bible prevents most slips, the checker finds the rest, and fixing them is still my job for
+now.</p>
+</blockquote>
+<h2 id="what-is-built">What is built<a class="headerlink" href="#what-is-built" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Prompt</th>
+<th>What it writes</th>
+<th>Checked when written</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>brief</code></td>
+<td><code>novel_brief</code></td>
+<td>premise, genre and tone, point of view and tense, setting, characters, stakes, shape, length, content limits</td>
+<td>not parsed</td>
+</tr>
+<tr>
+<td><code>story_bible</code></td>
+<td><code>novel_story_bible</code></td>
+<td>one JSON object: premise, characters (name, aliases, age), places, dated events, span in years</td>
+<td>read by <code>StoryBibleParser</code> (<code>STORY_BIBLE_INVALID</code>)</td>
+</tr>
+<tr>
+<td><code>beats</code></td>
+<td><code>novel_beats</code></td>
+<td>15 to 25 numbered beats in three acts, in story order</td>
+<td>not parsed</td>
+</tr>
+<tr>
+<td><code>outline</code></td>
+<td><code>novel_outline</code></td>
+<td>the chapters, in the same <code>## Chapter N: Title</code> format a non-fiction outline uses</td>
+<td>read by <code>OutlineParser</code> (<code>OUTLINE_INVALID</code>)</td>
+</tr>
+<tr>
+<td><code>metadata</code></td>
+<td><code>novel_metadata</code></td>
+<td>the store listing: title, subtitle, blurb, seven keywords, one to three categories</td>
+<td>read by <code>MetadataParser</code> (<code>METADATA_INVALID</code>)</td>
+</tr>
+<tr>
+<td><code>draft</code></td>
+<td><code>novel_context_pack</code>, <code>novel_summary</code></td>
+<td>each chapter in order, then a summary of it for the next; <code>chapter_NN.md</code>, <code>summary_NN.md</code>, <code>draft.md</code></td>
+<td>continuity, once every chapter is written</td>
+</tr>
+<tr>
+<td><code>assemble</code></td>
+<td>none (no model call)</td>
+<td>the book as a project under <code>manuscript/</code>: <code>src/chapter_NN.md</code> and <code>books/&lt;slug&gt;.toml</code> with <code>kind = "novel"</code></td>
+<td>the chapters are cleaned and any unfinished marker or the word <code>Draft</code> is refused</td>
+</tr>
+<tr>
+<td><code>audit</code></td>
+<td>none</td>
+<td>the same publish audits as <code>ei book audit</code> (<code>audit.md</code>, <code>audit/</code>)</td>
+<td>a book that fails stops the run</td>
+</tr>
+<tr>
+<td><code>build</code></td>
+<td>none</td>
+<td>the interior PDF, EPUB, covers, listing and KDP bundle under <code>book/</code>, the reports under <code>build/</code>, <code>quality-report.json</code> and <code>build.md</code></td>
+<td>a book that does not pass stops the run (<code>BUILD_FAILED</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>The plan is nine stages, from the brief to a built book. Only the editing passes (revision and copy editing) are not
+built, so a novel is built from the draft as written.</p>
+<h2 id="drafting">Drafting<a class="headerlink" href="#drafting" title="Permanent link">&para;</a></h2>
+<p>The drafting stage is the same loop non-fiction uses (ADR 0010): one chapter after another, each written from the
+voice (the brief and the story bible), the grounding (the whole outline and the beats of the whole novel), this
+chapter's entry, the summaries of the chapters before it and the tail of the last one, fitted to the model's window.
+A <code>DraftRecipe</code> says what a kind of book reads and how it labels it, so the non-fiction prompt is byte-for-byte what it
+was. The one plain-text instruction carries only numbers and the two content levels, and says that <code>not given</code> means
+mild violence and sweet heat. A chapter is done when its text and its summary both exist, so a redelivered stage does
+only what is left.</p>
+<p>When every chapter is written, <code>NovelDraftChecks</code> reads the whole draft against the story bible with the continuity
+checker. Each finding becomes one <strong>non-blocking</strong> quality issue on the run (<code>CONTINUITY_NAME</code>, <code>CONTINUITY_PLACE</code>,
+<code>CONTINUITY_AGE</code>, <code>CONTINUITY_TIMELINE</code>), the run keeps going, and <code>continuity.md</code> lists every finding (the run records
+the first 50). A finding is a question, not a verdict: a flashback, or a new character named like an old one, is a good
+reason for one to be wrong, so nothing is stopped or rewritten automatically. Nothing repairs a chapter either; that
+is for the author, or a later editing pass.</p>
+<h2 id="content-levels">Content levels<a class="headerlink" href="#content-levels" title="Permanent link">&para;</a></h2>
+<p>A brief may set <code>violence</code> (<code>none</code>, <code>mild</code>, <code>moderate</code>, <code>graphic</code>) and <code>heat</code> (<code>none</code>, <code>sweet</code>, <code>steamy</code>, <code>explicit</code>),
+and only a novel may. Every novel stage first asks <code>ContentPolicy</code> whether the model is <em>recorded</em> as allowing those
+levels, before any call is made: the ceiling is something you record in your own model catalog after reading your
+provider's usage policy (<code>max_violence</code>, <code>max_heat</code>; see <a href="../model-catalog/#content-levels">MODEL_CATALOG.md</a>), and a model with
+none recorded is held to <code>mild</code> and <code>sweet</code>. The levels also go into the prompts, so a stage is told to stay within them.
+That is a guard against asking a model for what its provider says it will not write, not a content filter.</p>
+<h2 id="the-story-bible-and-the-continuity-checker">The story bible and the continuity checker<a class="headerlink" href="#the-story-bible-and-the-continuity-checker" title="Permanent link">&para;</a></h2>
+<p><code>StoryBibleParser</code> reads the first JSON object in the stage's answer, so a preamble or a code fence does no harm.
+Every text is collapsed to one line and stripped of control and invisible characters before the bible's own limits
+apply, the timeline is sorted by its time values, and a value of the wrong type or a bible that breaks its own rules (a
+name twice, more than 60 characters) stops the run where it was written, before drafting is paid for.</p>
+<p><code>ContinuityChecker</code> reads chapters against the bible with no model call and reports near-miss names and places, ages
+outside the bible's range, and events mentioned out of order. The draft stage calls it once, over the whole draft.</p>
+<h2 id="trying-it">Trying it<a class="headerlink" href="#trying-it" title="Permanent link">&para;</a></h2>
+<p>A novel run ends in a built book, as a non-fiction run does. The <code>metadata</code> stage comes right after the outline, so <code>assemble</code> can write the config
+from the listing and the draft's own chapters. A novel keeps its em and en dashes (only non-fiction refuses them), and its
+trim size is the brief's (<code>trim_size</code>, for example <code>5.5x8.5</code>). <strong>There are no editing passes for a novel yet</strong>: the book is built
+from the draft as written, so it is only as good as the draft. The build needs the TeX worker image
+(<a href="../worker-image/">WORKER_IMAGE.md</a>); <code>EI_BUILD_STRICT_RELEASE</code> works as for non-fiction (<a href="../books-and-kdp/">BOOKS_AND_KDP.md</a>).</p>
+<p><code>ei book create --kind novel "&lt;idea&gt;" --budget-usd N --out DIR --profile FILE</code> makes a novel the same way it makes a
+non-fiction book (<a href="../interactions/">INTERACTIONS.md</a>). The paid smoke test in <a href="../live-smoke-test/">LIVE_SMOKE_TEST.md</a> drives only the
+non-fiction plan. A novel has been run only against scripted servers, and that scripted run of the whole plan is built with the real
+toolchain, including as a strict release (<code>tests/toolchain/test_run_builds_book.py</code>). To see the prompts a novel sends without a model, read the templates named in the table above
+(<code>src/engineering_influence/infrastructure/prompt_library/templates/novel_*.toml</code>); each is versioned, and its text is
+pinned in <code>tests/fixtures/prompt_templates.lock.toml</code>.</p>
+<h2 id="what-is-not-built-or-not-checked">What is not built or not checked<a class="headerlink" href="#what-is-not-built-or-not-checked" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Revision and copy editing for a novel; a repair pass that asks the model to fix a continuity finding.</li>
+<li>A paid check of the novel plan against a real model.</li>
+<li>Nothing here has been run against a real model. The prompts are tested against scripted servers, and how well a
+  20-billion-parameter local model writes a story bible as valid JSON is not known: if it often does not, the run stops
+  with <code>STORY_BIBLE_INVALID</code> and the message says why.</li>
+<li>Series bibles (one bible across several books).</li>
+</ul></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://properdocs.org/">ProperDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="properdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="properdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="properdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="properdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>
