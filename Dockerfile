@@ -40,6 +40,10 @@ CMD ["serve", "worker"]
 
 # The slim image. Last, so it stays the default target.
 FROM python:3.13-slim
+# procps provides ps, which the worker uses to measure a tool's memory; the slim base does not include it.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends procps \
+ && rm -rf /var/lib/apt/lists/*
 RUN useradd --system --uid 10001 --no-create-home --shell /usr/sbin/nologin app
 COPY --from=build /app/.venv /app/.venv
 ENV PATH="/app/.venv/bin:${PATH}" PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1

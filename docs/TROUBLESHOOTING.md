@@ -66,6 +66,36 @@ Find the symptom, then the cause. Commands assume you ran `set -a; . examples/.e
 | Coverage drops below 100% only for `book_cli` / `serve_cli` | Child-process coverage not enabled (pytest-cov 7+) | Keep `patch = ["subprocess"]` and `parallel = true` in `[tool.coverage.run]` |
 | Pushed a Dependabot-style commit and `provenance` fails | The commit has no `Made-With:` trailer | `vibey-gh install` adds the commit hook; amend the commit message |
 
+## Errors you will see, by their code
+
+Each code is in the message the command prints, in the form `error: <message>`, or in the response body of the API.
+Codes shown here are the ones a person is likely to meet; the full list is the snapshot
+`tests/contracts/snapshots/error_codes.json`, and most of the rest are internal (stage plumbing, job payloads,
+recorded cassettes) and need no action from you.
+
+| Code | The message says | What to do |
+|---|---|---|
+| `BRIEF_UNREADABLE` | `cannot read FILE: …` | `ei run create` could not open the brief file. Check the path and that the file is readable |
+| `CONTENT_LEVEL_NOT_ALLOWED` | `the brief asks for violence X, but PROVIDER/MODEL is recorded as allowing up to Y` (or the same for `heat`, or that no ceiling is recorded) | The model's usage policy does not allow the content level the brief asks for. Lower the level, or use a model whose recorded ceiling allows it. The message names the policy page to read |
+| `EXPORT_TARGET_NOT_EMPTY` | `FOLDER already exists and is not an empty folder; choose a new or empty --out` | `ei book create` writes the book only into a new or empty folder. Choose a new `--out`; see the `--out` row above |
+| `CONTEXT_TOO_LARGE` | `the style, grounding, beats and instruction alone need N input tokens and only M are available` | The fixed parts of a chapter's prompt do not fit the model's window. Shorten the author's own material, or use a model with a larger window |
+| `DATABASE_UNAVAILABLE` | `cannot reach or migrate the database (ErrorType)` | The database is down or the URL is wrong; the message never includes the password. See the database row above |
+| `EXPORT_NAME_CLASH` | `two artifacts of run R would be written to P` | Two stored files map to one path. Not expected in a normal run; report it with the run id |
+| `LOCAL_SERVER_UNREACHABLE` | `nothing answers at URL` | The local model server is not running at `EI_LOCAL_URL`. Start Ollama, or see [LOCAL_MODEL.md](LOCAL_MODEL.md) |
+| `MODEL_REJECTED` | `the model server rejected the request (STATUS, CODE): MESSAGE` | The server refused the call. The status and the server's own message say why: often a wrong model name, or a key the provider does not accept |
+| `PATH_ESCAPE` | `path is outside the permitted directory` | A path given to a tool is outside the folder it may use. Give a path inside that folder |
+| `PRICING_REQUIRED` | `a strict release needs the author's pricing: add a [pricing] table …` | `--strict-release` needs `[pricing]` in the author profile. Add it, or drop `--strict-release` |
+| `RUN_HAS_NO_ARTIFACTS` | a run that stored nothing cannot be exported | The run failed before it stored anything. Read its `issue:` lines; a new run is the way forward |
+| `STAGE_MODEL_NOT_CONFIGURED` | `EI_STAGE_EXECUTOR=model needs NAME` | Name what the model executor needs: a profile, a catalog or a model. See [MODEL_PROFILES.md](MODEL_PROFILES.md) |
+| `STAGE_MODEL_PROFILE_UNKNOWN` | `no profile named NAME in FILE (it has: …)` | The profile you named is not in that file. Use one of the names it lists |
+| `STAGE_MODEL_KEY_IN_CLEAR` | `profile NAME would send its key over plain http to another host` | A profile would send its key unencrypted to another machine. Use `https`, or a local address |
+| `SCHEMA_OUT_OF_DATE` | `the database schema is not at the latest revision; run ei db upgrade` | Run `ei db upgrade` |
+| `TOOL_URL_REFUSED` | the address was refused by the URL policy | A remote tool server must be a public `https` address. See [TOOL_LOCK.md](TOOL_LOCK.md) |
+| `TOOL_ENV_MISSING` | `the environment variable NAME is not set` | Set the variable the tool server's configuration names, then start again |
+| `WEBHOOK_TARGET_REJECTED` | `webhook destination refused: REASON` | The webhook's address was refused: it must be public `https` |
+| `SKILL_IMPORT_TOO_LARGE` | `the chosen text is N characters and a part holds at most M; choose sections with --section` | Pick fewer reference sections with `--section`. The message lists each section and its length |
+| `SOURCE_TOO_COMPLEX` | `the page nests elements more than N deep` | A fetched web page is too deeply nested to read safely. The research stage skips it; no action needed |
+
 ## Collecting evidence for a bug report
 
 ```bash
