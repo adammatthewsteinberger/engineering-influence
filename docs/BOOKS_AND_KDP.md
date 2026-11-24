@@ -25,7 +25,7 @@ The publish stage (`ei book publish`) produces, and verifies, the files and deci
 | Hardcover interior | Compact hardcover build; page limit checked, or an explicit external-provider decision required |
 | eBook | EPUB built and validated (structure, links, `epubcheck`) |
 | Covers | Front, back and spine/wrap for print at the exact trim and page count, plus the eBook cover; image, quiet-zone and layout checks |
-| Listing metadata | Title, subtitle, author, description size, **exactly seven unique keywords** (categories are not checked yet) |
+| Listing metadata | Title, subtitle, author, description size, **exactly seven unique keywords** (categories are checked for count, shape and uniqueness, not against Amazon's category tree) |
 | Pricing | List-price policy, freshness and source of the inputs, estimated print cost and royalty |
 | Manuscript quality | Forbidden-content, scaffold-leak, chapter-opening, contents, research-apparatus and formula checks |
 | Evidence | A machine-readable release report with file digests, tool versions and git state |
@@ -50,8 +50,8 @@ Be exact about today's state (alpha `0.1.0a2`):
 | Uploading to KDP | Never automatic: KDP has no publishing API. You upload the verified files and paste the verified metadata yourself |
 
 So today you can run the full orchestration end to end and produce KDP-ready packaging from
-a manuscript; fully autonomous drafting arrives when a real runner is plugged into the
-`RunnerInterface`. This page is updated as each row changes.
+a manuscript; drafting is built but unproven against a live model, and `ei book create` is the entry point. The
+`/v1/pipelines` stage pipeline still uses the placeholder runner. This page is updated as each row changes.
 
 ## Fiction and non-fiction
 

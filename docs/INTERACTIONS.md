@@ -8,8 +8,8 @@ return the same result. Pick by who is calling.
 |---|---|---|---|
 | [REST API](#rest-api) | `ei serve api` | API key | yes |
 | [Python SDK](#python-sdk) | your code | API key | yes (it calls the REST API) |
-| [MCP server](#mcp-server) | stdio child process | no (local only) | no (in-memory) |
-| [CLI](#cli) | `ei` | no (local only) | `serve` and `book` yes; `pipeline start` no |
+| [MCP server](#mcp-server) | stdio child process | no (local only) | yes with `ei serve mcp`; the example server is in-memory |
+| [CLI](#cli) | `ei` | no (local only) | `serve`, `run` and `book` yes; `pipeline start` no |
 | [Webhooks](#webhooks) | outbound HTTPS | HMAC signature | yes |
 
 ## The request
@@ -93,7 +93,7 @@ Full scripts: [`examples/api/start_pipeline.py`](../examples/api/start_pipeline.
 
 `packages/engineering-influence-sdk` is a thin typed wrapper over `httpx` for the operations the API
 has: starting a pipeline, creating a book run from a brief (`create_run`), and listing, resuming and cancelling runs
-(`list_runs`, `resume_run`, `cancel_run`), and reading a run (`get_run`) and the files it stored (`get_artifact`, as bytes). It ships in this repository
+(`list_runs`, `resume_run`, `cancel_run`), answering a run's request for more budget (`grant_run`, `deny_run`), and reading a run (`get_run`) and the files it stored (`get_artifact`, as bytes). It ships in this repository
 and in each release.
 
 ```python
@@ -155,6 +155,8 @@ with one tool when built bare, and the rest when it is given the services (`gran
 | `get_run` | `run_id` | a run's `RunSummaryV1`: status, stage, budget and the names of its stored artifacts (present only when the server is built with a run reader) |
 | `read_artifact` | `run_id`, `name` (such as `book/my-book.pdf`) | `{name, bytes, encoding, content}`: the text when the file is UTF-8, base64 when it is not. A file over 1 MiB is refused (`ARTIFACT_TOO_LARGE`) and the message names the `GET /v1/runs/{id}/artifacts/{name}` address that downloads any size (present with `get_run`) |
 | `create_run` | `brief` (an object: the brief contract v1) | the new run as a `RunSummaryV1`, pending at its first stage. Present only when the server is built with a run creator |
+| `grant_run` | `run_id`, optional `micro_usd` | the run after allowing it more budget. Present only with `allow_spend=True` (`ei serve mcp` sets it from `EI_MCP_ALLOW_SPEND`) |
+| `deny_run` | `run_id` | the run after refusing it more budget; it parks. Present only with `allow_spend=True` |
 
 [`examples/mcp/server.py`](../examples/mcp/server.py) is the bare server over in-memory adapters, for trying the tool shapes
 without a stack, and [`examples/mcp/client.py`](../examples/mcp/client.py) is a client that spawns it, lists the tools and calls one.
@@ -165,10 +167,14 @@ The server is a local process: it is not authenticated, so do not expose it on a
 ```text
 ei --version
 ei pipeline start --slug S --title T --postulate P [--postulate P …] [--stage STAGE …]
-ei serve api|worker
+ei serve api|worker|mcp
 ei db upgrade
 ei run status|resume|cancel|export RUN_ID
 ei run create BRIEF.TOML
+ei run grant RUN_ID [--micro-usd N]
+ei run deny RUN_ID
+ei doctor (--models | --search | --local) [--catalog FILE] [--profiles FILE] [--query Q] [--probe]
+ei acp
 ei run runs
 ei book [--root DIR] audit|build|epub|covers|qa|package|publish …
 ei book create --kind nonfiction|novel IDEA --budget-usd N --out DIR --profile FILE [--resume]
@@ -194,7 +200,8 @@ ei plugins fetch INDEX NAME [--output DIR]
 | Command | What it does | Exit status |
 |---|---|---|
 | `ei pipeline start` | Validates a project and prints the result as JSON. In-memory only: it does not queue work on the stack. `--stage` defaults to `thesis`. | `0`; `2` on a usage error |
-| `ei serve api` / `worker` | Runs the API or the worker from `EI_*` settings. | `2` and one line naming the bad variable; never a traceback |
+| `ei serve api` / `worker` / `mcp` | Runs the API, the worker or the stdio MCP server from `EI_*` settings (see [MCP server](#mcp-server)). | `2` and one line naming the bad variable; never a traceback |
+| `ei doctor` | Checks that this installation is ready, never asking a paid model to answer: `--models` the model profiles and catalog (`--probe` adds one model-list request per profile), `--search` one real search through each configured provider, `--local` the free local model. See [MODEL_PROFILES.md](MODEL_PROFILES.md) and [LOCAL_MODEL.md](LOCAL_MODEL.md). | `0` ready; `1` a check failed; `2` setup trouble |
 | `ei db upgrade` | Applies the database migrations to `EI_DATABASE_URL` and prints the revision reached. Needs the `runtime` extra. | `0`; `1` extra missing; `2` and one line for a missing setting or an unreachable database |
 | `ei run status RUN_ID` | Prints the run as one line of JSON (the same `RunSummaryV1` the API returns). Needs only `EI_DATABASE_URL`. | `0`; `1` unknown run; `2` setup trouble |
 | `ei run create BRIEF.TOML` | Starts a book run from a brief file (TOML, the brief contract v1: `kind`, `idea`, `budget_micro_usd` and the optional keys). The run is saved pending with the brief's cap as its budget and its first stage is queued for the worker; a file that is not a brief, or a kind this build cannot start, is refused on one line and nothing is saved. Needs the database and the broker, like `resume`. |

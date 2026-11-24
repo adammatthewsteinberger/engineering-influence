@@ -171,10 +171,10 @@ CI runs `actionlint` and `zizmor` (medium severity and above) on every workflow.
 
 ## What has not been exercised
 
-- The four publishing jobs (`testpypi`, `testpypi-sdk`, `pypi`, `pypi-sdk`) have never run: they need the trusted publishers and the variables described above.
+- The five publishing jobs (`testpypi`, `testpypi-sdk`, `pypi`, `pypi-sdk`, `images`) have never run: they need the trusted publishers and the variables described above.
 - The `github-release` job has not run in its new form, which creates the tag itself instead of reading one.
 - The guard is tested against its own script (`tests/e2e/test_release_guard.py`), and the development-build staging step against the real step (`tests/e2e/test_dev_build_stage.py`).
   The upload jobs are tested only by their shape.
 - `zizmor` reports two low-severity suggestions to write `./.github/workflows/…` as `$/…`.
   The documented `./` form is kept deliberately.
-- The container image is not published anywhere.
+- No container image has been published yet: the `images` job has never run, and stays off until `PUBLISH_IMAGES` is `true` and the `ghcr` environment is approved.

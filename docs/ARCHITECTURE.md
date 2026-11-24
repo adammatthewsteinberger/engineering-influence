@@ -93,8 +93,9 @@ The correlation id travels the whole way: request, queued job, worker log lines 
 - **Queues**: `EI_QUEUE_NAME` (default `engineering-influence.jobs`) and its `.dead` companion.
 
 - **Runs** (`bookrunrecord`), the **run journal** (`journalrecord`) and **artifacts** (`artifactrecord`)
-  back resumable book runs. The worker writes them when it advances a `run.advance` job; nothing yet
-  creates a run. The API and `ei run status` read them (`RunSummaryV1`) and never write.
+  back resumable book runs. The worker writes them when it advances a `run.advance` job; `ei run create`,
+  `POST /v1/runs` and the MCP and SDK `create_run` start one, and `ei run grant`, `deny`, `resume` and `cancel` change it.
+  The API and `ei run status` read them (`RunSummaryV1`).
 
 The schema is owned by Alembic. The migrations ship in the wheel
 (`infrastructure/migrations/`), `ei db upgrade` applies them to `EI_DATABASE_URL`, and the compose
@@ -122,7 +123,5 @@ another `QueueInterface`; another `LedgerInterface`.
 
 ## Not built yet
 
-An importer entry-point plugin layer, an OpenAPI snapshot and webhook event catalog as
-published contracts, the other MCP tools, an inbound webhook route, the methodology stages
-P1 to P14 with autonomy modes and budget guards, and integration tests against real
-containers. [CHANGELOG.md](../CHANGELOG.md) records what has landed.
+An importer entry-point plugin layer, an inbound webhook route, and the methodology stages
+P1 to P14 with autonomy modes. [CHANGELOG.md](../CHANGELOG.md) records what has landed.

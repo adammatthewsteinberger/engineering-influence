@@ -29,6 +29,7 @@ EI_AUTHOR_PROFILE=author.toml \
 ei evaluate --out eval-out --budget-usd 5 --judge-budget-usd 3 --baseline previous/evaluation.json
 ```
 
+- Also accepted: `--profile FILE` (the author profile, as an alternative to `EI_AUTHOR_PROFILE`), `--set FILE` (default `evaluation/set.toml`), `--rubric FILE` (default `evaluation/rubric.toml`) and `--release LABEL` (recorded in the report).
 - `EI_ALLOW_PAID=1` is required. Without it the command refuses before it reads a file or calls a model.
 - `--budget-usd` is the most **each book** may spend; `--judge-budget-usd` is the most the **judge may spend in all**. Both are required and have no default.
 - `--out` must be a new or empty folder, so one evaluation never mixes with another. Each book is made under it (`<case>/` and `<case>.state/`), and `evaluation.json` is written beside them.

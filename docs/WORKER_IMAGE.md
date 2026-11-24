@@ -32,7 +32,7 @@ A run's own book was built in this image too: the scripted rehearsal of the whol
 stage, which produced the interior PDF, the EPUB (checked by epubcheck), the ebook, paperback and hardcover covers, the
 listing and the release manifest. That check is `tests/toolchain/test_run_builds_book.py`, which the CI toolchain job runs.
 
-Not verified: a full-length book, and the CI job that builds this target.
+Not verified: a full-length book, and the two workflows that build this target (`nightly-eval.yml` and the release `images` job), which have never run.
 
 ## Running a stack whose worker builds books
 

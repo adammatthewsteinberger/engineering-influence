@@ -30,8 +30,8 @@ sh examples/up.sh
 ```
 
 The first run writes `examples/.env` (git-ignored, mode 600) with random database and broker
-passwords and one API key, then builds the image and starts four containers: Postgres,
-RabbitMQ, the API on `127.0.0.1:8000` and the worker. It waits until every container is
+passwords and one API key, then builds the image and starts five services: Postgres,
+RabbitMQ, a one-shot database migration, the API on `127.0.0.1:8000` and the worker. It waits until every container is
 healthy. Nothing has a default credential, and nothing is reachable from your network.
 
 Export the connection settings into your shell:

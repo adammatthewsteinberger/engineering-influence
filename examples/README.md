@@ -73,8 +73,8 @@ you can build and test a receiver today. The signature format is in
 
 ## What these do not cover
 
-`ei pipeline start` and the MCP server use in-memory adapters: they validate and plan, but
-they do not queue work on the stack. To run work on the stack, use REST or the SDK.
+`ei pipeline start` and the example MCP server (`examples/mcp/server.py`) use in-memory adapters: they validate and
+plan, but they do not queue work on the stack. To run work on the stack, use REST, the SDK or `ei serve mcp`.
 
 ## Stop
 
