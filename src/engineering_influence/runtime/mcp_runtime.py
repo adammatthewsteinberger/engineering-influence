@@ -33,6 +33,7 @@ from engineering_influence.services.read_run import ReadRun
 from engineering_influence.services.resolve_spend_consent import ResolveSpendConsent
 from engineering_influence.services.resume_run import ResumeRun
 from engineering_influence.services.run_management import RunManagement
+from engineering_influence.services.spend_ceiling import SpendCeiling
 from engineering_influence.services.start_pipeline import StartPipeline
 
 
@@ -73,15 +74,16 @@ class McpRuntime(McpRuntimeInterface):
         self._ledger = SqlModelLedger(url)
         runs, artifacts = SqlModelRunRepository(url), SqlModelArtifactStore(url)
         self._stores = [runs, artifacts]
+        ceiling = SpendCeiling(runs, self._settings.spend_limits)
         manager = RunManagement(
             ListRuns(runs),
             ResumeRun(runs, queue),
             CancelRun(runs),
-            ResolveSpendConsent(runs, queue),
+            ResolveSpendConsent(runs, queue, ceiling),
         )
         return McpApplication(
             ProjectController(StartPipeline(self._ledger, queue)),
-            CreateRun(runs, queue),
+            CreateRun(runs, queue, ceiling=ceiling),
             manager,
             RunController(ReadRun(runs, artifacts)),
             allow_spend=self._settings.mcp_allow_spend,

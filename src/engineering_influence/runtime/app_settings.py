@@ -1,8 +1,9 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Validated process settings."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
+from engineering_influence.models.spend_limits import SpendLimits
 from engineering_influence.runtime.interfaces.app_settings_interface import AppSettingsInterface
 
 
@@ -10,7 +11,8 @@ from engineering_influence.runtime.interfaces.app_settings_interface import AppS
 class AppSettings(AppSettingsInterface):
     """Everything a process needs from its environment.
 
-    ``database_url`` and ``rabbitmq_url`` carry credentials, so they are never logged.
+    ``database_url`` and ``rabbitmq_url`` carry credentials, so they are never logged. ``spend_limits`` are the operator's
+    ceilings on what any run, and all runs together, may be allowed to spend; none is set by default.
     """
 
     database_url: str
@@ -23,6 +25,7 @@ class AppSettings(AppSettingsInterface):
     rate_per_second: float = 10.0
     mcp_allow_spend: bool = False
     mcp_max_run_budget_micro_usd: int = 5_000_000
+    spend_limits: SpendLimits = field(default_factory=SpendLimits)
 
     def __repr__(self) -> str:
         return (

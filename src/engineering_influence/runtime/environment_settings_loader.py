@@ -5,6 +5,7 @@ import os
 from collections.abc import Mapping
 
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
+from engineering_influence.models.spend_limits import SpendLimits
 from engineering_influence.runtime.app_settings import AppSettings
 from engineering_influence.runtime.interfaces.environment_settings_loader_interface import (
     EnvironmentSettingsLoaderInterface,
@@ -46,6 +47,7 @@ class EnvironmentSettingsLoader(EnvironmentSettingsLoaderInterface):
             rate_per_second=self._positive("EI_RATE_PER_SECOND", 10.0),
             mcp_allow_spend=self._text("EI_MCP_ALLOW_SPEND", "").lower() in ("1", "true", "yes"),
             mcp_max_run_budget_micro_usd=self._whole("EI_MCP_MAX_RUN_BUDGET_MICRO_USD", 5_000_000),
+            spend_limits=SpendLimits.from_environment(self._environ),
         )
 
     def _text(self, name: str, default: str) -> str:

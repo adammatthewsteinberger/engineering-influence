@@ -9,18 +9,27 @@ from engineering_influence.services.advance_run import AdvanceRun
 from engineering_influence.services.interfaces.resolve_spend_consent_interface import (
     ResolveSpendConsentInterface,
 )
+from engineering_influence.services.interfaces.spend_ceiling_interface import (
+    SpendCeilingInterface,
+)
 
 
 class ResolveSpendConsent(ResolveSpendConsentInterface):
-    """A grant raises the cap and queues the stage; a denial parks the run and queues nothing.
+    """A grant raises the cap and queues the stage (once the spend ceiling, if there is one, allows the raise); a denial parks the run and queues nothing.
 
     Both are a compare-and-swap against the state that was read, so an answer that races another
     one is refused (RUN_CHANGED) rather than applied twice.
     """
 
-    def __init__(self, runs: RunRepositoryInterface, queue: QueueInterface) -> None:
+    def __init__(
+        self,
+        runs: RunRepositoryInterface,
+        queue: QueueInterface,
+        ceiling: SpendCeilingInterface | None = None,
+    ) -> None:
         self._runs = runs
         self._queue = queue
+        self._ceiling = ceiling
 
     def grant(self, run_id: str, micro_usd: int | None = None) -> BookRun:
         """Raise the cap, un-park the run, and queue its current stage."""
@@ -31,6 +40,8 @@ class ResolveSpendConsent(ResolveSpendConsentInterface):
             raise ApplicationError(
                 code="CONSENT_NOT_PENDING", message=str(error), http_status=409
             ) from error
+        if self._ceiling is not None:
+            self._ceiling.admit_raise(run, changed.budget.cap - run.budget.cap)
         self._store(run, changed)
         self._queue.enqueue(
             AdvanceRun.KIND, {"run_id": run_id, "stage": changed.stage, "attempt": 1}
