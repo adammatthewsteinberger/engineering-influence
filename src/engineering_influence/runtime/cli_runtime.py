@@ -97,6 +97,9 @@ from engineering_influence.services.interfaces.local_model_doctor_interface impo
 from engineering_influence.services.interfaces.model_doctor_interface import (
     ModelDoctorInterface,
 )
+from engineering_influence.services.interfaces.readiness_doctor_interface import (
+    ReadinessDoctorInterface,
+)
 from engineering_influence.services.interfaces.resolve_spend_consent_interface import (
     ResolveSpendConsentInterface,
 )
@@ -117,6 +120,7 @@ from engineering_influence.services.plugin_importer import PluginImporter
 from engineering_influence.services.plugin_installer import PluginInstaller
 from engineering_influence.services.plugin_lock_verifier import PluginLockVerifier
 from engineering_influence.services.plugin_marketplace import PluginMarketplace
+from engineering_influence.services.readiness_doctor import ReadinessDoctor
 from engineering_influence.services.resolve_spend_consent import ResolveSpendConsent
 from engineering_influence.services.resume_run import ResumeRun
 from engineering_influence.services.run_progress import RunProgress
@@ -142,6 +146,8 @@ class CliRuntime(CliRuntimeInterface):
 
     ``probe_timeout_seconds`` bounds each request of ``doctor --probe``. ``publishing`` replaces the factory that wires the book commands to the real file system and
     toolchain, so a test can drive the whole command line over fakes. ``brave_base_url`` is where ``doctor --search`` finds Brave, so a test can point it at a local server.
+    ``local_searxng_url`` is the SearXNG a run with the free local model falls back to when no search is configured; the
+    doctor checks that same address, so it reports on the search a run would really use.
     """
 
     LOCAL_MODEL_WAIT_SECONDS = 300.0
@@ -159,12 +165,14 @@ class CliRuntime(CliRuntimeInterface):
         probe_timeout_seconds: float = 10.0,
         bundles: BundleFetcherInterface | None = None,
         brave_base_url: str = "https://api.search.brave.com",
+        local_searxng_url: str = "http://127.0.0.1:8888",
     ) -> None:
         self._publishing = publishing
         self._queue = queue
         self._probe_timeout_seconds = probe_timeout_seconds
         self._bundles = bundles
         self._brave_base_url = brave_base_url
+        self._local_searxng_url = local_searxng_url
 
     def build(self) -> CliApplicationInterface:
         """Wire the controller, the book commands and the server commands."""
@@ -185,7 +193,11 @@ class CliRuntime(CliRuntimeInterface):
                 self._resolve_spend,
             ),
             DoctorCli(
-                self._model_doctor, self._search_doctor, self._local_model_doctor, os.environ
+                self._model_doctor,
+                self._search_doctor,
+                self._local_model_doctor,
+                os.environ,
+                self._readiness_doctor,
             ),
             self._tools_cli(),
             self._skills_cli(),
@@ -325,7 +337,8 @@ class CliRuntime(CliRuntimeInterface):
     def _search_doctor(self) -> SearchDoctorInterface:
         """Build the search doctor from the same settings the research stage reads, in the same order.
 
-        ``EI_SEARXNG_URL`` first, then Brave when ``BRAVE_SEARCH_API_KEY`` is set. The client is built here and lives until this one-shot
+        ``EI_SEARXNG_URL`` first, then Brave when ``BRAVE_SEARCH_API_KEY`` is set. With neither, a run with the free
+        local model (``EI_STAGE_EXECUTOR`` unset or ``local``) uses a SearXNG at its default address, so that is checked. The client is built here and lives until this one-shot
         command exits.
         """
         import httpx
@@ -355,7 +368,31 @@ class CliRuntime(CliRuntimeInterface):
             key = ""
         if key:
             providers.append(("brave", BraveSearchProvider(client, key, self._brave_base_url)))
+        if not providers and os.environ.get("EI_STAGE_EXECUTOR", "local") == "local":
+            providers.append(
+                (
+                    "searxng at its default address",
+                    SearxngSearchProvider(client, self._local_searxng_url),
+                )
+            )
         return SearchDoctor(tuple(providers))
+
+    def _readiness_doctor(self) -> ReadinessDoctorInterface:
+        """Build the readiness doctor over this interpreter's own modules, this ``PATH`` and the real profile reader."""
+        from importlib.util import find_spec
+
+        from engineering_influence.infrastructure.author.toml_author_profile_loader import (
+            TomlAuthorProfileLoader,
+        )
+        from engineering_influence.infrastructure.tools.path_executable_finder import (
+            PathExecutableFinder,
+        )
+
+        return ReadinessDoctor(
+            lambda module: find_spec(module) is not None,
+            PathExecutableFinder(),
+            TomlAuthorProfileLoader(),
+        )
 
     def _local_model_doctor(self) -> LocalModelDoctorInterface:
         """Build the local model doctor from the same settings the worker reads (``EI_LOCAL_MODEL``, ``EI_LOCAL_URL``).

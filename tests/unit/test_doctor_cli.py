@@ -4,6 +4,7 @@
 
 import argparse
 import json
+import shutil
 import threading
 import time
 from collections.abc import Iterator
@@ -23,6 +24,9 @@ from engineering_influence.services.interfaces.local_model_doctor_interface impo
 )
 from engineering_influence.services.interfaces.model_doctor_interface import (
     ModelDoctorInterface,
+)
+from engineering_influence.services.interfaces.readiness_doctor_interface import (
+    ReadinessDoctorInterface,
 )
 from engineering_influence.services.interfaces.search_doctor_interface import (
     SearchDoctorInterface,
@@ -61,6 +65,10 @@ def NO_SEARCH() -> SearchDoctorInterface:
     raise AssertionError("a models check never builds the search doctor")
 
 
+def NO_READY() -> ReadinessDoctorInterface:
+    raise AssertionError("only a readiness check builds the readiness doctor")
+
+
 def NO_LOCAL() -> LocalModelDoctorInterface:
     raise AssertionError("a models or search check never builds the local model doctor")
 
@@ -77,6 +85,8 @@ class Doctor(ModelDoctorInterface):
 
 def arguments(**changes: object) -> argparse.Namespace:
     values: dict[str, object] = {
+        "ready": False,
+        "author_profile": None,
         "models": True,
         "search": False,
         "local": False,
@@ -91,7 +101,7 @@ def arguments(**changes: object) -> argparse.Namespace:
 
 def test_a_clean_report_prints_each_line_and_exits_0(capsys: pytest.CaptureFixture[str]) -> None:
     doctor = Doctor((DoctorFinding("a", "price", True, "ok"), DoctorFinding("a", "key", True, "k")))
-    assert DoctorCli(lambda probe: doctor, NO_SEARCH, NO_LOCAL, {}).run(arguments()) == 0
+    assert DoctorCli(lambda probe: doctor, NO_SEARCH, NO_LOCAL, {}, NO_READY).run(arguments()) == 0
     assert capsys.readouterr().out == (
         "ok   a: price: ok\nok   a: key: k\nall 2 checks passed; sent: nothing\n"
     )
@@ -104,7 +114,7 @@ def test_a_failed_check_exits_1_and_counts_the_failures(
     doctor = Doctor(
         (DoctorFinding("a", "price", True, "ok"), DoctorFinding("a", "key", False, "no"))
     )
-    assert DoctorCli(lambda probe: doctor, NO_SEARCH, NO_LOCAL, {}).run(arguments()) == 1
+    assert DoctorCli(lambda probe: doctor, NO_SEARCH, NO_LOCAL, {}, NO_READY).run(arguments()) == 1
     out = capsys.readouterr().out
     assert "FAIL a: key: no" in out
     assert out.endswith("1 of 2 checks failed\n")
@@ -119,7 +129,7 @@ def test_the_probe_flag_is_passed_to_the_builder_and_named_in_the_summary(
         asked.append(probe)
         return Doctor((DoctorFinding("a", "probe", True, "available"),))
 
-    assert DoctorCli(build, NO_SEARCH, NO_LOCAL, {}).run(arguments(probe=True)) == 0
+    assert DoctorCli(build, NO_SEARCH, NO_LOCAL, {}, NO_READY).run(arguments(probe=True)) == 0
     assert asked == [True]
     assert "sent: one model-list request per profile" in capsys.readouterr().out
 
@@ -127,7 +137,7 @@ def test_the_probe_flag_is_passed_to_the_builder_and_named_in_the_summary(
 def test_the_files_default_to_the_environment() -> None:
     doctor = Doctor()
     environment = {"EI_MODEL_CATALOG": "env-c.toml", "EI_MODEL_PROFILES": "env-p.toml"}
-    DoctorCli(lambda probe: doctor, NO_SEARCH, NO_LOCAL, environment).run(
+    DoctorCli(lambda probe: doctor, NO_SEARCH, NO_LOCAL, environment, NO_READY).run(
         arguments(catalog=None, profiles=None)
     )
     assert doctor.calls == [(Path("env-c.toml"), Path("env-p.toml"))]
@@ -136,7 +146,7 @@ def test_the_files_default_to_the_environment() -> None:
 def test_a_flag_wins_over_the_environment() -> None:
     doctor = Doctor()
     environment = {"EI_MODEL_CATALOG": "env-c.toml", "EI_MODEL_PROFILES": "env-p.toml"}
-    DoctorCli(lambda probe: doctor, NO_SEARCH, NO_LOCAL, environment).run(
+    DoctorCli(lambda probe: doctor, NO_SEARCH, NO_LOCAL, environment, NO_READY).run(
         arguments(catalog=Path("flag.toml"), profiles=None)
     )
     assert doctor.calls == [(Path("flag.toml"), Path("env-p.toml"))]
@@ -146,9 +156,9 @@ def test_a_flag_wins_over_the_environment() -> None:
 def test_a_file_that_is_not_named_anywhere_exits_2(
     capsys: pytest.CaptureFixture[str], missing: str
 ) -> None:
-    code = DoctorCli(lambda probe: Doctor(), NO_SEARCH, NO_LOCAL, {"EI_MODEL_CATALOG": "  "}).run(
-        arguments(**{missing: None})
-    )
+    code = DoctorCli(
+        lambda probe: Doctor(), NO_SEARCH, NO_LOCAL, {"EI_MODEL_CATALOG": "  "}, NO_READY
+    ).run(arguments(**{missing: None}))
     assert code == 2
     assert "EI_MODEL_CATALOG and EI_MODEL_PROFILES" in capsys.readouterr().err
 
@@ -157,7 +167,7 @@ def test_an_invalid_file_prints_one_line_and_exits_2(capsys: pytest.CaptureFixtu
     def build(probe: bool) -> ModelDoctorInterface:
         raise ApplicationError("MODEL_PROFILE_INVALID", "profile #1 (x) is missing 'adapter'")
 
-    assert DoctorCli(build, NO_SEARCH, NO_LOCAL, {}).run(arguments()) == 2
+    assert DoctorCli(build, NO_SEARCH, NO_LOCAL, {}, NO_READY).run(arguments()) == 2
     assert capsys.readouterr().err == "error: profile #1 (x) is missing 'adapter'\n"
 
 
@@ -165,7 +175,7 @@ def test_a_missing_extra_is_named_and_exits_1(capsys: pytest.CaptureFixture[str]
     def build(probe: bool) -> ModelDoctorInterface:
         raise ImportError("no httpx", name="httpx")
 
-    assert DoctorCli(build, NO_SEARCH, NO_LOCAL, {}).run(arguments(probe=True)) == 1
+    assert DoctorCli(build, NO_SEARCH, NO_LOCAL, {}, NO_READY).run(arguments(probe=True)) == 1
     err = capsys.readouterr().err
     assert "doctor needs the runtime extra" in err
     assert "httpx is missing" in err
@@ -338,7 +348,7 @@ def test_a_clean_search_check_prints_each_line_and_says_what_was_sent(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     fake = SearchDoctorFake(GOOD)
-    assert DoctorCli(never_models, lambda: fake, NO_LOCAL, {}).run(searching()) == 0
+    assert DoctorCli(never_models, lambda: fake, NO_LOCAL, {}, NO_READY).run(searching()) == 0
     assert capsys.readouterr().out == (
         "ok   searxng: search: 5 links, the first from example.org\n"
         "all 1 checks passed; sent: one search request per provider\n"
@@ -348,7 +358,9 @@ def test_a_clean_search_check_prints_each_line_and_says_what_was_sent(
 
 def test_the_query_can_be_chosen() -> None:
     fake = SearchDoctorFake(GOOD)
-    DoctorCli(never_models, lambda: fake, NO_LOCAL, {}).run(searching(query="beekeeping manuals"))
+    DoctorCli(never_models, lambda: fake, NO_LOCAL, {}, NO_READY).run(
+        searching(query="beekeeping manuals")
+    )
     assert fake.queries == ["beekeeping manuals"]
 
 
@@ -356,14 +368,16 @@ def test_a_failed_search_check_exits_1_and_counts_the_failures(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     assert (
-        DoctorCli(never_models, lambda: SearchDoctorFake(BAD + GOOD), NO_LOCAL, {}).run(searching())
+        DoctorCli(never_models, lambda: SearchDoctorFake(BAD + GOOD), NO_LOCAL, {}, NO_READY).run(
+            searching()
+        )
         == 1
     )
     assert "1 of 2 checks failed" in capsys.readouterr().out
 
 
 def test_a_search_check_needs_no_model_files(capsys: pytest.CaptureFixture[str]) -> None:
-    code = DoctorCli(never_models, lambda: SearchDoctorFake(GOOD), NO_LOCAL, {}).run(
+    code = DoctorCli(never_models, lambda: SearchDoctorFake(GOOD), NO_LOCAL, {}, NO_READY).run(
         searching(catalog=None, profiles=None)
     )
     assert code == 0
@@ -378,7 +392,7 @@ def test_an_unusable_search_setting_prints_one_line_and_exits_2(
             "STAGE_SEARXNG_URL_INVALID", "EI_SEARXNG_URL is not usable: no host", 503
         )
 
-    assert DoctorCli(never_models, build, NO_LOCAL, {}).run(searching()) == 2
+    assert DoctorCli(never_models, build, NO_LOCAL, {}, NO_READY).run(searching()) == 2
     assert capsys.readouterr().err == "error: EI_SEARXNG_URL is not usable: no host\n"
 
 
@@ -388,7 +402,7 @@ def test_a_missing_extra_is_named_for_the_search_check_too(
     def build() -> SearchDoctorInterface:
         raise ImportError("no httpx", name="httpx")
 
-    assert DoctorCli(never_models, build, NO_LOCAL, {}).run(searching()) == 1
+    assert DoctorCli(never_models, build, NO_LOCAL, {}, NO_READY).run(searching()) == 1
     assert "httpx is missing" in capsys.readouterr().err
 
 
@@ -502,8 +516,40 @@ def test_the_real_command_with_nothing_configured_fails_and_says_how_to_set_one_
     monkeypatch: pytest.MonkeyPatch, no_brave: None, capsys: pytest.CaptureFixture[str]
 ) -> None:
     monkeypatch.delenv("EI_SEARXNG_URL", raising=False)
+    monkeypatch.setenv("EI_STAGE_EXECUTOR", "model")
     assert search() == 1
     assert "no web search is set up: set EI_SEARXNG_URL" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("executor", [None, "local"])
+def test_with_the_free_local_model_the_search_a_run_falls_back_to_is_the_one_checked(
+    monkeypatch: pytest.MonkeyPatch,
+    no_brave: None,
+    capsys: pytest.CaptureFixture[str],
+    executor: str | None,
+) -> None:
+    monkeypatch.delenv("EI_SEARXNG_URL", raising=False)
+    if executor is None:
+        monkeypatch.delenv("EI_STAGE_EXECUTOR", raising=False)
+    else:
+        monkeypatch.setenv("EI_STAGE_EXECUTOR", executor)
+    with searxng() as (url, _):
+        code = CliRuntime(local_searxng_url=url).build().run(["doctor", "--search"])
+    assert code == 0
+    assert "ok   searxng at its default address: search: 2 links" in capsys.readouterr().out
+
+
+def test_a_configured_search_is_checked_and_the_default_address_is_then_left_alone(
+    monkeypatch: pytest.MonkeyPatch, no_brave: None, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.delenv("EI_STAGE_EXECUTOR", raising=False)
+    with searxng() as (url, _):
+        monkeypatch.setenv("EI_SEARXNG_URL", url)
+        code = (
+            CliRuntime(local_searxng_url="http://127.0.0.1:9").build().run(["doctor", "--search"])
+        )
+    out = capsys.readouterr().out
+    assert code == 0 and "default address" not in out
 
 
 def test_the_real_command_refuses_an_address_with_no_host_before_sending_anything(
@@ -580,6 +626,7 @@ def test_a_blank_searxng_setting_counts_as_not_set(
     monkeypatch: pytest.MonkeyPatch, no_brave: None, capsys: pytest.CaptureFixture[str]
 ) -> None:
     monkeypatch.setenv("EI_SEARXNG_URL", "   ")
+    monkeypatch.setenv("EI_STAGE_EXECUTOR", "model")
     assert search() == 1
     assert "no web search is set up" in capsys.readouterr().out
 
@@ -634,7 +681,7 @@ def test_a_clean_local_check_prints_each_line_and_says_what_was_sent(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     fake = LocalDoctorFake(LOCAL_GOOD)
-    assert DoctorCli(never_models, never_search, lambda: fake, {}).run(local_args()) == 0
+    assert DoctorCli(never_models, never_search, lambda: fake, {}, NO_READY).run(local_args()) == 0
     assert capsys.readouterr().out == (
         "ok   local: server: Ollama answers\n"
         "ok   local: context: 32768 tokens\n"
@@ -646,9 +693,9 @@ def test_a_clean_local_check_prints_each_line_and_says_what_was_sent(
 def test_a_failed_local_check_exits_1_and_counts_what_failed(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    code = DoctorCli(never_models, never_search, lambda: LocalDoctorFake(LOCAL_BAD), {}).run(
-        local_args()
-    )
+    code = DoctorCli(
+        never_models, never_search, lambda: LocalDoctorFake(LOCAL_BAD), {}, NO_READY
+    ).run(local_args())
     assert code == 1
     out = capsys.readouterr().out
     assert "FAIL local: model: gpt-oss:20b is not pulled" in out
@@ -663,7 +710,7 @@ def test_a_local_setting_that_cannot_be_used_exits_2_with_one_line(
             code="STAGE_LOCAL_MODEL_INVALID", message="EI_LOCAL_URL is not usable"
         )
 
-    assert DoctorCli(never_models, never_search, build, {}).run(local_args()) == 2
+    assert DoctorCli(never_models, never_search, build, {}, NO_READY).run(local_args()) == 2
     assert capsys.readouterr().err == "error: EI_LOCAL_URL is not usable\n"
 
 
@@ -673,7 +720,7 @@ def test_a_missing_extra_exits_1_with_the_fix_for_the_local_check(
     def build() -> LocalModelDoctorInterface:
         raise ImportError("no httpx", name="httpx")
 
-    assert DoctorCli(never_models, never_search, build, {}).run(local_args()) == 1
+    assert DoctorCli(never_models, never_search, build, {}, NO_READY).run(local_args()) == 1
     assert "engineering-influence[runtime]" in capsys.readouterr().err
 
 
@@ -789,3 +836,132 @@ def test_an_unusable_local_address_is_reported_before_anything_is_sent(
     monkeypatch.setenv("EI_LOCAL_URL", "ftp://example.test")
     assert CliRuntime().build().run(["doctor", "--local"]) == 2
     assert capsys.readouterr().err.startswith("error: EI_LOCAL_MODEL or EI_LOCAL_URL is not usable")
+
+
+# ------------------------------------------------------------------------------ doctor --ready
+class ReadinessFake(ReadinessDoctorInterface):
+    def __init__(self, findings: tuple[DoctorFinding, ...]) -> None:
+        self.findings = findings
+        self.profiles: list[Path | None] = []
+
+    def check(self, profile: Path | None) -> tuple[DoctorFinding, ...]:
+        self.profiles.append(profile)
+        return self.findings
+
+
+def ready_args(**changes: object) -> argparse.Namespace:
+    return arguments(models=False, ready=True, **changes)
+
+
+INSTALLED = (DoctorFinding("install", "extra runtime", True, "installed"),)
+NOT_INSTALLED = (DoctorFinding("install", "tool lualatex", False, "not on PATH"),)
+
+
+def test_ready_runs_the_install_checks_then_the_local_model_then_the_search_and_says_what_was_sent(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    ready, local, search = (
+        ReadinessFake(INSTALLED),
+        LocalDoctorFake(LOCAL_GOOD),
+        SearchDoctorFake(GOOD),
+    )
+    cli = DoctorCli(never_models, lambda: search, lambda: local, {}, lambda: ready)
+
+    assert cli.run(ready_args()) == 0
+
+    assert capsys.readouterr().out == (
+        "ok   install: extra runtime: installed\n"
+        "ok   local: server: Ollama answers\n"
+        "ok   local: context: 32768 tokens\n"
+        "ok   searxng: search: 5 links, the first from example.org\n"
+        "all 4 checks passed; sent: one tiny completion to the local model, "
+        "and one search request per provider\n"
+    )
+    assert search.queries == [DoctorCli.DEFAULT_QUERY]
+
+
+def test_ready_reports_every_part_even_when_an_early_one_fails_and_exits_1(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    cli = DoctorCli(
+        never_models,
+        lambda: SearchDoctorFake(BAD),
+        lambda: LocalDoctorFake(LOCAL_GOOD),
+        {},
+        lambda: ReadinessFake(NOT_INSTALLED),
+    )
+
+    assert cli.run(ready_args()) == 1
+
+    out = capsys.readouterr().out
+    assert "FAIL install: tool lualatex: not on PATH\n" in out
+    assert "ok   local: server: Ollama answers\n" in out
+    assert "FAIL searxng: search: could not search: down\n" in out
+    assert out.endswith("2 of 4 checks failed\n")
+
+
+def test_ready_checks_the_profile_the_flag_names_before_the_one_in_the_environment() -> None:
+    ready = ReadinessFake(INSTALLED)
+    cli = DoctorCli(
+        never_models,
+        lambda: SearchDoctorFake(GOOD),
+        lambda: LocalDoctorFake(LOCAL_GOOD),
+        {"EI_AUTHOR_PROFILE": " env.toml "},
+        lambda: ready,
+    )
+
+    cli.run(ready_args())
+    cli.run(ready_args(author_profile=Path("flag.toml")))
+
+    assert ready.profiles == [Path("env.toml"), Path("flag.toml")]
+
+
+def test_ready_with_no_profile_named_anywhere_passes_none_on_for_the_check_to_report() -> None:
+    ready = ReadinessFake(INSTALLED)
+    cli = DoctorCli(
+        never_models,
+        lambda: SearchDoctorFake(GOOD),
+        lambda: LocalDoctorFake(LOCAL_GOOD),
+        {"EI_AUTHOR_PROFILE": "  "},
+        lambda: ready,
+    )
+
+    cli.run(ready_args())
+
+    assert ready.profiles == [None]
+
+
+def test_ready_searches_for_what_the_person_asked_for() -> None:
+    search = SearchDoctorFake(GOOD)
+    cli = DoctorCli(
+        never_models,
+        lambda: search,
+        lambda: LocalDoctorFake(LOCAL_GOOD),
+        {},
+        lambda: ReadinessFake(INSTALLED),
+    )
+
+    cli.run(ready_args(query="tide tables"))
+
+    assert search.queries == ["tide tables"]
+
+
+def test_ready_is_one_of_the_four_ways_to_run_the_doctor_and_takes_an_author_profile() -> None:
+    with pytest.raises(SystemExit):
+        CliRuntime().build().run(["doctor", "--ready", "--local"])
+    parser = argparse.ArgumentParser()
+    DoctorCli(never_models, never_search, NO_LOCAL, {}, NO_READY).register(parser.add_subparsers())
+
+    parsed = parser.parse_args(["doctor", "--ready", "--author-profile", "a.toml"])
+
+    assert parsed.ready and parsed.author_profile == Path("a.toml")
+
+
+def test_the_real_readiness_doctor_looks_at_this_interpreter_this_path_and_the_real_file(
+    tmp_path: Path,
+) -> None:
+    findings = {f.check: f for f in CliRuntime()._readiness_doctor().check(tmp_path / "none.toml")}
+
+    assert findings["extra runtime"].passed and findings["extra publishing"].passed
+    assert findings["author profile"].detail == f"there is no file at {tmp_path / 'none.toml'}"
+    assert findings["tool zip"].passed == (shutil.which("zip") is not None)

@@ -1,0 +1,8 @@
+# A starter author profile. Copy it somewhere of your own, outside this repository, change every value,
+# and name the copy with EI_AUTHOR_PROFILE or `ei book create --profile FILE`. It is never sent to a model:
+# the assemble stage writes it onto the title, copyright and about-the-author pages.
+# The full list of keys, and the optional [pricing] table a strict release needs, is in docs/CONFIGURATION.md.
+author = "Your Name"
+publisher = "Your Imprint"
+edition = "First Edition"
+author_bio = "One or two sentences about you, as you want them printed in the book."

@@ -29,9 +29,10 @@ class ServeCli(ServeCliInterface):
         try:
             self._starter.start(arguments.target)
         except ImportError as error:
+            extras = "mcp,runtime" if arguments.target == "mcp" else "api,runtime"
             print(
-                "error: serve needs the api and runtime extras: "
-                f"pip install 'engineering-influence[api,runtime]' ({error.name} is missing)",
+                f"error: serve {arguments.target} needs the {extras.replace(',', ' and ')} extras: "
+                f"pip install 'engineering-influence[{extras}]' ({error.name} is missing)",
                 file=sys.stderr,
             )
             return 1

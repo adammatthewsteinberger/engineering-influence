@@ -216,4 +216,4 @@ Prefer short chapters, each with one job.
 
 A plugin ([PLUGINS.md](PLUGINS.md)) is a bundle of skills and tool server definitions that a person installs from a
 file; its skills become ordinary skills here, enabled for no stage. Nothing fetches a skill from a network during a
-run, and a run never contacts a marketplace. Claude Code plugin folders and `marketplace.json` are not read yet (M6.5).
+run, and a run never contacts a marketplace. A Claude Code plugin folder is read by `ei plugins import`, and a marketplace index by `ei plugins search` and `fetch` ([PLUGINS.md](PLUGINS.md)).
