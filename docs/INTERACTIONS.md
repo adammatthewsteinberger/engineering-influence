@@ -139,8 +139,8 @@ start a run, watch it, resume or cancel it and read what it made; a run that nee
 
 **A run an agent starts is held to `EI_MCP_MAX_RUN_BUDGET_MICRO_USD`** (default 5,000,000, five dollars): `create_run` refuses a brief
 with a bigger `budget_micro_usd` (`BUDGET_ABOVE_LIMIT`), so an agent cannot open a run with a cap of its own choosing. That bounds one
-run, **not how many runs an agent starts**: a total or concurrent limit is not built yet, so run the server under a model
-provider key whose own spend limit you are comfortable with.
+run, **not how many runs an agent starts**. For that, set the stack-wide ceilings below (`EI_MAX_OUTSTANDING_BUDGET_MICRO_USD`), which
+hold every way into the stack, MCP included.
 
 `McpApplication(controller).build()` returns an `MCPServer` (from the official `mcp` 2.x SDK)
 with one tool when built bare, and the rest when it is given the services (`grant_run` and `deny_run` only with

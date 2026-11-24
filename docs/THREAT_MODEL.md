@@ -151,7 +151,7 @@ live internet, a live search service or a live model.
 
 | Threat | Defence | Gap |
 |---|---|---|
-| Spend with no human in the loop | A reservation before every call, a cap per run, spend rebuilt from the journal (`CallModel`, `SpendGuard`, `AdvanceRun`). | The guard is per process; M6's fan-out must decide how workers share it. |
+| Spend with no human in the loop | A reservation before every call, a cap per run, spend rebuilt from the journal; operator ceilings on any run's cap and on all runs' unspent budget (`EI_MAX_RUN_BUDGET_MICRO_USD`, `EI_MAX_OUTSTANDING_BUDGET_MICRO_USD`, off until set) (`CallModel`, `SpendGuard`, `AdvanceRun`). | The guard is per process; M6's fan-out must decide how workers share it. |
 | A model answer that fills the window | The output cap on every request, and the context assembler's token budget. | |
 | A book slug that escapes the project | A slug must match `BookSlug.PATTERN` before any build (`BookBuilder`). | |
 | An artifact key that escapes the artifact store | `ConfinedPathGuard` confines the path (`FileArtifactStore`). | |
