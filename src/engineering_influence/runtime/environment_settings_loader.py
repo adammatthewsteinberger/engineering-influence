@@ -17,7 +17,8 @@ class EnvironmentSettingsLoader(EnvironmentSettingsLoaderInterface):
     """``EI_DATABASE_URL`` and ``EI_RABBITMQ_URL`` are required; the rest have safe defaults.
 
     ``EI_MCP_ALLOW_SPEND`` (``1``, ``true`` or ``yes``) lets the MCP server grant and deny a run's budget requests; off by
-    default, so an agent cannot spend more than a run's cap.
+    default, so an agent cannot spend more than a run's cap. ``EI_MCP_MAX_RUN_BUDGET_MICRO_USD`` (default 5,000,000, five
+    dollars) is the most a run started over MCP may be given.
 
     The API binds to loopback unless ``EI_HOST`` says otherwise, so a bare run is never
     reachable from the network by accident.
@@ -44,6 +45,7 @@ class EnvironmentSettingsLoader(EnvironmentSettingsLoaderInterface):
             rate_burst=self._positive("EI_RATE_BURST", 30.0),
             rate_per_second=self._positive("EI_RATE_PER_SECOND", 10.0),
             mcp_allow_spend=self._text("EI_MCP_ALLOW_SPEND", "").lower() in ("1", "true", "yes"),
+            mcp_max_run_budget_micro_usd=self._whole("EI_MCP_MAX_RUN_BUDGET_MICRO_USD", 5_000_000),
         )
 
     def _text(self, name: str, default: str) -> str:
@@ -53,6 +55,12 @@ class EnvironmentSettingsLoader(EnvironmentSettingsLoaderInterface):
         raw = self._text("EI_PORT", "8000")
         if not raw.isdigit() or not 1 <= int(raw) <= 65535:
             raise ValueError("EI_PORT must be a port number from 1 to 65535")
+        return int(raw)
+
+    def _whole(self, name: str, default: int) -> int:
+        raw = self._text(name, str(default))
+        if not raw.isdigit() or int(raw) < 1:
+            raise ValueError(f"{name} must be a whole number above zero")
         return int(raw)
 
     def _positive(self, name: str, default: float) -> float:

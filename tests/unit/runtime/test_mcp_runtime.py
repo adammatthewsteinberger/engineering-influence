@@ -152,6 +152,40 @@ def test_closing_releases_the_ledger_and_both_run_stores(database_url: str) -> N
     assert all(engine.pool is not pool for engine, pool in zip(engines, pools, strict=True))
 
 
+def test_a_run_an_agent_starts_is_held_to_the_operators_ceiling(database_url: str) -> None:
+    mcp = runtime(database_url, mcp_max_run_budget_micro_usd=1_500_000)
+    try:
+        create = tools_of(mcp.build_server())["create_run"]
+        brief = {
+            "schema_version": 1,
+            "kind": "novel",
+            "idea": "A road",
+            "budget_micro_usd": 1_500_001,
+        }
+        with pytest.raises(ApplicationError) as error:
+            create(brief)
+        assert error.value.code == "BUDGET_ABOVE_LIMIT"
+        assert create({**brief, "budget_micro_usd": 1_500_000})["status"] == "pending"
+    finally:
+        mcp.close()
+
+
+def test_by_default_it_is_held_to_five_dollars(database_url: str) -> None:
+    mcp = runtime(database_url)
+    try:
+        create = tools_of(mcp.build_server())["create_run"]
+        brief = {
+            "schema_version": 1,
+            "kind": "novel",
+            "idea": "A road",
+            "budget_micro_usd": 5_000_001,
+        }
+        with pytest.raises(ApplicationError):
+            create(brief)
+    finally:
+        mcp.close()
+
+
 def test_the_database_is_released_even_when_the_server_crashes(
     database_url: str, process_state: None
 ) -> None:

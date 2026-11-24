@@ -31,7 +31,9 @@ class McpApplication(McpApplicationInterface):
     larger than ``MAX_ARTIFACT_BYTES`` is refused (``ARTIFACT_TOO_LARGE``) with the address that downloads any size.
 
     ``grant_run`` and ``deny_run`` spend or withhold the person's money, so a server built with ``allow_spend=False``
-    does not offer them: an agent can start a run and read it, but only a person can give it more budget.
+    (the default) does not offer them: an agent can start a run and read it, but only a person can give it more budget.
+    A run an agent starts is held to ``max_run_budget_micro_usd`` when one is set, so the agent cannot open a run with a
+    cap of its own choosing (``BUDGET_ABOVE_LIMIT``). That bounds one run, not how many an agent starts.
     """
 
     MAX_ARTIFACT_BYTES: ClassVar[int] = 1_048_576
@@ -42,13 +44,15 @@ class McpApplication(McpApplicationInterface):
         creator: CreateRunInterface | None = None,
         manager: RunManagementInterface | None = None,
         reader: RunControllerInterface | None = None,
-        allow_spend: bool = True,
+        allow_spend: bool = False,
+        max_run_budget_micro_usd: int | None = None,
     ) -> None:
         self._controller = controller
         self._creator = creator
         self._manager = manager
         self._reader = reader
         self._allow_spend = allow_spend
+        self._max_run_budget = max_run_budget_micro_usd
 
     def build(self) -> Any:
         """Build a server with a typed `start_pipeline` tool."""
@@ -77,11 +81,19 @@ class McpApplication(McpApplicationInterface):
 
         if self._creator is not None:
             creator = self._creator
+            ceiling = self._max_run_budget
 
             @server.tool()
             def create_run(brief: dict[str, Any]) -> dict[str, Any]:
                 """Start a book run from a brief (the brief contract v1); returns the new run."""
                 value = BookBriefV1.model_validate(brief).to_model()
+                if ceiling is not None and value.budget_micro_usd > ceiling:
+                    raise ApplicationError(
+                        code="BUDGET_ABOVE_LIMIT",
+                        message=f"a run started here may spend at most {ceiling} micro-USD; "
+                        f"this brief asks for {value.budget_micro_usd}",
+                        http_status=422,
+                    )
                 return RunSummaryV1.from_run(creator.create(value), []).model_dump(mode="json")
 
         if self._manager is not None:

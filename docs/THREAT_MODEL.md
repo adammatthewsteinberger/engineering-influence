@@ -6,7 +6,7 @@ below names the test that holds it up; a defence with no test is listed as a gap
 M5, when model output first became something the pipeline typesets. It covers the book
 pipeline and the model layer. The API, MCP and webhook surfaces have their own controls (API
 key checks, rate limiting, an outbound URL policy; for MCP, a stdio server with no tool that spends the person's money unless
-the operator turns it on) and are not modelled here.
+the operator turns it on, and a per-run budget ceiling) and are not modelled here.
 
 ## What is protected
 

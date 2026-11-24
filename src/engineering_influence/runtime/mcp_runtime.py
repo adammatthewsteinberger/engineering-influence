@@ -85,6 +85,7 @@ class McpRuntime(McpRuntimeInterface):
             manager,
             RunController(ReadRun(runs, artifacts)),
             allow_spend=self._settings.mcp_allow_spend,
+            max_run_budget_micro_usd=self._settings.mcp_max_run_budget_micro_usd,
         ).build()
 
     def run(self) -> None:

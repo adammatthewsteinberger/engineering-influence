@@ -296,6 +296,20 @@ def test_the_mcp_server_may_spend_only_when_the_operator_says_so(value: str, all
     assert load(REQUIRED).mcp_allow_spend is False
 
 
+def test_a_run_started_over_mcp_is_held_to_five_dollars_unless_the_operator_says_otherwise() -> (
+    None
+):
+    assert load(REQUIRED).mcp_max_run_budget_micro_usd == 5_000_000
+    changed = load({**REQUIRED, "EI_MCP_MAX_RUN_BUDGET_MICRO_USD": " 12000000 "})
+    assert changed.mcp_max_run_budget_micro_usd == 12_000_000
+
+
+@pytest.mark.parametrize("value", ["0", "-1", "five", "2.5", "1e6"])
+def test_the_mcp_budget_ceiling_is_a_whole_number_above_zero(value: str) -> None:
+    with pytest.raises(ValueError, match="EI_MCP_MAX_RUN_BUDGET_MICRO_USD"):
+        load({**REQUIRED, "EI_MCP_MAX_RUN_BUDGET_MICRO_USD": value})
+
+
 def test_serve_mcp_runs_the_mcp_runtime_with_the_settings_it_loaded(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

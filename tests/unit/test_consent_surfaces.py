@@ -104,7 +104,9 @@ def test_grant_and_deny_need_the_key(api_guard: ApiGuard) -> None:
 
 def mcp_tools(manager: RunManagement) -> Any:
     server: Any = McpApplication(
-        ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue())), manager=manager
+        ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue())),
+        manager=manager,
+        allow_spend=True,
     ).build()
     return server._tool_manager._tools
 

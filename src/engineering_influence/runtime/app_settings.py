@@ -22,6 +22,7 @@ class AppSettings(AppSettingsInterface):
     rate_burst: float = 30.0
     rate_per_second: float = 10.0
     mcp_allow_spend: bool = False
+    mcp_max_run_budget_micro_usd: int = 5_000_000
 
     def __repr__(self) -> str:
         return (

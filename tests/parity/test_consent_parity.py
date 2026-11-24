@@ -96,6 +96,7 @@ def test_mcp_grants_like_the_service() -> None:
     server: Any = McpApplication(
         ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue())),
         manager=manager_for(repo, queue),
+        allow_spend=True,
     ).build()
     assert server._tool_manager._tools["grant_run"].fn("run-1", None) == expected_grant()
     assert summary(repo) == expected_grant()
@@ -201,6 +202,7 @@ def test_every_surface_refuses_a_grant_for_a_run_that_is_not_waiting(
         server: Any = McpApplication(
             ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue())),
             manager=manager_for(repo, queue),
+            allow_spend=True,
         ).build()
         server._tool_manager._tools["grant_run"].fn("run-1", None)
     assert mcp.value.code == "CONSENT_NOT_PENDING"
