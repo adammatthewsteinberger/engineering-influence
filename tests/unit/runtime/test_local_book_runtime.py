@@ -171,3 +171,82 @@ def test_a_finished_run_records_what_it_spent_beside_what_the_brief_was_expected
     spend = json.loads((tmp_path / "out" / "run" / "quality-report.json").read_text())["spend"]
     assert spend["cap_micro_usd"] == 5_000_000 and spend["spent_micro_usd"] > 0
     assert spend["estimated_micro_usd"] > 0 and spend["spent_over_estimated"] > 0
+
+
+class Killed(BaseException):
+    """What a killed process looks like to the run: nothing after it runs."""
+
+
+def finished_in_one_go(
+    tmp_path: Path, url: str, kind: BookKind
+) -> tuple[list[str], int, dict[str, str]]:
+    """The uninterrupted run: its progress lines, what it spent, and the chapters it wrote."""
+    heard: list[str] = []
+    creator = made(tmp_path, url)
+    try:
+        run = creator.start(brief_for(kind), heard.append)
+        creator.export(tmp_path / "out")
+    finally:
+        creator.close()
+    assert run.status is RunStatus.COMPLETED
+    return heard, run.budget.spent, chapters_of(tmp_path / "out")
+
+
+def chapters_of(out: Path) -> dict[str, str]:
+    return {
+        p.name: p.read_text(encoding="utf-8") for p in sorted((out / "src").glob("chapter_*.md"))
+    }
+
+
+@pytest.mark.parametrize(
+    ("kind", "stages"),
+    [(BookKind.NONFICTION, 12), (BookKind.NOVEL, 9)],
+    ids=["nonfiction", "novel"],
+)
+def test_a_run_killed_after_any_stage_ends_where_an_uninterrupted_run_ends_and_pays_for_nothing_twice(
+    tmp_path: Path, kind: BookKind, stages: int
+) -> None:
+    whole = tmp_path / "whole"
+    whole.mkdir()
+    with serve() as reference:
+        lines, spent, chapters = finished_in_one_go(whole, reference.url, kind)
+        calls = len(reference.seen)
+    assert len(lines) == stages and chapters
+
+    for killed_after in range(1, stages):
+        folder = tmp_path / f"killed-after-{killed_after}"
+        folder.mkdir()
+        seen = 0
+
+        def kill(line: str, at: int = killed_after) -> None:
+            nonlocal seen
+            seen += 1
+            if seen == at:
+                raise Killed
+
+        with serve() as server:
+            first = made(folder, server.url)
+            try:
+                with pytest.raises(Killed):
+                    first.start(brief_for(kind), kill)
+            finally:
+                first.close()
+            second = made(folder, server.url)
+            try:
+                resumed: list[str] = []
+                run = second.resume(False, resumed.append)
+                second.export(folder / "out")
+            finally:
+                second.close()
+            paid_in_all = len(server.seen)
+
+        where = f"killed after stage {killed_after} of {stages}"
+        assert run.status is RunStatus.COMPLETED, where
+        assert resumed == lines[killed_after:], (
+            where
+        )  # it carried on from the next stage, not the first
+        assert paid_in_all == calls, (
+            where
+        )  # every model call was made exactly once across both processes
+        assert run.budget.spent == spent, where  # and so the bill is the uninterrupted run's bill
+        assert chapters_of(folder / "out") == chapters, where  # and the book is the same book

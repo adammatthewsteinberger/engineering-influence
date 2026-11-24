@@ -130,6 +130,39 @@ never prints a traceback, which could carry a connection string.
 | `EI_MCP_MAX_RUN_BUDGET_MICRO_USD` | MCP server | The most a run started over MCP may be given, in micro-dollars (default 5,000,000, five dollars). A bigger brief is refused with `BUDGET_ABOVE_LIMIT`. It bounds one run, not how many an agent starts. |
 | `EI_MCP_ALLOW_SPEND` | MCP server | `1`, `true` or `yes` lets `ei serve mcp` offer `grant_run` and `deny_run`, so an agent can answer a run's request for more budget. Off by default: an agent can then start, watch, resume, cancel and read runs, but cannot raise a run's cap. |
 
+### Every variable, and where it is described
+
+A test (`tests/unit/test_docs_match_code.py`) fails when the code reads an `EI_*` variable that is not in this index, or
+when this index names one nothing uses. The two `compose only` rows are read by Docker Compose, not by the program.
+
+| Variable | For | Described in |
+|---|---|---|
+| `EI_ALLOW_PAID` | lets `ei evaluate` spend money; without it the command refuses | [EVALUATION.md](EVALUATION.md) |
+| `EI_API_KEYS` | the API's keys | [Security settings](#security-settings) |
+| `EI_API_PORT` (compose only) | the host port the API is published on, default 8000 | `examples/.env.example`, [TROUBLESHOOTING.md](TROUBLESHOOTING.md) |
+| `EI_AUTHOR_PROFILE` | the author's own details file; a run reads it only when this names it | [The author profile](#the-author-profile-your-own-details) |
+| `EI_BUILD_STRICT_RELEASE` | makes any release warning fail a run's `build` stage | [Limits to know](#limits-to-know-1) |
+| `EI_DATABASE_URL` | the database | [Running the stack](#running-the-stack) |
+| `EI_EVAL_JUDGE_PROFILE` | the model profile that judges books in `ei evaluate` | [EVALUATION.md](EVALUATION.md) |
+| `EI_HOST`, `EI_PORT` | where the API listens | [Running the stack](#running-the-stack) |
+| `EI_LOCAL_MODEL`, `EI_LOCAL_URL` | the free local model's name and address | [LOCAL_MODEL.md](LOCAL_MODEL.md) |
+| `EI_LOG_LEVEL` | log verbosity | [Running the stack](#running-the-stack) |
+| `EI_MAX_OUTSTANDING_BUDGET_MICRO_USD` | the most unspent budget all runs may hold together | [Running the stack](#running-the-stack) |
+| `EI_MAX_RUN_BUDGET_MICRO_USD` | the most any one run may be given | [Running the stack](#running-the-stack) |
+| `EI_MCP_ALLOW_SPEND` | lets `ei serve mcp` offer `grant_run` and `deny_run` | [Running the stack](#running-the-stack) |
+| `EI_MCP_MAX_RUN_BUDGET_MICRO_USD` | the most a run started over MCP may be given | [Running the stack](#running-the-stack) |
+| `EI_MODEL_CATALOG`, `EI_MODEL_PROFILES` | the model price list and the profiles file | [MODEL_PROFILES.md](MODEL_PROFILES.md) |
+| `EI_PLUGIN_LOCK` | the plugin lock file | [The plugin lock](#the-plugin-lock-installed-bundles) |
+| `EI_QUEUE_NAME` | the job queue's name | [Running the stack](#running-the-stack) |
+| `EI_RABBITMQ_URL` | the broker | [Running the stack](#running-the-stack) |
+| `EI_RATE_BURST`, `EI_RATE_PER_SECOND` | the API's rate limit | [Running the stack](#running-the-stack) |
+| `EI_SEARXNG_PORT` (compose only) | the host port of the local search container, default 8888 | [A free local web search](#a-free-local-web-search-searxng) |
+| `EI_SEARXNG_URL` | the SearXNG address the research stage searches through | [A free local web search](#a-free-local-web-search-searxng) |
+| `EI_SKILL_LOCK` | the skill lock file | [The skill lock](#the-skill-lock-installed-prompt-text) |
+| `EI_STAGE_EXECUTOR` | what writes a run's stages: `local`, `model` or `deterministic` | [Limits to know](#limits-to-know-1) |
+| `EI_STAGE_MODEL_PROFILE` | the profile the `model` executor uses | [MODEL_PROFILES.md](MODEL_PROFILES.md) |
+| `EI_TOOL_LOCK` | the tool lock file | [The tool lock](#the-tool-lock-third-party-tool-servers) |
+
 ```bash
 cp examples/.env.example examples/.env     # fill in the three blank values
 docker compose -f examples/docker-compose.yml --env-file examples/.env up -d --build --wait
