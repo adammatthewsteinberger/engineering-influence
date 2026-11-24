@@ -5,9 +5,6 @@ package for Amazon KDP: interior PDF, EPUB, covers, listing and a quality report
 This file is for an AI agent that has a shell. It is plain instructions with no narrative. The human-facing
 pages are indexed in llms.txt.
 
-Status: alpha (0.1.0a2). Every stage is built and tested, but the writing has only run against scripted
-servers, never a live model. Do not tell a user the books are good; nobody has measured that.
-
 ## Install
 
     curl -fsSL https://raw.githubusercontent.com/adammatthewsteinberger/engineering-influence/main/install.sh | sh
