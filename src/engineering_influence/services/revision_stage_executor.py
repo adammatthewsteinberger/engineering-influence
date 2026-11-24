@@ -5,6 +5,7 @@ import asyncio
 from collections.abc import Callable
 
 from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.errors.spend_consent_needed_error import SpendConsentNeededError
 from engineering_influence.interfaces.artifact_store_interface import ArtifactStoreInterface
 from engineering_influence.interfaces.prompt_library_interface import PromptLibraryInterface
 from engineering_influence.interfaces.stage_executor_interface import StageExecutorInterface
@@ -44,6 +45,13 @@ class RevisionStageExecutor(StageExecutorInterface):
     unchanged**, because a retry would replay the same answer. The stage's report says which chapters came back
     unchanged, as a tolerated issue, worked out from the stored files so it survives a redelivery, and the
     stage's own artifact, ``<stage>.md``, lists every chapter's length before and after.
+
+    **A revision is optional, so a pass that runs out of money does not stop the run.** When a call would pass the
+    cap, that chapter and every later one in the pass keep the text they had (it is stored unchanged, so the next pass
+    reads it as usual; the chapter it stopped at is kept in ``<stage>_skipped.md`` so a redelivery reports the same), the
+    stage's list says so, and one tolerated issue (``revision-skipped-budget``) records it in
+    the quality report. Nothing is sent and nothing is paid for the chapters that were skipped. The drafting stages are
+    different: a book cannot be finished without them, so they still stop and ask for the money.
 
     The prompt is filled from what the pass names (see ``RevisionPass``). A chapter whose prompt, estimated at three
     characters a token, would not leave room for the answer in the model's window stops the stage before the call
@@ -88,9 +96,14 @@ class RevisionStageExecutor(StageExecutorInterface):
         sources = await self._sources(run, outline)
         summaries = await self._summaries(run, outline)
         guard = self._guards(run.budget)
+        first_skipped = await self._first_skipped(run)
         for chapter in outline.chapters:
             if await self._read(run, self._name(self._pass.output, chapter.number)) is None:
                 source = sources[chapter.number]
+                if first_skipped is not None and chapter.number >= first_skipped:
+                    # The money ran out earlier in this pass: nothing more is asked of the model.
+                    await self._store(run, self._name(self._pass.output, chapter.number), source)
+                    continue
                 values = {
                     "voice": voice,
                     "outline": outline_text,
@@ -99,16 +112,23 @@ class RevisionStageExecutor(StageExecutorInterface):
                     "chapter": source,
                 }
                 request = self._request(run, source, values)
-                outcome = await asyncio.to_thread(
-                    self._loop.run, guard, run.run_id, run.stage, attempt, request
-                )
+                try:
+                    outcome = await asyncio.to_thread(
+                        self._loop.run, guard, run.run_id, run.stage, attempt, request
+                    )
+                except SpendConsentNeededError:
+                    # Recorded first, so a redelivery after this knows where the pass stopped and reports the same list.
+                    first_skipped = chapter.number
+                    await self._store(run, f"{self._pass.stage}_skipped.md", str(first_skipped))
+                    await self._store(run, self._name(self._pass.output, chapter.number), source)
+                    continue
                 if not outcome.complete:
                     # An unfinished answer always carries the reasons (see ToolLoopResult).
                     why = "; ".join(f"{i.code}: {i.detail}" for i in outcome.issues)
                     raise self._unusable(chapter.number, why)
                 kept = outcome.text if self._plausible(source, outcome.text) else source
                 await self._store(run, self._name(self._pass.output, chapter.number), kept)
-        return await self._report(run, outline, sources)
+        return await self._report(run, outline, sources, first_skipped)
 
     async def _opening(self, run: BookRun) -> tuple[str, str]:
         wanted = ["outline.md"] + (["positioning.md"] if "voice" in self._pass.blanks else [])
@@ -192,7 +212,9 @@ class RevisionStageExecutor(StageExecutorInterface):
         before, after = len(source.split()), len(answer.split())
         return self._pass.min_ratio * before <= after <= self._pass.max_ratio * before
 
-    async def _report(self, run: BookRun, outline: Outline, sources: dict[int, str]) -> StageReport:
+    async def _report(
+        self, run: BookRun, outline: Outline, sources: dict[int, str], first_skipped: int | None
+    ) -> StageReport:
         lines = [f"# Revision: {self._pass.stage}", ""]
         issues = []
         for chapter in outline.chapters:
@@ -201,12 +223,36 @@ class RevisionStageExecutor(StageExecutorInterface):
             unchanged = revised == sources[chapter.number]
             lines.append(
                 f"- {chapter.heading()} ({before:,} to {after:,} words"
-                + (", unchanged)" if unchanged else ")")
+                + (
+                    ", not revised: out of budget)"
+                    if self._was_skipped(chapter.number, first_skipped)
+                    else ", unchanged)"
+                    if unchanged
+                    else ")"
+                )
             )
-            if unchanged:
+            if unchanged and not self._was_skipped(chapter.number, first_skipped):
                 issues.append(self._unchanged(run, chapter))
+        if first_skipped is not None:
+            issues.append(
+                QualityIssue(
+                    run.stage,
+                    "revision-skipped-budget",
+                    f"{run.stage} ran out of budget: chapters {first_skipped} to {outline.chapters[-1].number} "
+                    "keep the text they had",
+                    blocking=False,
+                )
+            )
         await self._store(run, f"{self._pass.stage}.md", "\n".join(lines) + "\n")
         return StageReport(tuple(issues))
+
+    @staticmethod
+    def _was_skipped(number: int, first_skipped: int | None) -> bool:
+        return first_skipped is not None and number >= first_skipped
+
+    async def _first_skipped(self, run: BookRun) -> int | None:
+        marker = await self._read(run, f"{self._pass.stage}_skipped.md")
+        return None if marker is None else int(marker)
 
     @staticmethod
     def _unchanged(run: BookRun, chapter: ChapterOutline) -> QualityIssue:

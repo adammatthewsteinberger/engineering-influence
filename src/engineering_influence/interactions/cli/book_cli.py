@@ -110,6 +110,11 @@ class BookCli(BookCliInterface):
             "--resume", action="store_true", help="continue the run in the state folder"
         )
         create.add_argument(
+            "--ignore-estimate",
+            action="store_true",
+            help="start even if the budget is below what the book is expected to cost",
+        )
+        create.add_argument(
             "--approve-spend",
             action="store_true",
             help="with --resume: grant the extra budget a stopped run asked for",
@@ -189,6 +194,10 @@ class BookCli(BookCliInterface):
             return 2
         try:
             progress = lambda line: print(line, flush=True)
+            if brief is not None and not self._affordable(
+                creator, brief, arguments.ignore_estimate
+            ):
+                return 2
             run = (
                 creator.resume(arguments.approve_spend, progress)
                 if brief is None
@@ -200,6 +209,36 @@ class BookCli(BookCliInterface):
             return 2
         finally:
             creator.close()
+
+    def _affordable(
+        self, creator: LocalBookCreatorInterface, brief: BookBrief, ignore: bool
+    ) -> bool:
+        """Say what the book is expected to cost, and refuse a budget that cannot finish it before anything is spent."""
+        plan = creator.plan(brief)
+        if plan is None:
+            return True
+        grade = plan.grade()
+
+        def dollars(micro: int) -> str:
+            return f"{Decimal(micro) / self.MICRO:.2f}"
+
+        print(
+            f"estimate: about {dollars(plan.estimate.expected())} USD for the whole book "
+            f"({dollars(plan.estimate.essential())} before editing), against a budget of {dollars(plan.cap)}: {grade}",
+            flush=True,
+        )
+        if grade == plan.SHORT and not ignore:
+            print(
+                "error: the budget is below what the book is expected to cost before editing. "
+                f"Use --budget-usd {dollars(plan.suggested())} or more, or --ignore-estimate to start anyway",
+                file=sys.stderr,
+            )
+            return False
+        if grade in (plan.SHORT, plan.TIGHT):
+            print("the run may stop to ask for more budget", flush=True)
+        elif grade == plan.LEAN:
+            print("editing passes that run out of money are skipped; the draft is kept", flush=True)
+        return True
 
     def _finish(
         self, creator: LocalBookCreatorInterface, run: BookRun, out: Path, state: Path

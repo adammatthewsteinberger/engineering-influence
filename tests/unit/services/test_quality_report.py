@@ -5,6 +5,7 @@ import json
 
 from engineering_influence.models.manuscript_build import ManuscriptBuild
 from engineering_influence.models.quality_issue import QualityIssue
+from engineering_influence.models.spend_summary import SpendSummary
 from engineering_influence.services.quality_report import QualityReport
 
 PDF = b"%PDF-1.7 the interior"
@@ -65,3 +66,27 @@ def test_the_same_inputs_give_the_same_bytes_and_a_trailing_newline() -> None:
     assert first == QualityReport().render("herbs", (), passing())
     assert first.endswith(b"}\n")
     assert list(json.loads(first)) == sorted(json.loads(first))
+
+
+def test_the_spend_block_sets_what_was_spent_beside_what_was_expected() -> None:
+    spend = SpendSummary(5_000_000, 1_500_000, 1_000_000, 1_500_000)
+    report = json.loads(QualityReport().render("herbs", (), passing(), spend))
+    assert report["spend"] == {
+        "cap_micro_usd": 5_000_000,
+        "spent_micro_usd": 1_500_000,
+        "estimated_micro_usd": 1_000_000,
+        "estimated_high_micro_usd": 1_500_000,
+        "spent_over_estimated": 1.5,
+    }
+
+
+def test_with_no_estimate_the_spend_block_still_says_what_was_spent() -> None:
+    report = json.loads(QualityReport().render("herbs", (), passing(), SpendSummary(10, 4)))
+    assert report["spend"]["estimated_micro_usd"] is None
+    assert (
+        report["spend"]["spent_over_estimated"] is None and report["spend"]["spent_micro_usd"] == 4
+    )
+
+
+def test_without_a_summary_there_is_no_spend_block_so_old_reports_do_not_change() -> None:
+    assert "spend" not in json.loads(QualityReport().render("herbs", (), passing()))

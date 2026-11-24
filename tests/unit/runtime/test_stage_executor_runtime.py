@@ -757,3 +757,20 @@ def test_a_novel_draft_the_model_is_not_recorded_as_allowing_is_refused_before_a
         rt.close()
     assert caught.value.code == "CONTENT_LEVEL_NOT_ALLOWED"
     assert seen.seen == []
+
+
+def test_a_runtime_that_uses_no_model_has_no_estimate_and_one_that_does_can_say_what_a_book_costs(
+    tmp_path: Path,
+) -> None:
+    from engineering_influence.services.cost_estimator import CostEstimator
+
+    placeholder = runtime({"EI_STAGE_EXECUTOR": "deterministic"})
+    assert placeholder.estimator() is None
+    build(placeholder)
+    assert placeholder.estimator() is None
+    with provider("unused") as (url, _):
+        own = runtime(files(tmp_path, url=url))
+        assert own.estimator() is None
+        build(own)
+        assert isinstance(own.estimator(), CostEstimator)
+        own.close()

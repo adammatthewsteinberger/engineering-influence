@@ -3,6 +3,7 @@
 import asyncio
 import json
 from collections.abc import Mapping
+from dataclasses import replace
 
 import pytest
 
@@ -15,9 +16,13 @@ from engineering_influence.models.book_brief import BookBrief
 from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget import Budget
+from engineering_influence.models.cost_estimate import CostEstimate
 from engineering_influence.models.manuscript_build import ManuscriptBuild
 from engineering_influence.models.quality_issue import QualityIssue
 from engineering_influence.services.build_stage_executor import BuildStageExecutor
+from engineering_influence.services.interfaces.cost_estimator_interface import (
+    CostEstimatorInterface,
+)
 from engineering_influence.services.manuscript_project import ManuscriptProject
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 from engineering_influence.services.quality_report import QualityReport
@@ -120,3 +125,44 @@ def test_a_run_without_an_assembled_book_is_refused_before_anything_is_built() -
     with pytest.raises(ApplicationError) as refused:
         asyncio.run(executor.execute(run(), 1))
     assert refused.value.code == "STAGE_INPUT_MISSING" and builder.seen == []
+
+
+class Estimating(CostEstimatorInterface):
+    def __init__(self) -> None:
+        self.briefs: list[BookBrief] = []
+
+    def estimate(self, brief: BookBrief) -> CostEstimate:
+        self.briefs.append(brief)
+        return CostEstimate((("draft", 600, True), ("copy_edit", 200, False)))
+
+
+def test_the_report_records_the_estimate_made_from_the_brief_beside_the_real_spend() -> None:
+    store = InMemoryArtifactStore()
+    store.put(RUN, "manuscript/books/herbs.toml", b"title = 'Herbs'")
+    store.put(RUN, "manuscript/src/chapter_01.md", b"# One")
+    estimator = Estimating()
+    executor = BuildStageExecutor(
+        store, Builder(PASS), ManuscriptProject(store), QualityReport(), estimator
+    )
+    spent = replace(run(), budget=Budget(cap=1_000, spent=400))
+    asyncio.run(executor.execute(spent, 1))
+    report = json.loads(store.get(RUN, "quality-report.json") or b"")
+    assert report["spend"] == {
+        "cap_micro_usd": 1_000,
+        "spent_micro_usd": 400,
+        "estimated_micro_usd": 800,
+        "estimated_high_micro_usd": 1_200,
+        "spent_over_estimated": 0.5,
+    }
+    assert estimator.briefs == [spent.brief]
+
+
+def test_without_an_estimator_the_report_still_records_the_spend() -> None:
+    executor, store, _ = world(PASS)
+    asyncio.run(executor.execute(replace(run(), budget=Budget(cap=1_000, spent=400)), 1))
+    spend = json.loads(store.get(RUN, "quality-report.json") or b"")["spend"]
+    assert (spend["cap_micro_usd"], spend["spent_micro_usd"], spend["estimated_micro_usd"]) == (
+        1_000,
+        400,
+        None,
+    )
