@@ -1,5 +1,5 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
-"""The ``serve`` command group: run the API or the worker."""
+"""The ``serve`` command group: run the API, the worker or the MCP server."""
 
 import argparse
 import sys
@@ -20,9 +20,9 @@ class ServeCli(ServeCliInterface):
         self._starter = starter
 
     def register(self, subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]") -> None:
-        """Add ``serve api`` and ``serve worker``."""
-        serve = subparsers.add_parser("serve", help="run the API or the worker")
-        serve.add_argument("target", choices=("api", "worker"))
+        """Add ``serve api``, ``serve worker`` and ``serve mcp``."""
+        serve = subparsers.add_parser("serve", help="run the API, the worker or the MCP server")
+        serve.add_argument("target", choices=("api", "worker", "mcp"))
 
     def run(self, arguments: argparse.Namespace) -> int:
         """Start the chosen process; return its exit status."""

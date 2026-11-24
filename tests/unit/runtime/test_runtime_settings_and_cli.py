@@ -276,3 +276,69 @@ def test_the_cli_builds_the_local_book_maker_from_the_environment_and_the_settin
     finally:
         creator.close()
     assert (tmp_path / "state" / LocalBookRuntime.DATABASE).is_file()
+
+
+@pytest.mark.parametrize(
+    ("value", "allowed"),
+    [
+        ("1", True),
+        ("true", True),
+        ("YES", True),
+        (" Yes ", True),
+        ("0", False),
+        ("no", False),
+        ("maybe", False),
+        ("", False),
+    ],
+)
+def test_the_mcp_server_may_spend_only_when_the_operator_says_so(value: str, allowed: bool) -> None:
+    assert load({**REQUIRED, "EI_MCP_ALLOW_SPEND": value}).mcp_allow_spend is allowed
+    assert load(REQUIRED).mcp_allow_spend is False
+
+
+def test_a_run_started_over_mcp_is_held_to_five_dollars_unless_the_operator_says_otherwise() -> (
+    None
+):
+    assert load(REQUIRED).mcp_max_run_budget_micro_usd == 5_000_000
+    changed = load({**REQUIRED, "EI_MCP_MAX_RUN_BUDGET_MICRO_USD": " 12000000 "})
+    assert changed.mcp_max_run_budget_micro_usd == 12_000_000
+
+
+@pytest.mark.parametrize("value", ["0", "-1", "five", "2.5", "1e6"])
+def test_the_mcp_budget_ceiling_is_a_whole_number_above_zero(value: str) -> None:
+    with pytest.raises(ValueError, match="EI_MCP_MAX_RUN_BUDGET_MICRO_USD"):
+        load({**REQUIRED, "EI_MCP_MAX_RUN_BUDGET_MICRO_USD": value})
+
+
+def test_serve_mcp_runs_the_mcp_runtime_with_the_settings_it_loaded(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    started: list[AppSettings] = []
+
+    class StartsMcp:
+        def __init__(self, settings: AppSettings) -> None:
+            self.settings = settings
+
+        def run(self) -> None:
+            started.append(self.settings)
+
+    serve = ServeCli(ServeStarter(MappingSecrets(REQUIRED), mcp_runtime=StartsMcp))  # type: ignore[arg-type]
+    assert run(serve, "mcp", {**REQUIRED, "EI_MCP_ALLOW_SPEND": "1"}, monkeypatch) == (0, "")
+    assert [(item.database_url, item.mcp_allow_spend) for item in started] == [(DB, True)]
+
+
+def test_without_a_factory_the_starter_builds_the_real_mcp_runtime() -> None:
+    from engineering_influence.runtime.mcp_runtime import McpRuntime
+
+    settings = AppSettings("sqlite://", "amqp://guest:guest@localhost:1//")
+    assert isinstance(ServeStarter._real_mcp(settings), McpRuntime)
+
+
+def test_serve_mcp_is_one_of_the_targets_and_a_configuration_error_exits_2(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    parser = argparse.ArgumentParser()
+    ServeCli(ServeStarter(MappingSecrets({}))).register(parser.add_subparsers(dest="command"))
+    assert parser.parse_args(["serve", "mcp"]).target == "mcp"
+    status, stderr = run(ServeCli(ServeStarter(MappingSecrets({}))), "mcp", {}, monkeypatch)
+    assert status == 2 and "EI_DATABASE_URL" in stderr

@@ -7,11 +7,13 @@ from engineering_influence.interfaces.secret_provider_interface import SecretPro
 from engineering_influence.interfaces.serve_starter_interface import ServeStarterInterface
 from engineering_influence.runtime.app_settings import AppSettings
 from engineering_influence.runtime.interfaces.api_runtime_interface import ApiRuntimeInterface
+from engineering_influence.runtime.interfaces.mcp_runtime_interface import McpRuntimeInterface
 from engineering_influence.runtime.interfaces.worker_runtime_interface import WorkerRuntimeInterface
 
 Runner = Callable[[AppSettings, SecretProviderInterface], None]
 ApiRuntimeFactory = Callable[[AppSettings, SecretProviderInterface], ApiRuntimeInterface]
 WorkerRuntimeFactory = Callable[[AppSettings], WorkerRuntimeInterface]
+McpRuntimeFactory = Callable[[AppSettings], McpRuntimeInterface]
 
 
 class ServeStarter(ServeStarterInterface):
@@ -29,15 +31,17 @@ class ServeStarter(ServeStarterInterface):
         run_worker: Runner | None = None,
         api_runtime: ApiRuntimeFactory | None = None,
         worker_runtime: WorkerRuntimeFactory | None = None,
+        mcp_runtime: McpRuntimeFactory | None = None,
     ) -> None:
         self._secrets = secrets
         self._run_api = run_api
         self._run_worker = run_worker
         self._api_runtime = api_runtime
         self._worker_runtime = worker_runtime
+        self._mcp_runtime = mcp_runtime
 
     def start(self, target: str) -> None:
-        """Run ``api`` or ``worker`` until it stops."""
+        """Run ``api``, ``worker`` or ``mcp`` until it stops."""
         from engineering_influence.infrastructure.security.env_secret_provider import (
             EnvSecretProvider,
         )
@@ -49,6 +53,8 @@ class ServeStarter(ServeStarterInterface):
         settings = EnvironmentSettingsLoader(secrets).load()
         if target == "api":
             (self._run_api or self._default_api)(settings, secrets)
+        elif target == "mcp":
+            (self._mcp_runtime or self._real_mcp)(settings).run()
         else:
             (self._run_worker or self._default_worker)(settings, secrets)
 
@@ -63,6 +69,12 @@ class ServeStarter(ServeStarterInterface):
         from engineering_influence.runtime.api_runtime import ApiRuntime
 
         return ApiRuntime(settings, secrets)
+
+    @staticmethod
+    def _real_mcp(settings: AppSettings) -> McpRuntimeInterface:
+        from engineering_influence.runtime.mcp_runtime import McpRuntime
+
+        return McpRuntime(settings)
 
     @staticmethod
     def _real_worker(settings: AppSettings) -> WorkerRuntimeInterface:
