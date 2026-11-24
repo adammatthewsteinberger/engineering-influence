@@ -1,12 +1,41 @@
 # Asking a model
 
+**BLUF:** Every model call goes through two services. `CallModel` makes one call at most once: it reserves the
+worst-case cost before sending, and replays a finished answer from the journal for nothing. `AskModel` decides
+what to do when an answer comes back cut off, refused or empty. Together they are why a run never starts a call it
+cannot afford, and never pays twice for the same answer.
+
 A stage never talks to a provider directly. It goes through two services, one above the other.
+
+## Reserve first, then spend
+
+> **Daniel:** A run has a five dollar cap. What stops ten chapters being drafted at once and spending eight?
+>
+> **Professor Feynman:** You are at a restaurant with fifty dollars and no card. When do you check that you can
+> afford the dish?
+>
+> **Daniel:** Before I order. Not when the bill comes.
+>
+> **Professor Feynman:** Each call does the same. Before anything is sent, it sets aside the most that call could
+> possibly cost. If that does not fit under the cap, the call is refused and nothing is sent. When the answer
+> arrives, the real cost is booked and the rest is handed back.
+>
+> **Daniel:** So no call starts unless its worst case fits, even with other calls in flight.
+>
+> **Professor Feynman:** And a second habit saves money: an answer already paid for is written in a journal. Ask
+> the same question in the same run and stage and you get the journal's copy, free. One limit to the dinner
+> picture: if a call costs more than the worst case it reserved, the run books what it reserved and stops as over
+> budget. The journal still holds the true figure.
+>
+> **Daniel:** Reserve the worst case, book the real cost, replay what is already paid for. That is why resuming a
+> run costs nothing for finished work.
 
 ## `CallModel`: one call, at most once
 
 1. A request already answered **in this run and stage** is replayed from the run journal for nothing.
 2. Otherwise the worst-case cost is reserved from the run's `SpendGuard` before anything is sent. A
-   call that does not fit raises `BudgetExceededError` having sent nothing.
+   call that does not fit raises `SpendConsentNeededError` (a `BudgetExceededError` that carries the amount
+   needed) having sent nothing.
 3. The call is made. If it raises, the reservation is released and nothing is journaled.
 4. The answer is journaled with its real cost before the reservation is settled.
 
@@ -24,7 +53,7 @@ whether it is `complete`, the `issues` if it is not, and what it cost.
 | It hit its output cap | Asks again with the cap **doubled**, up to the model's own limit. At the limit there is nothing more to try. |
 | It declined | Asks the **identical** request again, up to `refusal_retries` times (default 1). |
 | It runs out of attempts (default 4 calls in all) | Returns the best text it has and one **blocking** `QualityIssue` per defect: `TRUNCATED` (the text ends part-way) and/or `REFUSED` (the model's own words, trimmed to one line of 300 characters). The stage carries on. |
-| The run is out of money, or the provider is down or at capacity | Nothing is caught here. `BudgetExceededError`, `TransientStageError` and `CapacityExhaustedError` go to the run, which retries or parks it. |
+| The run is out of money, or the provider is down or at capacity | Nothing is caught here; each goes to the run. Out of money (`SpendConsentNeededError`) stops the run in `awaiting_consent` until someone grants or denies more. A provider that is down (`TransientStageError`) is retried, three times at most. One at capacity (`CapacityExhaustedError`) parks the run. |
 
 - **A refusal is never reworded, pressed or disguised.** It is the model's decision; a retry only covers a
   refusal that was a fluke. If it keeps declining, the stage gets no text and a `REFUSED` issue, and decides

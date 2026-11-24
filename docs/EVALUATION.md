@@ -1,5 +1,10 @@
 # The evaluation
 
+**BLUF:** `ei evaluate` measures whether a release is good enough: it makes five books, has a separately named
+judge model score each one against a rubric, and passes only if every book finished, every dimension's mean is at
+least 3.5 of 5, none has dropped by more than 0.2, and the cost estimate was within 30% of the real cost. It
+spends real money and refuses to start without `EI_ALLOW_PAID=1`. It has never been run against a real model.
+
 ADR 0003 defines 1.0 by criteria that can be measured. Two of them are measured by one command, `ei evaluate`:
 
 - **A5** — the pre-flight cost estimate is within 30% of what the books really cost.
@@ -9,12 +14,43 @@ ADR 0003 defines 1.0 by criteria that can be measured. Two of them are measured 
 
 **Status.** The harness is built and tested against scripted models. It has not been run against a real model, so nothing here says the stack clears the bar. The first paid run is what produces the first baseline.
 
+## Why the judge must be someone else
+
+> **Daniel:** Could the writing model not just rate its own books? It would save a second model.
+>
+> **Professor Feynman:** Would you let a student mark his own exam?
+>
+> **Daniel:** No. He would be generous, and he would miss exactly the mistakes he made.
+>
+> **Professor Feynman:** So the judge is named separately, and the command refuses to start without one. Nothing
+> stops you naming the writer's own profile as the judge, so do not. It gets a fixed rubric with written anchors
+> for 1, 3 and 5, and it must give a reason for every score.
+>
+> **Daniel:** One strict marker can still have a bad day.
+>
+> **Professor Feynman:** Which is why the bar is on the mean of each dimension across the books, at 3.5 or more,
+> and why no dimension may fall more than 0.2 below the last release. The second catches a slow slide that a fixed
+> bar would miss. Every book must also finish, and the cost estimate must be within 30%. Here the picture gives
+> out: a human examiner knows the subject. This one reads carefully, and it has not yet been checked against human
+> readers.
+>
+> **Daniel:** A judge I name separately, a floor on every mean, and no backsliding. And until someone pays for the
+> first run, there is no baseline at all.
+
 ## What is in `evaluation/`
 
 | File | What it is |
 |---|---|
 | `evaluation/set.toml` | The books made on every release: three non-fiction ideas and two novels, each a short book (`target_words = 10000`) so a run stays affordable |
 | `evaluation/rubric.toml` | The dimensions, the question the judge asks for each, what a 1, a 3 and a 5 look like, which kinds of book each applies to, and the bar (`pass_mean = 3.5`, `max_drop = 0.2`) |
+
+The rubric's dimensions:
+
+| Dimension | Applies to |
+|---|---|
+| `structure`, `prose`, `voice` | both kinds |
+| `accuracy`, `usefulness` | non-fiction |
+| `continuity`, `character`, `pacing` | novels |
 
 The set is the benchmark. Changing an idea changes what is measured, so edit the set only together with a new baseline. The ideas are generic on purpose: this repository holds no author's own material.
 

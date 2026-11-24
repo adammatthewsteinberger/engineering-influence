@@ -1,7 +1,12 @@
 # Interfaces reference
 
+**BLUF:** Every interface drives the same thing, a book run that ends in a KDP-ready package, so learn one and you
+know them all. To write one book, use the CLI (`ei book create`). To serve many, run the stack and call it over
+REST, the SDK, MCP or the Agent Client Protocol. This page is the contract for each: requests, replies, flags,
+exit codes and the error codes a caller meets most.
+
 Every interface starts or drives the same thing: an autonomous book-writing run that ends in a
-KDP-ready package ([details](BOOKS_AND_KDP.md)). Five interfaces sit over the same controller layer, so they accept the same request and
+KDP-ready package ([details](BOOKS_AND_KDP.md)). Six interfaces sit over the same controller layer, so they accept the same request and
 return the same result. Pick by who is calling.
 
 | Interface | Process | Authenticated | Reaches the stack |
@@ -10,7 +15,32 @@ return the same result. Pick by who is calling.
 | [Python SDK](#python-sdk) | your code | API key | yes (it calls the REST API) |
 | [MCP server](#mcp-server) | stdio child process | no (local only) | yes with `ei serve mcp`; the example server is in-memory |
 | [CLI](#cli) | `ei` | no (local only) | `serve`, `run` and `book` yes; `pipeline start` no |
+| [Agent Client Protocol](#agent-client-protocol) | `ei acp` (stdio) | no (local only) | yes |
 | [Webhooks](#webhooks) | outbound HTTPS | HMAC signature | yes |
+
+## One counter, several windows
+
+> **Daniel:** Six ways in. REST, an SDK, MCP, a CLI, ACP, webhooks. Do I have to learn six products?
+>
+> **Professor Feynman:** Think of a bank. You can walk to the counter, use the machine outside, or phone. How many
+> banks is that?
+>
+> **Daniel:** One. The same account, the same rules, whichever way I ask.
+>
+> **Professor Feynman:** Same here. Each interface is a window; behind all of them is one counter, the controller
+> layer. A window translates your request and hands it over. The rules about runs and money live behind the
+> counter. A window may be stricter, never looser: the MCP window caps a run at five dollars and cannot grant more
+> budget unless you allow it.
+>
+> **Daniel:** So if the API refuses a budget above the operator's limit, the MCP tool refuses it too.
+>
+> **Professor Feynman:** For the same reason, though not in the same words. REST gives you a code,
+> `BUDGET_ABOVE_LIMIT`. MCP and ACP give you the message. Now the limit of the picture: not every window is open
+> to the street. The REST API checks a key. The CLI, the MCP server and ACP check nothing, because they are meant
+> to run on your own machine, so they must never be put on a network.
+>
+> **Daniel:** Then I pick the window by who is calling, and I read one set of rules. I will start at the table
+> below.
 
 ## The request
 
@@ -25,6 +55,23 @@ Every start request is a **project**:
 
 The result is `{"job_id": "<id>", "project_slug": "<slug>"}`: the job queued for the first stage.
 The worker runs the stages in the order given.
+
+A **book run** starts from a **brief** instead (`POST /v1/runs`, `ei run create`, the SDK and MCP `create_run`, and
+`ei book create`, which builds one from its flags). Any key not in this table is refused:
+
+| Field | Rules |
+|---|---|
+| `schema_version` | `1`, the default |
+| `kind` | required: `nonfiction` or `novel` |
+| `idea` | required, not blank |
+| `budget_micro_usd` | required: a whole number above 0, in millionths of a dollar |
+| `title_hint`, `audience` | optional, not blank |
+| `target_words` | optional, above 0 |
+| `trim_size` | optional: `5x8`, `5.5x8.5` or `6x9` |
+| `language` | default `en` |
+| `inputs` | at most 8 of `{name, text, origin}`; `origin` is `pasted` (the default) or `file`; names unique; 200,000 characters in all |
+| `violence` | novels only: `none`, `mild`, `moderate` or `graphic` |
+| `heat` | novels only: `none`, `sweet`, `steamy` or `explicit` |
 
 ## REST API
 
@@ -63,7 +110,17 @@ copied into the queued job, restored by the worker and sent on outbound webhooks
 | 404 | `RUN_NOT_FOUND` | No run has that id | no |
 | 404 | `ARTIFACT_NOT_FOUND` | The run has no such artifact; a name that could never be stored (absolute, `..`, backslash) gets the same answer | no |
 | 422 | n/a | Body failed validation (FastAPI's `detail` list) | no, fix the body |
+| 409 | `RUN_FINISHED` | The run is completed, failed or cancelled, so it cannot be resumed or cancelled | no |
+| 409 | `RUN_CHANGED` | The run changed while it was being answered | yes |
+| 409 | `CONSENT_NOT_PENDING` | A grant or a denial for a run that is not waiting for one | no |
+| 422 | `BUDGET_ABOVE_LIMIT` | The budget asked for is above the operator's limit for one run | no, ask for less |
+| 422 | `OUTSTANDING_BUDGET_EXCEEDED` | All unfinished runs together would hold more unspent budget than the operator allows | later, when runs finish |
+| 422 | `RUN_KIND_UNSUPPORTED` | This build cannot start that kind of book | no |
 | 503 | `SECRET_MISSING` | A required secret is not configured | after fixing configuration |
+
+These are the codes a caller of the API meets most. Every code the package can raise is frozen in
+`tests/contracts/snapshots/error_codes.json`; most of the rest stop a process at start and are described beside the
+setting they concern in [CONFIGURATION.md](CONFIGURATION.md).
 
 Python with `requests`:
 
@@ -169,14 +226,21 @@ ei --version
 ei pipeline start --slug S --title T --postulate P [--postulate P …] [--stage STAGE …]
 ei serve api|worker|mcp
 ei db upgrade
-ei run status|resume|cancel|export RUN_ID
+ei run status|resume|cancel RUN_ID
+ei run export RUN_ID DIRECTORY
 ei run create BRIEF.TOML
 ei run grant RUN_ID [--micro-usd N]
 ei run deny RUN_ID
 ei doctor (--ready | --models | --search | --local) [--author-profile FILE] [--catalog FILE] [--profiles FILE] [--query Q] [--probe]
 ei acp
 ei run runs
-ei book [--root DIR] audit|build|epub|covers|qa|package|publish …
+ei book [--root DIR] audit [--json] [--strict-release] [SLUG …]
+ei book [--root DIR] build [--hardcover] [--tex-only] [--no-verify] [SLUG …]
+ei book [--root DIR] epub [--tex-only] [--no-verify] [SLUG …]
+ei book [--root DIR] covers [--preview] [--hardcover-pdf PATH] [SLUG …]
+ei book [--root DIR] qa PDF [--output DIR] [--dpi N]
+ei book [--root DIR] package [SLUG …]
+ei book [--root DIR] publish [--audit-only] [--no-render] [--strict-release] [--dpi N] [--report-dir DIR] [SLUG …]
 ei book create --kind nonfiction|novel IDEA --budget-usd N --out DIR --profile FILE [--resume]
 ei evaluate --out DIR --budget-usd N --judge-budget-usd N [--profile FILE] [--baseline FILE] [--set FILE] [--rubric FILE] [--release LABEL]
 ei tools add [--lock PATH] [--env VAR …] [--replace] NAME -- COMMAND [ARG …]
@@ -202,19 +266,19 @@ ei plugins fetch INDEX NAME [--output DIR]
 | Command | What it does | Exit status |
 |---|---|---|
 | `ei pipeline start` | Validates a project and prints the result as JSON. In-memory only: it does not queue work on the stack. `--stage` defaults to `thesis`. | `0`; `2` on a usage error |
-| `ei serve api` / `worker` / `mcp` | Runs the API, the worker or the stdio MCP server from `EI_*` settings (see [MCP server](#mcp-server)). | `2` and one line naming the bad variable; never a traceback |
+| `ei serve api` / `worker` / `mcp` | Runs the API, the worker or the stdio MCP server from `EI_*` settings (see [MCP server](#mcp-server)). | `0` on a clean stop; `1` an extra is missing (the message names which); `2` and one line naming the bad variable; never a traceback |
 | `ei doctor` | Checks that this installation is ready, never asking a paid model to answer. **`--ready` answers whether this machine can make a book now**: the extras, the tools the `build` stage calls, the author profile (`--author-profile FILE`, else `EI_AUTHOR_PROFILE`), then the local model and the search, every check made and printed in one run. The others check one thing: `--models` the model profiles and catalog (`--probe` adds one model-list request per profile), `--search` one real search through each configured provider, `--local` the free local model. See [MODEL_PROFILES.md](MODEL_PROFILES.md) and [LOCAL_MODEL.md](LOCAL_MODEL.md). | `0` ready; `1` a check failed; `2` setup trouble |
 | `ei db upgrade` | Applies the database migrations to `EI_DATABASE_URL` and prints the revision reached. Needs the `runtime` extra. | `0`; `1` extra missing; `2` and one line for a missing setting or an unreachable database |
-| `ei run status RUN_ID` | Prints the run as one line of JSON (the same `RunSummaryV1` the API returns). Needs only `EI_DATABASE_URL`. | `0`; `1` unknown run; `2` setup trouble |
-| `ei run create BRIEF.TOML` | Starts a book run from a brief file (TOML, the brief contract v1: `kind`, `idea`, `budget_micro_usd` and the optional keys). The run is saved pending with the brief's cap as its budget and its first stage is queued for the worker; a file that is not a brief, or a kind this build cannot start, is refused on one line and nothing is saved. Needs the database and the broker, like `resume`. |
-| `ei run runs` | Lists every saved run, one line each: its id, status and current stage. Needs only the database. |
+| `ei run status RUN_ID` | Prints the run as one line of JSON (the same `RunSummaryV1` the API returns). Needs only `EI_DATABASE_URL`. | `0`; `1` unknown run, or the `runtime` extra is missing (true of every `ei run` command); `2` setup trouble |
+| `ei run create BRIEF.TOML` | Starts a book run from a brief file (TOML, the brief contract v1: `kind`, `idea`, `budget_micro_usd` and the optional keys). The run is saved pending with the brief's cap as its budget and its first stage is queued for the worker; a file that is not a brief, or a kind this build cannot start, is refused on one line and nothing is saved. Needs the database and the broker, like `resume`. | `0`; `1` a file that cannot be read or is not a brief, or a kind this build cannot start; `2` setup trouble, or a budget an operator ceiling refuses |
+| `ei run runs` | Lists every saved run, one line each: its id, status and current stage. Needs only the database. | `0`; `2` setup trouble |
 | `ei run resume RUN_ID` | Moves a parked run back to running and queues its current stage; on a run that is already running it only queues the stage again, which repairs a resume that died half-way. Reads `EI_DATABASE_URL` and `EI_RABBITMQ_URL`. | `0`; `1` unknown run, finished run or a run that kept changing; `2` setup trouble |
 | `ei run cancel RUN_ID` | Stops a run for good; cancelling twice is fine, and a completed or failed run is refused. Needs only `EI_DATABASE_URL`. | same |
-| `ei run grant RUN_ID [--micro-usd N]` | Gives a run more budget and continues it. A run waiting for consent gets exactly the amount it asked for (passing another amount is refused); a parked run needs `--micro-usd` and gets exactly that. The stage is queued. Needs `EI_DATABASE_URL` and `EI_RABBITMQ_URL`. | `0`; `1` the run is not waiting for consent or parked, or it changed while being answered; `2` setup trouble |
+| `ei run grant RUN_ID [--micro-usd N]` | Gives a run more budget and continues it. A run waiting for consent gets exactly the amount it asked for (passing another amount is refused); a parked run needs `--micro-usd` and gets exactly that. The stage is queued. Needs `EI_DATABASE_URL` and `EI_RABBITMQ_URL`. | `0`; `1` the run is not waiting for consent or parked, or it changed while being answered; `2` setup trouble, or a grant an operator ceiling refuses |
 | `ei run deny RUN_ID` | Refuses a run's request for more budget. The run parks, and nothing is queued; it can be granted more later. Needs only `EI_DATABASE_URL`. | same |
 | `ei run export RUN_ID DIRECTORY` | Writes what a run produced to a **new or empty** folder: the book as a project at the top (`books/<slug>.toml` and `src/chapter_NN.md`, as the book commands expect) and every other artifact under `run/` (the stage outputs and the `audit/` reports). It reads the run and changes nothing in it. Nothing is overwritten, and either every file is written or none is. A folder that holds anything is refused, as is a run that has stored nothing. Needs only `EI_DATABASE_URL`. | `0`; `1` unknown run, a run with nothing stored, or a folder that is not empty; `2` setup trouble |
-| `ei book create --kind KIND IDEA --budget-usd N --out DIR --profile FILE` | **Makes a whole book from an idea, in this process, with nobody in the loop.** It runs every stage of the plan for the kind (brief to build; see [BOOKS_AND_KDP.md](BOOKS_AND_KDP.md)) with the models and search the environment names (`EI_STAGE_EXECUTOR` and its settings, as for a worker), then writes the book to `--out` (a new or empty folder): the project at the top (`books/`, `src/`) and every artifact under `run/`, so the finished PDF, EPUB, covers, listing and manifest are in `run/book/`, the readiness reports in `run/build/`, and `run/quality-report.json` says how it came out. `--budget-usd` has no default, and `--profile` (or `EI_AUTHOR_PROFILE`) is required, because the author's details are needed to typeset the book: both are checked **before anything is spent**. **Before anything is spent it says what the book is expected to cost with the priced model** (`estimate: about 6.00 USD for the whole book (4.00 before editing), against a budget of 5.00: tight`) and grades the budget: `short` (below what the essential stages are expected to cost: refused, with the budget that would do, unless `--ignore-estimate`), `tight` (may stop to ask for more), `lean` (an editing pass that runs out of money is skipped) or `ample`. With the free local model the estimate is still printed, from a price of zero; with the offline placeholder there is no estimate. Optional: `--title`, `--audience`, `--target-words`, `--trim-size`, `--ignore-estimate`, and `--strict-release` (fails the build on any release warning; needs `[pricing]` in the profile). The run is kept in a SQLite file in `OUT.state/` (`--state-dir` to move it), so a process that dies loses nothing that was paid for: `--resume` continues it, and a model call already made is replayed, not paid for again. When the run asks for more budget it stops and writes nothing; `--resume --approve-spend` grants exactly what it asked for. A failed run is final, but what it made is still written to `--out`. | `0` the book is written; `1` the run failed or a needed extra is missing; `2` the command could not start (a missing idea, kind, budget or profile, a bad profile, a folder that already holds a run); `3` the run stopped to ask for budget |
-| `ei book …` | Audit, build and publish books (needs the `publishing` extra and, for PDFs, a TeX toolchain). `package SLUG` writes the KDP release bundle (`build/SLUG/release/kdp`, see [BOOKS_AND_KDP.md](BOOKS_AND_KDP.md#the-release-bundle)) and refuses a failing release. Reads `engineering-influence.toml` in `--root`. | `0` ok; `1` a build or audit failure; `2` bad arguments |
+| `ei book create --kind KIND IDEA --budget-usd N --out DIR --profile FILE` | **Makes a whole book from an idea, in this process, with nobody in the loop.** It runs every stage of the plan for the kind (brief to build; see [BOOKS_AND_KDP.md](BOOKS_AND_KDP.md)) with the models and search the environment names (`EI_STAGE_EXECUTOR` and its settings, as for a worker), then writes the book to `--out` (a new or empty folder): the project at the top (`books/`, `src/`) and every artifact under `run/`, so the finished PDF, EPUB, covers, listing and manifest are in `run/book/`, the readiness reports in `run/build/`, and `run/quality-report.json` says how it came out. `--budget-usd` has no default, and `--profile` (or `EI_AUTHOR_PROFILE`) is required, because the author's details are needed to typeset the book: both are checked **before anything is spent**. **Before anything is spent it says what the book is expected to cost with the priced model** (`estimate: about 6.00 USD for the whole book (4.00 before editing), against a budget of 5.00: tight`) and grades the budget: `short` (below what the essential stages are expected to cost: refused, with the budget that would do, unless `--ignore-estimate`), `tight` (may stop to ask for more), `lean` (an editing pass that runs out of money is skipped) or `ample`. With the free local model the estimate is still printed, from a price of zero; with the offline placeholder there is no estimate. Optional: `--title`, `--audience`, `--target-words`, `--trim-size`, `--ignore-estimate`, and `--strict-release` (fails the build on any release warning; needs `[pricing]` in the profile). The run is kept in a SQLite file in `OUT.state/` (`--state-dir` to move it), so a process that dies loses nothing that was paid for: `--resume` continues it, and a model call already made is replayed, not paid for again. When the run asks for more budget it stops and writes nothing; `--resume --approve-spend` grants exactly what it asked for. A failed run is final, but what it made is still written to `--out`. | `0` the book is written; `1` the run failed or a needed extra is missing; `2` the command could not start (a missing idea, kind, budget or profile, a bad profile, a folder that already holds a run, or a budget below the estimate without `--ignore-estimate`); `3` the run stopped to ask for budget, or parked because the provider is at capacity |
+| `ei book …` | Audit, build and publish books (needs the `publishing` extra and, for PDFs, a TeX toolchain). With no `SLUG` a subcommand works on every configured book. `--dpi` defaults to 90, and below 36 is refused (exit `2`). `package SLUG` writes the KDP release bundle (`build/SLUG/release/kdp`, see [BOOKS_AND_KDP.md](BOOKS_AND_KDP.md#the-release-bundle)) and refuses a failing release. Reads `engineering-influence.toml` in `--root`. | `0` ok; `1` a build or audit failure; `2` bad arguments |
 | `ei evaluate --out DIR --budget-usd N --judge-budget-usd N` | **Spends real money.** Makes every book of the evaluation set (`evaluation/set.toml`) with the stack's own pipeline, has the judge model (`EI_EVAL_JUDGE_PROFILE`) score each finished book on the rubric (`evaluation/rubric.toml`), and checks the release against the 1.0 bar: every book finished, every dimension's mean at least 3.5, none fallen by more than 0.2 from `--baseline`, and the cost estimate within 30% of what was spent. Refuses to start unless `EI_ALLOW_PAID=1`. `--budget-usd` is the most each book may spend and `--judge-budget-usd` the most the judge may spend in all; neither has a default. `--out` must be a new or empty folder; `evaluation.json` is written there beside the books, and is the next release's baseline. See [EVALUATION.md](EVALUATION.md). | `0` the release meets the bar; `1` it does not (each reason is printed) or a needed extra is missing; `2` the command could not run (not paid for, a bad budget, a folder that is not empty, a bad rubric or set, no judge named, or a judge that failed) |
 | `ei tools add NAME -- COMMAND …` | **Runs** an MCP server once, under limits and with a bare environment, and records what it is in the tool lock: its files' hashes, the name and version it reported and a hash of its tools. Options go before `NAME`. Refuses a launcher (`npx`, `uvx`, `docker`, …) and a relative script path before anything is run. See [TOOL_LOCK.md](TOOL_LOCK.md). | `0`; `2` on a refusal or an unusable lock |
 | `ei tools add --url URL NAME` | **Contacts** a remote MCP server once and records its address, the name and version it reported and a hash of its tools. Only https to a public address is allowed; the token, if any, is the variable named by `--bearer-env`. The server's code is not locked, only what it advertises. See [TOOL_LOCK.md](TOOL_LOCK.md#remote-servers-http). | `0`; `2` on a refusal or an unusable lock |
@@ -255,7 +319,7 @@ Sessions are stored in the database beside the runs, so any `ei acp` process can
 
 Not yet implemented: MCP servers in a session.
 
-Refusals are JSON-RPC errors: `-32700` for a line that is not JSON, `-32600` for a message that is not a JSON-RPC 2.0 request, `-32601` for a method this agent does not implement, and `-32602` for invalid parameters, including a prompt that is not valid TOML (`BRIEF_INVALID`) or a kind this build cannot start. An unexpected failure is `-32603` with the message `internal error`; only the exception's class name is written to stderr, because a message can carry a connection string.
+Refusals are JSON-RPC errors: `-32700` for a line that is not JSON, `-32600` for a message that is not a JSON-RPC 2.0 request, `-32601` for a method this agent does not implement, and `-32602` for invalid parameters, including a prompt that is not valid TOML (`BRIEF_INVALID`) or a kind this build cannot start. An unexpected failure is `-32603` with the message `internal error`; only the exception's class name is written to stderr, because a message can carry a connection string. A refusal with no JSON-RPC code of its own, such as a brief above `EI_MAX_RUN_BUDGET_MICRO_USD`, is also `-32603`, with the refusal's own message.
 
 ## Webhooks
 

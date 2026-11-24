@@ -1,5 +1,10 @@
 # Configuration
 
+**BLUF:** Settings come from environment variables, a few files those variables name, and command-line flags.
+Every security setting fails closed: a missing or weak value stops the process instead of opening it. To write one
+book you need only an author profile. To run the stack you need a database URL, a broker URL and API keys. Every
+`EI_*` variable the code reads is in one index on this page.
+
 Book configuration is intentionally separate from author profile configuration.
 The public package accepts a project title, slug, governing postulates and the
 stages to run. Target formats and an autonomy policy are planned, not accepted yet. Private books repositories may add a profile that
@@ -7,6 +12,28 @@ fills the governing-postulates slot without changing the public domain model.
 
 The book config, the brief and the run summary schemas are versioned under `contracts/` and frozen by snapshot
 tests ([COMPATIBILITY.md](COMPATIBILITY.md)).
+
+## Why a missing setting stops everything
+
+> **Daniel:** I left the API keys blank to try it quickly and the server refused to start. Most tools just run
+> open in that case. Why so strict?
+>
+> **Professor Feynman:** What does a shop do when the lock on the front door is broken?
+>
+> **Daniel:** A careless one props the door open. A careful one stays shut until the lock is fixed.
+>
+> **Professor Feynman:** That is fail closed. An unset key could mean 'I forgot' or 'I want no security', and a
+> program cannot tell which. So this one assumes you forgot, and stays shut. It also tells you which variable is
+> wrong, and never prints the value.
+>
+> **Daniel:** Annoying on day one.
+>
+> **Professor Feynman:** And it is the reason there is no day when you discover the door was open all along. The
+> picture has a limit: a closed shop loses customers, and a stopped worker loses time. So a setting that is merely
+> optional, like the log level, has a default instead.
+>
+> **Daniel:** Required things stop the process, optional things have defaults, and the error names the variable. I
+> will look mine up in the index.
 
 ## Security settings
 
@@ -99,7 +126,7 @@ The outbox table gained a `dead_at` column before migrations existed. `ei db upg
 existing table as it is and does not add the column, so recreate any database created before that
 change.
 
-### Limits to know
+### What the observability does not tell you
 
 - Log masking is by field name. A secret written into the message text itself is
   not masked, so pass values as `extra` fields.
@@ -138,10 +165,11 @@ when this index names one nothing uses. The two `compose only` rows are read by 
 | Variable | For | Described in |
 |---|---|---|
 | `EI_ALLOW_PAID` | lets `ei evaluate` spend money; without it the command refuses | [EVALUATION.md](EVALUATION.md) |
+| `BRAVE_SEARCH_API_KEY` (not an `EI_` variable) | a Brave Search key, the backup search | [RESEARCH.md](RESEARCH.md) |
 | `EI_API_KEYS` | the API's keys | [Security settings](#security-settings) |
 | `EI_API_PORT` (compose only) | the host port the API is published on, default 8000 | `examples/.env.example`, [TROUBLESHOOTING.md](TROUBLESHOOTING.md) |
 | `EI_AUTHOR_PROFILE` | the author's own details file; a run reads it only when this names it | [The author profile](#the-author-profile-your-own-details) |
-| `EI_BUILD_STRICT_RELEASE` | makes any release warning fail a run's `build` stage | [Limits to know](#limits-to-know-1) |
+| `EI_BUILD_STRICT_RELEASE` | makes any release warning fail a run's `build` stage | [Limits to know](#limits-to-know) |
 | `EI_DATABASE_URL` | the database | [Running the stack](#running-the-stack) |
 | `EI_EVAL_JUDGE_PROFILE` | the model profile that judges books in `ei evaluate` | [EVALUATION.md](EVALUATION.md) |
 | `EI_HOST`, `EI_PORT` | where the API listens | [Running the stack](#running-the-stack) |
@@ -159,7 +187,7 @@ when this index names one nothing uses. The two `compose only` rows are read by 
 | `EI_SEARXNG_PORT` (compose only) | the host port of the local search container, default 8888 | [A free local web search](#a-free-local-web-search-searxng) |
 | `EI_SEARXNG_URL` | the SearXNG address the research stage searches through | [A free local web search](#a-free-local-web-search-searxng) |
 | `EI_SKILL_LOCK` | the skill lock file | [The skill lock](#the-skill-lock-installed-prompt-text) |
-| `EI_STAGE_EXECUTOR` | what writes a run's stages: `local`, `model` or `deterministic` | [Limits to know](#limits-to-know-1) |
+| `EI_STAGE_EXECUTOR` | what writes a run's stages: `local`, `model` or `deterministic` | [Limits to know](#limits-to-know) |
 | `EI_STAGE_MODEL_PROFILE` | the profile the `model` executor uses | [MODEL_PROFILES.md](MODEL_PROFILES.md) |
 | `EI_TOOL_LOCK` | the tool lock file | [The tool lock](#the-tool-lock-third-party-tool-servers) |
 
@@ -209,6 +237,9 @@ A job that is malformed, or that fails, is rejected without requeue and lands in
 `.dead` queue, with an alert for failures. Nothing retries it automatically: inspect it
 and republish it by hand. Stopping the worker finishes the job in flight first.
 
+A failed run carries one blocking issue that says why: `stage-failed` (a failure that cannot be retried),
+`retries-exhausted` (three transient failures in a row) or `budget-exceeded` (the journal holds more than the cap).
+
 ### Limits to know
 
 - **A run starts from `ei run create BRIEF.TOML`.** It saves the run and queues its first stage on the broker, and the
@@ -228,7 +259,7 @@ and republish it by hand. Stopping the worker finishes the job in flight first.
   outline that cannot be read as numbered chapters (`OUTLINE_INVALID`; see [PROMPTS.md](PROMPTS.md#the-outline-is-a-format-not-just-prose)).
   Nothing has been run against a live provider.
 - **`EI_EVAL_JUDGE_PROFILE`** (required by `ei evaluate`): the name of the profile, in `EI_MODEL_PROFILES`, of the model that scores the
-  evaluation's books. It is a model of its own, never the one that wrote them. `ei evaluate` refuses to start without it
+  evaluation's books. It is named separately; nothing stops you naming the writer's own profile, so do not. `ei evaluate` refuses to start without it
   (`EVALUATION_JUDGE_REQUIRED`) and spends only when `EI_ALLOW_PAID=1` ([EVALUATION.md](EVALUATION.md)).
 - **`EI_BUILD_STRICT_RELEASE`** (optional, default off): `1`, `true` or `yes` makes a run's `build` stage build a strict release,
   so any readiness warning (for example a missing price or its source and date) fails the run. Off, those are warnings in
@@ -361,7 +392,11 @@ checks (`EI_BUILD_STRICT_RELEASE`, or `--strict-release` on `ei book create`). W
 warning in the run's `quality-report.json`, and a strict release fails.
 
 Any other key is refused, a missing file stops the process at start (`AUTHOR_PROFILE_MISSING`), and a bad one stops it with
-the reason (`AUTHOR_PROFILE_INVALID`). The file is at most 64 KiB; the limits on each field are fixed in the code. Without a
+the reason (`AUTHOR_PROFILE_INVALID`). The file is at most 64 KiB. A one-line field is at most 200 characters with no space at either end; `author_bio`,
+`dedication` and `copyright_notes` are at most 4,000; `year` is 1000 to 9999; `email` has an `@` and no space; an ISBN
+is digits and hyphens ending in a digit or `X`; `also_by` has at most 20 titles; and no field may hold a control or
+invisible character. `[pricing]` needs `verified_on` (an ISO date), `source_url` (http or https), and `ebook` and
+`paperback` above zero; `hardcover` is optional. Without a
 profile the assembled book loads but does not build, and the build says which of these is missing. Em and en dashes are
 refused in non-fiction when the book is built, and the profile is not rewritten, so leave them out of your own text.
 
