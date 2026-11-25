@@ -1,0 +1,1 @@
+Long books fit their drafting prompts: the context is fitted with a character estimate instead of the local model's byte count, each section sees the chapter titles rather than the whole outline, summaries may run to 1,000 tokens, and the model request timeout is 30 minutes.

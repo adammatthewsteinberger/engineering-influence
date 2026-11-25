@@ -286,7 +286,7 @@ def test_the_plan_carries_the_voice_the_grounding_and_this_chapters_beats() -> N
     assert "BRIEF: bees for beginners" in plan.style
     assert "POSITIONING: the calm guide" in plan.style
     assert "RESEARCH: colonies swarm in spring" in plan.grounding
-    assert "## Chapter 3: The Suit" in plan.grounding
+    assert "Chapter 3: The Suit" in plan.grounding
     assert plan.beats == chapter.render()
 
 
@@ -368,7 +368,7 @@ def test_the_summary_request_gives_the_chapter_as_an_untrusted_block() -> None:
     world.execute()
     request = world.loop.calls[2][4]
     assert request.prompt_version == "stage_summary@1"
-    assert request.max_output_tokens == 400
+    assert request.max_output_tokens == 1_000
     assert "# Chapter 1: The Hive" in request.prompt
     assert "ADVICE" not in request.prompt
     assert "untrusted" in request.system

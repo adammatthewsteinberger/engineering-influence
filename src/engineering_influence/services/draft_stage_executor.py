@@ -65,7 +65,7 @@ class DraftStageExecutor(StageExecutorInterface):
     NONFICTION = DraftRecipe(
         ("brief", "positioning", "research", "outline"),
         (("The author's brief", "brief"), ("The positioning", "positioning")),
-        (("The whole outline", "outline"), ("The research notes", "research")),
+        (("The chapter titles", "outline"), ("The research notes", "research")),
         "context_pack",
         "stage_summary",
         "Write section {section} of {sections} of chapter {number} of {count} now, covering beat {section} "
@@ -83,7 +83,7 @@ class DraftStageExecutor(StageExecutorInterface):
     MAX_SECTION_WORDS = 3_000
     TOKENS_PER_WORD = 1.6
     OUTPUT_ROOM = 400
-    SUMMARY_TOKENS = 400
+    SUMMARY_TOKENS = 1_000
     INPUT_MARGIN = 512
     CHARACTERS_PER_TOKEN = 3
 
@@ -293,7 +293,7 @@ class DraftStageExecutor(StageExecutorInterface):
         )
         plan = ContextPlan(
             style=self._recipe.style_text(texts),
-            grounding=self._recipe.grounding_text(texts),
+            grounding=self._recipe.grounding_text({**texts, "outline": self._titles(outline)}),
             beats=chapter.render(),
             instruction=self._recipe.instruction_text(
                 number,
@@ -404,6 +404,11 @@ class DraftStageExecutor(StageExecutorInterface):
 
     async def _store(self, run: BookRun, name: str, text: str) -> None:
         await asyncio.to_thread(self._artifacts.put, run.run_id, name, text.encode("utf-8"))
+
+    @staticmethod
+    def _titles(outline: Outline) -> str:
+        """Every chapter's heading, one a line: where the book is going, without the beats of the other chapters."""
+        return "\n".join(chapter.heading() for chapter in outline.chapters)
 
     @staticmethod
     def _chapter_name(number: int) -> str:

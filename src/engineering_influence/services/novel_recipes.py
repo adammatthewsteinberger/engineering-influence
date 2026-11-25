@@ -28,7 +28,7 @@ class NovelRecipes(StageRecipesInterface):
     DRAFT: ClassVar[DraftRecipe] = DraftRecipe(
         ("brief", "story_bible", "beats", "outline"),
         (("The author's brief", "brief"), ("The story bible", "story_bible")),
-        (("The whole outline", "outline"), ("The beats of the whole novel", "beats")),
+        (("The chapter titles", "outline"), ("The beats of the whole novel", "beats")),
         "novel_context_pack",
         "novel_summary",
         "Write chapter {number} of {count} now, following the beats above, in about {words} words. "

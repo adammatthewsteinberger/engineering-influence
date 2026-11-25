@@ -52,7 +52,7 @@ def test_the_nonfiction_recipe_gives_the_same_words_the_drafter_always_gave() ->
     texts = {"brief": "B", "positioning": "P", "research": "R", "outline": "O"}
     value = DraftStageExecutor.NONFICTION
     assert value.style_text(texts) == "The author's brief:\nB\n\nThe positioning:\nP"
-    assert value.grounding_text(texts) == "The whole outline:\nO\n\nThe research notes:\nR"
+    assert value.grounding_text(texts) == "The chapter titles:\nO\n\nThe research notes:\nR"
     assert value.sectioned is True
     assert value.instruction_text(2, 5, 800, "not given", "not given", 1, 2) == (
         "Write section 1 of 2 of chapter 2 of 5 now, covering beat 1 above, in about 800 words. "
@@ -67,7 +67,7 @@ def test_the_novel_recipe_reads_the_bible_and_the_beats_and_carries_the_levels()
     texts = {"brief": "B", "story_bible": "S", "beats": "T", "outline": "O"}
     assert value.style_text(texts) == "The author's brief:\nB\n\nThe story bible:\nS"
     assert (
-        value.grounding_text(texts) == "The whole outline:\nO\n\nThe beats of the whole novel:\nT"
+        value.grounding_text(texts) == "The chapter titles:\nO\n\nThe beats of the whole novel:\nT"
     )
     sentence = value.instruction_text(3, 12, 2500, "mild", "none")
     assert sentence.startswith(
