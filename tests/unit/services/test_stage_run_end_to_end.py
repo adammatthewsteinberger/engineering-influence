@@ -283,12 +283,12 @@ DRAFTING = (
     ("SUMMARY TWO text", "end_turn"),
 )
 REVISING = (
-    ("CHAPTER ONE revised", "end_turn"),
-    ("CHAPTER TWO revised", "end_turn"),
-    ("CHAPTER ONE polished", "end_turn"),
-    ("CHAPTER TWO polished", "end_turn"),
-    ("CHAPTER ONE final", "end_turn"),
-    ("CHAPTER TWO final", "end_turn"),
+    ("# Chapter 1: The Hive\n\nCHAPTER ONE revised", "end_turn"),
+    ("# Chapter 2: The Site\n\nCHAPTER TWO revised", "end_turn"),
+    ("# Chapter 1: The Hive\n\nCHAPTER ONE polished", "end_turn"),
+    ("# Chapter 2: The Site\n\nCHAPTER TWO polished", "end_turn"),
+    ("# Chapter 1: The Hive\n\nCHAPTER ONE final", "end_turn"),
+    ("# Chapter 2: The Site\n\nCHAPTER TWO final", "end_turn"),
 )
 GOOD = (
     ("BRIEF text", "end_turn"),
@@ -318,7 +318,9 @@ def test_a_run_goes_from_brief_to_draft_and_completes_with_each_answer_stored() 
         "build.md",
         "build/publication-report.json",
         "chapter_01.md",
+        "chapter_01_s01.md",
         "chapter_02.md",
+        "chapter_02_s01.md",
         "copy_01.md",
         "copy_02.md",
         "copy_edit.md",
@@ -346,7 +348,7 @@ def test_a_run_goes_from_brief_to_draft_and_completes_with_each_answer_stored() 
     )
     assert world.store.get(RUN_ID, "research.md") == b"RESEARCH text"
     assert world.store.get(RUN_ID, "outline.md") == OUTLINE_TEXT.encode()
-    assert world.store.get(RUN_ID, "chapter_02.md") == b"CHAPTER TWO text"
+    assert world.store.get(RUN_ID, "chapter_02.md") == b"# Chapter 2: The Site\n\nCHAPTER TWO text"
     assert world.run().issues == ()
 
 
@@ -370,9 +372,9 @@ def test_each_stage_is_asked_with_what_the_stages_before_it_wrote() -> None:
         "stage_research@2",
         "stage_outline@4",
         "stage_metadata@1",
-        "context_pack@2",
+        "context_pack@3",
         "stage_summary@1",
-        "context_pack@2",
+        "context_pack@3",
         "stage_summary@1",
         "stage_revise_structure@2",
         "stage_revise_structure@2",
@@ -629,8 +631,8 @@ def test_each_editing_pass_is_given_what_the_pass_before_it_wrote() -> None:
     assert "CHAPTER TWO polished" in copy_two.prompt
     assert world.store.get(RUN_ID, "copy_edit.md") == (
         b"# Revision: copy_edit\n\n"
-        b"- Chapter 1: The Hive (3 to 3 words)\n"
-        b"- Chapter 2: The Site (3 to 3 words)\n"
+        b"- Chapter 1: The Hive (8 to 8 words)\n"
+        b"- Chapter 2: The Site (8 to 8 words)\n"
     )
 
 

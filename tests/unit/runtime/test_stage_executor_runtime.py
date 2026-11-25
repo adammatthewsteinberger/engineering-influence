@@ -285,14 +285,13 @@ def test_the_draft_stage_is_routed_to_the_drafter_and_writes_every_chapter(
         executor = rt.build(store, InMemoryJournal())
         asyncio.run(executor.execute(run_for("draft"), 1))
         rt.close()
-    assert store.get("run-1", "chapter_02.md") == b"Words from the model."
+    assert store.get("run-1", "chapter_02.md") == b"# Chapter 2: The Site\n\nWords from the model."
     assert store.get("run-1", "summary_02.md") == b"Words from the model."
     index = store.get("run-1", "draft.md")
-    assert index is not None and b"Total: 8 words" in index
+    assert index is not None and b"Total: 18 words" in index
     sent = [json.dumps(body) for _, _, body in seen.seen]
-    # The provider says the same words every time, so the second summary asks exactly what the first
-    # did and is replayed from the journal: three calls, not four.
-    assert len(sent) == 3
+    # The chapters open with different headings, so the second summary asks something new: four calls.
+    assert len(sent) == 4
     assert "Chapter 2: The Site" in sent[2] and "the positioning" in sent[2]
 
 

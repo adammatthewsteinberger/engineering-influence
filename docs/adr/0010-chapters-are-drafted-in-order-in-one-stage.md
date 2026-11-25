@@ -179,3 +179,22 @@ A non-fiction plan now has three editing stages between `draft` and `assemble`: 
 - **Not known:** whether the edits improve the prose. Nothing here has run against a live model, and the length bounds only catch an answer
   that is plainly not an edit.
 
+## Amendment: chapters are drafted one section per beat (2026-11-25)
+
+A non-fiction chapter is no longer one model call. `DraftStageExecutor` writes it as one call per outline beat, each
+section stored as `chapter_NN_sKK.md`, then joins the sections under `# Chapter N: Title` into `chapter_NN.md`. The reason
+is the local model: a single reply was capped at 8,192 tokens and the model ended its chapters at 1,300 to 2,800 words,
+so a 100,000-word book came out at 15,479 words.
+
+- **Sections, not chapters, are the unit of resume.** A section that is stored is never redrafted; a chapter is done when
+  its joined file and its summary exist, as before.
+- **Each section sees the end of the one before it.** Section *k* gets section *k-1* as its previous tail (chapter *n-1*
+  for section 1), the full chapter beats, and the earlier chapter summaries. The instruction holds numbers only.
+- **The model writes no heading.** `context_pack` is version 3; the executor adds the chapter heading to section 1.
+- **Length.** A chapter's share of the target is the brief's `target_words` over the chapters (2,500 when there is none),
+  never under 300 or over 12,000. Each section is that share over the chapter's beats, never under 150 or over 3,000
+  words, so one reply stays inside the output cap.
+- **Novels are unchanged.** `DraftRecipe.sectioned` is false for novels, so they still draft a chapter in one call.
+
+Not yet checked: that a section keeps to its beat, that a refusal is caught, and that a chapter reaches its length. Those
+belong to the refusal and outline-sizing slices (PR 2 and PR 3 of the plan). Nothing here has run against a live model.

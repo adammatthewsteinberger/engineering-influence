@@ -2,8 +2,8 @@
 # Regenerate with EI_UPDATE_PROMPT_LOCK=1 (see tests/unit/test_prompt_template_lock.py).
 
 [context_pack]
-version = 2
-fingerprint = "6536536270f882538435c9ee6af2c3e7ee9ff09d94f659c3919739b61834a676"
+version = 3
+fingerprint = "5ee67074505558a626bc5b75c32092215af0cd4a13294ab3fc890d2b7e383468"
 
 [eval_judge]
 version = 1

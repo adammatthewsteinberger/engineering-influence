@@ -14,7 +14,7 @@ is called `templates`, never `prompts`, because the `leak-scan` CI job rejects a
 
 Today nineteen templates ship, the seven `novel_*` ones among them (see [NOVELS.md](NOVELS.md)). `stage_brief`, `stage_positioning`, `stage_research`, `stage_outline` and `stage_metadata` are the
 prompts for five of the non-fiction stages; every blank in them that is filled from outside (the author's idea, and what an earlier stage
-wrote) is declared untrusted. `context_pack` (version 2) is the layout of the prompt that drafts one chapter: its fixed system text and the
+wrote) is declared untrusted. `context_pack` (version 3) is the layout of the prompt that drafts one section of a chapter: its fixed system text and the
 labels the context assembler puts between the parts. **Where each part goes is a trust decision**: the system part
 is fixed text, and the voice, the outline and research, the earlier chapters' summaries, the tail of the last chapter
 and this chapter's beats all came from a model or the web, so each is an untrusted blank and reaches the model as its
@@ -74,7 +74,7 @@ its shape (`BookMetadata`). Em and en dashes in it are rewritten before it is re
 | `stage_research` | 2 | Researches a non-fiction book on the web with search and page-reading tools |
 | `stage_outline` | 4 | Plans the chapters of a non-fiction book from its brief, positioning and research |
 | `stage_metadata` | 1 | Writes the store listing of a non-fiction book: title, subtitle, description, keywords and categories |
-| `context_pack` | 2 | The fixed instructions and the labels for the prompt that drafts one chapter |
+| `context_pack` | 3 | The fixed instructions and the labels for the prompt that drafts one section of a chapter |
 | `stage_summary` | 1 | Summarises one drafted chapter so that later chapters can be written to follow it |
 | `stage_revise_structure` | 2 | Revises the structure of one non-fiction chapter against the outline and the other chapters |
 | `stage_revise_lines` | 2 | Line-edits one non-fiction chapter for clarity, rhythm and concision in the book's voice |
@@ -139,7 +139,7 @@ says it is not a source for a fact.
 ## Versions are part of the journal key
 
 A model call's journal key contains the prompt version, so a resumed run reuses an answer only for the same
-prompt. The assembler records `template.identifier()` (`context_pack@2`). A stage with skills enabled adds their identity
+prompt. The assembler records `template.identifier()` (`context_pack@3`). A stage with skills enabled adds their identity
 (`stage_outline@4+skill_guidance@2:<digest>`), so a skill's text is part of the key too. Editing a template's text and
 keeping its version would make a resumed run replay answers written for the old text, so
 `tests/unit/test_prompt_template_lock.py` compares each shipped template with
