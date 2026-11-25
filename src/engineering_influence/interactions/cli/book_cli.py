@@ -8,6 +8,7 @@ import json
 import sys
 import tomllib
 from collections.abc import Callable, Mapping
+from contextlib import AbstractContextManager, nullcontext
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -16,6 +17,7 @@ from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
 from engineering_influence.interactions.cli.interfaces.book_cli_interface import BookCliInterface
+from engineering_influence.interfaces.keep_awake_interface import KeepAwakeInterface
 from engineering_influence.interfaces.local_book_creator_interface import (
     LocalBookCreatorInterface,
 )
@@ -43,9 +45,11 @@ class BookCli(BookCliInterface):
         self,
         controller_for: Callable[[Path], PublishingController],
         creator_for: Callable[[Path, Mapping[str, str]], LocalBookCreatorInterface],
+        keep_awake: KeepAwakeInterface,
     ) -> None:
         self._controller_for = controller_for
         self._creator_for = creator_for
+        self._keep_awake = keep_awake
 
     def register(self, subparsers: Any) -> None:
         """Add the `book` command and its subcommands."""
@@ -113,6 +117,11 @@ class BookCli(BookCliInterface):
             "--ignore-estimate",
             action="store_true",
             help="start even if the budget is below what the book is expected to cost",
+        )
+        create.add_argument(
+            "--no-keep-awake",
+            action="store_true",
+            help="do not hold the computer awake while the book is made",
         )
         create.add_argument(
             "--approve-spend",
@@ -199,17 +208,24 @@ class BookCli(BookCliInterface):
                 creator, brief, arguments.ignore_estimate
             ):
                 return 2
-            run = (
-                creator.resume(arguments.approve_spend, progress)
-                if brief is None
-                else creator.start(brief, progress)
-            )
+            with self._awake(arguments):
+                run = (
+                    creator.resume(arguments.approve_spend, progress)
+                    if brief is None
+                    else creator.start(brief, progress)
+                )
             return self._finish(creator, run, arguments.out, state)
         except ApplicationError as error:
             print(f"error: {error.message}", file=sys.stderr)
             return 2
         finally:
             creator.close()
+
+    def _awake(self, arguments: argparse.Namespace) -> AbstractContextManager[None]:
+        """The keep-awake hold for the run, or nothing when the author asked for none."""
+        if arguments.no_keep_awake:
+            return nullcontext()
+        return self._keep_awake.hold()
 
     @staticmethod
     def _check_out(out: Path, state: Path, resuming: bool) -> None:

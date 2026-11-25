@@ -279,6 +279,21 @@
             },
             {
               "choices": null,
+              "default": false,
+              "dest": "no_keep_awake",
+              "flags": [
+                "--no-keep-awake"
+              ],
+              "name": "--no-keep-awake",
+              "nargs": 0,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": false,
+              "type": null
+            },
+            {
+              "choices": null,
               "default": null,
               "dest": "out",
               "flags": [

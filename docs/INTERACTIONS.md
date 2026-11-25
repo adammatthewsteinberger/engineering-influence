@@ -241,7 +241,7 @@ ei book [--root DIR] covers [--preview] [--hardcover-pdf PATH] [SLUG …]
 ei book [--root DIR] qa PDF [--output DIR] [--dpi N]
 ei book [--root DIR] package [SLUG …]
 ei book [--root DIR] publish [--audit-only] [--no-render] [--strict-release] [--dpi N] [--report-dir DIR] [SLUG …]
-ei book create --kind nonfiction|novel IDEA --budget-usd N --out DIR --profile FILE [--resume]
+ei book create --kind nonfiction|novel IDEA --budget-usd N --out DIR --profile FILE [--resume] [--no-keep-awake]
 ei evaluate --out DIR --budget-usd N --judge-budget-usd N [--profile FILE] [--baseline FILE] [--set FILE] [--rubric FILE] [--release LABEL]
 ei tools add [--lock PATH] [--env VAR …] [--replace] NAME -- COMMAND [ARG …]
 ei tools add [--lock PATH] [--bearer-env VAR] [--replace] --url URL NAME
@@ -341,3 +341,13 @@ Destinations must be public `https` URLs; loopback, private ranges and cloud met
 [`examples/webhooks/send_event.py`](../examples/webhooks/send_event.py) sends it valid, replayed,
 tampered and stale deliveries. **No service emits webhooks yet**; the sender reproduces the
 request the platform will make so you can build a receiver now.
+
+### Keeping the computer awake during `ei book create`
+
+A book takes hours on a local model, so `ei book create` holds the computer awake for the whole run. On macOS it runs
+`caffeinate -i` for the life of the process; on Linux it runs `systemd-inhibit` around a `sleep`. Pass `--no-keep-awake`
+to turn that off. Where neither tool is found, the run continues and a warning says the computer may sleep; a run that
+is stopped by sleep is continued with `--resume` and pays for nothing twice.
+
+The hold prevents idle sleep. A closed laptop lid on battery still sleeps on both platforms, and nothing the program
+does can prevent that: keep the lid open, or plug in, for a long run.

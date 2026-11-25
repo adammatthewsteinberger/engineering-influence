@@ -37,6 +37,7 @@ from engineering_influence.infrastructure.skills.new_file_skill_sink import NewF
 from engineering_influence.infrastructure.skills.toml_skill_lock_store import TomlSkillLockStore
 from engineering_influence.infrastructure.skills.toml_skill_parser import TomlSkillParser
 from engineering_influence.infrastructure.skills.toml_skill_writer import TomlSkillWriter
+from engineering_influence.infrastructure.system_keep_awake import SystemKeepAwake
 from engineering_influence.infrastructure.tools.lazy_remote_transport_factory import (
     LazyRemoteTransportFactory,
 )
@@ -179,7 +180,7 @@ class CliRuntime(CliRuntimeInterface):
         controller = ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue()))
         return CliApplication(
             controller,
-            BookCli(self._publishing_controller, self._local_book_creator),
+            BookCli(self._publishing_controller, self._local_book_creator, self._keep_awake()),
             ServeCli(ServeStarter()),
             DbCli(self._schema_migrator, self._secret_provider),
             RunCli(
@@ -507,6 +508,11 @@ class CliRuntime(CliRuntimeInterface):
             baseline,
             date.today(),
         )
+
+    @staticmethod
+    def _keep_awake() -> SystemKeepAwake:
+        """The sleep inhibitor for this machine; its warning goes to standard error."""
+        return SystemKeepAwake.for_this_machine()
 
     def _local_book_creator(
         self, state_dir: Path, settings: Mapping[str, str]
