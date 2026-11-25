@@ -1,0 +1,21 @@
+# Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
+"""SHA-256 of a file."""
+
+import hashlib
+from pathlib import Path
+
+from engineering_influence.repositories.release.interfaces.file_digest_interface import (
+    FileDigestInterface,
+)
+
+
+class FileDigest(FileDigestInterface):
+    """Hashes in 1 MiB blocks so large PDFs never load whole."""
+
+    def sha256(self, path: Path) -> str:
+        """The hex digest of the file's bytes."""
+        digest = hashlib.sha256()
+        with path.open("rb") as handle:
+            for block in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(block)
+        return digest.hexdigest()

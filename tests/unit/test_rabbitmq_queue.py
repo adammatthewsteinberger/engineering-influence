@@ -72,6 +72,7 @@ def test_rabbitmq_queue_publishes_durable_job() -> None:
         "job_id": job_id,
         "kind": "pipeline.thesis",
         "payload": {"project_slug": "demo"},
+        "schema_version": 1,
     }
 
 

@@ -1,13 +1,19 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Readiness service contract."""
 
-from abc import ABC, abstractmethod
+from __future__ import annotations
 
-from engineering_influence.contracts.readiness_report import ReadinessReport
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from engineering_influence.contracts.readiness_report import ReadinessReport
 
 
 class ReadinessProbeInterface(ABC):
     """Report whether the service can do useful work right now."""
+
+    __slots__ = ()
 
     @abstractmethod
     def check(self) -> ReadinessReport:

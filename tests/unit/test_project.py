@@ -2,9 +2,9 @@
 
 import pytest
 
-from engineering_influence.domain.governing_postulates import GoverningPostulates
-from engineering_influence.domain.pipeline_stage import PipelineStage
-from engineering_influence.domain.project import Project
+from engineering_influence.models.governing_postulates import GoverningPostulates
+from engineering_influence.models.pipeline_stage import PipelineStage
+from engineering_influence.models.project import Project
 
 
 def test_project_keeps_neutral_postulates_and_selected_stages() -> None:

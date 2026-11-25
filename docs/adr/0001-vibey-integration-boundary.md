@@ -5,9 +5,12 @@ Status: accepted for the alpha architecture
 ## Context
 
 The pipeline needs durable jobs, leases, gates, recovery, and workflow
-orchestration. The target runtime is vibey-engine 4.5.0.
+orchestration. The target runtime is vibey-engine 0.4 (`>=0.4,<0.5`; 4.5.0, which this ADR was first written
+against, was removed from PyPI).
 
-The local 4.5.0 source was inspected at release commit `f1cd3fe0`. Its worker
+The 4.5.0 source was inspected at release commit `f1cd3fe0`, and the claim below was
+re-checked against 0.4.0 on 2026-11-18 (no entry-point group, no handler-registration hook).
+The worker
 has a `JobDispatcher` that routes string job kinds to handlers, but the handler
 mapping is assembled inside `vibey.bootstrap.build_worker` and the package does
 not expose a third-party entry point for registering handlers or workflow
@@ -28,9 +31,9 @@ release may receive a native adapter without changing the application core.
 ## Consequences
 
 - Pipeline phases can use domain-specific job kinds without modifying vibey.
-- Crash recovery and exactly-once event delivery remain explicit contracts of
+- Crash recovery and at-least-once event delivery (consumers must deduplicate) remain explicit contracts of
   the engineering-influence adapters.
 - The adapter must preserve lease, retry, dead-letter, and gate semantics and
-  must be covered by integration tests against PostgreSQL and RabbitMQ.
+  must be covered by integration tests against PostgreSQL and RabbitMQ. Those tests exist in `tests/integration` and run in the `integration` CI job. They cover dead-lettering, redelivery of an unacknowledged message, retries, and a run that finishes through the stack when workers die; lease and gate semantics are covered by unit tests, because the adapters do not use vibey's leases.
 - Native vibey worker registration remains an optimization, not an architectural
   prerequisite.

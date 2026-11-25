@@ -2,7 +2,7 @@
 
 import pytest
 
-from engineering_influence.domain import PhaseRun, PhaseState
+from engineering_influence.models import PhaseRun, PhaseState
 
 
 def test_pending_run_can_be_queued() -> None:

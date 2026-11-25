@@ -1,0 +1,3 @@
+# Commits that only move or rename files (squash-merge SHAs). See CONTRIBUTING.md.
+# R1: domain -> models, interaction -> interactions, *Port -> *Interface
+f3e7baa6cdd5c0222a422c1fc241ccf41f89e1d3

@@ -1,0 +1,78 @@
+# Pins each shipped prompt template's version to a fingerprint of its text.
+# Regenerate with EI_UPDATE_PROMPT_LOCK=1 (see tests/unit/test_prompt_template_lock.py).
+
+[context_pack]
+version = 2
+fingerprint = "6536536270f882538435c9ee6af2c3e7ee9ff09d94f659c3919739b61834a676"
+
+[eval_judge]
+version = 1
+fingerprint = "d07f6a1b2a3231bb38d7ab6a7138dee2319b82c046fcf19ff6194d49e92d0f2d"
+
+[novel_beats]
+version = 1
+fingerprint = "9a99e0b6e16182d72e0dd4a8dad33bd860bd5d69f7b458d19f294981da9847b0"
+
+[novel_brief]
+version = 1
+fingerprint = "1467a7838d0bd3ba6b4ab29472c2d332ed8b77eac715a4916d7505a256a24397"
+
+[novel_context_pack]
+version = 1
+fingerprint = "9c52e5ff3c5a73975bb4acc3fa575e61fb787d2be55c650f7a4beffbea1b87f5"
+
+[novel_metadata]
+version = 1
+fingerprint = "7fcfbaa16e3d3d2b7f4bde3d4f69779ad433bdbdd482cc80b7193c9a5c8cd1a5"
+
+[novel_outline]
+version = 1
+fingerprint = "ddeaf38eff9a41cc49fc44a1c26f3e41fde5d81e94d17c4111b09139f03f9f7d"
+
+[novel_story_bible]
+version = 1
+fingerprint = "94f201acab95ae06de536bdc086f96f7e3ec2177a7c5aed70c43bd7daec18aac"
+
+[novel_summary]
+version = 1
+fingerprint = "6f4e44f3c43f42730bba78da0ba2277a2b266f2e3313fdf20c6132f68da78015"
+
+[skill_guidance]
+version = 2
+fingerprint = "a4201ec270b5535eadbad3b7fa5df2ad493f34e1036f55f10a04da2dd13ea9aa"
+
+[stage_brief]
+version = 2
+fingerprint = "0c8a89733fbb2f3ed2d11958cafcc15ba4b7be615130a9194448fcba65a2ae3b"
+
+[stage_copy_edit]
+version = 2
+fingerprint = "0f7fe6160a2e1e7864101f98e580c58a5d49129033b1c00eb42774ef50614391"
+
+[stage_metadata]
+version = 1
+fingerprint = "a5d4aac337b08a56252d013038c9a562dac86c38897f3c22c405fcef7d98b007"
+
+[stage_outline]
+version = 4
+fingerprint = "be5718fd75e583d7556771122330c56eb871d35fb213d721cbbc781435a5262e"
+
+[stage_positioning]
+version = 1
+fingerprint = "c83751d07fb0aba9077b044b7252ba91176aaa3213d1230abf61fecb80cc85b2"
+
+[stage_research]
+version = 2
+fingerprint = "a3bae15acc01c5bd769e60a75bbbe6e473dbff3bcfb58edfdecda8e4b2d5e4e8"
+
+[stage_revise_lines]
+version = 2
+fingerprint = "5e99b86a60e85631e8297ec535e97d6f3b663360ffabbdc202ae2122bec04fda"
+
+[stage_revise_structure]
+version = 2
+fingerprint = "685a359337927389c02736a1e2690273a9cae66965bebca7336278b39ab2d203"
+
+[stage_summary]
+version = 1
+fingerprint = "40ddadb5ca19aebd1871571ed573db273f19d33ae7b56b04305c7de8d2f90ba7"

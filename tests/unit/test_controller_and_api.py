@@ -4,14 +4,14 @@ import pytest
 
 from engineering_influence.contracts.project_request import ProjectRequest
 from engineering_influence.controllers.project_controller import ProjectController
-from engineering_influence.interaction.api.api_guard import ApiGuard
-from engineering_influence.interaction.api.application import ApiApplication
-from engineering_influence.interfaces.ledger_port import LedgerPort
-from engineering_influence.interfaces.queue_port import QueuePort
+from engineering_influence.interactions.api.api_guard import ApiGuard
+from engineering_influence.interactions.api.application import ApiApplication
+from engineering_influence.interfaces.ledger_interface import LedgerInterface
+from engineering_influence.interfaces.queue_interface import QueueInterface
 from engineering_influence.services.start_pipeline import StartPipeline
 
 
-class RecordingLedger(LedgerPort):
+class RecordingLedger(LedgerInterface):
     """In-memory ledger for interaction tests."""
 
     def __init__(self) -> None:
@@ -21,7 +21,7 @@ class RecordingLedger(LedgerPort):
         self.events.append((event_name, payload))
 
 
-class RecordingQueue(QueuePort):
+class RecordingQueue(QueueInterface):
     """In-memory queue for interaction tests."""
 
     def __init__(self) -> None:
@@ -52,7 +52,9 @@ def test_controller_uses_shared_start_pipeline_service() -> None:
 
 
 def test_api_returns_same_controller_contract(api_guard: ApiGuard) -> None:
-    application = ApiApplication(RecordingLedger(), RecordingQueue(), api_guard)
+    application = ApiApplication(
+        ProjectController(StartPipeline(RecordingLedger(), RecordingQueue())), api_guard
+    )
     application.build()
 
     assert application._start(request()) == {"job_id": "job-api-1", "project_slug": "demo"}

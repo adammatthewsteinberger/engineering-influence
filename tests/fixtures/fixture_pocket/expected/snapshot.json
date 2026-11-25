@@ -1,0 +1,86 @@
+{
+  "covers": [
+    "pocket-back.tif",
+    "pocket-ebook-preview.jpg",
+    "pocket-ebook.jpg",
+    "pocket-ebook.tif",
+    "pocket-front.tif",
+    "pocket-paperback-wrap.pdf",
+    "pocket-paperback-wrap.tif"
+  ],
+  "epub": {
+    "members": {
+      "META-INF/container.xml": "48dc4e9c19e733844861242a72429df570ef178e7c6a5b3c1666f4c03fbf90b4",
+      "OEBPS/content.opf": "dc9b31d6793e1a43004b061fc6b77a9bb989ae77773494782f6b85793323d0af",
+      "OEBPS/cover.jpg": "c81e9758fa69543d0ee5bb5b1cb22912f06460b4573c30e5fe70dd4981cb83f4",
+      "OEBPS/fine-ebook.css": "e4d7e90d2f3665e1c3185c19b83f3fefa72370d361e5c601a792703648104b97",
+      "OEBPS/nav.xhtml": "aa72e64057a3834af12a0ce196e18a0197987739cb98523c57328a08a9c8310c",
+      "OEBPS/pocket.css": "2570b53dc8fb9c5e60d8bcda5fcdf8a3000784efb1becfb955a38c791015e4f0",
+      "OEBPS/pocket.ncx": "185011baed11a20625df820fe02a92f30a2ac0d343a23195c3de79abd4e3a77f",
+      "OEBPS/pocket.xhtml": "5f4776936a413a7c71786298197fb1cac315f32d4e5a033daf09a36dd2c6ee4e",
+      "OEBPS/pocketch1.xhtml": "dff8244bf30d6d766625aea5f7d19f8406ddc5a22cdf223f6c282653c8c62b50",
+      "OEBPS/pocketch2.xhtml": "2c24e1ad0c3faa9a73ce2bab12f20de142ee602048ce81ad4062e9a14ac24294",
+      "OEBPS/pocketch3.xhtml": "f7aca023cddf03310ce8fc81db06642b2ae939b9b053a123a6ed9d6fb8f7a988",
+      "OEBPS/pocketli1.xhtml": "99f983ba983ce9a1821cad64f1a9690d7955cecde4c3c2ff1bc06bac629690cc",
+      "OEBPS/pocketli2.xhtml": "5cf33ab0d8157fabf462dc35e819018021d76896e8a76633bb58cfce7425d888",
+      "OEBPS/pocketli3.xhtml": "2d83f22c1091ec59cc2d8533378d5e37fc98b1567c795ac776e93601a7d4226c",
+      "OEBPS/pocketli4.xhtml": "fee69ecce214cfb99d0d5269bf335683453d28bb7c940cdf6a9dd59d2a10a4b7",
+      "OEBPS/pocketpa1.xhtml": "e40fa3f59eba0a97d0ce1b7e1818b35e8a1d6eb6d8acdd5fd425d5dbf2d0e4c6",
+      "OEBPS/pocketpa2.xhtml": "d0423ed9c72c86460ba181da32619a3629ddc2b3c2ade7dd666badb403b24b30",
+      "mimetype": "e468e350d1143eb648f60c7b0bd6031101ec0544a361ca74ecef256ac901f48b"
+    },
+    "mimetype_first_and_stored": true
+  },
+  "hardcover_pdf": null,
+  "pdf": {
+    "page_text_sha256": [
+      "06017e9dfda0bfdc29247761bc8e3d29d837e7042260bfbae843500dd4b965ba",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "483b2f99d81b89aa6b69547326465b2e69de8807792c7637d8e32ecc4dd60dc0",
+      "7ad0f48d77d02bc3965588c96ea54ff2a73508b9984d3fabf37906b06321eff5",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "e458af2ce1344d227242a56e96783d853ccf3fe5d0a4b8f6f314bdd53c3d7d7f",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "d6ddd57fce8d0bdf0c536df50e457b556efdfc0dcf9e835285a5cafa80e923d6",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "d38a96a196219d54fb372e52b039297d59d86ef8a534932fcc214645f7ff3218",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "4316e326fc1ade9656b2e512a6142684090f00bb3bc1459b27573b4e56649b57",
+      "dbbe81d9ceb1196545e4d93f2f1d25d5f5b6a0a90098c876084485ec3d0998f6",
+      "3a32cd5fa193ec70c503d18a6ee88d12e332c0060053b9ac3ac5eaeda7ad91d1",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "487d14194390ffe2d38445b667a5871ba6b1a4443d18d40b5418690c17346279",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "cdcc3f3adfa7676cb37472b79c0280693f9de4cc5441a889ec91d2c6fb51031b",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "5d590ae509f43e3e9ed92c8ef8485c45ff5d775a86cca41f7edab7057de4b885",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "15cc0f03f11ae5d459ef2b3236dbef6dcdb29041c25f6bcf527a6877798b8d35"
+    ],
+    "pages": 23,
+    "size_pt": [
+      360.0,
+      576.0
+    ]
+  },
+  "report": {
+    "findings": [],
+    "problems": [],
+    "status": "pass",
+    "steps": [
+      [
+        "pdf",
+        "pass"
+      ],
+      [
+        "covers",
+        "pass"
+      ],
+      [
+        "epub",
+        "pass"
+      ]
+    ]
+  }
+}

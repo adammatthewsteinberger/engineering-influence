@@ -1,0 +1,308 @@
+{
+  "AsyncEngineeringInfluenceClient": {
+    "__init__": {
+      "parameters": [
+        {
+          "annotation": "str",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "base_url"
+        },
+        {
+          "annotation": "str | None",
+          "default": "None",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "api_key"
+        },
+        {
+          "annotation": "Any",
+          "default": "None",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "transport"
+        }
+      ],
+      "returns": "None"
+    },
+    "cancel_run": {
+      "parameters": [
+        {
+          "annotation": "str",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "run_id"
+        }
+      ],
+      "returns": "dict[str, Any]"
+    },
+    "close": {
+      "parameters": [],
+      "returns": "None"
+    },
+    "create_run": {
+      "parameters": [
+        {
+          "annotation": "Mapping[str, Any]",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "brief"
+        }
+      ],
+      "returns": "dict[str, Any]"
+    },
+    "deny_run": {
+      "parameters": [
+        {
+          "annotation": "str",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "run_id"
+        }
+      ],
+      "returns": "dict[str, Any]"
+    },
+    "get_artifact": {
+      "parameters": [
+        {
+          "annotation": "str",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "run_id"
+        },
+        {
+          "annotation": "str",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "name"
+        }
+      ],
+      "returns": "bytes"
+    },
+    "get_run": {
+      "parameters": [
+        {
+          "annotation": "str",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "run_id"
+        }
+      ],
+      "returns": "dict[str, Any]"
+    },
+    "grant_run": {
+      "parameters": [
+        {
+          "annotation": "str",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "run_id"
+        },
+        {
+          "annotation": "int | None",
+          "default": "None",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "micro_usd"
+        }
+      ],
+      "returns": "dict[str, Any]"
+    },
+    "list_runs": {
+      "parameters": [],
+      "returns": "list[dict[str, Any]]"
+    },
+    "resume_run": {
+      "parameters": [
+        {
+          "annotation": "str",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "run_id"
+        }
+      ],
+      "returns": "dict[str, Any]"
+    },
+    "start_pipeline": {
+      "parameters": [
+        {
+          "annotation": "str",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "slug"
+        },
+        {
+          "annotation": "str",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "title"
+        },
+        {
+          "annotation": "tuple[str, ...]",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "postulates"
+        },
+        {
+          "annotation": "tuple[str, ...]",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "stages"
+        }
+      ],
+      "returns": "dict[str, str]"
+    }
+  },
+  "EngineeringInfluenceClient": {
+    "__init__": {
+      "parameters": [
+        {
+          "annotation": "str",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "base_url"
+        },
+        {
+          "annotation": "str | None",
+          "default": "None",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "api_key"
+        },
+        {
+          "annotation": "Any",
+          "default": "None",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "transport"
+        }
+      ],
+      "returns": "None"
+    },
+    "cancel_run": {
+      "parameters": [
+        {
+          "annotation": "str",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "run_id"
+        }
+      ],
+      "returns": "dict[str, Any]"
+    },
+    "close": {
+      "parameters": [],
+      "returns": "None"
+    },
+    "create_run": {
+      "parameters": [
+        {
+          "annotation": "Mapping[str, Any]",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "brief"
+        }
+      ],
+      "returns": "dict[str, Any]"
+    },
+    "deny_run": {
+      "parameters": [
+        {
+          "annotation": "str",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "run_id"
+        }
+      ],
+      "returns": "dict[str, Any]"
+    },
+    "get_artifact": {
+      "parameters": [
+        {
+          "annotation": "str",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "run_id"
+        },
+        {
+          "annotation": "str",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "name"
+        }
+      ],
+      "returns": "bytes"
+    },
+    "get_run": {
+      "parameters": [
+        {
+          "annotation": "str",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "run_id"
+        }
+      ],
+      "returns": "dict[str, Any]"
+    },
+    "grant_run": {
+      "parameters": [
+        {
+          "annotation": "str",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "run_id"
+        },
+        {
+          "annotation": "int | None",
+          "default": "None",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "micro_usd"
+        }
+      ],
+      "returns": "dict[str, Any]"
+    },
+    "list_runs": {
+      "parameters": [],
+      "returns": "list[dict[str, Any]]"
+    },
+    "resume_run": {
+      "parameters": [
+        {
+          "annotation": "str",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "run_id"
+        }
+      ],
+      "returns": "dict[str, Any]"
+    },
+    "start_pipeline": {
+      "parameters": [
+        {
+          "annotation": "str",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "slug"
+        },
+        {
+          "annotation": "str",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "title"
+        },
+        {
+          "annotation": "tuple[str, ...]",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "postulates"
+        },
+        {
+          "annotation": "tuple[str, ...]",
+          "default": null,
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "stages"
+        }
+      ],
+      "returns": "dict[str, str]"
+    }
+  },
+  "exports": [
+    "AsyncEngineeringInfluenceClient",
+    "EngineeringInfluenceClient"
+  ]
+}

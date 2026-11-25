@@ -2,21 +2,24 @@
 
 import pytest
 
-from engineering_influence.interaction.cli.main import CliApplication, main
-from engineering_influence.interfaces.ledger_port import LedgerPort
-from engineering_influence.interfaces.queue_port import QueuePort
+from engineering_influence.interfaces.ledger_interface import LedgerInterface
+from engineering_influence.interfaces.queue_interface import QueueInterface
+from engineering_influence.runtime.cli_runtime import CliRuntime
+from engineering_influence.runtime.main import main
 from engineering_influence.services.interfaces.start_pipeline_interface import (
     StartPipelineInterface,
 )
 
 
 def test_cli_accepts_empty_arguments() -> None:
-    assert CliApplication().run([]) == 0
+    assert CliRuntime().build().run([]) == 0
 
 
 def test_cli_starts_pipeline(capsys: pytest.CaptureFixture[str]) -> None:
     assert (
-        CliApplication().run(
+        CliRuntime()
+        .build()
+        .run(
             [
                 "pipeline",
                 "start",
@@ -42,11 +45,11 @@ def test_cli_main_exits_with_application_status(monkeypatch: pytest.MonkeyPatch)
 
 
 def test_abstract_port_bodies_are_fail_closed() -> None:
-    class LedgerProbe(LedgerPort):
+    class LedgerProbe(LedgerInterface):
         def append(self, event_name: str, payload: dict[str, object]) -> None:
             super().append(event_name, payload)
 
-    class QueueProbe(QueuePort):
+    class QueueProbe(QueueInterface):
         def enqueue(self, kind: str, payload: dict[str, object]) -> str:
             return super().enqueue(kind, payload)
 
@@ -63,3 +66,36 @@ def test_abstract_service_body_is_fail_closed() -> None:
 
     with pytest.raises(NotImplementedError):
         ServiceProbe().start(object())
+
+
+def start(*extra: str) -> list[str]:
+    return ["pipeline", "start", "--slug", "demo", "--title", "Demo", "--postulate", "p", *extra]
+
+
+def test_a_stage_that_does_not_exist_is_a_usage_error_not_a_traceback(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    with pytest.raises(SystemExit) as stopped:
+        CliRuntime().build().run(start("--stage", "bogus"))
+
+    assert stopped.value.code == 2
+    assert "invalid choice: 'bogus'" in capsys.readouterr().err
+
+
+def test_every_real_stage_can_be_asked_for(capsys: pytest.CaptureFixture[str]) -> None:
+    assert CliRuntime().build().run(start("--stage", "thesis", "--stage", "publish")) == 0
+    assert '"project_slug": "demo"' in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(("flag", "where"), [("--slug", "slug"), ("--title", "title")])
+def test_a_blank_value_is_one_line_on_stderr_and_exit_2_not_a_traceback(
+    capsys: pytest.CaptureFixture[str], flag: str, where: str
+) -> None:
+    arguments = ["pipeline", "start", "--slug", "demo", "--title", "Demo", "--postulate", "p"]
+    arguments[arguments.index(flag) + 1] = ""
+
+    assert CliRuntime().build().run(arguments) == 2
+
+    captured = capsys.readouterr()
+    assert captured.err == f"error: {where}: String should have at least 1 character\n"
+    assert captured.out == ""

@@ -1,14 +1,14 @@
 """Tests for the first application flow."""
 
-from engineering_influence.domain.governing_postulates import GoverningPostulates
-from engineering_influence.domain.pipeline_stage import PipelineStage
-from engineering_influence.domain.project import Project
-from engineering_influence.interfaces.ledger_port import LedgerPort
-from engineering_influence.interfaces.queue_port import QueuePort
+from engineering_influence.interfaces.ledger_interface import LedgerInterface
+from engineering_influence.interfaces.queue_interface import QueueInterface
+from engineering_influence.models.governing_postulates import GoverningPostulates
+from engineering_influence.models.pipeline_stage import PipelineStage
+from engineering_influence.models.project import Project
 from engineering_influence.services.start_pipeline import StartPipeline
 
 
-class RecordingLedger(LedgerPort):
+class RecordingLedger(LedgerInterface):
     """In-memory ledger fake for the service test."""
 
     def __init__(self) -> None:
@@ -18,7 +18,7 @@ class RecordingLedger(LedgerPort):
         self.events.append((event_name, payload))
 
 
-class RecordingQueue(QueuePort):
+class RecordingQueue(QueueInterface):
     """In-memory queue fake for the service test."""
 
     def __init__(self) -> None:

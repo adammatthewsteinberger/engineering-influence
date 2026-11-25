@@ -1,0 +1,11 @@
+[
+  "REFUSED",
+  "TOOL_LOOP_EXHAUSTED",
+  "TRUNCATED",
+  "budget-exceeded",
+  "retries-exhausted",
+  "revision-rejected",
+  "revision-skipped-budget",
+  "revision-unchanged",
+  "stage-failed"
+]

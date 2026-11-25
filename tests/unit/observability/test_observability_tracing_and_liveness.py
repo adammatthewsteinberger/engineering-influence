@@ -11,13 +11,6 @@ from typing import Any
 import pytest
 from vibey_bootstrap.tracing.decorators import traced
 
-from engineering_influence.domain.gate import Gate
-from engineering_influence.domain.gate_kind import GateKind
-from engineering_influence.domain.governing_postulates import GoverningPostulates
-from engineering_influence.domain.phase_run import PhaseRun
-from engineering_influence.domain.phase_state import PhaseState
-from engineering_influence.domain.pipeline_stage import PipelineStage
-from engineering_influence.domain.project import Project
 from engineering_influence.infrastructure.observability.bootstrap_metrics import BootstrapMetrics
 from engineering_influence.infrastructure.observability.process_crash_hooks import (
     ProcessCrashHooks,
@@ -30,8 +23,15 @@ from engineering_influence.infrastructure.observability.traced_start_pipeline im
     TracedStartPipeline,
 )
 from engineering_influence.infrastructure.observability.worker_heartbeat import WorkerHeartbeat
-from engineering_influence.interfaces.alert_port import AlertPort
-from engineering_influence.interfaces.metrics_port import MetricsPort
+from engineering_influence.interfaces.alert_interface import AlertInterface
+from engineering_influence.interfaces.metrics_interface import MetricsInterface
+from engineering_influence.models.gate import Gate
+from engineering_influence.models.gate_kind import GateKind
+from engineering_influence.models.governing_postulates import GoverningPostulates
+from engineering_influence.models.phase_run import PhaseRun
+from engineering_influence.models.phase_state import PhaseState
+from engineering_influence.models.pipeline_stage import PipelineStage
+from engineering_influence.models.project import Project
 from engineering_influence.services.interfaces.dispatch_outbox_interface import (
     DispatchOutboxInterface,
 )
@@ -179,7 +179,7 @@ class FakeClock:
         return self.now
 
 
-class RecordingAlerts(AlertPort):
+class RecordingAlerts(AlertInterface):
     def __init__(self) -> None:
         self.raised: list[tuple[str, str, dict[str, object], str]] = []
 
@@ -189,7 +189,7 @@ class RecordingAlerts(AlertPort):
         self.raised.append((severity, subject, context, dedup_key))
 
 
-class StubMetrics(MetricsPort):
+class StubMetrics(MetricsInterface):
     def increment(self, name: str, amount: int = 1) -> None:
         return None
 

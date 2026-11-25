@@ -3,12 +3,12 @@
 
 from typing import ClassVar
 
-from engineering_influence.domain.pipeline_stage import PipelineStage
-from engineering_influence.domain.project import Project
-from engineering_influence.interfaces.workflow_port import WorkflowPort
+from engineering_influence.interfaces.workflow_interface import WorkflowInterface
+from engineering_influence.models.pipeline_stage import PipelineStage
+from engineering_influence.models.project import Project
 
 
-class VibeyWorkflowAdapter(WorkflowPort):
+class VibeyWorkflowAdapter(WorkflowInterface):
     """Translate methodology stages into ordered queue job kinds."""
 
     _STAGE_JOBS: ClassVar[dict[PipelineStage, tuple[str, ...]]] = {

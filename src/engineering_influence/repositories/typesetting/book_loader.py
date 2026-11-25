@@ -1,0 +1,71 @@
+# Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
+"""Loads a Book from its TOML config and manuscript directory."""
+
+import tomllib
+from pathlib import Path
+from typing import Any
+
+from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
+from engineering_influence.interfaces.book_loader_interface import BookLoaderInterface
+from engineering_influence.models.publishing.path_relativizer import PathRelativizer
+from engineering_influence.models.typesetting.book import Book
+from engineering_influence.models.typesetting.chapter import Chapter
+from engineering_influence.models.typesetting.paper_stock import PaperStock
+from engineering_influence.models.typesetting.text_policy import TextPolicy
+from engineering_influence.models.typesetting.trim_size import TrimSize
+from engineering_influence.repositories.typesetting.chapter_loader import ChapterLoader
+
+
+class BookLoader(BookLoaderInterface):
+    """Reads every configured file, numbers the chapters, and rejects unlisted sources."""
+
+    def __init__(self, root: Path, strict: bool = True) -> None:
+        self._root = root
+        self._relativizer = PathRelativizer(root)
+        self._strict = strict
+
+    def load(self, config_path: Path) -> Book:
+        """Return the book described by the config."""
+        config = tomllib.loads(config_path.read_text(encoding="utf-8"))
+        policy = TextPolicy.for_name(config.get("kind"))  # an unknown kind stops the build here
+        TrimSize.for_name(config.get("trim_size"))  # and so do an unknown trim size or paper
+        PaperStock.for_name(config.get("paper"))
+        loader = ChapterLoader(self._relativizer, self._strict, policy)
+        source = self._root / config["source"]
+        book = Book(slug=config_path.stem, meta=config)
+        book.front = self._entries(loader, source, config.get("front", []), "front")
+        for part in config.get("parts", []):
+            book.parts.append(
+                (part["title"], self._entries(loader, source, part["chapters"], "chapter"))
+            )
+        book.back = self._entries(loader, source, config.get("back", []), "back")
+        # Only the main argument receives chapter numbers. Back matter stays unnumbered so the
+        # scholarly apparatus reads as apparatus, not as a continuation of the narrative.
+        number = 0
+        for _, chapters in book.parts:
+            for chapter in chapters:
+                number += 1
+                chapter.number = number
+        listed = {c.path.name for c in book.front + book.back} | {
+            c.path.name for _, chapters in book.parts for c in chapters
+        }
+        ignored = set(config.get("not_in_book", []))
+        for path in sorted(source.glob("*.md")):
+            if path.name not in listed and path.name not in ignored:
+                raise ManuscriptError(
+                    f"{self._relativizer.relative(path)} is not listed in {config_path.name}"
+                )
+        return book
+
+    def _entries(
+        self, loader: ChapterLoader, source: Path, items: list[Any], kind: str
+    ) -> list[Chapter]:
+        chapters = []
+        for item in items:
+            entry = {"file": item} if isinstance(item, str) else item
+            chapters.append(
+                loader.load(
+                    source / entry["file"], kind, entry.get("style", "prose"), entry.get("short")
+                )
+            )
+        return chapters

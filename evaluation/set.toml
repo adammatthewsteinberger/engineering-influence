@@ -1,0 +1,37 @@
+# The books every release is made into and scored on. The same ideas every time, so scores can be compared with the
+# previous release's. Editing an idea changes what is measured: commit a new baseline with it. These are generic on purpose
+# (no author's own material), and short (`target_words`) so an evaluation stays affordable.
+
+[[case]]
+name = "herbs-indoors"
+kind = "nonfiction"
+idea = "How to keep culinary herbs alive on a sunny windowsill, for people who have killed every plant they ever owned"
+title_hint = "Herbs Indoors"
+target_words = 10000
+
+[[case]]
+name = "composting-first-year"
+kind = "nonfiction"
+idea = "A beginner's guide to composting at home in an apartment or a small yard: what to put in, what to leave out, and why it goes wrong"
+target_words = 10000
+
+[[case]]
+name = "reading-a-balance-sheet"
+kind = "nonfiction"
+idea = "How a person with no accounting background can read a company's balance sheet and spot three common warning signs"
+target_words = 10000
+
+[[case]]
+name = "the-salt-road"
+kind = "novel"
+idea = "A courier walks the old salt road to the sea to deliver a letter she has promised not to open, and meets people who each want it for a different reason"
+title_hint = "The Salt Road"
+target_words = 10000
+trim_size = "5.5x8.5"
+
+[[case]]
+name = "the-last-lamp"
+kind = "novel"
+idea = "The keeper of an automated lighthouse that no longer needs a keeper discovers that someone is still signalling to the lamp from the dark water"
+target_words = 10000
+trim_size = "5.5x8.5"

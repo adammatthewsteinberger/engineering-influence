@@ -1,0 +1,41 @@
+# A daily check that the project still installs and passes against whatever the package index
+# serves today. Every other job installs from uv.lock, which cannot notice an upstream release
+# that disappears or drifts (vibey-engine 4.5.0 was removed from PyPI and broke CI that way).
+# A red run here means: look at the dependency bounds, then refresh uv.lock.
+name: Canary
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  fresh-resolution:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.14"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.12.6"
+          python-version: ${{ matrix.python }}
+      # No lock file: resolve the declared bounds from the index, exactly as a user's pip would.
+      - name: Resolve and install from the index
+        run: |
+          uv venv .canary
+          uv pip install --python .canary/bin/python --upgrade \
+            -e ./packages/engineering-influence-sdk \
+            -e ".[api,runtime,publishing,test]"
+          uv pip list --python .canary/bin/python --format freeze | grep -iE '^(vibey|mcp|fastapi|pydantic|sqlmodel|aio-pika)'
+      - name: Run the test suite against that resolution
+        run: .canary/bin/python -m pytest -q -p no:cacheprovider

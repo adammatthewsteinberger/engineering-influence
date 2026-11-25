@@ -5,13 +5,13 @@ from collections.abc import Iterable
 
 from vibey_bootstrap.security import compare_secrets
 
-from engineering_influence.interfaces.api_key_verifier_port import ApiKeyVerifierPort
-from engineering_influence.interfaces.secret_provider_port import SecretProviderPort
+from engineering_influence.interfaces.api_key_verifier_interface import ApiKeyVerifierInterface
+from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
 
 MINIMUM_KEY_LENGTH = 24
 
 
-class ConstantTimeApiKeyVerifier(ApiKeyVerifierPort):
+class ConstantTimeApiKeyVerifier(ApiKeyVerifierInterface):
     """Accept only keys from an explicit, non-empty, strong set.
 
     vibey_bootstrap's own ``verify_api_key_header`` passes every request when its
@@ -29,7 +29,7 @@ class ConstantTimeApiKeyVerifier(ApiKeyVerifierPort):
 
     @classmethod
     def from_secrets(
-        cls, secrets: SecretProviderPort, name: str = "EI_API_KEYS"
+        cls, secrets: SecretProviderInterface, name: str = "EI_API_KEYS"
     ) -> "ConstantTimeApiKeyVerifier":
         """Build from a comma-separated secret, failing when it is not configured."""
         return cls(secrets.require(name).split(","))

@@ -1,0 +1,92 @@
+# The documentation site: the repository's own Markdown, built with ProperDocs and published to GitHub Pages.
+#
+#   pull request  Builds the site with warnings as errors, so a link that goes nowhere fails the check. Publishes nothing.
+#   develop       The same build, then the site is published when the repository variable PUBLISH_DOCS is `true`.
+#
+# Nothing is published until that variable is set and GitHub Pages is switched to "GitHub Actions" in the repository
+# settings (docs/DOCUMENTATION_SITE.md). The site shows the development branch, which is the documentation of what is
+# built today; there is no analytics and no tracking.
+name: Docs
+
+on:
+  pull_request:
+    paths:
+      - "docs/**"
+      - "docs-site/**"
+      - "README.md"
+      - "CONTRIBUTING.md"
+      - "CHANGELOG.md"
+      - "SECURITY.md"
+      - "SUPPORT.md"
+      - "CODE_OF_CONDUCT.md"
+      - "llms.txt"
+      - "llms-full.txt"
+      - "properdocs.yml"
+      - "scripts/build_docs_site.py"
+      - "scripts/inject_docs_meta.py"
+      - ".github/workflows/docs.yml"
+  push:
+    branches: [develop]
+    paths:
+      - "docs/**"
+      - "docs-site/**"
+      - "README.md"
+      - "CONTRIBUTING.md"
+      - "CHANGELOG.md"
+      - "SECURITY.md"
+      - "SUPPORT.md"
+      - "CODE_OF_CONDUCT.md"
+      - "llms.txt"
+      - "llms-full.txt"
+      - "properdocs.yml"
+      - "scripts/build_docs_site.py"
+      - "scripts/inject_docs_meta.py"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.12.6"
+      # The runtime extra brings vibey-engine, which carries the stylesheet the site uses, at the version the lock pins.
+      - run: uv sync --locked --extra runtime
+      - name: Assemble the pages from the repository's Markdown
+        run: uv run python scripts/build_docs_site.py --out .site-src --branch develop
+      - name: Build the site, with warnings as errors
+        run: uv run --with 'properdocs==1.6.7' --with 'properdocs-theme-mkdocs==1.6.7' properdocs build --strict --config-file properdocs.yml --site-dir site
+      - name: Add each page's search and social metadata
+        run: uv run python scripts/inject_docs_meta.py --site-dir site
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
+        if: github.event_name != 'pull_request'
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    if: github.event_name != 'pull_request' && vars.PUBLISH_DOCS == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4

@@ -5,16 +5,16 @@ import asyncio
 import pytest
 
 from engineering_influence.errors.application_error import ApplicationError
-from engineering_influence.interfaces.alert_port import AlertPort
-from engineering_influence.interfaces.metrics_port import MetricsPort
-from engineering_influence.interfaces.webhook_delivery_port import (
-    WebhookDeliveryPort,
+from engineering_influence.interfaces.alert_interface import AlertInterface
+from engineering_influence.interfaces.metrics_interface import MetricsInterface
+from engineering_influence.interfaces.webhook_delivery_interface import (
+    WebhookDeliveryInterface,
 )
 from engineering_influence.repositories import SqlModelOutbox
 from engineering_influence.services.dispatch_outbox import DispatchOutbox
 
 
-class DeliveryFake(WebhookDeliveryPort):
+class DeliveryFake(WebhookDeliveryInterface):
     """Returns configured outcomes (a status, or an exception to raise) while recording calls."""
 
     def __init__(self, outcomes: list[int | Exception]) -> None:
@@ -36,7 +36,7 @@ class DeliveryFake(WebhookDeliveryPort):
         return outcome
 
 
-class MetricsFake(MetricsPort):
+class MetricsFake(MetricsInterface):
     """Counts increments in memory."""
 
     def __init__(self) -> None:
@@ -52,7 +52,7 @@ class MetricsFake(MetricsPort):
         return {}
 
 
-class AlertsFake(AlertPort):
+class AlertsFake(AlertInterface):
     """Records alerts."""
 
     def __init__(self) -> None:
@@ -65,9 +65,9 @@ class AlertsFake(AlertPort):
 
 
 def build(
-    outcomes: list[int | Exception], max_attempts: int = 5
+    database_url: str, outcomes: list[int | Exception], max_attempts: int = 5
 ) -> tuple[SqlModelOutbox, DeliveryFake, MetricsFake, AlertsFake, DispatchOutbox]:
-    outbox = SqlModelOutbox()
+    outbox = SqlModelOutbox(database_url)
     delivery = DeliveryFake(outcomes)
     metrics = MetricsFake()
     alerts = AlertsFake()
@@ -80,8 +80,8 @@ def build(
     )
 
 
-def test_dispatch_marks_only_successful_delivery() -> None:
-    outbox, delivery, metrics, _, service = build([202, 503])
+def test_dispatch_marks_only_successful_delivery(database_url: str) -> None:
+    outbox, delivery, metrics, _, service = build(database_url, [202, 503])
     outbox.enqueue("evt-ok", "https://ok.test", "pipeline.started", {"slug": "ok"})
     outbox.enqueue("evt-fail", "https://fail.test", "pipeline.started", {"slug": "fail"})
 
@@ -94,9 +94,9 @@ def test_dispatch_marks_only_successful_delivery() -> None:
     outbox.close()
 
 
-def test_one_poisoned_event_does_not_block_the_events_behind_it() -> None:
+def test_one_poisoned_event_does_not_block_the_events_behind_it(database_url: str) -> None:
     rejected = ApplicationError("WEBHOOK_TARGET_REJECTED", "destination refused")
-    outbox, _, metrics, _, service = build([rejected, 202])
+    outbox, _, metrics, _, service = build(database_url, [rejected, 202])
     outbox.enqueue("evt-bad", "http://10.0.0.1", "pipeline.started", {})
     outbox.enqueue("evt-good", "https://ok.test", "pipeline.started", {})
 
@@ -108,8 +108,8 @@ def test_one_poisoned_event_does_not_block_the_events_behind_it() -> None:
     outbox.close()
 
 
-def test_network_errors_are_isolated_too() -> None:
-    outbox, _, _, _, service = build([ConnectionError("down"), 200])
+def test_network_errors_are_isolated_too(database_url: str) -> None:
+    outbox, _, _, _, service = build(database_url, [ConnectionError("down"), 200])
     outbox.enqueue("evt-1", "https://a.test", "x", {})
     outbox.enqueue("evt-2", "https://b.test", "x", {})
 
@@ -117,8 +117,8 @@ def test_network_errors_are_isolated_too() -> None:
     outbox.close()
 
 
-def test_failed_attempts_are_counted_across_runs() -> None:
-    outbox, _, _, _, service = build([500])
+def test_failed_attempts_are_counted_across_runs(database_url: str) -> None:
+    outbox, _, _, _, service = build(database_url, [500])
     outbox.enqueue("evt-1", "https://a.test", "x", {})
 
     asyncio.run(service.dispatch(b"s"))
@@ -128,8 +128,8 @@ def test_failed_attempts_are_counted_across_runs() -> None:
     outbox.close()
 
 
-def test_an_event_that_keeps_failing_is_dead_lettered_and_alerted_once() -> None:
-    outbox, delivery, metrics, alerts, service = build([500], max_attempts=3)
+def test_an_event_that_keeps_failing_is_dead_lettered_and_alerted_once(database_url: str) -> None:
+    outbox, delivery, metrics, alerts, service = build(database_url, [500], max_attempts=3)
     outbox.enqueue("evt-1", "https://a.test", "pipeline.started", {})
 
     for _ in range(5):
@@ -148,8 +148,8 @@ def test_an_event_that_keeps_failing_is_dead_lettered_and_alerted_once() -> None
     outbox.close()
 
 
-def test_a_successful_retry_is_not_dead_lettered() -> None:
-    outbox, _, _, alerts, service = build([500, 500, 200], max_attempts=3)
+def test_a_successful_retry_is_not_dead_lettered(database_url: str) -> None:
+    outbox, _, _, alerts, service = build(database_url, [500, 500, 200], max_attempts=3)
     outbox.enqueue("evt-1", "https://a.test", "x", {})
 
     for _ in range(3):
@@ -160,6 +160,6 @@ def test_a_successful_retry_is_not_dead_lettered() -> None:
     outbox.close()
 
 
-def test_max_attempts_must_be_positive() -> None:
+def test_max_attempts_must_be_positive(database_url: str) -> None:
     with pytest.raises(ValueError, match="max_attempts"):
-        build([200], max_attempts=0)
+        build(database_url, [200], max_attempts=0)

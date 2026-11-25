@@ -6,13 +6,13 @@ from typing import Any
 
 from engineering_influence.contracts.job_message import JobMessage
 from engineering_influence.contracts.job_outcome import JobOutcome
-from engineering_influence.domain.gate import Gate
-from engineering_influence.domain.gate_kind import GateKind
-from engineering_influence.domain.phase_run import PhaseRun
-from engineering_influence.domain.phase_state import PhaseState
 from engineering_influence.errors.application_error import ApplicationError
-from engineering_influence.interfaces.ledger_port import LedgerPort
-from engineering_influence.interfaces.queue_port import QueuePort
+from engineering_influence.interfaces.ledger_interface import LedgerInterface
+from engineering_influence.interfaces.queue_interface import QueueInterface
+from engineering_influence.models.gate import Gate
+from engineering_influence.models.gate_kind import GateKind
+from engineering_influence.models.phase_run import PhaseRun
+from engineering_influence.models.phase_state import PhaseState
 from engineering_influence.services.interfaces.process_job_interface import ProcessJobInterface
 from engineering_influence.services.interfaces.run_phase_interface import RunPhaseInterface
 
@@ -30,7 +30,9 @@ class ProcessJob(ProcessJobInterface):
     thread, which also keeps a slow database call from stalling the consumer.
     """
 
-    def __init__(self, run_phase: RunPhaseInterface, ledger: LedgerPort, queue: QueuePort) -> None:
+    def __init__(
+        self, run_phase: RunPhaseInterface, ledger: LedgerInterface, queue: QueueInterface
+    ) -> None:
         self._run_phase = run_phase
         self._ledger = ledger
         self._queue = queue

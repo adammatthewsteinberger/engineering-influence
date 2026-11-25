@@ -4,9 +4,14 @@ import ast
 from pathlib import Path
 
 import pytest
+from architecture_metrics import SCRIPT_FOLDERS
 
 ROOT = Path(__file__).resolve().parents[2] / "src" / "engineering_influence"
-FILES = sorted(p for p in ROOT.rglob("*.py") if p.name != "__init__.py")
+FILES = sorted(
+    p
+    for p in ROOT.rglob("*.py")
+    if p.name != "__init__.py" and not SCRIPT_FOLDERS & set(p.relative_to(ROOT).parts)
+)
 
 # Allowed outward dependencies per layer (inward-only dependency direction).
 FORBIDDEN_IMPORTS = {

@@ -1,0 +1,29 @@
+# Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
+"""Loads cover fonts by file name from a search path."""
+
+import math
+from collections.abc import Sequence
+from pathlib import Path
+
+from PIL import ImageFont
+
+from engineering_influence.errors.typesetting.book_build_error import BookBuildError
+from engineering_influence.infrastructure.covers.interfaces.font_loader_interface import (
+    FontLoaderInterface,
+)
+
+
+class FontLoader(FontLoaderInterface):
+    """The first directory that holds the file wins."""
+
+    def __init__(self, directories: Sequence[Path]) -> None:
+        self._directories = list(directories)
+
+    def load(self, name: str, size_px: float) -> ImageFont.FreeTypeFont:
+        """Load a font at a pixel size (rounded up, minimum 6)."""
+        size = max(6, math.ceil(size_px - 1e-6))
+        for directory in self._directories:
+            path = directory / name
+            if path.exists():
+                return ImageFont.truetype(str(path), size)
+        raise BookBuildError(f"cover font not found: {name}")

@@ -3,9 +3,9 @@
 
 from vibey_bootstrap.tracing.decorators import traced_async
 
-from engineering_influence.domain.artifact import Artifact
-from engineering_influence.domain.gate import Gate
-from engineering_influence.domain.phase_run import PhaseRun
+from engineering_influence.models.artifact import Artifact
+from engineering_influence.models.gate import Gate
+from engineering_influence.models.phase_run import PhaseRun
 from engineering_influence.services.interfaces.run_phase_interface import RunPhaseInterface
 
 

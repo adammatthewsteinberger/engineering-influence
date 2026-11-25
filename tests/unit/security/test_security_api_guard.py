@@ -3,6 +3,7 @@
 from fastapi.testclient import TestClient
 from starlette.requests import Request
 
+from engineering_influence.controllers.project_controller import ProjectController
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
 from engineering_influence.infrastructure.security.constant_time_api_key_verifier import (
@@ -11,9 +12,10 @@ from engineering_influence.infrastructure.security.constant_time_api_key_verifie
 from engineering_influence.infrastructure.security.token_bucket_rate_limiter import (
     TokenBucketRateLimiter,
 )
-from engineering_influence.interaction.api.api_guard import ApiGuard
-from engineering_influence.interaction.api.application import ApiApplication
-from engineering_influence.interfaces.rate_limiter_port import RateLimiterPort
+from engineering_influence.interactions.api.api_guard import ApiGuard
+from engineering_influence.interactions.api.application import ApiApplication
+from engineering_influence.interfaces.rate_limiter_interface import RateLimiterInterface
+from engineering_influence.services.start_pipeline import StartPipeline
 
 KEY = "a-valid-api-key-0123456789"  # gitleaks:allow
 PROJECT = {"slug": "demo", "title": "Demo", "postulates": ["Evidence first."], "stages": ["thesis"]}
@@ -23,7 +25,11 @@ def client(burst: float = 100.0) -> TestClient:
     guard = ApiGuard(
         ConstantTimeApiKeyVerifier([KEY]), TokenBucketRateLimiter(burst=burst, per_second=0.0001)
     )
-    return TestClient(ApiApplication(InMemoryLedger(), InMemoryQueue(), guard).build())
+    return TestClient(
+        ApiApplication(
+            ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue())), guard
+        ).build()
+    )
 
 
 def test_a_request_without_a_key_is_unauthorized() -> None:
@@ -101,7 +107,7 @@ def test_rate_limit_response_is_retryable() -> None:
     assert limited.json()["code"] == "RATE_LIMITED"
 
 
-class RecordingLimiter(RateLimiterPort):
+class RecordingLimiter(RateLimiterInterface):
     """Admits everything except keys with a denied prefix, and records what it was asked."""
 
     def __init__(self, denied_prefix: str = "") -> None:
@@ -116,7 +122,11 @@ class RecordingLimiter(RateLimiterPort):
 def test_a_per_key_budget_applies_after_authentication() -> None:
     limiter = RecordingLimiter(denied_prefix="key:")
     guard = ApiGuard(ConstantTimeApiKeyVerifier([KEY]), limiter)
-    api = TestClient(ApiApplication(InMemoryLedger(), InMemoryQueue(), guard).build())
+    api = TestClient(
+        ApiApplication(
+            ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue())), guard
+        ).build()
+    )
 
     response = api.post("/v1/pipelines", json=PROJECT, headers={"Authorization": f"Bearer {KEY}"})
 
@@ -127,7 +137,11 @@ def test_a_per_key_budget_applies_after_authentication() -> None:
 def test_the_raw_api_key_never_reaches_the_limiter() -> None:
     limiter = RecordingLimiter()
     guard = ApiGuard(ConstantTimeApiKeyVerifier([KEY]), limiter)
-    api = TestClient(ApiApplication(InMemoryLedger(), InMemoryQueue(), guard).build())
+    api = TestClient(
+        ApiApplication(
+            ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue())), guard
+        ).build()
+    )
 
     api.post("/v1/pipelines", json=PROJECT, headers={"Authorization": f"Bearer {KEY}"})
 
@@ -137,7 +151,11 @@ def test_the_raw_api_key_never_reaches_the_limiter() -> None:
 def test_an_unauthenticated_request_is_never_charged_to_a_key() -> None:
     limiter = RecordingLimiter()
     guard = ApiGuard(ConstantTimeApiKeyVerifier([KEY]), limiter)
-    api = TestClient(ApiApplication(InMemoryLedger(), InMemoryQueue(), guard).build())
+    api = TestClient(
+        ApiApplication(
+            ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue())), guard
+        ).build()
+    )
 
     api.post("/v1/pipelines", json=PROJECT, headers={"Authorization": "Bearer wrong"})
 
@@ -149,3 +167,14 @@ def test_a_request_with_no_client_address_is_still_guarded() -> None:
     scope = {"type": "http", "headers": [(b"authorization", f"Bearer {KEY}".encode())]}
 
     guard(Request(scope))  # no client in scope: falls back to a shared "unknown" bucket
+
+
+def test_a_stage_that_does_not_exist_is_a_422_that_names_the_real_ones_not_a_500() -> None:
+    response = client().post(
+        "/v1/pipelines", json={**PROJECT, "stages": ["bogus"]}, headers={"X-API-Key": KEY}
+    )
+
+    assert response.status_code == 422
+    (problem,) = response.json()["detail"]
+    assert problem["loc"] == ["body", "stages"]
+    assert "unknown stage 'bogus': use one of thesis, book" in problem["msg"]

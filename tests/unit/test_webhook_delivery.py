@@ -8,7 +8,7 @@ import httpx
 from engineering_influence.infrastructure.security.public_https_url_policy import (
     PublicHttpsUrlPolicy,
 )
-from engineering_influence.interaction.webhooks import WebhookDelivery, WebhookSigner
+from engineering_influence.infrastructure.webhooks import WebhookDelivery, WebhookSigner
 
 
 def test_webhook_delivery_posts_signed_event() -> None:
@@ -41,6 +41,7 @@ def test_webhook_delivery_posts_signed_event() -> None:
     assert json.loads(body) == {
         "data": {"project_slug": "demo"},
         "id": "evt-1",
+        "schema_version": 1,
         "type": "pipeline.started",
     }
     assert observed["timestamp"] == "1700000000"

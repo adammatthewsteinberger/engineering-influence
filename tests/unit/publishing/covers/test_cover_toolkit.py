@@ -7,22 +7,22 @@ from typing import Any
 import numpy as np
 import pytest
 
-from engineering_influence.publishing.covers.box_blur import BoxBlur
-from engineering_influence.publishing.covers.builtin_cover_style import BuiltinCoverStyle
-from engineering_influence.publishing.covers.compositing import Compositing
-from engineering_influence.publishing.covers.cover_painter import CoverPainter
-from engineering_influence.publishing.covers.cover_plugin import CoverPlugin
-from engineering_influence.publishing.covers.cover_plugin_loader import CoverPluginLoader
-from engineering_influence.publishing.covers.film_grain import FilmGrain
-from engineering_influence.publishing.covers.gradient_painter import GradientPainter
-from engineering_influence.publishing.covers.ink import Ink
-from engineering_influence.publishing.covers.layout_factory import LayoutFactory
-from engineering_influence.publishing.covers.painter_registry import PainterRegistry
-from engineering_influence.publishing.covers.quiet_zone import QuietZone
-from engineering_influence.publishing.covers.soft_rect import SoftRect
-from engineering_influence.publishing.covers.starfield import Starfield
-from engineering_influence.publishing.covers.value_noise import ValueNoise
-from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
+from engineering_influence.errors.typesetting.book_build_error import BookBuildError
+from engineering_influence.infrastructure.covers.box_blur import BoxBlur
+from engineering_influence.infrastructure.covers.compositing import Compositing
+from engineering_influence.infrastructure.covers.cover_plugin_loader import CoverPluginLoader
+from engineering_influence.infrastructure.covers.film_grain import FilmGrain
+from engineering_influence.infrastructure.covers.gradient_painter import GradientPainter
+from engineering_influence.infrastructure.covers.ink import Ink
+from engineering_influence.infrastructure.covers.painter_registry import PainterRegistry
+from engineering_influence.infrastructure.covers.quiet_zone import QuietZone
+from engineering_influence.infrastructure.covers.soft_rect import SoftRect
+from engineering_influence.infrastructure.covers.starfield import Starfield
+from engineering_influence.infrastructure.covers.value_noise import ValueNoise
+from engineering_influence.interfaces.cover_painter_interface import CoverPainterInterface
+from engineering_influence.interfaces.cover_plugin_interface import CoverPluginInterface
+from engineering_influence.models.covers.builtin_cover_style import BuiltinCoverStyle
+from engineering_influence.models.covers.layout_factory import LayoutFactory
 
 
 def test_noise_is_seeded_bounded_and_shaped() -> None:
@@ -135,7 +135,7 @@ def test_builtin_style_splits_titles_near_the_middle(title: str, lines: list[str
     assert style.extra == {"subtitle_serif": True, "author_lift_in": 0.06}
 
 
-class Flat(CoverPainter):
+class Flat(CoverPainterInterface):
     def paint(self, layout: Any, style: Any) -> Any:
         return np.zeros((1, 1, 3), np.float32)
 
@@ -153,8 +153,8 @@ def test_registry_replaces_and_reports_unknown_painters() -> None:
         registry.get("missing")
 
 
-class DemoPlugin(CoverPlugin):
-    def painters(self) -> dict[str, CoverPainter]:
+class DemoPlugin(CoverPluginInterface):
+    def painters(self) -> dict[str, CoverPainterInterface]:
         return {"demo": Flat()}
 
     def styles(self) -> dict[str, Any]:
@@ -169,23 +169,16 @@ class FakeEntry:
         return self._target
 
 
-def test_entry_point_plugins_are_registered(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        "engineering_influence.publishing.covers.cover_plugin_loader.entry_points",
-        lambda group: [FakeEntry("demo", DemoPlugin)],
-    )
+def test_entry_point_plugins_are_registered() -> None:
     registry = PainterRegistry()
-    styles = CoverPluginLoader().load(registry)
+    styles = CoverPluginLoader(lambda group: [FakeEntry("demo", DemoPlugin)]).load(registry)
     assert list(styles) == ["demo-book"] and isinstance(registry.get("demo"), Flat)
 
 
-def test_entry_point_that_is_not_a_plugin_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        "engineering_influence.publishing.covers.cover_plugin_loader.entry_points",
-        lambda group: [FakeEntry("bad", dict)],
-    )
+def test_entry_point_that_is_not_a_plugin_is_rejected() -> None:
+    loader = CoverPluginLoader(lambda group: [FakeEntry("bad", dict)])
     with pytest.raises(BookBuildError, match="'bad' is not a CoverPlugin"):
-        CoverPluginLoader().load(PainterRegistry())
+        loader.load(PainterRegistry())
 
 
 def test_plugins_load_from_a_module_class_reference(

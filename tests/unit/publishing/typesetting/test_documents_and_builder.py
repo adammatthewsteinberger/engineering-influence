@@ -7,14 +7,23 @@ from typing import Any
 
 import pytest
 
-from engineering_influence.publishing.project_layout import ProjectLayout
-from engineering_influence.publishing.typesetting.book import Book
-from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
-from engineering_influence.publishing.typesetting.book_builder import BookBuilder
-from engineering_influence.publishing.typesetting.chapter import Chapter
-from engineering_influence.publishing.typesetting.ebook_document import EbookDocument
-from engineering_influence.publishing.typesetting.latex_compiler import LatexCompiler
-from engineering_influence.publishing.typesetting.print_document import PrintDocument
+from engineering_influence.errors.typesetting.book_build_error import BookBuildError
+from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
+from engineering_influence.infrastructure.publishing.filesystem_manuscript_source import (
+    FilesystemManuscriptSource,
+)
+from engineering_influence.infrastructure.publishing.package_assets import PackageAssets
+from engineering_influence.infrastructure.typesetting.filesystem_build_workspace import (
+    FilesystemBuildWorkspace,
+)
+from engineering_influence.infrastructure.typesetting.latex_compiler import LatexCompiler
+from engineering_influence.models.publishing.project_layout import ProjectLayout
+from engineering_influence.models.typesetting.book import Book
+from engineering_influence.models.typesetting.chapter import Chapter
+from engineering_influence.repositories.typesetting.book_loader import BookLoader
+from engineering_influence.services.typesetting.book_builder import BookBuilder
+from engineering_influence.services.typesetting.ebook_document import EbookDocument
+from engineering_influence.services.typesetting.print_document import PrintDocument
 
 MINIMAL: dict[str, Any] = {
     "title": "My Book",
@@ -110,13 +119,18 @@ def test_compiler_runs_latexmk_with_a_pinned_epoch(
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     script = bin_dir / "latexmk"
-    script.write_text('#!/bin/sh\necho "args:$*"\necho "epoch:$SOURCE_DATE_EPOCH"\nexit 3\n')
+    script.write_text(
+        '#!/bin/sh\necho "args:$*"\necho "epoch:$SOURCE_DATE_EPOCH"\necho "secret:${EI_TEST_SECRET:-absent}"\nexit 3\n'
+    )
     script.chmod(script.stat().st_mode | stat.S_IXUSR)
     monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ['PATH']}")
+    monkeypatch.setenv("EI_TEST_SECRET", "sk-do-not-leak")
     status, stdout = LatexCompiler().compile(tmp_path, "b.tex", 1234)
     assert status == 3
-    assert "args:-lualatex -interaction=nonstopmode -halt-on-error -file-line-error b.tex" in stdout
+    expected = "-lualatex -no-shell-escape -interaction=nonstopmode -halt-on-error"
+    assert f"args:{expected} -file-line-error b.tex" in stdout
     assert "epoch:1234" in stdout
+    assert "secret:absent" in stdout
 
 
 class FakeCompiler(LatexCompiler):
@@ -151,10 +165,21 @@ def project(root: Path) -> tuple[ProjectLayout, Path]:
     return ProjectLayout(root), assets
 
 
+def make_builder(layout: ProjectLayout, assets: Path, compiler: Any = None) -> BookBuilder:
+    return BookBuilder(
+        layout,
+        BookLoader(layout.root),
+        compiler or LatexCompiler(),
+        FilesystemBuildWorkspace(),
+        PackageAssets(assets),
+        FilesystemManuscriptSource(),
+    )
+
+
 def test_builder_writes_tex_and_assets_without_compiling(tmp_path: Path) -> None:
     layout, assets = project(tmp_path)
     compiler = FakeCompiler()
-    tex_path = BookBuilder(layout, assets, compiler).build("demo", tex_only=True, hardcover=True)
+    tex_path = make_builder(layout, assets, compiler).build("demo", tex_only=True, hardcover=True)
     assert tex_path == tmp_path / "build" / "demo-hardcover" / "demo.tex"
     workdir = tex_path.parent
     assert (workdir / "fine-book.cls").exists() and (workdir / "fine-book-hardcover.cls").exists()
@@ -165,26 +190,28 @@ def test_builder_writes_tex_and_assets_without_compiling(tmp_path: Path) -> None
 def test_builder_compiles_and_copies_the_pdf(tmp_path: Path) -> None:
     layout, assets = project(tmp_path)
     compiler = FakeCompiler()
-    pdf = BookBuilder(layout, assets, compiler).build("demo")
+    pdf = make_builder(layout, assets, compiler).build("demo")
     assert pdf == tmp_path / "output" / "demo.pdf" and pdf.read_bytes() == b"%PDF fake"
     assert compiler.calls == [(tmp_path / "build" / "demo", "demo.tex", 1924992000)]
     assert not (tmp_path / "build" / "demo" / "fine-book-hardcover.cls").exists()
-    hard = BookBuilder(layout, assets, FakeCompiler()).build("demo", hardcover=True)
+    hard = make_builder(layout, assets, FakeCompiler()).build("demo", hardcover=True)
     assert hard == tmp_path / "output" / "demo-hardcover.pdf"
 
 
 def test_builder_reports_latex_failures_from_the_log_or_stdout(tmp_path: Path) -> None:
     layout, assets = project(tmp_path)
     with pytest.raises(BookBuildError, match="LaTeX failed:\nLOG TAIL"):
-        BookBuilder(layout, assets, FakeCompiler(status=1, write_log=True)).build("demo")
+        make_builder(layout, assets, FakeCompiler(status=1, write_log=True)).build("demo")
     other_layout, other_assets = project(tmp_path / "two")
     with pytest.raises(BookBuildError, match="LaTeX failed:\nSTDOUT TAIL"):
-        BookBuilder(other_layout, other_assets, FakeCompiler(status=1)).build("demo")
+        make_builder(other_layout, other_assets, FakeCompiler(status=1)).build("demo")
 
 
-def test_builder_rejects_an_unknown_book_and_defaults_to_a_real_compiler(tmp_path: Path) -> None:
+def test_builder_rejects_an_unknown_book_and_writes_tex_with_the_real_adapters(
+    tmp_path: Path,
+) -> None:
     layout, assets = project(tmp_path)
-    builder = BookBuilder(layout, assets)
+    builder = make_builder(layout, assets)
     with pytest.raises(BookBuildError, match="no such book config"):
         builder.build("absent")
     assert builder.build("demo", tex_only=True).name == "demo.tex"
@@ -194,4 +221,68 @@ def test_builder_rejects_an_unknown_book_and_defaults_to_a_real_compiler(tmp_pat
 def test_builder_rejects_slugs_that_are_not_plain_names(tmp_path: Path, slug: str) -> None:
     layout, assets = project(tmp_path)
     with pytest.raises(BookBuildError, match="invalid book slug"):
-        BookBuilder(layout, assets, FakeCompiler()).build(slug)
+        make_builder(layout, assets, FakeCompiler()).build(slug)
+
+
+def story_book(meta: dict[str, Any]) -> Book:
+    body = "One.\n\n---\n\nTwo.\n"
+    chapter = Chapter(Path("x.md"), "chapter", title="T", short="s", body=body)
+    return Book("demo", meta, parts=[("Part One", [chapter])])
+
+
+def test_a_novel_prints_its_rules_as_scene_breaks_in_both_formats() -> None:
+    novel = story_book({**MINIMAL, "kind": "novel"})
+    assert "\\scenebreak" in PrintDocument().render(novel)
+    assert "\\scenebreak" in PrintDocument().render(novel, hardcover=True)
+    assert "\\scenebreak" in EbookDocument().render(novel)
+
+
+def test_a_book_with_no_kind_leaves_its_rules_unprinted_in_both_formats() -> None:
+    plain = story_book(MINIMAL)
+    assert "scenebreak" not in PrintDocument().render(plain)
+    assert "scenebreak" not in EbookDocument().render(plain)
+
+
+def test_an_unknown_kind_stops_the_document_before_any_tex_is_written() -> None:
+    with pytest.raises(ManuscriptError, match="'nonfiction' or 'novel'"):
+        PrintDocument().render(story_book({**MINIMAL, "kind": "poem"}))
+    with pytest.raises(ManuscriptError, match="'nonfiction' or 'novel'"):
+        EbookDocument().render(story_book({**MINIMAL, "kind": "poem"}))
+
+
+def with_trim(meta: dict[str, Any]) -> Book:
+    return book({**MINIMAL, **meta}, with_back=False)
+
+
+def test_a_six_by_nine_book_leaves_the_class_to_its_default_geometry() -> None:
+    assert "finetrim" not in PrintDocument().render(with_trim({}))
+    assert "finetrim" not in PrintDocument().render(with_trim({"trim_size": "6x9"}))
+
+
+@pytest.mark.parametrize(
+    ("trim", "width", "height"), [("5x8", "5in", "8in"), ("5.5x8.5", "5.5in", "8.5in")]
+)
+def test_another_trim_size_is_set_before_the_class_loads(
+    trim: str, width: str, height: str
+) -> None:
+    tex = PrintDocument().render(with_trim({"trim_size": trim}))
+    sizes = f"\\def\\finetrimwidth{{{width}}}\\def\\finetrimheight{{{height}}}\n"
+    assert sizes in tex
+    assert tex.index(sizes) < tex.index("\\documentclass{fine-book}")
+    assert tex.startswith("% Generated by engineering-influence from demo.toml. Do not edit.\n")
+
+
+def test_the_hardcover_interior_takes_the_trim_size_too() -> None:
+    tex = PrintDocument().render(with_trim({"trim_size": "5.5x8.5"}), hardcover=True)
+    assert "\\def\\finetrimwidth{5.5in}" in tex and "{fine-book-hardcover}" in tex
+
+
+def test_there_is_no_hardcover_interior_at_five_by_eight() -> None:
+    with pytest.raises(ManuscriptError, match="does not print a hardcover at the 5x8 trim"):
+        PrintDocument().render(with_trim({"trim_size": "5x8"}), hardcover=True)
+    assert "{fine-book}" in PrintDocument().render(with_trim({"trim_size": "5x8"}))
+
+
+def test_an_unknown_trim_size_stops_the_print_document() -> None:
+    with pytest.raises(ManuscriptError, match="5x8, 5.5x8.5, 6x9"):
+        PrintDocument().render(with_trim({"trim_size": "A5"}))

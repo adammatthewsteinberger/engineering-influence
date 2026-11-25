@@ -2,7 +2,7 @@
 
 from engineering_influence.contracts.health_status import HealthStatus
 from engineering_influence.contracts.readiness_report import ReadinessReport
-from engineering_influence.interaction.api.prometheus_renderer import PrometheusRenderer
+from engineering_influence.interactions.api.prometheus_renderer import PrometheusRenderer
 
 
 def test_counters_are_prefixed_sanitised_and_sorted() -> None:

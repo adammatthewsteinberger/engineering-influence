@@ -4,21 +4,20 @@
 import json
 from datetime import UTC, datetime
 
-from sqlmodel import Session, SQLModel, col, create_engine, select
+from sqlmodel import Session, col, create_engine, select
 
-from engineering_influence.interfaces.outbox_port import (
-    OutboxPort,
+from engineering_influence.interfaces.outbox_interface import (
+    OutboxInterface,
 )
 from engineering_influence.repositories.outbox_record import OutboxRecord
 
 
-class SqlModelOutbox(OutboxPort):
+class SqlModelOutbox(OutboxInterface):
     """Persist idempotent webhook intents with retry metadata."""
 
-    def __init__(self, database_url: str = "sqlite://") -> None:
+    def __init__(self, database_url: str) -> None:
         connect_args = {"check_same_thread": False} if database_url.startswith("sqlite") else {}
         self._engine = create_engine(database_url, connect_args=connect_args)
-        SQLModel.metadata.create_all(self._engine)
 
     def enqueue(
         self,

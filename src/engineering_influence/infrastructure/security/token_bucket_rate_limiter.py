@@ -5,10 +5,10 @@ from collections import OrderedDict
 
 from vibey_bootstrap.ratelimit import TokenBucket
 
-from engineering_influence.interfaces.rate_limiter_port import RateLimiterPort
+from engineering_influence.interfaces.rate_limiter_interface import RateLimiterInterface
 
 
-class TokenBucketRateLimiter(RateLimiterPort):
+class TokenBucketRateLimiter(RateLimiterInterface):
     """One bucket per caller key; the least recently seen keys are forgotten first."""
 
     def __init__(self, burst: float, per_second: float, max_keys: int = 10_000) -> None:

@@ -1,0 +1,32 @@
+{
+  "status": 200,
+  "body": {
+    "id": "msg_tool",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-test-20261101",
+    "content": [
+      {
+        "type": "text",
+        "text": "I will look that up."
+      },
+      {
+        "type": "tool_use",
+        "id": "toolu_01",
+        "name": "web_search",
+        "input": {
+          "query": "bee colony size"
+        }
+      }
+    ],
+    "stop_reason": "tool_use",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 150,
+      "output_tokens": 40,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    }
+  },
+  "note": "hand-written from the documented response shape; not recorded from a live call"
+}

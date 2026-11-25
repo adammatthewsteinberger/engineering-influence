@@ -6,17 +6,13 @@ import zipfile
 from pathlib import Path
 
 import pytest
-from conftest import raw_epub
+from conftest import make_epub_builder, make_repacker, make_verifier, raw_epub
 
-from engineering_influence.publishing.epub.cover_image import CoverImage
-from engineering_influence.publishing.epub.epub_builder import EpubBuilder
-from engineering_influence.publishing.epub.epub_repacker import EpubRepacker
-from engineering_influence.publishing.epub.epub_verifier import EpubVerifier
-from engineering_influence.publishing.epub.epubcheck_runner import EpubcheckRunner
-from engineering_influence.publishing.epub.tex4ebook_compiler import Tex4ebookCompiler
-from engineering_influence.publishing.project_layout import ProjectLayout
-from engineering_influence.publishing.typesetting.book import Book
-from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
+from engineering_influence.errors.typesetting.book_build_error import BookBuildError
+from engineering_influence.infrastructure.epub.epubcheck_runner import EpubcheckRunner
+from engineering_influence.infrastructure.epub.tex4ebook_compiler import Tex4ebookCompiler
+from engineering_influence.models.publishing.project_layout import ProjectLayout
+from engineering_influence.models.typesetting.book import Book
 
 
 def test_repacked_epub_is_finished_deterministic_and_valid(finished: Path, book: Book) -> None:
@@ -35,15 +31,15 @@ def test_repacked_epub_is_finished_deterministic_and_valid(finished: Path, book:
     assert '<div class="toc">' in toc and "<nav" not in toc
     assert "display" not in css and "margin: 0" in css
     assert "<h2 class='chapterHead' id='h3'>One</h2>" in chapter and "xml:lang" in chapter
-    assert EpubVerifier().verify(finished, book) == []
+    assert make_verifier().verify(finished, book) == []
 
 
 def test_repack_is_reproducible(
     tmp_path: Path, raw: Path, book: Book, layout: ProjectLayout
 ) -> None:
     first, second = tmp_path / "a.epub", tmp_path / "b.epub"
-    EpubRepacker(CoverImage(layout)).repack(raw, book, first)
-    EpubRepacker(CoverImage(layout)).repack(raw, book, second)
+    make_repacker(layout).repack(raw, book, first)
+    make_repacker(layout).repack(raw, book, second)
     assert first.read_bytes() == second.read_bytes()
 
 
@@ -59,7 +55,7 @@ def test_repack_rejects_a_package_without_navigation(
         for name, data in members.items():
             z.writestr(name, data)
     with pytest.raises(ValueError, match="no navigation document or NCX"):
-        EpubRepacker(CoverImage(layout)).repack(broken, book, tmp_path / "out.epub")
+        make_repacker(layout).repack(broken, book, tmp_path / "out.epub")
 
 
 def fake_tool(directory: Path, name: str, script: str) -> None:
@@ -116,7 +112,7 @@ def project(root: Path) -> ProjectLayout:
 def test_epub_builder_writes_ebook_sources_without_converting(tmp_path: Path) -> None:
     layout = project(tmp_path)
     compiler = FakeTex4ebook()
-    tex = EpubBuilder(layout, compiler=compiler).build("demo", tex_only=True)
+    tex = make_epub_builder(layout, compiler=compiler).build("demo", tex_only=True)
     workdir = tex.parent
     assert workdir == tmp_path / "build" / "demo" / "epub" and compiler.calls == []
     assert {"fine-ebook.sty", "fine-ebook.cfg", "fine-ebook.css", "ebook-meta.tex"} <= {
@@ -132,7 +128,7 @@ def test_epub_builder_converts_repacks_and_replaces_old_work(
     stale = layout.build / "demo" / "epub" / "stale.txt"
     stale.parent.mkdir(parents=True)
     stale.write_text("old")
-    epub = EpubBuilder(layout, compiler=FakeTex4ebook()).build("demo")
+    epub = make_epub_builder(layout, compiler=FakeTex4ebook()).build("demo")
     assert epub == layout.output / "demo.epub" and not stale.exists()
     with zipfile.ZipFile(epub) as z:
         assert "OEBPS/nav.xhtml" in z.namelist()
@@ -141,9 +137,9 @@ def test_epub_builder_converts_repacks_and_replaces_old_work(
 def test_epub_builder_reports_conversion_failures(layout: ProjectLayout) -> None:
     project(layout.root)
     with pytest.raises(BookBuildError, match="tex4ebook failed:\nEPUB LOG"):
-        EpubBuilder(layout, compiler=FakeTex4ebook(status=1, write_log=True)).build("demo")
+        make_epub_builder(layout, compiler=FakeTex4ebook(status=1, write_log=True)).build("demo")
     with pytest.raises(BookBuildError, match="tex4ebook failed:\nEPUB STDOUT"):
-        EpubBuilder(layout, compiler=FakeTex4ebook(write_epub=False)).build("demo")
+        make_epub_builder(layout, compiler=FakeTex4ebook(write_epub=False)).build("demo")
 
 
 @pytest.mark.parametrize("slug", ["../x", "-v", "a b", ""])
@@ -152,9 +148,9 @@ def test_epub_builder_rejects_unsafe_slugs_and_unknown_books(
 ) -> None:
     project(layout.root)
     with pytest.raises(BookBuildError, match="invalid book slug"):
-        EpubBuilder(layout, compiler=FakeTex4ebook()).build(slug)
+        make_epub_builder(layout, compiler=FakeTex4ebook()).build(slug)
     with pytest.raises(BookBuildError, match="no such book config"):
-        EpubBuilder(layout, compiler=FakeTex4ebook()).build("absent")
+        make_epub_builder(layout, compiler=FakeTex4ebook()).build("absent")
 
 
 def test_epub_builder_accepts_explicit_assets_and_a_real_default_compiler(tmp_path: Path) -> None:
@@ -163,7 +159,7 @@ def test_epub_builder_accepts_explicit_assets_and_a_real_default_compiler(tmp_pa
     assets.mkdir()
     for name in ("fine-ebook.sty", "fine-ebook.cfg", "fine-ebook.css"):
         (assets / name).write_text(name, encoding="utf-8")
-    tex = EpubBuilder(layout, assets).build("demo", tex_only=True)
+    tex = make_epub_builder(layout, assets=assets).build("demo", tex_only=True)
     assert (tex.parent / "fine-ebook.css").read_text(encoding="utf-8") == "fine-ebook.css"
 
 
@@ -173,6 +169,14 @@ def test_epubcheck_is_skipped_when_not_installed(
     monkeypatch.setenv("PATH", str(tmp_path))
     assert EpubcheckRunner().command() is None
     assert EpubcheckRunner().run(tmp_path / "x.epub") == []
+
+
+def test_a_strict_release_fails_when_epubcheck_is_not_installed(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("PATH", str(tmp_path))
+    findings = EpubcheckRunner(required=True).run(tmp_path / "x.epub")
+    assert findings == ["epubcheck: not installed, but a strict release requires it"]
 
 
 def test_epubcheck_bare_executable_reports_findings(

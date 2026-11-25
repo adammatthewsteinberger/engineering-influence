@@ -1,33 +1,44 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Transport-neutral publishing controller: audit, build, and publish a project's books."""
 
+import tomllib
 from pathlib import Path
 from typing import Any
 
-from engineering_influence.publishing.audit_report_text import AuditReportText
-from engineering_influence.publishing.book_auditor import BookAuditor
-from engineering_influence.publishing.covers.cover_builder import CoverBuilder
-from engineering_influence.publishing.covers.cover_plugin_loader import CoverPluginLoader
-from engineering_influence.publishing.covers.cover_style import CoverStyle
-from engineering_influence.publishing.covers.gradient_painter import GradientPainter
-from engineering_influence.publishing.covers.painter_registry import PainterRegistry
-from engineering_influence.publishing.epub.epub_builder import EpubBuilder
-from engineering_influence.publishing.epub.epub_verifier import EpubVerifier
-from engineering_influence.publishing.epub.tex4ebook_compiler import Tex4ebookCompiler
-from engineering_influence.publishing.pdf_verifier import PdfVerifier
-from engineering_influence.publishing.project_config import ProjectConfig
-from engineering_influence.publishing.project_layout import ProjectLayout
-from engineering_influence.publishing.qa.render_qa import RenderQa
-from engineering_influence.publishing.release.publish_pipeline import PublishPipeline
-from engineering_influence.publishing.release.publish_steps import PublishSteps
-from engineering_influence.publishing.release_auditor import ReleaseAuditor
-from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
-from engineering_influence.publishing.typesetting.book_builder import BookBuilder
-from engineering_influence.publishing.typesetting.book_loader import BookLoader
-from engineering_influence.publishing.typesetting.latex_compiler import LatexCompiler
+from engineering_influence.controllers.interfaces.publishing_controller_interface import (
+    PublishingControllerInterface,
+)
+from engineering_influence.errors.typesetting.book_build_error import BookBuildError
+from engineering_influence.interfaces.book_loader_interface import BookLoaderInterface
+from engineering_influence.interfaces.cover_builder_interface import CoverBuilderInterface
+from engineering_influence.interfaces.cover_builder_provider_interface import (
+    CoverBuilderProviderInterface,
+)
+from engineering_influence.interfaces.manuscript_source_interface import ManuscriptSourceInterface
+from engineering_influence.interfaces.pdf_inspector_interface import PdfInspectorInterface
+from engineering_influence.interfaces.publish_pipeline_provider_interface import (
+    PublishPipelineProviderInterface,
+)
+from engineering_influence.interfaces.render_qa_interface import RenderQaInterface
+from engineering_influence.models.publishing.project_config import ProjectConfig
+from engineering_influence.models.publishing.project_layout import ProjectLayout
+from engineering_influence.services.epub.epub_builder import EpubBuilder
+from engineering_influence.services.epub.epub_verifier import EpubVerifier
+from engineering_influence.services.interfaces.package_book_interface import (
+    PackageBookInterface,
+)
+from engineering_influence.services.publishing.audit_report_text import AuditReportText
+from engineering_influence.services.publishing.book_auditor import BookAuditor
+from engineering_influence.services.publishing.interfaces.pdf_verifier_interface import (
+    PdfVerifierInterface,
+)
+from engineering_influence.services.publishing.release_auditor import ReleaseAuditor
+from engineering_influence.services.typesetting.interfaces.book_builder_interface import (
+    BookBuilderInterface,
+)
 
 
-class PublishingController:
+class PublishingController(PublishingControllerInterface):
     """One entry point per publishing operation, shared by every transport.
 
     The controller owns the wiring a transport should not repeat: the project's layout, its
@@ -38,15 +49,31 @@ class PublishingController:
     def __init__(
         self,
         config: ProjectConfig,
-        latex: LatexCompiler | None = None,
-        tex4ebook: Tex4ebookCompiler | None = None,
-        qa: RenderQa | None = None,
+        files: ManuscriptSourceInterface,
+        pdfs: PdfInspectorInterface,
+        loader: BookLoaderInterface,
+        builder: BookBuilderInterface,
+        pdf_verifier: PdfVerifierInterface,
+        epub: EpubBuilder,
+        epub_verifier: EpubVerifier,
+        covers: CoverBuilderProviderInterface,
+        qa: RenderQaInterface,
+        publisher: PublishPipelineProviderInterface,
+        packager: PackageBookInterface,
     ) -> None:
         self._config = config
+        self._files = files
+        self._pdfs = pdfs
+        self._loader = loader
         self._layout = config.layout()
-        self._latex = latex
-        self._tex4ebook = tex4ebook
-        self._qa = qa or RenderQa(config.root)
+        self._builder = builder
+        self._pdf_verifier = pdf_verifier
+        self._epub = epub
+        self._epub_verifier = epub_verifier
+        self._covers = covers
+        self._qa = qa
+        self._publisher = publisher
+        self._packager = packager
 
     @property
     def layout(self) -> ProjectLayout:
@@ -56,8 +83,10 @@ class PublishingController:
     def audit(self, slug: str, *, strict_release: bool = False) -> tuple[dict[str, Any], bool, str]:
         """Return (both reports as dictionaries, whether the manuscript passes, text)."""
         config = self._book_config(slug)
-        manuscript = BookAuditor(self._config.root).audit(config)
-        release = ReleaseAuditor(self._config.root).audit(config, strict=strict_release)
+        manuscript = BookAuditor(self._config.root, self._files).audit(config)
+        release = ReleaseAuditor(self._config.root, self._files, self._pdfs).audit(
+            config, strict=strict_release
+        )
         text = AuditReportText()
         summary = f"{text.manuscript(manuscript)}\n{text.release(release)}"
         ok = not manuscript.issues and not release.errors
@@ -67,24 +96,22 @@ class PublishingController:
         self, slug: str, *, hardcover: bool = False, tex_only: bool = False, verify: bool = True
     ) -> str:
         """Build the interior PDF (or only its LaTeX) and verify the PDF."""
-        path = BookBuilder(self._layout, compiler=self._latex).build(
-            slug, tex_only=tex_only, hardcover=hardcover
-        )
+        path = self._builder.build(slug, tex_only=tex_only, hardcover=hardcover)
         if tex_only or not verify:
             return f"[{slug}] wrote {self._relative(path)}"
         log_slug = f"{slug}-hardcover" if hardcover else slug
         log = self._layout.build / log_slug / f"{slug}.log"
-        problems = PdfVerifier().verify(path, self._layout.books / f"{slug}.toml", log)
+        problems = self._pdf_verifier.verify(path, self._layout.books / f"{slug}.toml", log)
         self._raise_on(slug, problems)
         return f"[{slug}] built {self._relative(path)}\n[{slug}] all checks passed"
 
     def epub(self, slug: str, *, tex_only: bool = False, verify: bool = True) -> str:
         """Build the EPUB (or only its LaTeX) and verify the EPUB."""
-        path = EpubBuilder(self._layout, compiler=self._tex4ebook).build(slug, tex_only=tex_only)
+        path = self._epub.build(slug, tex_only=tex_only)
         if tex_only or not verify:
             return f"[{slug}] wrote {self._relative(path)}"
-        book = BookLoader(self._config.root).load(self._layout.books / f"{slug}.toml")
-        self._raise_on(slug, EpubVerifier().verify(path, book))
+        book = self._loader.load(self._layout.books / f"{slug}.toml")
+        self._raise_on(slug, self._epub_verifier.verify(path, book))
         return f"[{slug}] built {self._relative(path)}\n[{slug}] all checks passed"
 
     def covers(self, slug: str, *, preview: bool = False, hardcover_pdf: Path | None = None) -> str:
@@ -114,13 +141,7 @@ class PublishingController:
         strict_release: bool = False,
     ) -> tuple[dict[str, Any], bool]:
         """Run the complete acceptance pipeline for one book."""
-        steps = PublishSteps(
-            self._layout,
-            BookBuilder(self._layout, compiler=self._latex),
-            self._cover_builder(),
-            EpubBuilder(self._layout, compiler=self._tex4ebook),
-        )
-        pipeline = PublishPipeline(self._layout, steps, qa=self._qa)
+        pipeline = self._publisher.provide()
         return pipeline.publish(
             slug,
             dpi=dpi,
@@ -130,23 +151,19 @@ class PublishingController:
             strict_release=strict_release,
         )
 
+    def package(self, slug: str) -> str:
+        """Write the book's release bundle, after its release check; refuse a book whose check fails."""
+        config_path = self._book_config(slug)
+        reports, _, _ = self.audit(slug)
+        config = tomllib.loads(self._files.read_text(config_path))
+        return self._packager.package(slug, config, reports["release"]["status"])
+
     def book_slugs(self) -> list[str]:
         """Every book the project configures."""
         return sorted(path.stem for path in self._layout.books.glob("*.toml"))
 
-    def _cover_builder(self) -> CoverBuilder:
-        registry = PainterRegistry()
-        registry.register("gradient", GradientPainter())
-        loader = CoverPluginLoader()
-        self._config.activate()
-        styles: dict[str, CoverStyle] = loader.load(registry, self._config.root)
-        if self._config.cover_plugin:
-            styles.update(
-                loader.load_reference(self._config.cover_plugin, registry, self._config.root)
-            )
-        return CoverBuilder(
-            self._layout, registry=registry, styles=styles, font_dirs=self._config.font_dirs()
-        )
+    def _cover_builder(self) -> CoverBuilderInterface:
+        return self._covers.provide()
 
     def _book_config(self, slug: str) -> Path:
         path = self._layout.books / f"{slug}.toml"

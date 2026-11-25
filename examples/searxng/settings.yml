@@ -1,0 +1,19 @@
+# Settings for the local SearXNG that engineering-influence searches through.
+# The only change that matters is `json` under search.formats: without it SearXNG answers 403
+# to the adapter. The secret key is not here; compose passes it as SEARXNG_SECRET.
+use_default_settings: true
+
+general:
+  instance_name: "engineering-influence search"
+
+search:
+  formats:
+    - html
+    - json
+
+server:
+  # It is bound to 127.0.0.1 and used by one program, so the bot limiter (which needs a Valkey
+  # service) and the public-instance features stay off.
+  limiter: false
+  public_instance: false
+  image_proxy: false

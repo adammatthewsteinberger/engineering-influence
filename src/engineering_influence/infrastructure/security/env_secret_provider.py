@@ -4,10 +4,10 @@
 from vibey_bootstrap.failclose import ConfigurationError, require_env
 
 from engineering_influence.errors.application_error import ApplicationError
-from engineering_influence.interfaces.secret_provider_port import SecretProviderPort
+from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
 
 
-class EnvSecretProvider(SecretProviderPort):
+class EnvSecretProvider(SecretProviderInterface):
     """Read a secret from the environment and stop when it is absent or blank."""
 
     def require(self, name: str) -> str:

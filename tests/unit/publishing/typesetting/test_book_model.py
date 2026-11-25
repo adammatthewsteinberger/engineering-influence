@@ -4,14 +4,15 @@ from pathlib import Path
 
 import pytest
 
-from engineering_influence.publishing.path_relativizer import PathRelativizer
-from engineering_influence.publishing.typesetting.book_loader import BookLoader
-from engineering_influence.publishing.typesetting.chapter import Chapter
-from engineering_influence.publishing.typesetting.chapter_loader import ChapterLoader
-from engineering_influence.publishing.typesetting.chapter_tex import ChapterTex
-from engineering_influence.publishing.typesetting.manuscript_error import ManuscriptError
-from engineering_influence.publishing.typesetting.running_head import RunningHead
-from engineering_influence.publishing.typesetting.tex_text import TexText
+from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
+from engineering_influence.models.publishing.path_relativizer import PathRelativizer
+from engineering_influence.models.typesetting.chapter import Chapter
+from engineering_influence.models.typesetting.running_head import RunningHead
+from engineering_influence.models.typesetting.text_policy import TextPolicy
+from engineering_influence.repositories.typesetting.book_loader import BookLoader
+from engineering_influence.repositories.typesetting.chapter_loader import ChapterLoader
+from engineering_influence.services.typesetting.chapter_tex import ChapterTex
+from engineering_influence.services.typesetting.tex_text import TexText
 
 
 def test_running_head_prefers_the_main_clause() -> None:
@@ -149,3 +150,61 @@ def test_chapter_tex_includes_the_epigraph(tmp_path: Path) -> None:
         "\\begin{chapterepigraph}{Source}\nQuote.\n\\end{chapterepigraph}\n"
         in ChapterTex().render(chapter)
     )
+
+
+NOVEL = TextPolicy.for_name("novel")
+
+
+def test_a_novel_loader_accepts_em_dashes_but_still_refuses_en_dashes_and_markers(
+    tmp_path: Path,
+) -> None:
+    fiction = ChapterLoader(PathRelativizer(tmp_path), True, NOVEL)
+    fine = write(tmp_path / "ok.md", "# T\n\nWait \u2014 what.\n")
+    assert "\u2014" in fiction.load(fine, "chapter", "prose", None).body
+    for text, shown in (("A \u2013 dash.", "'\u2013'"), ("Fix [TODO later].", r"'\[TODO later\]'")):
+        bad = write(tmp_path / "bad.md", f"# T\n\n{text}\n")
+        with pytest.raises(ManuscriptError, match=f"unfinished marker or dash {shown}"):
+            fiction.load(bad, "chapter", "prose", None)
+
+
+def test_a_nonfiction_loader_still_refuses_the_same_em_dash(tmp_path: Path) -> None:
+    path = write(tmp_path / "d.md", "# T\n\nWait \u2014 what.\n")
+    with pytest.raises(ManuscriptError, match="unfinished marker or dash '\u2014'"):
+        ChapterLoader(PathRelativizer(tmp_path), True, TextPolicy.for_name(None)).load(
+            path, "chapter", "prose", None
+        )
+
+
+def test_book_loader_lets_a_novel_use_em_dashes_and_a_nonfiction_book_not(tmp_path: Path) -> None:
+    config = make_book(tmp_path, 'kind = "novel"\n')
+    write(tmp_path / "src" / "a.md", "# Chapter 1: One\n\nWait \u2014 what.\n")
+    assert BookLoader(tmp_path).load(config).parts[0][1][0].body == "Wait \u2014 what."
+    plain = make_book(tmp_path / "plain")
+    write(tmp_path / "plain" / "src" / "a.md", "# Chapter 1: One\n\nWait \u2014 what.\n")
+    with pytest.raises(ManuscriptError, match="unfinished marker or dash"):
+        BookLoader(tmp_path / "plain").load(plain)
+
+
+def test_book_loader_refuses_an_unknown_kind_before_reading_any_chapter(tmp_path: Path) -> None:
+    config = make_book(tmp_path, 'kind = "novell"\n')
+    with pytest.raises(ManuscriptError, match="'nonfiction' or 'novel'"):
+        BookLoader(tmp_path).load(config)
+
+
+@pytest.mark.parametrize(
+    ("extra", "message"),
+    [('trim_size = "A5"\n', "5x8, 5.5x8.5, 6x9"), ('paper = "glossy"\n', "white, cream")],
+)
+def test_book_loader_refuses_an_unknown_trim_size_or_paper(
+    tmp_path: Path, extra: str, message: str
+) -> None:
+    with pytest.raises(ManuscriptError, match=message):
+        BookLoader(tmp_path).load(make_book(tmp_path, extra))
+
+
+def test_book_loader_accepts_every_trim_size_and_paper(tmp_path: Path) -> None:
+    for trim in ("5x8", "5.5x8.5", "6x9"):
+        for paper in ("white", "cream"):
+            root = tmp_path / f"{trim}-{paper}"
+            config = make_book(root, f'trim_size = "{trim}"\npaper = "{paper}"\n')
+            assert BookLoader(root).load(config).meta["trim_size"] == trim

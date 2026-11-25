@@ -1,0 +1,24 @@
+# Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
+"""Ids on heading elements."""
+
+from engineering_influence.models.epub.xhtml_patterns import XhtmlPatterns
+from engineering_influence.services.epub.interfaces.heading_ids_interface import HeadingIdsInterface
+
+
+class HeadingIds(HeadingIdsInterface):
+    """Finds the anchors a contents link may target."""
+
+    def all(self, xhtml: str) -> list[str]:
+        """Every id on or inside a heading element, in document order."""
+        found: list[str] = []
+        for match in XhtmlPatterns.HEADING.finditer(xhtml):
+            found += XhtmlPatterns.ID.findall(match.group(2) + match.group(3))
+        return found
+
+    def own(self, xhtml: str) -> list[str]:
+        """The id attribute of each heading element itself."""
+        return [
+            found
+            for match in XhtmlPatterns.HEADING.finditer(xhtml)
+            for found in XhtmlPatterns.ID.findall(match.group(2))
+        ]

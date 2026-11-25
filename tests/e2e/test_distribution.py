@@ -17,7 +17,7 @@ pytestmark = pytest.mark.distribution
 
 ROOT = Path(__file__).resolve().parents[2]
 VERSION = engineering_influence.__version__
-ASSETS = "engineering_influence/publishing/assets/"
+ASSETS = "engineering_influence/infrastructure/publishing/assets/"
 
 
 def run(
@@ -83,6 +83,9 @@ def test_the_wheel_ships_the_typing_marker_the_assets_and_their_licenses(dist: P
     ):
         assert ASSETS + needed in names, needed
     assert any(name.endswith("dist-info/licenses/LICENSE") for name in names)
+    templates = "engineering_influence/infrastructure/prompt_library/templates/"
+    assert templates + "context_pack.toml" in names
+    assert templates + "skill_guidance.toml" in names
 
 
 def test_the_wheel_holds_only_the_package(dist: Path) -> None:
@@ -168,6 +171,75 @@ def test_a_minimal_install_runs_the_server_commands(dist: Path, clean_env: Path)
     assert "engineering-influence[api,runtime]" in served.stderr
     assert "Traceback" not in served.stderr
 
+    listed = ei(clean_env, "tools", "list", "--lock", str(clean_env / "no-such.lock.toml"))
+    assert listed.returncode == 0 and "no tool lock" in listed.stdout
+    remote = ei(
+        clean_env,
+        "tools",
+        "add",
+        "--lock",
+        str(clean_env / "no-such.lock.toml"),
+        "--url",
+        "https://mcp.example.com/mcp",
+        "docs",
+    )
+    assert remote.returncode == 2
+    assert "engineering-influence[runtime]" in remote.stderr and "Traceback" not in remote.stderr
+
+    skill = clean_env / "plain_style.toml"
+    skill.write_text(
+        'name = "plain_style"\nversion = 1\n[parts]\noutline = "Prefer short chapters."\n',
+        encoding="utf-8",
+    )
+    lock = str(clean_env / "ei-skills.lock.toml")
+    for command in (
+        ("add", "--lock", lock, str(skill)),
+        ("enable", "--lock", lock, "plain_style", "outline"),
+        ("verify", "--lock", lock),
+        ("list", "--lock", lock),
+    ):
+        done = ei(clean_env, "skills", *command)
+        assert done.returncode == 0 and "Traceback" not in done.stderr, done.stderr
+    assert "plain_style@1" in done.stdout and "enabled for outline" in done.stdout
+
+    bundle = clean_env / "research_pack.toml"
+    bundle.write_text(
+        'name = "research_pack"\nversion = 1\n[[server]]\nname = "docs"\n'
+        'url = "https://mcp.example.com/mcp"\n[[skill]]\nname = "house_style"\nversion = 1\n'
+        '[skill.parts]\nbrief = "Keep it short."\n',
+        encoding="utf-8",
+    )
+    plugin_lock = str(clean_env / "ei-plugins.lock.toml")
+    shown = ei(clean_env, "plugins", "show", str(bundle))
+    assert (
+        shown.returncode == 0
+        and "ei tools add --url https://mcp.example.com/mcp docs" in shown.stdout
+    )
+    for command in (
+        ("add", "--lock", plugin_lock, "--skill-lock", lock, str(bundle)),
+        ("verify", "--lock", plugin_lock, "--skill-lock", lock),
+        ("list", "--lock", plugin_lock),
+        ("remove", "--lock", plugin_lock, "--skill-lock", lock, "research_pack"),
+    ):
+        done = ei(clean_env, "plugins", *command)
+        assert done.returncode == 0 and "Traceback" not in done.stderr, done.stderr
+
+    index = clean_env / "index.toml"
+    index.write_text(
+        'version = 1\n[[plugin]]\nname = "research_pack"\nversion = 1\n'
+        'url = "https://plugins.example.com/research_pack.toml"\n' + f'sha256 = "{"a" * 64}"\n',
+        encoding="utf-8",
+    )
+    found = ei(clean_env, "plugins", "search", str(index))
+    assert (
+        found.returncode == 0
+        and "research_pack@1" in found.stdout
+        and "nothing is installed" in found.stdout
+    )
+    online = ei(clean_env, "plugins", "search", "https://plugins.example.com/index.toml")
+    assert online.returncode == 2
+    assert "engineering-influence[runtime]" in online.stderr and "Traceback" not in online.stderr
+
 
 def test_the_api_and_runtime_extras_are_enough_to_serve(dist: Path, clean_env: Path) -> None:
     install(clean_env, f"{wheel(dist)}[api,runtime]")
@@ -197,7 +269,7 @@ def test_the_publishing_extra_makes_the_book_commands_and_assets_available(
         clean_env / "bin" / "python",
         "-c",
         "from importlib.resources import files;"
-        "root = files('engineering_influence.publishing') / 'assets';"
+        "root = files('engineering_influence.infrastructure.publishing') / 'assets';"
         "print((root / 'fine-book.cls').is_file(), (root / 'fonts' / 'EBGaramond-Regular.otf').is_file())",
     )
 
@@ -227,3 +299,26 @@ def test_the_type_marker_is_installed(dist: Path, clean_env: Path) -> None:
     )
 
     assert result.stdout.strip() == "True"
+
+
+def test_the_prompt_templates_are_installed_and_load_without_any_extra(
+    dist: Path, clean_env: Path
+) -> None:
+    install(clean_env, str(wheel(dist)))
+
+    result = run(
+        clean_env / "bin" / "python",
+        "-c",
+        "from engineering_influence.infrastructure.prompt_library.toml_prompt_library import "
+        "TomlPromptLibrary;"
+        "library = TomlPromptLibrary();"
+        "print(library.names(), library.get('context_pack').identifier())",
+    )
+
+    assert result.stdout.strip() == (
+        "['context_pack', 'eval_judge', 'novel_beats', 'novel_brief', 'novel_context_pack', 'novel_metadata', 'novel_outline', "
+        "'novel_story_bible', 'novel_summary', 'skill_guidance', 'stage_brief', 'stage_copy_edit', "
+        "'stage_metadata', "
+        "'stage_outline', 'stage_positioning', 'stage_research', 'stage_revise_lines', "
+        "'stage_revise_structure', 'stage_summary'] context_pack@2"
+    )

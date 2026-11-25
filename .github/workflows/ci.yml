@@ -9,8 +9,41 @@ permissions:
   contents: read
 
 jobs:
+  # Every supported Python runs every gate. The image, the distribution build and the release use
+  # 3.13; the lock resolves 3.12 to 3.14 (pyproject.toml, [tool.uv] environments).
   checks:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.12.6"
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ matrix.python }}
+      # --locked fails when uv.lock is out of step with pyproject.toml (the `uv lock --check` gate).
+      - run: uv sync --locked --extra test --extra runtime --extra dev --extra publishing
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run lint-imports
+      - run: uv run bandit -q -r src packages
+      - run: uv run pip-audit
+      - run: uv run mypy --strict src packages
+      - run: uv run pytest --cov --cov-branch --cov-fail-under=100
+
+  # Builds a synthetic book with the real toolchain (LuaLaTeX, tex4ebook, epubcheck) and compares
+  # the result with a checked-in structural snapshot. The runner image is pinned because the
+  # snapshot depends on the TeX Live release; a deliberate change is accepted by re-running the
+  # test with EI_UPDATE_SNAPSHOT=1 and committing the new file (see docs/TESTING.md).
+  toolchain:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -21,13 +54,47 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
-      - run: uv sync --extra test --extra runtime --extra dev --extra publishing
-      - run: uv run ruff check .
-      - run: uv run lint-imports
-      - run: uv run bandit -q -r src packages
-      - run: uv run pip-audit
-      - run: uv run mypy --strict src packages
-      - run: uv run pytest --cov --cov-branch --cov-fail-under=100
+      # Cached .deb archives skip the 300 MB download on most runs. Without a cache the mirror can
+      # throttle a connection part-way through (a 17 MB package once took five minutes, and a whole
+      # attempt can stall), so the download runs in short two-minute attempts: apt resumes partial files, a fresh connection is usually
+      # fast, and stopping a download is safe in a way that stopping an install is not.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/apt-archives/*.deb
+          key: texlive-noble-${{ hashFiles('.github/workflows/ci.yml') }}
+          restore-keys: texlive-noble-
+      - name: Install the TeX toolchain
+        timeout-minutes: 20
+        env:
+          ARCHIVES: ${{ runner.temp }}/apt-archives
+          PACKAGES: >-
+            latexmk texlive-luatex texlive-latex-recommended texlive-latex-extra
+            texlive-pictures texlive-fonts-recommended texlive-plain-generic
+            texlive-extra-utils epubcheck default-jre-headless
+        run: |
+          set -eu
+          mkdir -p "$ARCHIVES"
+          read -r -a packages <<< "$PACKAGES"
+          options=(-o "Dir::Cache::archives=$ARCHIVES" -o Acquire::Retries=3 -o Acquire::http::Timeout=30)
+          sudo apt-get "${options[@]}" update
+          for attempt in 1 2 3 4 5 6; do
+            if sudo timeout 120 apt-get "${options[@]}" install -y --download-only --no-install-recommends "${packages[@]}"; then
+              break
+            fi
+            [ "$attempt" -lt 6 ] || { echo "the package download kept stalling" >&2; exit 1; }
+            echo "download attempt $attempt stalled; trying again" >&2
+          done
+          sudo apt-get "${options[@]}" install -y --no-install-recommends "${packages[@]}"
+      - run: uv sync --locked --extra test --extra runtime --extra publishing
+      - run: uv run pytest -m toolchain -p no:cacheprovider -v
+        env:
+          EI_SNAPSHOT_ARTIFACT_DIR: ${{ runner.temp }}/fixture-snapshot
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: fixture-snapshot
+          path: ${{ runner.temp }}/fixture-snapshot
+          if-no-files-found: ignore
 
   leak-scan:
     runs-on: ubuntu-latest
@@ -36,6 +103,7 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+      # What may live here, and where prompts and fixtures go: CONTRIBUTING.md, "What may live in this repository".
       - name: Reject private-content paths
         run: |
           ! git rev-list --objects HEAD | grep -E '(^|/)(manuscripts|living-waters|archive|prompts|chapters)/|^output/|\.(pdf|docx)$'
@@ -53,15 +121,47 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
-      - run: pip install "vibey-engine==4.5.0"
+      # vibey-gh ships inside vibey-engine; install the exact version uv.lock pins instead of
+      # asking the index, which no longer lists the 4.5.0 this job used to request.
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.12.6"
+      - run: uv sync --locked --extra runtime
       # Every source file must carry the fingerprint header.
-      - run: vibey-gh check --ci
+      - run: uv run vibey-gh check --ci
       # Every NEW commit must carry the Made-With trailer. Pull requests are judged
       # over their own range only; history that predates adoption is not rewritten.
-      - if: github.event_name == 'pull_request'
+      # Dependabot writes its own commit messages and cannot add the trailer, so pull
+      # requests that Dependabot opened are exempt from the provenance check only
+      # (conventional commits are still checked below). The PR author is used, not the
+      # pusher, so a maintainer's follow-up push to the branch does not break the PR.
+      # A release pull request (develop into main) adds everything since the last release, and that includes
+      # squash commits that lost their trailer before the squash message kept it. History is not rewritten, so a
+      # pull request into main is judged from the newest of those commits onward; every other pull request is
+      # judged over its own range, as before. Once main holds the release, its tip is later than this commit and
+      # the range is the pull request's own again.
+      - id: range
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
-          vibey-gh provenance-check --commits "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
-          vibey-gh conventional-check --commits "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+          set -eu
+          baseline=7e80218753c42305318ce6c65c1c52a1da900b3f
+          start="$BASE"
+          if [ "$BASE_REF" = main ] && git merge-base --is-ancestor "$BASE" "$baseline"; then
+            start="$baseline"
+          fi
+          echo "commits=$start..$HEAD" >> "$GITHUB_OUTPUT"
+      - if: github.event_name == 'pull_request' && github.event.pull_request.user.login != 'dependabot[bot]'
+        env:
+          COMMITS: ${{ steps.range.outputs.commits }}
+        run: uv run vibey-gh provenance-check --commits "$COMMITS"
+      - if: github.event_name == 'pull_request'
+        env:
+          COMMITS: ${{ steps.range.outputs.commits }}
+        run: uv run vibey-gh conventional-check --commits "$COMMITS"
 
   compose-smoke:
     runs-on: ubuntu-latest
@@ -73,6 +173,36 @@ jobs:
       # Builds the image, starts Postgres, RabbitMQ, the API and a worker with throwaway
       # credentials, runs a two-stage pipeline through them and checks dead-lettering.
       - run: sh examples/compose_smoke.sh
+
+  # Runs the integration tests against a real PostgreSQL and RabbitMQ, started by the same script a
+  # developer uses (tests/integration/stack.sh) with random throwaway credentials. They cover the
+  # migrations on PostgreSQL, the stores under concurrent writers, jobs through the broker, and a book
+  # run that finishes through the stack however its workers die. EI_REQUIRE_INTEGRATION turns a
+  # missing stack into a failure instead of a skip, so this job cannot pass with nothing tested.
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      EI_REQUIRE_INTEGRATION: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.12.6"
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - run: uv sync --locked --extra test --extra runtime
+      - run: |
+          eval "$(sh tests/integration/stack.sh up)"
+          for url in "$EI_TEST_DATABASE_URL" "$EI_TEST_RABBITMQ_URL"; do
+            echo "::add-mask::$(printf '%s' "$url" | sed 's#^[^:]*://[^:]*:\([^@]*\)@.*#\1#')"
+          done
+          uv run pytest -m integration -q tests/integration
+      - if: always()
+        run: sh tests/integration/stack.sh down
 
   # The same build the release uses, so a tag can only publish what CI has been building all along.
   distribution:

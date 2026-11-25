@@ -4,10 +4,13 @@ import dataclasses
 
 import pytest
 
-from engineering_influence.publishing.covers.box import Box
-from engineering_influence.publishing.covers.cover_layout import CoverLayout
-from engineering_influence.publishing.covers.layout_check import LayoutCheck
-from engineering_influence.publishing.covers.layout_factory import LayoutFactory
+from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
+from engineering_influence.models.covers.box import Box
+from engineering_influence.models.covers.cover_layout import CoverLayout
+from engineering_influence.models.covers.layout_check import LayoutCheck
+from engineering_influence.models.covers.layout_factory import LayoutFactory
+from engineering_influence.models.typesetting.paper_stock import PaperStock
+from engineering_influence.models.typesetting.trim_size import TrimSize
 
 FACTORY = LayoutFactory()
 
@@ -112,3 +115,76 @@ def test_incomplete_print_layouts_are_rejected(kind: str) -> None:
     layout = dataclasses.replace(FACTORY.ebook(), kind=kind)
     with pytest.raises(ValueError, match="needs back, spine, and barcode"):
         LayoutCheck().run(layout)
+
+
+def factory(trim: str, paper: str) -> LayoutFactory:
+    return LayoutFactory(TrimSize.for_name(trim), PaperStock.for_name(paper))
+
+
+@pytest.mark.parametrize(
+    ("trim", "paper", "pages", "width", "height"),
+    [
+        ("5x8", "white", 200, 0.25 + 10 + 200 * 0.002252, 0.25 + 8),
+        ("5.5x8.5", "cream", 200, 0.25 + 11 + 200 * 0.0025, 0.25 + 8.5),
+        ("6x9", "cream", 200, 0.25 + 12 + 200 * 0.0025, 0.25 + 9),
+        ("6x9", "white", 200, 0.25 + 12 + 200 * 0.002252, 0.25 + 9),
+    ],
+)
+def test_the_paperback_wrap_follows_the_trim_size_and_the_paper(
+    trim: str, paper: str, pages: int, width: float, height: float
+) -> None:
+    layout = factory(trim, paper).paperback(pages)
+    thickness = PaperStock.for_name(paper).inches_per_page
+    assert layout.width == pytest.approx(width)
+    assert layout.height == pytest.approx(height)
+    assert layout.spine is not None and layout.spine.w == pytest.approx(pages * thickness)
+    assert layout.front.w == pytest.approx(TrimSize.for_name(trim).width_in)
+    assert layout.back is not None and layout.back.w == pytest.approx(layout.front.w)
+
+
+def test_cream_paper_gives_a_wider_spine_than_white_for_the_same_pages() -> None:
+    cream = factory("6x9", "cream").paperback(300).spine
+    white = factory("6x9", "white").paperback(300).spine
+    assert cream is not None and white is not None
+    assert cream.w - white.w == pytest.approx(300 * (0.0025 - 0.002252))
+
+
+@pytest.mark.parametrize("trim", ["5x8", "5.5x8.5", "6x9"])
+@pytest.mark.parametrize("paper", ["white", "cream"])
+def test_every_trim_and_paper_passes_every_layout_check(trim: str, paper: str) -> None:
+    check = LayoutCheck()
+    made = factory(trim, paper)
+    assert check.run(made.ebook()) == []
+    assert check.run(made.paperback(249)) == []
+    assert check.run(made.paperback(40)) == []
+
+
+@pytest.mark.parametrize(
+    ("trim", "paper"), [("5.5x8.5", "white"), ("5.5x8.5", "cream"), ("6x9", "cream")]
+)
+def test_the_hardcover_wrap_follows_the_trim_size_and_the_paper(trim: str, paper: str) -> None:
+    layout = factory(trim, paper).hardcover(360)
+    size = TrimSize.for_name(trim)
+    thickness = PaperStock.for_name(paper).inches_per_page
+    assert layout.spine is not None
+    assert layout.spine.w == pytest.approx(360 * thickness + 4.8 / 25.4)
+    assert layout.front.w == pytest.approx(size.width_in + 5 / 25.4)
+    assert layout.front.h == pytest.approx(size.height_in + 6 / 25.4)
+    assert LayoutCheck().run(layout) == []
+
+
+def test_there_is_no_hardcover_wrap_at_a_trim_size_kdp_does_not_print_one() -> None:
+    with pytest.raises(ManuscriptError, match="does not print a hardcover at the 5x8 trim"):
+        factory("5x8", "white").hardcover(200)
+
+
+@pytest.mark.parametrize("trim", ["5x8", "5.5x8.5", "6x9"])
+def test_the_ebook_cover_keeps_the_kindle_pixels_and_ratio_at_every_trim(trim: str) -> None:
+    layout = factory(trim, "white").ebook()
+    assert layout.px == (1600, 2560)
+    assert layout.width == pytest.approx(TrimSize.for_name(trim).width_in)
+    assert layout.height / layout.width == pytest.approx(1.6)
+
+
+def test_a_factory_with_no_arguments_makes_six_by_nine_on_white_paper() -> None:
+    assert LayoutFactory().paperback(249).width == factory("6x9", "white").paperback(249).width

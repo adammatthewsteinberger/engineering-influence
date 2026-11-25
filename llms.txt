@@ -1,5 +1,61 @@
 # engineering-influence
 
-Public software only. Private author-owned books and profiles are not part of
-this repository. Read `README.md`, `docs/ARCHITECTURE.md`, and the ADRs before
-editing domain or infrastructure code.
+> Writes a complete book, non-fiction or a novel, with nobody in the loop, and produces the files Amazon KDP asks for: interior PDF, EPUB, covers, listing and a quality report. A person reviews and uploads; KDP has no publishing API. Install with one command, write a book with one command (`ei book create`), on a free local model by default. Public software only: author-owned books and profiles are not in this repository.
+
+Install: `curl -fsSL https://raw.githubusercontent.com/adammatthewsteinberger/engineering-influence/main/install.sh | sh`
+Check: `ei doctor --ready`
+Write a book: `ei book create --kind nonfiction "IDEA" --budget-usd 5 --out ./BOOK --profile ~/.config/engineering-influence/author.toml`
+Exit codes of `ei book create`: 0 written, 1 failed (output kept), 2 could not start, 3 stopped to ask for more budget (resume with `--resume --approve-spend`, only with the user's agreement).
+Interfaces: CLI (`ei`), REST API, Python SDK, MCP server (stdio, `ei serve mcp`: start_pipeline, create_run, get_run, list_runs, resume_run, cancel_run and read_artifact, plus grant_run and deny_run only with EI_MCP_ALLOW_SPEND), Agent Client Protocol (`ei acp`) and signed webhooks.
+
+## Start here
+
+- [README](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/README.md): what it is, the two commands, what you get, limitations
+- [Getting started](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/GETTING_STARTED.md): install, check, write a first book, then run the stack
+- [Driving it from another AI](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/AGENTS_DRIVING.md): the exact instructions for an agent with a shell, the Claude Code skill, and the MCP path with its limits
+- [Books and KDP](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/BOOKS_AND_KDP.md): what a KDP-ready package contains, what is built and what is not
+- [Interfaces reference](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/INTERACTIONS.md): REST, SDK, MCP, CLI, ACP and webhook contracts, exit codes, error codes
+
+## Write books
+
+- [Novels](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/NOVELS.md): the novel stages, the story bible and the continuity checker
+- [The local model](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/LOCAL_MODEL.md): the free model that writes by default, and `ei doctor --local`
+- [Model profiles](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/MODEL_PROFILES.md): using a model you pay for
+- [Model catalog](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/MODEL_CATALOG.md): the price list a paid run is costed against
+- [Model calls](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/MODEL_CALLS.md): how one call is made at most once, and what happens to an incomplete answer
+- [Research](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/RESEARCH.md): web search and page fetch for the research stage
+- [Prompts](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/PROMPTS.md): the prompt templates, their versions and the lock
+- [Skills](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/SKILLS.md): adding reviewed guidance to a stage
+- [Plugins](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/PLUGINS.md): bundles of skills and tool servers
+- [Tool lock](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/TOOL_LOCK.md): approving third-party MCP tool servers for a stage
+
+## Understand and operate
+
+- [Architecture](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/ARCHITECTURE.md): the onion layers and interface rules, request flow, trust boundaries, extension points
+- [Configuration](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/CONFIGURATION.md): every EI_* variable, the author profile, security settings, observability, limits
+- [Threat model](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/THREAT_MODEL.md): what is protected, where untrusted text enters, known gaps
+- [Worker image](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/WORKER_IMAGE.md): the container images and the TeX toolchain
+- [Troubleshooting](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/TROUBLESHOOTING.md): symptom, cause, fix
+- [Evaluation](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/EVALUATION.md): `ei evaluate`, the rubric, the judge, and the bar a release must meet (spends real money)
+- [Live smoke test](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/LIVE_SMOKE_TEST.md): the capped test against a real model
+- [Architecture decision records](https://github.com/adammatthewsteinberger/engineering-influence/tree/main/docs/adr)
+
+## Contribute
+
+- [Contributing](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/CONTRIBUTING.md)
+- [Agent guidance for changing the code](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/AGENTS.md)
+- [Testing](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/TESTING.md): the CI gates and how to run them
+- [Compatibility](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/COMPATIBILITY.md): the public contracts, what counts as a breaking change, and the snapshots that guard them
+- [Releasing](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/RELEASING.md): cutting and verifying a release
+- [The documentation site](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/DOCUMENTATION_SITE.md): how the pages are published as a website
+- [How these documents are written](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/STYLE.md)
+- [Security policy](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/SECURITY.md)
+
+## Examples
+
+- [Runnable examples](https://github.com/adammatthewsteinberger/engineering-influence/tree/main/examples): curl, Python requests, SDK, MCP client and server, webhook receiver and sender, CLI script, a starter author profile and the Claude Code skill
+
+## Optional
+
+- [Changelog](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/CHANGELOG.md)
+- [llms-full.txt](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/llms-full.txt): the instructions an agent needs to drive this, in one file

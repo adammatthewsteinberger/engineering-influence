@@ -1,0 +1,3 @@
+# A made-up key in a test, flagged by the generic API-key rule in the commit that added it.
+# The line now carries '# gitleaks:allow'; this entry covers the PR range that still contains the earlier commit.
+b4ca96e7861cc8da7059d28c541d2650a1b69243:tests/unit/test_brave_search_provider.py:generic-api-key:22

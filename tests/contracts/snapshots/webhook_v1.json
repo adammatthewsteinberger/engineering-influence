@@ -1,0 +1,66 @@
+{
+  "body": "canonical JSON: sorted keys, no spaces",
+  "envelope": {
+    "additionalProperties": false,
+    "properties": {
+      "data": {
+        "additionalProperties": true,
+        "title": "Data",
+        "type": "object"
+      },
+      "id": {
+        "minLength": 1,
+        "title": "Id",
+        "type": "string"
+      },
+      "schema_version": {
+        "const": 1,
+        "default": 1,
+        "title": "Schema Version",
+        "type": "integer"
+      },
+      "type": {
+        "minLength": 1,
+        "title": "Type",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "data"
+    ],
+    "title": "WebhookEventV1",
+    "type": "object"
+  },
+  "headers": [
+    "Content-Type",
+    "X-Engineering-Influence-Event",
+    "X-Engineering-Influence-Event-Id",
+    "X-Engineering-Influence-Signature",
+    "X-Engineering-Influence-Timestamp"
+  ],
+  "signature": "v1=<hex HMAC-SHA256 of '<X-Engineering-Influence-Timestamp>.<body>'>",
+  "types": {
+    "gate.awaiting": [
+      "gate",
+      "job_id",
+      "phase",
+      "project_slug"
+    ],
+    "phase.completed": [
+      "artifact_id",
+      "job_id",
+      "phase",
+      "project_slug"
+    ],
+    "pipeline.completed": [
+      "project_slug"
+    ],
+    "pipeline.started": [
+      "project_slug",
+      "remaining_stages",
+      "stage"
+    ]
+  }
+}

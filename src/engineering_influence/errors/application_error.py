@@ -4,9 +4,13 @@
 from dataclasses import FrozenInstanceError, dataclass
 from typing import Any
 
+from engineering_influence.errors.interfaces.application_error_interface import (
+    ApplicationErrorInterface,
+)
+
 
 @dataclass(slots=True, unsafe_hash=True)
-class ApplicationError(Exception):
+class ApplicationError(ApplicationErrorInterface, Exception):
     """An interaction-neutral error with stable transport metadata.
 
     The declared fields are immutable once set. ``frozen=True`` is not used because it

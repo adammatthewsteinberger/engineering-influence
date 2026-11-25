@@ -23,16 +23,25 @@ x-app: &app
     EI_DATABASE_URL: postgresql+psycopg://ei:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in examples/.env}@postgres:5432/ei
     EI_RABBITMQ_URL: amqp://ei:${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD in examples/.env}@rabbitmq:5672/
     EI_LOG_LEVEL: ${EI_LOG_LEVEL:-INFO}
+    # The worker's default is the free local model, which a container cannot reach at 127.0.0.1, so this stack
+    # runs the offline placeholder until you say otherwise. For Ollama on the host, set in examples/.env:
+    #   EI_STAGE_EXECUTOR=local  EI_LOCAL_URL=http://host.docker.internal:11434  EI_SEARXNG_URL=<your SearXNG>
+    EI_STAGE_EXECUTOR: ${EI_STAGE_EXECUTOR:-deterministic}
+    EI_LOCAL_URL: ${EI_LOCAL_URL:-}
+    EI_LOCAL_MODEL: ${EI_LOCAL_MODEL:-}
+    EI_SEARXNG_URL: ${EI_SEARXNG_URL:-}
 
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: ei
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in examples/.env}
       POSTGRES_DB: ei
-    volumes: [postgres-data:/var/lib/postgresql/data]
+    # PostgreSQL 18+ images keep a versioned data directory under /var/lib/postgresql,
+    # so the volume must mount the parent; mounting .../data makes the container exit.
+    volumes: [postgres-data:/var/lib/postgresql]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ei -d ei"]
       interval: 5s
@@ -52,9 +61,22 @@ services:
       timeout: 10s
       retries: 20
 
+  # One-shot: brings the schema to the latest revision, then exits. The API and the worker wait
+  # for it, so neither can start on an empty or old database, and neither creates tables itself.
+  migrate:
+    <<: *app
+    command: ["db", "upgrade"]
+    restart: "no"
+    depends_on:
+      postgres: {condition: service_healthy}
+
   api:
     <<: *app
     command: ["serve", "api"]
+    depends_on:
+      postgres: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+      migrate: {condition: service_completed_successfully}
     environment:
       <<: *app-environment
       EI_API_KEYS: ${EI_API_KEYS:?set EI_API_KEYS in examples/.env}
@@ -72,6 +94,10 @@ services:
   worker:
     <<: *app
     command: ["serve", "worker"]
+    depends_on:
+      postgres: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+      migrate: {condition: service_completed_successfully}
 
 volumes:
   postgres-data:

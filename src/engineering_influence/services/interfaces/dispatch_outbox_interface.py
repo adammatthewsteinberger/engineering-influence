@@ -7,6 +7,8 @@ from abc import ABC, abstractmethod
 class DispatchOutboxInterface(ABC):
     """Drain durable webhook intents through a delivery adapter."""
 
+    __slots__ = ()
+
     @abstractmethod
     async def dispatch(self, secret: bytes) -> int:
         """Deliver pending events and return the number acknowledged."""

@@ -9,18 +9,39 @@ from pathlib import Path
 import pytest
 from pypdf import PdfWriter
 
-from engineering_influence.publishing.covers.cover_builder import CoverBuilder
-from engineering_influence.publishing.epub.epub_builder import EpubBuilder
-from engineering_influence.publishing.epub.epub_verifier import EpubVerifier
-from engineering_influence.publishing.pdf_verifier import PdfVerifier
-from engineering_influence.publishing.project_layout import ProjectLayout
-from engineering_influence.publishing.qa.page_record import PageRecord
-from engineering_influence.publishing.qa.render_qa import RenderQa
-from engineering_influence.publishing.qa.render_report import RenderReport
-from engineering_influence.publishing.release.publish_pipeline import PublishPipeline
-from engineering_influence.publishing.release.publish_steps import PublishSteps, Step
-from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
-from engineering_influence.publishing.typesetting.book_builder import BookBuilder
+from engineering_influence.errors.typesetting.book_build_error import BookBuildError
+from engineering_influence.infrastructure.covers.cover_builder import CoverBuilder
+from engineering_influence.infrastructure.publishing.filesystem_manuscript_source import (
+    FilesystemManuscriptSource,
+)
+from engineering_influence.infrastructure.publishing.pypdf_pdf_inspector import PypdfPdfInspector
+from engineering_influence.infrastructure.publishing.system_clock import SystemClock
+from engineering_influence.infrastructure.qa.render_qa import RenderQa
+from engineering_influence.infrastructure.release.epub_zip_check import EpubZipCheck
+from engineering_influence.infrastructure.release.git_state import GitState
+from engineering_influence.infrastructure.release.tool_versions import ToolVersions
+from engineering_influence.infrastructure.typesetting.filesystem_build_workspace import (
+    FilesystemBuildWorkspace,
+)
+from engineering_influence.interfaces.clock_interface import ClockInterface
+from engineering_influence.interfaces.epub_verifier_interface import EpubVerifierInterface
+from engineering_influence.interfaces.render_qa_interface import RenderQaInterface
+from engineering_influence.models.publishing.path_relativizer import PathRelativizer
+from engineering_influence.models.publishing.project_layout import ProjectLayout
+from engineering_influence.models.qa.page_record import PageRecord
+from engineering_influence.models.qa.render_report import RenderReport
+from engineering_influence.models.typesetting.book import Book
+from engineering_influence.repositories.release.artifact_inventory import ArtifactInventory
+from engineering_influence.repositories.release.json_report import JsonReport
+from engineering_influence.repositories.release.step_recorder import StepRecorder
+from engineering_influence.repositories.typesetting.book_loader import BookLoader
+from engineering_influence.services.epub.epub_builder import EpubBuilder
+from engineering_influence.services.publishing.interfaces.pdf_verifier_interface import (
+    PdfVerifierInterface,
+)
+from engineering_influence.services.release.publish_pipeline import PublishPipeline
+from engineering_influence.services.release.publish_steps import PublishSteps, Step
+from engineering_influence.services.typesetting.book_builder import BookBuilder
 
 BASE = (
     'source = "src"\ntitle = "Demo"\nsubtitle = "Sub"\nauthor = "Ann Author"\npublisher = "P"\n'
@@ -88,8 +109,10 @@ class FakeSteps(PublishSteps):
             bad_epub,
         )
         self.ran: list[str] = []
+        self.strict_seen: list[bool] = []
 
-    def plan(self, slug: str, *, hardcover: bool) -> list[Step]:
+    def plan(self, slug: str, *, hardcover: bool, strict: bool = False) -> list[Step]:
+        self.strict_seen.append(strict)
         names = ["pdf", *(["hardcover"] if hardcover else []), "covers", "epub"]
         return [(n, [n, slug], self._action(n, slug)) for n in names]
 
@@ -139,10 +162,35 @@ CLOCK = iter(
 )
 
 
+class TickClock(ClockInterface):
+    def now(self) -> datetime:
+        return next(CLOCK)
+
+
+def wire(
+    layout: ProjectLayout, steps: PublishSteps, qa: RenderQaInterface, clock: ClockInterface
+) -> PublishPipeline:
+    return PublishPipeline(
+        layout,
+        steps,
+        FilesystemManuscriptSource(),
+        PypdfPdfInspector(),
+        qa,
+        clock,
+        JsonReport(),
+        ArtifactInventory(layout),
+        GitState(layout.root),
+        ToolVersions(),
+        EpubZipCheck(),
+        StepRecorder(PathRelativizer(layout.root), clock),
+        FilesystemBuildWorkspace(),
+    )
+
+
 def pipeline(
     layout: ProjectLayout, steps: PublishSteps, qa: RenderQa | None = None
 ) -> PublishPipeline:
-    return PublishPipeline(layout, steps, qa=qa, clock=lambda: next(CLOCK))
+    return wire(layout, steps, qa or RenderQa(layout.root), TickClock())
 
 
 def test_unknown_books_are_rejected(tmp_path: Path) -> None:
@@ -275,9 +323,23 @@ def test_strict_release_rejects_a_book_without_a_contract_at_preflight(tmp_path:
     assert result["release_readiness"]["findings"][0]["code"] == "missing-release-contract"
 
 
-def test_the_real_clock_and_default_renderer_are_used_when_not_injected(tmp_path: Path) -> None:
+def test_a_required_release_contract_tells_the_steps_to_require_epubcheck(tmp_path: Path) -> None:
+    (tmp_path / "strict").mkdir()
+    (tmp_path / "plain").mkdir()
+    strict_layout = project(tmp_path / "strict", BASE + PARTS + CONTRACT)
+    plain_layout = project(tmp_path / "plain")
+    strict_steps, plain_steps = FakeSteps(strict_layout), FakeSteps(plain_layout)
+    pipeline(strict_layout, strict_steps).publish("demo", no_render=True)
+    pipeline(plain_layout, plain_steps).publish("demo", no_render=True)
+    assert strict_steps.strict_seen == [True]
+    assert plain_steps.strict_seen == [False]
+
+
+def test_the_system_clock_stamps_the_report(tmp_path: Path) -> None:
     layout = project(tmp_path)
-    result, _ = PublishPipeline(layout, FakeSteps(layout)).publish("demo", audit_only=True)
+    result, _ = wire(layout, FakeSteps(layout), RenderQa(layout.root), SystemClock()).publish(
+        "demo", audit_only=True
+    )
     assert result["started_at"].endswith("+00:00")
 
 
@@ -312,9 +374,45 @@ class StubEpub(EpubBuilder):
         return path
 
 
-def real_steps(layout: ProjectLayout) -> tuple[PublishSteps, StubBuilder, StubCovers]:
+class FakeEpubVerifier(EpubVerifierInterface):
+    def __init__(self, problems: list[str]) -> None:
+        self._problems = problems
+
+    def verify(self, path: Path, book: Book) -> list[str]:
+        return list(self._problems)
+
+
+class FakePdfVerifier(PdfVerifierInterface):
+    def __init__(self, problems: list[str] | None = None) -> None:
+        self.problems = problems or []
+        self.logs: list[Path] = []
+
+    def verify(self, pdf_path: Path, config_path: Path, log_path: Path | None = None) -> list[str]:
+        self.logs.append(log_path or Path())
+        return list(self.problems)
+
+
+def real_steps(
+    layout: ProjectLayout,
+    epub_problems: list[str] | None = None,
+    pdf_verifier: PdfVerifierInterface | None = None,
+) -> tuple[PublishSteps, StubBuilder, StubCovers]:
     builder, covers = StubBuilder(layout), StubCovers(layout)
-    return PublishSteps(layout, builder, covers, StubEpub(layout)), builder, covers
+    verifier = FakeEpubVerifier(epub_problems or [])
+    return (
+        PublishSteps(
+            layout,
+            builder,
+            pdf_verifier or FakePdfVerifier(),
+            covers,
+            StubEpub(layout),
+            BookLoader(layout.root),
+            verifier,
+            verifier,
+        ),
+        builder,
+        covers,
+    )
 
 
 def test_the_step_plan_orders_the_builds(tmp_path: Path) -> None:
@@ -327,38 +425,29 @@ def test_the_step_plan_orders_the_builds(tmp_path: Path) -> None:
     assert hard[2][1][-2:] == ["--hardcover-pdf", "output/demo-hardcover.pdf"]
 
 
-def test_step_actions_build_and_verify(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_step_actions_build_and_verify(tmp_path: Path) -> None:
     layout = project(tmp_path)
-    steps, builder, covers = real_steps(layout)
-    seen: list[Path] = []
-
-    def pdf_ok(self: PdfVerifier, pdf: Path, config: Path, log: Path | None = None) -> list[str]:
-        seen.append(log or Path())
-        return []
-
-    monkeypatch.setattr(PdfVerifier, "verify", pdf_ok)
-    monkeypatch.setattr(EpubVerifier, "verify", lambda self, path, book: [])
+    pdf_verifier = FakePdfVerifier()
+    steps, builder, covers = real_steps(layout, pdf_verifier=pdf_verifier)
     assert "built output/demo.pdf" in steps.pdf("demo")
     assert "built output/demo-hardcover.pdf" in steps.hardcover("demo")
-    assert [p.parent.name for p in seen] == ["demo", "demo-hardcover"]
+    assert [p.parent.name for p in pdf_verifier.logs] == ["demo", "demo-hardcover"]
     assert "covers written to output/covers/demo" in steps.covers("demo", hardcover=False)
     steps.covers("demo", hardcover=True)
     assert covers.calls == [("demo", True, None), ("demo", True, Path("output/demo-hardcover.pdf"))]
     assert "built output/demo.epub" in steps.epub("demo")
+    assert [s[0] for s in steps.plan("demo", hardcover=False, strict=True)][-1] == "epub"
     assert builder.calls == [("pdf", "demo"), ("hardcover", "demo")]
 
 
-def test_failed_verification_raises_with_every_problem(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_failed_verification_raises_with_every_problem(tmp_path: Path) -> None:
     layout = project(tmp_path)
-    steps, _, _ = real_steps(layout)
-    monkeypatch.setattr(PdfVerifier, "verify", lambda self, pdf, config, log=None: ["a", "b"])
+    steps, _, _ = real_steps(layout, pdf_verifier=FakePdfVerifier(["a", "b"]))
     with pytest.raises(BookBuildError, match=r"\[demo\] FAIL a\n\[demo\] FAIL b"):
         steps.pdf("demo")
-    monkeypatch.setattr(EpubVerifier, "verify", lambda self, path, book: ["epub bad"])
+    failing, _, _ = real_steps(layout, epub_problems=["epub bad"])
     with pytest.raises(BookBuildError, match=r"\[demo\] FAIL epub bad"):
-        steps.epub("demo")
+        failing.epub("demo")
 
 
 def test_when_the_interior_is_never_built_the_report_has_no_pdf_facts(tmp_path: Path) -> None:

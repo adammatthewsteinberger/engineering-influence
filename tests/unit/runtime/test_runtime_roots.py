@@ -1,11 +1,13 @@
 """The two composition roots: the API and the worker."""
 
 import asyncio
+import json
 import logging
 import os
 import signal
 import sys
 from collections.abc import Iterator, Mapping
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -14,13 +16,31 @@ import uvicorn
 from fastapi.testclient import TestClient
 
 from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.infrastructure.deterministic_stage_executor import (
+    DeterministicStageExecutor,
+)
 from engineering_influence.infrastructure.observability.process_crash_hooks import ProcessCrashHooks
 from engineering_influence.infrastructure.observability.worker_heartbeat import WorkerHeartbeat
 from engineering_influence.infrastructure.rabbitmq_job_consumer import RabbitMqJobConsumer
-from engineering_influence.interfaces.secret_provider_port import SecretProviderPort
+from engineering_influence.infrastructure.security.env_secret_provider import EnvSecretProvider
+from engineering_influence.interfaces.queue_interface import QueueInterface
+from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
+from engineering_influence.models.book_brief import BookBrief
+from engineering_influence.models.book_kind import BookKind
+from engineering_influence.models.book_run import BookRun
+from engineering_influence.models.budget import Budget
+from engineering_influence.models.run_status import RunStatus
+from engineering_influence.models.stage_plan import StagePlan
+from engineering_influence.repositories.sqlmodel_artifact_store import SqlModelArtifactStore
+from engineering_influence.repositories.sqlmodel_journal import SqlModelJournal
 from engineering_influence.repositories.sqlmodel_ledger import SqlModelLedger
+from engineering_influence.repositories.sqlmodel_run_repository import SqlModelRunRepository
 from engineering_influence.runtime.api_runtime import ApiRuntime
 from engineering_influence.runtime.app_settings import AppSettings
+from engineering_influence.runtime.interfaces.stage_executor_runtime_interface import (
+    StageExecutorRuntimeInterface,
+)
+from engineering_influence.runtime.stage_executor_runtime import StageExecutorRuntime
 from engineering_influence.runtime.worker_runtime import WorkerRuntime
 
 KEY = "a-valid-api-key-0123456789"  # gitleaks:allow
@@ -34,7 +54,7 @@ PROJECT = {
 UNREACHABLE_BROKER = "amqp://svc:rabbitpw@127.0.0.1:1/"
 
 
-class Secrets(SecretProviderPort):
+class Secrets(SecretProviderInterface):
     def __init__(self, values: Mapping[str, str]) -> None:
         self._values = values
 
@@ -48,12 +68,20 @@ class Secrets(SecretProviderPort):
 def api_runtime(request: pytest.FixtureRequest) -> Any:
     """Build an ApiRuntime and close its database pool afterwards."""
 
-    def make(settings: AppSettings, secrets: SecretProviderPort) -> ApiRuntime:
-        runtime = ApiRuntime(settings, secrets)
+    def make(
+        settings: AppSettings,
+        secrets: SecretProviderInterface,
+        queue: QueueInterface | None = None,
+    ) -> ApiRuntime:
+        runtime = ApiRuntime(settings, secrets, queue=queue)
         request.addfinalizer(runtime.close)
         return runtime
 
     return make
+
+
+# Every test here starts from the migrated database the shared fixture puts at tmp_path / "ei.db".
+pytestmark = pytest.mark.usefixtures("database_url")
 
 
 def settings_for(tmp_path: Path, **overrides: Any) -> AppSettings:
@@ -86,28 +114,28 @@ def test_the_api_serves_probes_and_guards_everything_else(tmp_path: Path, api_ru
     assert "database" not in metrics  # an embedded database has no network check
 
 
-def test_starting_a_pipeline_records_it_and_queues_the_first_stage(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, api_runtime: Any
-) -> None:
-    queued: list[tuple[str, dict[str, object]]] = []
+class FakeQueue(QueueInterface):
+    def __init__(self) -> None:
+        self.queued: list[tuple[str, dict[str, object]]] = []
 
-    def fake_enqueue(self: Any, kind: str, payload: dict[str, object]) -> str:
-        queued.append((kind, payload))
+    def enqueue(self, kind: str, payload: dict[str, object]) -> str:
+        self.queued.append((kind, payload))
         return "job-9"
 
-    monkeypatch.setattr(
-        "engineering_influence.infrastructure.rabbitmq_queue.RabbitMqQueueAdapter.enqueue",
-        fake_enqueue,
-    )
+
+def test_starting_a_pipeline_records_it_and_queues_the_first_stage(
+    tmp_path: Path, api_runtime: Any
+) -> None:
+    queue = FakeQueue()
     settings = settings_for(tmp_path)
-    client = TestClient(api_runtime(settings, Secrets({"EI_API_KEYS": KEY})).build_app())
+    client = TestClient(api_runtime(settings, Secrets({"EI_API_KEYS": KEY}), queue).build_app())
 
     response = client.post(
         "/v1/pipelines", json=PROJECT, headers={**AUTH, "X-Request-ID": "client-req-0001"}
     )
 
     assert response.json() == {"job_id": "job-9", "project_slug": "demo"}
-    kind, payload = queued[0]
+    kind, payload = queue.queued[0]
     assert kind == "pipeline.thesis"
     assert payload["remaining_stages"] == ["book"]
     assert payload["correlation_id"] == "client-req-0001"
@@ -278,3 +306,130 @@ def test_running_the_worker_configures_logging_and_crash_hooks(
     assert any(
         getattr(h, "_engineering_influence_json", False) for h in logging.getLogger().handlers
     )
+
+
+def test_the_api_refuses_to_start_on_a_database_that_was_never_migrated(tmp_path: Path) -> None:
+    settings = AppSettings(f"sqlite:///{tmp_path / 'fresh.db'}", UNREACHABLE_BROKER)
+    with pytest.raises(ApplicationError) as raised:
+        ApiRuntime(settings, Secrets({"EI_API_KEYS": KEY})).build_app()
+    assert raised.value.code == "SCHEMA_OUT_OF_DATE"
+    assert "ei db upgrade" in raised.value.message
+
+
+def test_the_worker_refuses_to_start_on_a_database_that_was_never_migrated(tmp_path: Path) -> None:
+    settings = AppSettings(f"sqlite:///{tmp_path / 'fresh.db'}", UNREACHABLE_BROKER)
+    with pytest.raises(ApplicationError) as raised:
+        WorkerRuntime(settings).build()
+    assert raised.value.code == "SCHEMA_OUT_OF_DATE"
+
+
+def test_the_worker_opens_the_run_stores_and_releases_them_on_close(tmp_path: Path) -> None:
+    worker = WorkerRuntime(settings_for(tmp_path))
+    worker.build()
+    assert len(worker._stores) == 3
+    worker.close()
+    assert worker._stores == []
+
+
+class Executors(StageExecutorRuntimeInterface):
+    """Stands in for the choice of stage executor, and notes how the worker used it."""
+
+    def __init__(self) -> None:
+        self.built: list[tuple[Any, Any]] = []
+        self.closed = 0
+
+    def build(self, artifacts: Any, journal: Any) -> Any:
+        self.built.append((artifacts, journal))
+        return DeterministicStageExecutor(artifacts, journal)
+
+    def close(self) -> None:
+        self.closed += 1
+
+
+def test_the_worker_gets_its_stage_executor_from_the_executor_runtime_and_closes_it(
+    tmp_path: Path,
+) -> None:
+    executors = Executors()
+    worker = WorkerRuntime(settings_for(tmp_path), executors=executors)
+    worker.build()
+    assert len(executors.built) == 1
+    artifacts, journal = executors.built[0]
+    assert isinstance(artifacts, SqlModelArtifactStore)
+    assert isinstance(journal, SqlModelJournal)
+    assert executors.closed == 0
+    worker.close()
+    assert executors.closed == 1
+
+
+class Delivery:
+    """The parts of an aio-pika incoming message the handler uses."""
+
+    def __init__(self, document: dict[str, Any]) -> None:
+        self.body = json.dumps(document).encode()
+        self.acked = 0
+        self.rejected: list[bool] = []
+
+    async def ack(self) -> None:
+        self.acked += 1
+
+    async def reject(self, requeue: bool = False) -> None:
+        self.rejected.append(requeue)
+
+
+def test_the_built_worker_runs_a_run_advance_job_against_the_database(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    runs = SqlModelRunRepository(settings.database_url)
+    brief = BookBrief(kind=BookKind.NONFICTION, idea="sourdough", budget_micro_usd=1_000)
+    plan = StagePlan(kind=BookKind.NONFICTION, stages=("brief",))
+    runs.save(BookRun("run-1", brief, plan, Budget(cap=1_000)))
+    placeholder = StageExecutorRuntime(
+        {"EI_STAGE_EXECUTOR": "deterministic"}, EnvSecretProvider(), date(2026, 11, 23)
+    )
+    worker = WorkerRuntime(settings, executors=placeholder)
+    consumer, _ = worker.build()
+    delivery = Delivery(
+        {
+            "job_id": "job-1",
+            "kind": "run.advance",
+            "payload": {"run_id": "run-1", "stage": "brief", "attempt": 1},
+        }
+    )
+
+    asyncio.run(consumer._handler.handle(delivery))
+    worker.close()
+
+    assert (delivery.acked, delivery.rejected) == (1, [])
+    stored = runs.get("run-1")
+    assert stored is not None and stored.status is RunStatus.COMPLETED
+    artifacts = SqlModelArtifactStore(settings.database_url)
+    assert artifacts.get("run-1", "brief.md") == b"brief: draft for sourdough"
+    artifacts.close()
+    runs.close()
+
+
+def test_the_composed_api_serves_a_run_and_its_artifact_from_the_database(
+    tmp_path: Path, api_runtime: Any
+) -> None:
+    settings = settings_for(tmp_path)
+    runs, artifacts = (
+        SqlModelRunRepository(settings.database_url),
+        SqlModelArtifactStore(settings.database_url),
+    )
+    brief = BookBrief(kind=BookKind.NONFICTION, idea="sourdough", budget_micro_usd=1_000)
+    plan = StagePlan(kind=BookKind.NONFICTION, stages=("brief", "outline"))
+    runs.save(BookRun("run-1", brief, plan, Budget(cap=1_000), status=RunStatus.RUNNING))
+    artifacts.put("run-1", "brief.md", b"# Brief")
+    runtime = api_runtime(settings, Secrets({"EI_API_KEYS": KEY}))
+    client = TestClient(runtime.build_app())
+
+    summary = client.get("/v1/runs/run-1", headers=AUTH)
+    artifact = client.get("/v1/runs/run-1/artifacts/brief.md", headers=AUTH)
+
+    assert summary.status_code == 200 and summary.json()["artifacts"] == ["brief.md"]
+    assert artifact.status_code == 200 and artifact.content == b"# Brief"
+    assert client.get("/v1/runs/run-1").status_code == 401
+    assert len(runtime._stores) == 2
+    runtime.close()
+    assert runtime._stores == []
+    artifacts.close()
+    runs.close()

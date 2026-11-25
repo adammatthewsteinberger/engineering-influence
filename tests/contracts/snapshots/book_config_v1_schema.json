@@ -1,0 +1,142 @@
+{
+  "$defs": {
+    "BookConfigEntryV1": {
+      "properties": {
+        "file": {
+          "minLength": 1,
+          "title": "File",
+          "type": "string"
+        },
+        "short": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Short"
+        },
+        "style": {
+          "default": "prose",
+          "minLength": 1,
+          "title": "Style",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file"
+      ],
+      "title": "BookConfigEntryV1",
+      "type": "object"
+    },
+    "BookConfigPartV1": {
+      "properties": {
+        "chapters": {
+          "items": {
+            "$ref": "#/$defs/BookConfigEntryV1"
+          },
+          "title": "Chapters",
+          "type": "array"
+        },
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "chapters"
+      ],
+      "title": "BookConfigPartV1",
+      "type": "object"
+    },
+    "BookKind": {
+      "enum": [
+        "nonfiction",
+        "novel"
+      ],
+      "title": "BookKind",
+      "type": "string"
+    }
+  },
+  "additionalProperties": true,
+  "properties": {
+    "back": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/BookConfigEntryV1"
+      },
+      "title": "Back",
+      "type": "array"
+    },
+    "front": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/BookConfigEntryV1"
+      },
+      "title": "Front",
+      "type": "array"
+    },
+    "kind": {
+      "$ref": "#/$defs/BookKind",
+      "default": "nonfiction"
+    },
+    "not_in_book": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Not In Book",
+      "type": "array"
+    },
+    "paper": {
+      "default": "white",
+      "enum": [
+        "white",
+        "cream"
+      ],
+      "title": "Paper",
+      "type": "string"
+    },
+    "parts": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/BookConfigPartV1"
+      },
+      "title": "Parts",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "source": {
+      "minLength": 1,
+      "title": "Source",
+      "type": "string"
+    },
+    "trim_size": {
+      "default": "6x9",
+      "enum": [
+        "5x8",
+        "5.5x8.5",
+        "6x9"
+      ],
+      "title": "Trim Size",
+      "type": "string"
+    }
+  },
+  "required": [
+    "source"
+  ],
+  "title": "BookConfigV1",
+  "type": "object"
+}

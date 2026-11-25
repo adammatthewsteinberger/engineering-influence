@@ -4,23 +4,27 @@ import argparse
 import io
 from collections.abc import Mapping
 from contextlib import redirect_stderr
+from pathlib import Path
 
 import pytest
 
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.infrastructure.security.env_secret_provider import EnvSecretProvider
-from engineering_influence.interaction.cli.main import CliApplication
-from engineering_influence.interaction.cli.serve_cli import ServeCli
-from engineering_influence.interfaces.secret_provider_port import SecretProviderPort
+from engineering_influence.interactions.cli.serve_cli import ServeCli
+from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
+from engineering_influence.runtime.api_runtime import ApiRuntime
 from engineering_influence.runtime.app_settings import AppSettings
+from engineering_influence.runtime.cli_runtime import CliRuntime
 from engineering_influence.runtime.endpoint_checks import EndpointChecks
 from engineering_influence.runtime.environment_settings_loader import EnvironmentSettingsLoader
+from engineering_influence.runtime.serve_starter import ServeStarter
+from engineering_influence.runtime.worker_runtime import WorkerRuntime
 
 DB = "postgresql+psycopg://svc:s3cretpw@db.internal:5432/ei"
 MQ = "amqp://svc:rabbitpw@mq.internal:5672/"
 
 
-class MappingSecrets(SecretProviderPort):
+class MappingSecrets(SecretProviderInterface):
     def __init__(self, values: Mapping[str, str]) -> None:
         self._values = values
 
@@ -141,9 +145,11 @@ class Calls:
 
 def cli(calls: Calls, values: Mapping[str, str]) -> ServeCli:
     return ServeCli(
-        MappingSecrets(values),
-        run_api=lambda settings, _: calls.api.append(settings),
-        run_worker=lambda settings, _: calls.worker.append(settings),
+        ServeStarter(
+            MappingSecrets(values),
+            run_api=lambda settings, _: calls.api.append(settings),
+            run_worker=lambda settings, _: calls.worker.append(settings),
+        )
     )
 
 
@@ -192,10 +198,10 @@ def test_a_value_error_also_exits_2(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_a_startup_failure_inside_the_runner_exits_2(monkeypatch: pytest.MonkeyPatch) -> None:
-    def failing(_: AppSettings, __: SecretProviderPort) -> None:
+    def failing(_: AppSettings, __: SecretProviderInterface) -> None:
         raise ApplicationError("SECRET_MISSING", "required secret EI_API_KEYS is not configured")
 
-    serve = ServeCli(MappingSecrets(REQUIRED), run_api=failing)
+    serve = ServeCli(ServeStarter(MappingSecrets(REQUIRED), run_api=failing))
 
     status, stderr = run(serve, "api", REQUIRED, monkeypatch)
 
@@ -204,20 +210,31 @@ def test_a_startup_failure_inside_the_runner_exits_2(monkeypatch: pytest.MonkeyP
 
 def test_the_default_runners_start_the_real_runtimes(monkeypatch: pytest.MonkeyPatch) -> None:
     started: list[str] = []
-    monkeypatch.setattr(
-        "engineering_influence.runtime.api_runtime.ApiRuntime.run",
-        lambda self: started.append("api"),
+
+    class StartsApi(ApiRuntime):
+        def run(self) -> None:
+            started.append("api")
+
+    class StartsWorker(WorkerRuntime):
+        def run(self) -> None:
+            started.append("worker")
+
+    starter = ServeStarter(
+        MappingSecrets(REQUIRED), api_runtime=StartsApi, worker_runtime=StartsWorker
     )
-    monkeypatch.setattr(
-        "engineering_influence.runtime.worker_runtime.WorkerRuntime.run",
-        lambda self: started.append("worker"),
-    )
-    serve = ServeCli(MappingSecrets(REQUIRED))
+    serve = ServeCli(starter)
 
     run(serve, "api", REQUIRED, monkeypatch)
     run(serve, "worker", REQUIRED, monkeypatch)
 
     assert started == ["api", "worker"]
+
+
+def test_without_a_factory_the_starter_builds_the_real_runtimes() -> None:
+    settings = AppSettings("sqlite://", "amqp://guest:guest@localhost:1//")
+
+    assert isinstance(ServeStarter._real_api(settings, MappingSecrets(REQUIRED)), ApiRuntime)
+    assert isinstance(ServeStarter._real_worker(settings), WorkerRuntime)
 
 
 def test_the_top_level_command_routes_serve(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -226,11 +243,181 @@ def test_the_top_level_command_routes_serve(monkeypatch: pytest.MonkeyPatch) -> 
     buffer = io.StringIO()
 
     with redirect_stderr(buffer):
-        status = CliApplication().run(["serve", "api"])
+        status = CliRuntime().build().run(["serve", "api"])
 
     assert status == 2 and "EI_DATABASE_URL" in buffer.getvalue()
 
 
 def test_serve_only_accepts_known_targets() -> None:
     with pytest.raises(SystemExit):
-        CliApplication().run(["serve", "everything"])
+        CliRuntime().build().run(["serve", "everything"])
+
+
+def test_the_cli_builds_the_local_book_maker_from_the_environment_and_the_settings_it_is_given(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from engineering_influence.interfaces.local_book_creator_interface import (
+        LocalBookCreatorInterface,
+    )
+    from engineering_influence.runtime.local_book_runtime import LocalBookRuntime
+
+    profile = tmp_path / "author.toml"
+    profile.write_text(
+        'author = "A"\npublisher = "P"\nedition = "First Edition"\nauthor_bio = "B"\n',
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("EI_STAGE_EXECUTOR", "deterministic")
+    monkeypatch.setenv("EI_AUTHOR_PROFILE", str(tmp_path / "not-there.toml"))
+    creator = CliRuntime()._local_book_creator(
+        tmp_path / "state", {"EI_AUTHOR_PROFILE": str(profile)}
+    )
+    try:
+        assert isinstance(creator, LocalBookCreatorInterface)
+    finally:
+        creator.close()
+    assert (tmp_path / "state" / LocalBookRuntime.DATABASE).is_file()
+
+
+@pytest.mark.parametrize(
+    ("value", "allowed"),
+    [
+        ("1", True),
+        ("true", True),
+        ("YES", True),
+        (" Yes ", True),
+        ("0", False),
+        ("no", False),
+        ("maybe", False),
+        ("", False),
+    ],
+)
+def test_the_mcp_server_may_spend_only_when_the_operator_says_so(value: str, allowed: bool) -> None:
+    assert load({**REQUIRED, "EI_MCP_ALLOW_SPEND": value}).mcp_allow_spend is allowed
+    assert load(REQUIRED).mcp_allow_spend is False
+
+
+def test_a_run_started_over_mcp_is_held_to_five_dollars_unless_the_operator_says_otherwise() -> (
+    None
+):
+    assert load(REQUIRED).mcp_max_run_budget_micro_usd == 5_000_000
+    changed = load({**REQUIRED, "EI_MCP_MAX_RUN_BUDGET_MICRO_USD": " 12000000 "})
+    assert changed.mcp_max_run_budget_micro_usd == 12_000_000
+
+
+@pytest.mark.parametrize("value", ["0", "-1", "five", "2.5", "1e6"])
+def test_the_mcp_budget_ceiling_is_a_whole_number_above_zero(value: str) -> None:
+    with pytest.raises(ValueError, match="EI_MCP_MAX_RUN_BUDGET_MICRO_USD"):
+        load({**REQUIRED, "EI_MCP_MAX_RUN_BUDGET_MICRO_USD": value})
+
+
+def test_serve_mcp_runs_the_mcp_runtime_with_the_settings_it_loaded(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    started: list[AppSettings] = []
+
+    class StartsMcp:
+        def __init__(self, settings: AppSettings) -> None:
+            self.settings = settings
+
+        def run(self) -> None:
+            started.append(self.settings)
+
+    serve = ServeCli(ServeStarter(MappingSecrets(REQUIRED), mcp_runtime=StartsMcp))  # type: ignore[arg-type]
+    assert run(serve, "mcp", {**REQUIRED, "EI_MCP_ALLOW_SPEND": "1"}, monkeypatch) == (0, "")
+    assert [(item.database_url, item.mcp_allow_spend) for item in started] == [(DB, True)]
+
+
+def test_without_a_factory_the_starter_builds_the_real_mcp_runtime() -> None:
+    from engineering_influence.runtime.mcp_runtime import McpRuntime
+
+    settings = AppSettings("sqlite://", "amqp://guest:guest@localhost:1//")
+    assert isinstance(ServeStarter._real_mcp(settings), McpRuntime)
+
+
+def test_serve_mcp_is_one_of_the_targets_and_a_configuration_error_exits_2(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    parser = argparse.ArgumentParser()
+    ServeCli(ServeStarter(MappingSecrets({}))).register(parser.add_subparsers(dest="command"))
+    assert parser.parse_args(["serve", "mcp"]).target == "mcp"
+    status, stderr = run(ServeCli(ServeStarter(MappingSecrets({}))), "mcp", {}, monkeypatch)
+    assert status == 2 and "EI_DATABASE_URL" in stderr
+
+
+def test_the_real_evaluate_command_is_wired_and_refuses_to_spend_without_the_paid_switch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.delenv("EI_ALLOW_PAID", raising=False)
+    status = (
+        CliRuntime()
+        .build()
+        .run(
+            [
+                "evaluate",
+                "--out",
+                str(tmp_path / "o"),
+                "--budget-usd",
+                "1",
+                "--judge-budget-usd",
+                "1",
+            ]
+        )
+    )
+    assert status == 2 and "EI_ALLOW_PAID=1" in capsys.readouterr().err
+
+
+def test_the_cli_builds_the_evaluation_from_the_environment_and_the_settings_it_is_given(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from engineering_influence.interfaces.release_evaluator_interface import (
+        ReleaseEvaluatorInterface,
+    )
+    from engineering_influence.runtime.evaluation_runtime import EvaluationRuntime
+
+    monkeypatch.setenv("EI_EVAL_JUDGE_PROFILE", "judge")
+    monkeypatch.setenv("EI_AUTHOR_PROFILE", str(tmp_path / "not-there.toml"))
+    evaluator = CliRuntime()._release_evaluator(
+        tmp_path / "work",
+        tmp_path / "rubric.toml",
+        tmp_path / "set.toml",
+        None,
+        {"EI_AUTHOR_PROFILE": "chosen.toml"},
+    )
+    assert isinstance(evaluator, ReleaseEvaluatorInterface)
+    assert isinstance(evaluator, EvaluationRuntime)
+    assert evaluator._environment["EI_EVAL_JUDGE_PROFILE"] == "judge"
+    assert evaluator._environment["EI_AUTHOR_PROFILE"] == "chosen.toml"
+
+
+@pytest.mark.parametrize(
+    ("target", "module", "extras"),
+    [
+        ("mcp", "mcp", "mcp,runtime"),
+        ("api", "fastapi", "api,runtime"),
+        ("worker", "aio_pika", "api,runtime"),
+    ],
+)
+def test_a_missing_module_names_the_extras_the_chosen_target_needs(
+    monkeypatch: pytest.MonkeyPatch, target: str, module: str, extras: str
+) -> None:
+    def missing(*_: object) -> None:
+        raise ImportError(f"no {module}", name=module)
+
+    class MissingMcp:
+        def __init__(self, settings: AppSettings) -> None:
+            missing()
+
+    starter = ServeStarter(
+        MappingSecrets(REQUIRED),
+        run_api=missing,
+        run_worker=missing,
+        mcp_runtime=MissingMcp,  # type: ignore[arg-type]
+    )
+
+    status, stderr = run(ServeCli(starter), target, REQUIRED, monkeypatch)
+
+    assert status == 1
+    assert stderr == (
+        f"error: serve {target} needs the {extras.replace(',', ' and ')} extras: "
+        f"pip install 'engineering-influence[{extras}]' ({module} is missing)\n"
+    )

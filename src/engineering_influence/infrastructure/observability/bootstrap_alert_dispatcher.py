@@ -5,7 +5,7 @@ import logging
 
 from vibey_bootstrap.alerts.dispatcher import AlertSeverity, alert_dev_team
 
-from engineering_influence.interfaces.alert_port import AlertPort
+from engineering_influence.interfaces.alert_interface import AlertInterface
 
 _LOGGER = logging.getLogger(__name__)
 _LEVELS = {
@@ -15,7 +15,7 @@ _LEVELS = {
 }
 
 
-class BootstrapAlertDispatcher(AlertPort):
+class BootstrapAlertDispatcher(AlertInterface):
     """Log every alert immediately, then let vibey_bootstrap dedupe and deliver it.
 
     vibey_bootstrap sends only CRITICAL alerts at once and holds ERROR and WARN for a

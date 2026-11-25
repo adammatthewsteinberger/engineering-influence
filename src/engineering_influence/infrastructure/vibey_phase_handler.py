@@ -4,21 +4,19 @@
 from importlib import import_module
 from typing import Any
 
-from engineering_influence.domain.gate import Gate
-from engineering_influence.domain.gate_kind import GateKind
-from engineering_influence.domain.phase_run import PhaseRun
-from engineering_influence.domain.phase_state import PhaseState
-from engineering_influence.interfaces.gate_port import GatePort
-from engineering_influence.interfaces.phase_handler_port import PhaseHandlerPort
-from engineering_influence.interfaces.runner_port import RunnerPort
-from engineering_influence.services.run_phase import RunPhase
+from engineering_influence.interfaces.phase_handler_interface import PhaseHandlerInterface
+from engineering_influence.models.gate import Gate
+from engineering_influence.models.gate_kind import GateKind
+from engineering_influence.models.phase_run import PhaseRun
+from engineering_influence.models.phase_state import PhaseState
+from engineering_influence.services.interfaces.run_phase_interface import RunPhaseInterface
 
 
-class VibeyPhaseHandler(PhaseHandlerPort):
+class VibeyPhaseHandler(PhaseHandlerInterface):
     """Translate vibey job payloads into the shared phase service."""
 
-    def __init__(self, runner: RunnerPort, gates: GatePort) -> None:
-        self._phase = RunPhase(runner, gates)
+    def __init__(self, phase: RunPhaseInterface) -> None:
+        self._phase = phase
 
     async def handle(self, job: Any) -> Any:
         """Run a job and return vibey's Success or Park outcome."""

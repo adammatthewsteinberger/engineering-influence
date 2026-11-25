@@ -1,28 +1,33 @@
-# Publishing a release: push a tag named v<version> from the main branch.
+# Publishing is driven by the branch a commit lands on, and a person approves each upload.
 #
-#   1. The guard job checks the tag matches the code, the changelog and the main branch.
-#   2. The build job is the same reusable workflow CI runs on every push, plus the full tests.
-#   3. The GitHub release attaches the artifacts with signed build provenance.
-#   4. Publishing to PyPI is last, is skipped unless the repository variable
-#      PUBLISH_TO_PYPI is 'true', and waits for approval of the 'pypi' environment.
+#   develop  Every merge builds <version>.dev<run number> and uploads it to TestPyPI.
+#   main     Every merge is a release: the guard checks the version, the changelog and the folded
+#            changelog fragments, a GitHub release is created with signed provenance, and the
+#            packages are uploaded to PyPI.
+#
+#   1. The guard job reads the branch and decides which of the two this is. Only develop and main
+#      publish; a manual run from any other branch is refused.
+#   2. The build job is the same reusable workflow CI runs on every push. A release also runs the
+#      full tests. A development build is made from a copy of the commit with its version stamped.
+#   3. A release creates the tag v<version> and the GitHub release. A development build does not.
+#   4. The uploads are separate jobs and environments for the core and the SDK, because PyPI tells
+#      pending publishers apart by their environment: testpypi and testpypi-sdk for develop, pypi and
+#      pypi-sdk for main. The SDK goes up only after the core. Each environment needs a person's
+#      approval, and each index has its own on/off variable (PUBLISH_TO_TESTPYPI, PUBLISH_TO_PYPI).
+#   5. A release also pushes the two images to GHCR, from its own environment (ghcr) and behind its
+#      own variable (PUBLISH_IMAGES), with build provenance attested for each.
 name: Release
 
 on:
   push:
-    tags: ["v*"]
-  # The same pipeline, started by hand for a tag that already exists. Use it if a tag push does not
-  # start the workflow.
+    branches: [develop, main]
+  # The same pipeline, started by hand on develop or main.
   workflow_dispatch:
-    inputs:
-      tag:
-        description: An existing tag to release, for example v0.1.0a1
-        required: true
-        type: string
 
 permissions: {}
 
 concurrency:
-  group: release-${{ inputs.tag || github.ref_name }}
+  group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -31,27 +36,42 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: read
+    outputs:
+      kind: ${{ steps.guard.outputs.kind }}
+      version: ${{ steps.guard.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: refs/tags/${{ inputs.tag || github.ref_name }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - name: The tag must match the code, the changelog and the main branch
+      - name: The branch decides what is published, and a release must match the code and the changelog
+        id: guard
         env:
-          TAG: ${{ inputs.tag || github.ref_name }}
+          REF: ${{ github.ref }}
         run: |
           set -eu
           core="$(sed -n 's/^__version__ = "\(.*\)"/\1/p' src/engineering_influence/__init__.py)"
           sdk="$(sed -n 's/^__version__ = "\(.*\)"/\1/p' packages/engineering-influence-sdk/src/engineering_influence_sdk/__init__.py)"
           [ -n "$core" ] || { echo "could not read the package version" >&2; exit 1; }
           [ "$core" = "$sdk" ] || { echo "core $core and sdk $sdk versions differ" >&2; exit 1; }
-          [ "$TAG" = "v$core" ] || { echo "tag $TAG does not match version $core" >&2; exit 1; }
-          # The dots in a version are regex wildcards; escape them so only this exact version matches.
-          pattern="$(printf '%s' "$core" | sed 's/[][\.*^$+?(){}|]/\\&/g')"
-          grep -Eq "^## \[?$pattern\]?( |$)" CHANGELOG.md || { echo "CHANGELOG.md has no '## $core' section" >&2; exit 1; }
-          git merge-base --is-ancestor HEAD origin/main || { echo "$TAG is not on the main branch" >&2; exit 1; }
-          echo "releasing $core"
+          printf '%s' "$core" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+((a|b|rc)[0-9]+)?$' || { echo "version $core is not a plain release version" >&2; exit 1; }
+          case "$REF" in
+            refs/heads/develop) kind=dev ;;
+            refs/heads/main) kind=release ;;
+            *) echo "only develop and main are published, not $REF" >&2; exit 1 ;;
+          esac
+          if [ "$kind" = release ]; then
+            # The dots in a version are regex wildcards; escape them so only this exact version matches.
+            pattern="$(printf '%s' "$core" | sed 's/[][\.*^$+?(){}|]/\\&/g')"
+            grep -Eq "^## \[?$pattern\]?( |$)" CHANGELOG.md || { echo "CHANGELOG.md has no '## $core' section" >&2; exit 1; }
+            leftover="$(find changelog.d -type f -name '*.md' ! -name README.md 2>/dev/null | head -n 1)"
+            [ -z "$leftover" ] || { echo "$leftover is an unfolded changelog fragment; run scripts/fold_changelog.py" >&2; exit 1; }
+            git merge-base --is-ancestor HEAD origin/main || { echo "$core is not on the main branch" >&2; exit 1; }
+          fi
+          echo "kind=$kind" >> "$GITHUB_OUTPUT"
+          echo "version=$core" >> "$GITHUB_OUTPUT"
+          echo "$kind build of $core"
 
   build:
     needs: guard
@@ -59,11 +79,13 @@ jobs:
       contents: read
     uses: ./.github/workflows/build-distribution.yml
     with:
-      run_tests: true
-      ref: refs/tags/${{ inputs.tag || github.ref_name }}
+      run_tests: ${{ needs.guard.outputs.kind == 'release' }}
+      ref: ${{ github.sha }}
+      dev_build: ${{ needs.guard.outputs.kind == 'dev' && format('{0}', github.run_number) || '' }}
 
   github-release:
-    needs: build
+    needs: [guard, build]
+    if: needs.guard.outputs.kind == 'release'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -80,23 +102,105 @@ jobs:
           subject-path: |
             dist/*.whl
             dist/*.tar.gz
+      # The tag is created here, at the commit that was built, and only if no tag by that name exists.
+      # A tag that already exists must point at that same commit, or nothing is released: anyone with
+      # write access can push a tag, and `gh release create --target` ignores the target when the tag
+      # exists, which would attach these artifacts to a different commit. Anything other than a clear
+      # "not found" from GitHub stops the release. Running this again for the same commit finds the
+      # tag and the release, and leaves them alone.
       - name: Create the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ inputs.tag || github.ref_name }}
+          TAG: v${{ needs.guard.outputs.version }}
+          TARGET: ${{ github.sha }}
         run: |
           set -eu
+          err="$(mktemp)"
+          if object="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.type + " " + .object.sha' 2>"$err")"; then
+            kind="${object%% *}"
+            commit="${object#* }"
+            if [ "$kind" = tag ]; then
+              commit="$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$commit" --jq .object.sha)"
+            fi
+            [ "$commit" = "$TARGET" ] || { echo "tag $TAG points at $commit, not at the built commit $TARGET" >&2; exit 1; }
+          elif grep -q "HTTP 404" "$err"; then
+            echo "$TAG does not exist yet"
+          else
+            cat "$err" >&2
+            echo "could not tell whether $TAG exists" >&2
+            exit 1
+          fi
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "$TAG is already released"
+            exit 0
+          fi
           flag=""
-          case "$TAG" in *a[0-9]*|*b[0-9]*|*rc[0-9]*|*.dev*) flag="--prerelease" ;; esac
-          gh release create "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes --title "$TAG" $flag
+          case "$TAG" in *a[0-9]*|*b[0-9]*|*rc[0-9]*) flag="--prerelease" ;; esac
+          gh release create "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --target "$TARGET" --generate-notes --title "$TAG" $flag
 
-  pypi:
-    needs: github-release
-    if: vars.PUBLISH_TO_PYPI == 'true'
+  # develop: a development build, to TestPyPI. Configure the trusted publisher for each project on
+  # TestPyPI, and require reviewers on each environment, before setting PUBLISH_TO_TESTPYPI.
+  testpypi:
+    needs: [guard, build]
+    if: needs.guard.outputs.kind == 'dev' && vars.PUBLISH_TO_TESTPYPI == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Configure the trusted publisher for both projects on PyPI, and require reviewers on this
-    # environment, before setting PUBLISH_TO_PYPI. See docs/RELEASING.md.
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/project/engineering-influence/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: dist
+          path: dist
+      - name: Keep only the distributions of this package
+        run: |
+          set -eu
+          mkdir testpypi-dist
+          mv dist/engineering_influence-*.whl dist/engineering_influence-*.tar.gz testpypi-dist/
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          packages-dir: testpypi-dist/
+          attestations: true
+          skip-existing: true
+
+  testpypi-sdk:
+    needs: [guard, testpypi]
+    if: needs.guard.outputs.kind == 'dev' && vars.PUBLISH_TO_TESTPYPI == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: testpypi-sdk
+      url: https://test.pypi.org/project/engineering-influence-sdk/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: dist
+          path: dist
+      - name: Keep only the distributions of this package
+        run: |
+          set -eu
+          mkdir testpypi-sdk-dist
+          mv dist/engineering_influence_sdk-*.whl dist/engineering_influence_sdk-*.tar.gz testpypi-sdk-dist/
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          packages-dir: testpypi-sdk-dist/
+          attestations: true
+          skip-existing: true
+
+  # main: a release, to PyPI. Configure the trusted publisher for each project on PyPI, and require
+  # reviewers on each environment, before setting PUBLISH_TO_PYPI. See docs/RELEASING.md.
+  pypi:
+    needs: [guard, github-release]
+    if: needs.guard.outputs.kind == 'release' && vars.PUBLISH_TO_PYPI == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment:
       name: pypi
       url: https://pypi.org/project/engineering-influence/
@@ -107,12 +211,120 @@ jobs:
         with:
           name: dist
           path: dist
-      - name: Keep only the distributions
+      - name: Keep only the distributions of this package
         run: |
           set -eu
           mkdir pypi-dist
-          mv dist/*.whl dist/*.tar.gz pypi-dist/
+          mv dist/engineering_influence-*.whl dist/engineering_influence-*.tar.gz pypi-dist/
       - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
         with:
           packages-dir: pypi-dist/
+          attestations: true
+
+  # main: the two images, to GHCR, from the commit that was released. A tag that is already published
+  # must have been built from this same commit, or nothing is pushed; anything other than a clear
+  # "no such manifest" from the registry stops the job. Pre-releases get their version tags only. A
+  # stable release also moves `latest` and `tex`. Turn it on with PUBLISH_IMAGES once the `ghcr`
+  # environment exists. See docs/RELEASING.md.
+  images:
+    needs: [guard, github-release]
+    if: needs.guard.outputs.kind == 'release' && vars.PUBLISH_IMAGES == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment:
+      name: ghcr
+      url: https://github.com/adammatthewsteinberger/engineering-influence/pkgs/container/engineering-influence
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    outputs:
+      image: ${{ steps.publish.outputs.image }}
+      runtime_digest: ${{ steps.publish.outputs.runtime_digest }}
+      tex_digest: ${{ steps.publish.outputs.tex_digest }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Build, check and push both images
+        id: publish
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.guard.outputs.version }}
+        run: |
+          set -eu
+          image="ghcr.io/$(printf '%s' "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')"
+          stable=yes
+          case "$VERSION" in *a[0-9]*|*b[0-9]*|*rc[0-9]*) stable=no ;; esac
+          printf '%s' "$GITHUB_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+          # publish <Dockerfile target> <tag> <floating tag> <output name>
+          publish() {
+            target="$1"; tag="$2"; floating="$3"; key="$4"
+            ref="$image:$tag"
+            err="$(mktemp)"
+            if docker manifest inspect "$ref" >/dev/null 2>"$err"; then
+              docker pull --quiet "$ref" >/dev/null
+              built="$(docker inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$ref")"
+              [ "$built" = "$GITHUB_SHA" ] || { echo "$ref was built from '$built', not from $GITHUB_SHA" >&2; exit 1; }
+              echo "$ref is already published from this commit"
+            elif grep -Eiq 'no such manifest|manifest unknown|not found' "$err"; then
+              docker build --target "$target" --tag "$ref" \
+                --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
+                --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+                --label "org.opencontainers.image.version=$VERSION" \
+                .
+              reported="$(docker run --rm "$ref" --version)"
+              [ "$reported" = "engineering-influence $VERSION" ] || { echo "$ref reports '$reported', not $VERSION" >&2; exit 1; }
+              docker push --quiet "$ref"
+            else
+              cat "$err" >&2
+              echo "could not tell whether $ref exists" >&2
+              exit 1
+            fi
+            digest="$(docker inspect --format '{{index .RepoDigests 0}}' "$ref")"
+            echo "${key}=${digest#*@}" >> "$GITHUB_OUTPUT"
+            if [ "$stable" = yes ]; then
+              docker tag "$ref" "$image:$floating"
+              docker push --quiet "$image:$floating"
+            fi
+          }
+          publish runtime "$VERSION" latest runtime_digest
+          publish worker-tex "$VERSION-tex" tex tex_digest
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ${{ steps.publish.outputs.image }}
+          subject-digest: ${{ steps.publish.outputs.runtime_digest }}
+          push-to-registry: true
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ${{ steps.publish.outputs.image }}
+          subject-digest: ${{ steps.publish.outputs.tex_digest }}
+          push-to-registry: true
+
+  pypi-sdk:
+    needs: [guard, pypi]
+    if: needs.guard.outputs.kind == 'release' && vars.PUBLISH_TO_PYPI == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: pypi-sdk
+      url: https://pypi.org/project/engineering-influence-sdk/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: dist
+          path: dist
+      - name: Keep only the distributions of this package
+        run: |
+          set -eu
+          mkdir pypi-sdk-dist
+          mv dist/engineering_influence_sdk-*.whl dist/engineering_influence_sdk-*.tar.gz pypi-sdk-dist/
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          packages-dir: pypi-sdk-dist/
           attestations: true

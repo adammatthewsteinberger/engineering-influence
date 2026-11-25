@@ -10,11 +10,15 @@ from vibey_bootstrap.logging.jsonformatter import JsonLogFormatter
 from vibey_bootstrap.logging.masking import register_secret_keys
 from vibey_bootstrap.logging.noise import silence_noisy_loggers
 
+from engineering_influence.infrastructure.observability.interfaces.json_logging_configurator_interface import (
+    JsonLoggingConfiguratorInterface,
+)
+
 _MARKER = "_engineering_influence_json"
 _SECRET_FIELDS = ("x-api-key", "ei_api_keys", "webhook_secret", "signature", "secret")
 
 
-class JsonLoggingConfigurator:
+class JsonLoggingConfigurator(JsonLoggingConfiguratorInterface):
     """Replace the root handlers with one JSON handler; safe to call more than once."""
 
     def __init__(self, level: int | str = "INFO", stream: TextIO | None = None) -> None:

@@ -9,11 +9,29 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-from engineering_influence.publishing.epub.cover_image import CoverImage
-from engineering_influence.publishing.epub.epub_repacker import EpubRepacker
-from engineering_influence.publishing.project_layout import ProjectLayout
-from engineering_influence.publishing.typesetting.book import Book
-from engineering_influence.publishing.typesetting.chapter import Chapter
+from engineering_influence.infrastructure.epub.cover_image import CoverImage
+from engineering_influence.infrastructure.epub.epub_archive import EpubArchive
+from engineering_influence.infrastructure.epub.epub_cover_inspector import EpubCoverInspector
+from engineering_influence.infrastructure.epub.epubcheck_runner import EpubcheckRunner
+from engineering_influence.infrastructure.epub.tex4ebook_compiler import Tex4ebookCompiler
+from engineering_influence.infrastructure.epub.zip_epub_package import ZipEpubPackage
+from engineering_influence.infrastructure.publishing.filesystem_manuscript_source import (
+    FilesystemManuscriptSource,
+)
+from engineering_influence.infrastructure.publishing.package_assets import PackageAssets
+from engineering_influence.infrastructure.typesetting.filesystem_build_workspace import (
+    FilesystemBuildWorkspace,
+)
+from engineering_influence.interfaces.epub_compiler_interface import EpubCompilerInterface
+from engineering_influence.interfaces.epubcheck_interface import EpubcheckInterface
+from engineering_influence.models.publishing.project_layout import ProjectLayout
+from engineering_influence.models.typesetting.book import Book
+from engineering_influence.models.typesetting.chapter import Chapter
+from engineering_influence.repositories.typesetting.book_loader import BookLoader
+from engineering_influence.services.epub.epub_builder import EpubBuilder
+from engineering_influence.services.epub.epub_identifier import EpubIdentifier
+from engineering_influence.services.epub.epub_repacker import EpubRepacker
+from engineering_influence.services.epub.epub_verifier import EpubVerifier
 
 PAGE = (
     "<?xml version='1.0' encoding='utf-8'?>\n<!DOCTYPE html>\n"
@@ -24,6 +42,35 @@ PAGE = (
 
 def page(body: str) -> str:
     return PAGE.format(body=body)
+
+
+def make_verifier(epubcheck: EpubcheckInterface | None = None) -> EpubVerifier:
+    """The verifier wired with the real archive reader and cover inspector."""
+    return EpubVerifier(EpubArchive(), epubcheck or EpubcheckRunner(), EpubCoverInspector())
+
+
+def make_repacker(layout: ProjectLayout, identifier: EpubIdentifier | None = None) -> EpubRepacker:
+    """The repacker wired with the real cover image and zip package."""
+    return EpubRepacker(CoverImage(layout), ZipEpubPackage(), identifier or EpubIdentifier())
+
+
+def make_epub_builder(
+    layout: ProjectLayout,
+    compiler: EpubCompilerInterface | None = None,
+    assets: Path | None = None,
+) -> EpubBuilder:
+    """The ebook builder wired with the real loader, workspace, assets and repacker."""
+    identifier = EpubIdentifier()
+    return EpubBuilder(
+        layout,
+        BookLoader(layout.root),
+        compiler or Tex4ebookCompiler(),
+        FilesystemBuildWorkspace(),
+        PackageAssets(assets),
+        make_repacker(layout, identifier),
+        FilesystemManuscriptSource(),
+        identifier,
+    )
 
 
 def make_book() -> Book:
@@ -119,7 +166,7 @@ def raw(tmp_path: Path) -> Path:
 @pytest.fixture
 def finished(tmp_path: Path, raw: Path, book: Book, layout: ProjectLayout) -> Path:
     out = tmp_path / "finished.epub"
-    EpubRepacker(CoverImage(layout)).repack(raw, book, out)
+    make_repacker(layout).repack(raw, book, out)
     return out
 
 

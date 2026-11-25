@@ -1,51 +1,47 @@
-"""PDF-facing checks, driven by fake pages and small generated PDFs."""
+"""PDF-facing checks: rules over plain facts, and the inspector that reads real PDFs."""
 
-import io
-from typing import Any
+from pathlib import Path
 
-from pypdf import PdfReader, PdfWriter
+import pytest
+from pypdf import PdfWriter
 from pypdf.generic import ArrayObject, DictionaryObject, NameObject
+from reportlab.pdfgen import canvas
 
-from engineering_influence.publishing.folio_reader import FolioReader
-from engineering_influence.publishing.pdf_layout_check import PdfLayoutCheck
-from engineering_influence.publishing.pdf_structure_check import PdfStructureCheck
+from engineering_influence.infrastructure.publishing.pypdf_pdf_inspector import PypdfPdfInspector
+from engineering_influence.models.publishing.pdf_document import PdfDocument
+from engineering_influence.models.publishing.pdf_page import PdfPage
+from engineering_influence.models.publishing.pdf_word import PdfWord
+from engineering_influence.models.typesetting.trim_size import TrimSize
+from engineering_influence.services.publishing.folio_reader import FolioReader
+from engineering_influence.services.publishing.pdf_layout_check import PdfLayoutCheck
+from engineering_influence.services.publishing.pdf_structure_check import PdfStructureCheck
 
-
-class FakePage:
-    def __init__(
-        self,
-        chars: list[dict[str, float]] | None = None,
-        words: list[dict[str, Any]] | None = None,
-        text: str = "",
-    ) -> None:
-        self.chars = chars or []
-        self._words = words or []
-        self._text = text
-        self.width = 432.0
-        self.height = 648.0
-
-    def extract_words(self, **_: Any) -> list[dict[str, Any]]:
-        return self._words
-
-    def extract_text(self, **_: Any) -> str:
-        return self._text
+SIX_BY_NINE = TrimSize.for_name(None)
 
 
-def box(x0: float, x1: float, top: float = 100, bottom: float = 500) -> FakePage:
-    return FakePage(chars=[{"x0": x0, "x1": x1, "top": top, "bottom": bottom}], text="t")
+def page(
+    text_box: tuple[float, float, float, float] | None = None,
+    words: tuple[PdfWord, ...] = (),
+    text: str = "",
+) -> PdfPage:
+    return PdfPage(432.0, 648.0, 432.0, 648.0, text, words, text_box, False, False, frozenset())
 
 
-def word(text: str, top: float) -> dict[str, Any]:
-    return {"text": text, "top": top, "bottom": top + 8}
+def box(x0: float, x1: float, top: float = 100, bottom: float = 500) -> PdfPage:
+    return page((x0, x1, top, bottom), text="t")
+
+
+def word(text: str, top: float) -> PdfWord:
+    return PdfWord(text, top, top + 8)
 
 
 def test_folio_prefers_running_head_and_ignores_body_numbers() -> None:
     words = [word("12", 600), word("iv", 20), word("Hello", 25), word("7", 300)]
-    assert FolioReader().read(FakePage(words=words)) == "iv"
+    assert FolioReader().read(page(words=tuple(words))) == "iv"
 
 
 def test_folio_is_none_without_candidates() -> None:
-    assert FolioReader().read(FakePage(words=[word("Hello", 20)])) is None
+    assert FolioReader().read(page(words=(word("Hello", 20),))) is None
 
 
 def test_layout_accepts_page_inside_margins() -> None:
@@ -70,16 +66,15 @@ def test_layout_reports_top_and_bottom_edges() -> None:
 
 
 def test_layout_reports_third_consecutive_blank_page_only() -> None:
-    blank = FakePage()
+    blank = page()
     problems, _, _ = PdfLayoutCheck().run([blank, blank, blank, box(100, 330), blank, blank])
     assert problems == ["more than two consecutive blank pages ending at page 3"]
 
 
-def read_back(writer: PdfWriter) -> PdfReader:
-    buffer = io.BytesIO()
-    writer.write(buffer)
-    buffer.seek(0)
-    return PdfReader(buffer)
+def inspected(writer: PdfWriter, tmp_path: Path) -> PdfDocument:
+    path = tmp_path / "x.pdf"
+    writer.write(str(path))
+    return PypdfPdfInspector().inspect(path)
 
 
 def font(base: str, embedded: bool) -> DictionaryObject:
@@ -91,30 +86,30 @@ def font(base: str, embedded: bool) -> DictionaryObject:
     )
 
 
-def test_structure_accepts_clean_trim_page() -> None:
+def test_structure_accepts_clean_trim_page(tmp_path: Path) -> None:
     writer = PdfWriter()
     writer.add_blank_page(432, 648)
-    assert PdfStructureCheck().run(read_back(writer)) == []
+    assert PdfStructureCheck().run(inspected(writer, tmp_path), SIX_BY_NINE) == []
 
 
-def test_structure_reports_size_bookmarks_annotations_and_groups() -> None:
+def test_structure_reports_size_bookmarks_annotations_and_groups(tmp_path: Path) -> None:
     writer = PdfWriter()
     writer.add_blank_page(400, 600)
-    page = writer.add_blank_page(432, 648)
-    page[NameObject("/Annots")] = ArrayObject()
-    page[NameObject("/Group")] = DictionaryObject()
+    second = writer.add_blank_page(432, 648)
+    second[NameObject("/Annots")] = ArrayObject()
+    second[NameObject("/Group")] = DictionaryObject()
     writer.add_outline_item("Chapter", 0)
-    problems = PdfStructureCheck().run(read_back(writer))
+    problems = PdfStructureCheck().run(inspected(writer, tmp_path), SIX_BY_NINE)
     assert "PDF has bookmarks; KDP print interiors should not" in problems
     assert "page 1 is 400.0 x 600.0 pt, expected 432 x 648" in problems
     assert "page 2 has annotations or links" in problems
     assert "page 2 has a transparency group" in problems
 
 
-def test_structure_reports_only_unembedded_fonts() -> None:
+def test_structure_reports_only_unembedded_fonts(tmp_path: Path) -> None:
     writer = PdfWriter()
     writer.add_blank_page(432, 648)  # no resources at all
-    page = writer.add_blank_page(432, 648)
+    second = writer.add_blank_page(432, 648)
     type0 = DictionaryObject({NameObject("/DescendantFonts"): ArrayObject([font("/Wide", False)])})
     fonts = DictionaryObject(
         {
@@ -124,10 +119,59 @@ def test_structure_reports_only_unembedded_fonts() -> None:
             NameObject("/F4"): type0,
         }
     )
-    page[NameObject("/Resources")] = DictionaryObject({NameObject("/Font"): fonts})
+    second[NameObject("/Resources")] = DictionaryObject({NameObject("/Font"): fonts})
     third = writer.add_blank_page(432, 648)
     third[NameObject("/Resources")] = DictionaryObject()  # resources without fonts
-    assert PdfStructureCheck().run(read_back(writer)) == [
+    assert PdfStructureCheck().run(inspected(writer, tmp_path), SIX_BY_NINE) == [
         "font not embedded: /Bare",
         "font not embedded: /Wide",
     ]
+
+
+def test_the_inspector_reads_text_words_and_the_box_of_a_page(tmp_path: Path) -> None:
+    path = tmp_path / "b.pdf"
+    pdf = canvas.Canvas(str(path), pagesize=(432, 648))
+    pdf.drawString(100, 500, "Hello world")
+    pdf.showPage()
+    pdf.showPage()  # a blank page
+    pdf.save()
+
+    document = PypdfPdfInspector().inspect(path)
+
+    written, blank = document.pages
+    assert written.text == "Hello world"
+    assert [w.text for w in written.words] == ["Hello", "world"]
+    assert written.text_box is not None and written.text_box[0] == 100
+    assert (written.width, written.height) == (432, 648)
+    assert blank.text == "" and blank.words == () and blank.text_box is None
+    assert not document.has_outline
+
+
+def test_page_count_is_none_for_a_missing_file(tmp_path: Path) -> None:
+    path = tmp_path / "b.pdf"
+    assert PypdfPdfInspector().page_count(path) is None
+    writer = PdfWriter()
+    writer.add_blank_page(432, 648)
+    writer.add_blank_page(432, 648)
+    writer.write(str(path))
+    assert PypdfPdfInspector().page_count(path) == 2
+
+
+@pytest.mark.parametrize(
+    ("name", "width", "height"), [("5x8", 360, 576), ("5.5x8.5", 396, 612), ("6x9", 432, 648)]
+)
+def test_structure_accepts_a_page_of_the_books_own_trim_size(
+    tmp_path: Path, name: str, width: int, height: int
+) -> None:
+    writer = PdfWriter()
+    writer.add_blank_page(width, height)
+    assert PdfStructureCheck().run(inspected(writer, tmp_path), TrimSize.for_name(name)) == []
+
+
+def test_structure_refuses_a_page_of_another_trim_size_and_names_the_expected_one(
+    tmp_path: Path,
+) -> None:
+    writer = PdfWriter()
+    writer.add_blank_page(432, 648)  # 6 x 9 in a book that says 5.5 x 8.5
+    problems = PdfStructureCheck().run(inspected(writer, tmp_path), TrimSize.for_name("5.5x8.5"))
+    assert problems == ["page 1 is 432.0 x 648.0 pt, expected 396 x 612"]

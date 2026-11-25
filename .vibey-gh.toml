@@ -3,7 +3,7 @@
 # Deliberately conservative, mirroring the private books repository:
 #
 # - Every commit carries the Made-With trailer, added by the installed hooks.
-# - Every file under src/ carries the provenance header (`vibey-gh check --apply` adds it).
+# - Every file under src/ and packages/*/src/ carries the provenance header (`vibey-gh check --apply` adds it).
 # - [install] workflows = []: only the hooks and the CLI are installed. The pull-request,
 #   merge-train, promote, release, and AI-review workflows stay off until they are adopted
 #   deliberately (several merge or promote on their own, and the AI lanes need secrets).
@@ -13,7 +13,7 @@
 #   (README, AGENTS.md, docs/) are checked by review, not by this tool.
 
 [fingerprint]
-sources = ["src/**/*.py"]
+sources = ["src/**/*.py", "packages/**/src/**/*.py"]
 
 [documentation]
 enabled = false

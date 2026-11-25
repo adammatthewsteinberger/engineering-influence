@@ -1,0 +1,151 @@
+{
+  "$defs": {
+    "BookKind": {
+      "enum": [
+        "nonfiction",
+        "novel"
+      ],
+      "title": "BookKind",
+      "type": "string"
+    },
+    "RunBudgetV1": {
+      "properties": {
+        "cap_micro_usd": {
+          "title": "Cap Micro Usd",
+          "type": "integer"
+        },
+        "remaining_micro_usd": {
+          "title": "Remaining Micro Usd",
+          "type": "integer"
+        },
+        "reserved_micro_usd": {
+          "title": "Reserved Micro Usd",
+          "type": "integer"
+        },
+        "spent_micro_usd": {
+          "title": "Spent Micro Usd",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "cap_micro_usd",
+        "spent_micro_usd",
+        "reserved_micro_usd",
+        "remaining_micro_usd"
+      ],
+      "title": "RunBudgetV1",
+      "type": "object"
+    },
+    "RunIssueV1": {
+      "properties": {
+        "blocking": {
+          "title": "Blocking",
+          "type": "boolean"
+        },
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "detail": {
+          "title": "Detail",
+          "type": "string"
+        },
+        "stage": {
+          "title": "Stage",
+          "type": "string"
+        }
+      },
+      "required": [
+        "stage",
+        "code",
+        "detail",
+        "blocking"
+      ],
+      "title": "RunIssueV1",
+      "type": "object"
+    },
+    "RunStatus": {
+      "enum": [
+        "pending",
+        "running",
+        "parked_capacity",
+        "awaiting_consent",
+        "completed",
+        "failed",
+        "cancelled"
+      ],
+      "title": "RunStatus",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "artifacts": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Artifacts",
+      "type": "array"
+    },
+    "budget": {
+      "$ref": "#/$defs/RunBudgetV1"
+    },
+    "consent_requested_micro_usd": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Consent Requested Micro Usd"
+    },
+    "issues": {
+      "items": {
+        "$ref": "#/$defs/RunIssueV1"
+      },
+      "title": "Issues",
+      "type": "array"
+    },
+    "kind": {
+      "$ref": "#/$defs/BookKind"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "stage": {
+      "title": "Stage",
+      "type": "string"
+    },
+    "stages": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Stages",
+      "type": "array"
+    },
+    "status": {
+      "$ref": "#/$defs/RunStatus"
+    }
+  },
+  "required": [
+    "run_id",
+    "kind",
+    "status",
+    "stage",
+    "stages",
+    "budget",
+    "issues",
+    "artifacts"
+  ],
+  "title": "RunSummaryV1",
+  "type": "object"
+}

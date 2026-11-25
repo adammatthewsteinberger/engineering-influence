@@ -6,15 +6,21 @@ from typing import Any
 import numpy as np
 import pytest
 from PIL import Image
-from pypdf import PdfWriter
+from pypdf import PdfReader, PdfWriter
 
-from engineering_influence.publishing.covers.cover_builder import CoverBuilder
-from engineering_influence.publishing.covers.cover_painter import CoverPainter
-from engineering_influence.publishing.covers.cover_style import CoverStyle
-from engineering_influence.publishing.covers.ebook_cover_verifier import EbookCoverVerifier
-from engineering_influence.publishing.covers.painter_registry import PainterRegistry
-from engineering_influence.publishing.project_layout import ProjectLayout
-from engineering_influence.publishing.typesetting.book_build_error import BookBuildError
+from engineering_influence.errors.typesetting.back_cover_text_too_long_error import (
+    BackCoverTextTooLongError,
+)
+from engineering_influence.errors.typesetting.book_build_error import BookBuildError
+from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
+from engineering_influence.infrastructure.covers.cover_builder import CoverBuilder
+from engineering_influence.infrastructure.covers.interfaces.ebook_cover_verifier_interface import (
+    EbookCoverVerifierInterface,
+)
+from engineering_influence.infrastructure.covers.painter_registry import PainterRegistry
+from engineering_influence.interfaces.cover_painter_interface import CoverPainterInterface
+from engineering_influence.models.covers.cover_style import CoverStyle
+from engineering_influence.models.publishing.project_layout import ProjectLayout
 
 FILES = (
     "ebook.jpg",
@@ -114,7 +120,7 @@ def test_reports_missing_inputs_and_unsafe_slugs(tmp_path: Path) -> None:
         builder.build("demo")
 
 
-class WhitePainter(CoverPainter):
+class WhitePainter(CoverPainterInterface):
     def paint(self, layout: Any, style: CoverStyle) -> Any:
         return np.ones((*reversed(layout.px), 3), np.float32)
 
@@ -123,7 +129,7 @@ def test_a_light_ebook_cover_gets_the_gray_border_and_still_verifies(tmp_path: P
     layout = project(tmp_path)
     registry = PainterRegistry()
     registry.register("white", WhitePainter())
-    from engineering_influence.publishing.covers.builtin_cover_style import BuiltinCoverStyle
+    from engineering_influence.models.covers.builtin_cover_style import BuiltinCoverStyle
 
     style = BuiltinCoverStyle().for_book({"title": "Demo Cover"})
     style.painter = "white"
@@ -142,15 +148,17 @@ def test_a_light_ebook_cover_gets_the_gray_border_and_still_verifies(tmp_path: P
         assert ebook.getpixel((800, 8))[0] > 250  # the art itself is untouched inside the frame
 
 
-def test_verification_failures_fail_the_build(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+class FailingEbookVerifier(EbookCoverVerifierInterface):
+    def run(self, path: Path) -> list[str]:
+        return ["forced problem"]
+
+
+def test_verification_failures_fail_the_build(tmp_path: Path) -> None:
     layout = project(tmp_path)
-    monkeypatch.setattr(EbookCoverVerifier, "run", lambda self, path: ["forced problem"])
     with pytest.raises(
         BookBuildError, match=r"\[demo\] cover check failed: forced problem; forced problem"
     ):
-        CoverBuilder(layout).build("demo")
+        CoverBuilder(layout, ebooks=FailingEbookVerifier()).build("demo")
 
 
 def test_custom_font_directories_are_searched_before_the_bundled_fonts(tmp_path: Path) -> None:
@@ -158,3 +166,78 @@ def test_custom_font_directories_are_searched_before_the_bundled_fonts(tmp_path:
     empty = tmp_path / "no-fonts"
     empty.mkdir()
     assert CoverBuilder(layout, font_dirs=[empty]).build("demo").is_dir()
+
+
+def pages_of(path: Path) -> int:
+    return len(PdfReader(str(path)).pages)
+
+
+def test_a_five_by_eight_book_gets_a_paperback_wrap_and_no_hardcover_wrap(tmp_path: Path) -> None:
+    layout = project(tmp_path, 'trim_size = "5x8"\n')
+    out = CoverBuilder(layout).build("demo", preview=True)
+    names = sorted(p.name for p in out.iterdir())
+    assert not any("hardcover" in name for name in names)
+    assert "demo-paperback-wrap.pdf" in names and "demo-ebook.jpg" in names
+    with Image.open(out / "demo-paperback-wrap.tif") as wrap:
+        # 120 pages on white paper: 0.25 + 10 + 120 * 0.002252 in wide, 8.25 in tall, at 300 ppi.
+        assert wrap.size == (3157, 2475)
+    with Image.open(out / "demo-front.tif") as front:
+        # Cropped on pixel boundaries, so it can differ from the idealised 5.25 in by a pixel.
+        assert abs(front.size[0] - round((5 + 0.125 + 0.125) * 300)) <= 1
+
+
+def test_a_cream_paper_book_gets_a_wider_spine_than_the_same_book_on_white(tmp_path: Path) -> None:
+    white = tmp_path / "white"
+    white.mkdir()
+    cream = tmp_path / "cream"
+    cream.mkdir()
+    CoverBuilder(project(white)).build("demo")
+    CoverBuilder(project(cream, 'paper = "cream"\n')).build("demo")
+    wide = "output/covers/demo/demo-paperback-wrap.tif"
+    with Image.open(white / wide) as w, Image.open(cream / wide) as c:
+        # 120 pages: 0.27024 in on white and 0.3 in on cream, at 300 ppi.
+        assert (w.size[0], c.size[0]) == (3757, 3765)
+
+
+def test_a_five_and_a_half_by_eight_and_a_half_book_builds_every_cover_file(tmp_path: Path) -> None:
+    layout = project(tmp_path, 'trim_size = "5.5x8.5"\npaper = "cream"\n')
+    out = CoverBuilder(layout).build("demo")
+    assert sorted(p.name for p in out.iterdir()) == sorted(f"demo-{f}" for f in FILES)
+    with Image.open(out / "demo-paperback-wrap.tif") as wrap:
+        # 120 cream pages: 0.25 + 11 + 120 * 0.0025 = 11.55 in = 3465 px, which rounds up by at most one.
+        assert abs(wrap.size[0] - 3465) <= 1 and wrap.size[1] == 2625
+
+
+@pytest.mark.parametrize("extra", ['trim_size = "7x10"\n', 'paper = "glossy"\n'])
+def test_an_unknown_trim_size_or_paper_stops_the_cover_build(tmp_path: Path, extra: str) -> None:
+    layout = project(tmp_path, extra)
+    with pytest.raises(ManuscriptError, match="must be one of"):
+        CoverBuilder(layout).build("demo")
+
+
+def with_description(root: Path, trim: str, characters: int) -> ProjectLayout:
+    sentence = "The keeper climbed the stairs every evening, counting the steps as her mother. "
+    text = (sentence * (characters // len(sentence) + 1))[:characters].rstrip()
+    paragraphs = "\\n\\n".join(text[i : i + 400] for i in range(0, len(text), 400))
+    (root / "books").mkdir()
+    (root / "books" / "demo.toml").write_text(
+        'title = "Demo Cover"\nsubtitle = "A Subtitle"\nauthor = "Ann Author"\n'
+        'publisher = "Pub House"\nauthor_bio = "Ann writes."\n'
+        f'trim_size = "{trim}"\ndescription = "{paragraphs}"\n',
+        encoding="utf-8",
+    )
+    blank_pdf(root / "output" / "demo.pdf", 120)
+    return ProjectLayout(root)
+
+
+def test_a_long_description_builds_at_six_by_nine_but_not_at_five_by_eight(tmp_path: Path) -> None:
+    roomy = tmp_path / "roomy"
+    roomy.mkdir()
+    CoverBuilder(with_description(roomy, "6x9", 3000)).build("demo")
+    tight = tmp_path / "tight"
+    tight.mkdir()
+    with pytest.raises(BackCoverTextTooLongError) as raised:
+        CoverBuilder(with_description(tight, "5x8", 3000)).build("demo")
+    assert raised.value.characters > raised.value.capacity > 0
+    assert "does not fit above the barcode area" in str(raised.value)
+    assert isinstance(raised.value, BookBuildError)

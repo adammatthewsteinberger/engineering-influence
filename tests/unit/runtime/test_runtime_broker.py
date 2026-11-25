@@ -17,8 +17,8 @@ from engineering_influence.infrastructure.observability.context_var_correlation 
 )
 from engineering_influence.infrastructure.rabbitmq_job_consumer import RabbitMqJobConsumer
 from engineering_influence.infrastructure.rabbitmq_topology import RabbitMqTopology
-from engineering_influence.interfaces.alert_port import AlertPort
-from engineering_influence.interfaces.metrics_port import MetricsPort
+from engineering_influence.interfaces.alert_interface import AlertInterface
+from engineering_influence.interfaces.metrics_interface import MetricsInterface
 from engineering_influence.services.interfaces.process_job_interface import ProcessJobInterface
 
 TRACE = "4bf92f3577b34da6a3ce929d0e0e4736"
@@ -44,7 +44,7 @@ class Delivery:
         self.rejected.append(requeue)
 
 
-class Metrics(MetricsPort):
+class Metrics(MetricsInterface):
     def __init__(self) -> None:
         self.seen: dict[str, int] = {}
 
@@ -58,7 +58,7 @@ class Metrics(MetricsPort):
         return {}
 
 
-class Alerts(AlertPort):
+class Alerts(AlertInterface):
     def __init__(self) -> None:
         self.raised: list[tuple[str, str, dict[str, object], str]] = []
 
