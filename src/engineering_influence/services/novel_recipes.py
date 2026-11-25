@@ -40,7 +40,7 @@ class NovelRecipes(StageRecipesInterface):
         StageRecipe("brief", "novel_brief", (), 1_500),
         StageRecipe("story_bible", "novel_story_bible", ("brief",), 4_000),
         StageRecipe("beats", "novel_beats", ("brief", "story_bible"), 3_000),
-        StageRecipe("outline", "novel_outline", ("brief", "story_bible", "beats"), 5_000),
+        StageRecipe("outline", "novel_outline", ("brief", "story_bible", "beats"), 8_192),
         StageRecipe("metadata", "novel_metadata", ("brief", "story_bible", "outline"), 2_500),
     )
 

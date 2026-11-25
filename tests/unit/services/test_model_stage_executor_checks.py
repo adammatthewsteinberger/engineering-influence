@@ -58,7 +58,7 @@ class Checks(StageOutputCheckInterface):
         self.fail = fail
         self.calls: list[tuple[str, str]] = []
 
-    def check(self, stage: str, text: str) -> None:
+    def check(self, stage: str, text: str, target_words: int | None) -> None:
         self.calls.append((stage, text))
         if self.fail:
             raise self.fail

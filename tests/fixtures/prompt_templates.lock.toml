@@ -26,8 +26,8 @@ version = 1
 fingerprint = "7fcfbaa16e3d3d2b7f4bde3d4f69779ad433bdbdd482cc80b7193c9a5c8cd1a5"
 
 [novel_outline]
-version = 1
-fingerprint = "ddeaf38eff9a41cc49fc44a1c26f3e41fde5d81e94d17c4111b09139f03f9f7d"
+version = 2
+fingerprint = "886b6d1bb7aaffd7056dbfb8901694b5644a48c04a79d634785ab33673fc766c"
 
 [novel_story_bible]
 version = 1
@@ -54,8 +54,8 @@ version = 1
 fingerprint = "a5d4aac337b08a56252d013038c9a562dac86c38897f3c22c405fcef7d98b007"
 
 [stage_outline]
-version = 4
-fingerprint = "be5718fd75e583d7556771122330c56eb871d35fb213d721cbbc781435a5262e"
+version = 5
+fingerprint = "0ae1c5a3c61f128f97aad745a07fe91748c33fe6e46c9d6ffb71339a0be441fe"
 
 [stage_positioning]
 version = 1

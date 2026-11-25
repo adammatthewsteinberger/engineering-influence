@@ -30,6 +30,11 @@ Beats:
 Purpose: Explain watering.
 Beats:
 - Drainage
+
+## Chapter 3: Feeding
+Purpose: Explain feeding.
+Beats:
+- Compost
 """
 LISTING = (
     "Title: Herbs Indoors\nSubtitle: A calm guide to windowsill herbs\nDescription:\n"
@@ -65,6 +70,12 @@ Leads to: The road begins.
 Purpose: Ana finds shelter.
 Beats:
 - Ana reaches the inn
+Leads to: The road turns cold.
+
+## Chapter 3: The Snow
+Purpose: Ana crosses the pass.
+Beats:
+- Ana climbs
 """
 CHAPTER = re.compile(r'<untrusted name="chapter">\n(.*?)\n</untrusted>', re.DOTALL)
 NUMBER = re.compile(r"Write chapter (\d+) of")

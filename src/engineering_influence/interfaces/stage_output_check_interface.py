@@ -12,5 +12,9 @@ class StageOutputCheckInterface(ABC):
     __slots__ = ()
 
     @abstractmethod
-    def check(self, stage: str, text: str) -> None:
-        """Return when the answer is usable; raise an ApplicationError saying what is wrong when it is not."""
+    def check(self, stage: str, text: str, target_words: int | None) -> None:
+        """Return when the answer is usable; raise an ApplicationError saying what is wrong when it is not.
+
+        ``target_words`` is the brief's length, so an outline can be checked for the number of chapters it
+        should have; it is None when the brief gives no length.
+        """

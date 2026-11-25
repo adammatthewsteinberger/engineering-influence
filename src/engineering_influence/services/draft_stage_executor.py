@@ -78,7 +78,6 @@ class DraftStageExecutor(StageExecutorInterface):
     DEFAULT_WORDS = 2_500
     MIN_WORDS = 300
     MAX_WORDS = 6_000
-    MAX_CHAPTER_WORDS = 12_000
     MIN_SECTION_WORDS = 150
     MAX_SECTION_WORDS = 3_000
     TOKENS_PER_WORD = 1.6
@@ -341,8 +340,7 @@ class DraftStageExecutor(StageExecutorInterface):
 
     def _words(self, target: int | None, chapters: int) -> int:
         shared = target // chapters if target else self.DEFAULT_WORDS
-        ceiling = self.MAX_CHAPTER_WORDS if self._recipe.sectioned else self.MAX_WORDS
-        return max(self.MIN_WORDS, min(ceiling, shared))
+        return max(self.MIN_WORDS, min(self.MAX_WORDS, shared))
 
     def _section_words(self, chapter_words: int, sections: int) -> int:
         """The words one section should run to: the chapter's share, kept inside one call's reach."""

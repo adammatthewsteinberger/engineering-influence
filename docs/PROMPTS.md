@@ -72,7 +72,7 @@ its shape (`BookMetadata`). Em and en dashes in it are rewritten before it is re
 | `stage_brief` | 2 | Turns a rough idea into a precise brief for a non-fiction book |
 | `stage_positioning` | 1 | Positions a non-fiction book for its reader, from its brief |
 | `stage_research` | 2 | Researches a non-fiction book on the web with search and page-reading tools |
-| `stage_outline` | 4 | Plans the chapters of a non-fiction book from its brief, positioning and research |
+| `stage_outline` | 5 | Plans the chapters of a non-fiction book from its brief, positioning and research |
 | `stage_metadata` | 1 | Writes the store listing of a non-fiction book: title, subtitle, description, keywords and categories |
 | `context_pack` | 3 | The fixed instructions and the labels for the prompt that drafts one section of a chapter |
 | `stage_summary` | 1 | Summarises one drafted chapter so that later chapters can be written to follow it |
@@ -82,7 +82,7 @@ its shape (`BookMetadata`). Em and en dashes in it are rewritten before it is re
 | `novel_brief` | 1 | Turns a rough idea into a precise brief for a novel |
 | `novel_story_bible` | 1 | Writes the story bible, as JSON, that every chapter of a novel must agree with |
 | `novel_beats` | 1 | Plans the beats of a whole novel, in story order, from its brief and story bible |
-| `novel_outline` | 1 | Plans the chapters of a novel from its brief, story bible and beats |
+| `novel_outline` | 2 | Plans the chapters of a novel from its brief, story bible and beats |
 | `novel_metadata` | 1 | Writes the store listing of a novel: title, subtitle, blurb, keywords and categories |
 | `novel_context_pack` | 1 | The fixed instructions and the labels for the prompt that drafts one chapter of a novel |
 | `novel_summary` | 1 | Summarises one drafted chapter of a novel so that later chapters can be written to follow it |
@@ -140,7 +140,7 @@ says it is not a source for a fact.
 
 A model call's journal key contains the prompt version, so a resumed run reuses an answer only for the same
 prompt. The assembler records `template.identifier()` (`context_pack@3`). A stage with skills enabled adds their identity
-(`stage_outline@4+skill_guidance@2:<digest>`), so a skill's text is part of the key too. Editing a template's text and
+(`stage_outline@5+skill_guidance@2:<digest>`), so a skill's text is part of the key too. Editing a template's text and
 keeping its version would make a resumed run replay answers written for the old text, so
 `tests/unit/test_prompt_template_lock.py` compares each shipped template with
 `tests/fixtures/prompt_templates.lock.toml`, which pins its version to a fingerprint of everything the
@@ -157,7 +157,7 @@ A new template needs a file, a lock entry and tests that render it.
 
 ## The outline is a format, not just prose
 
-`stage_outline` (version 4) is read by a program: the stage that drafts chapters walks the outline, so the
+`stage_outline` (version 5) is read by a program: the stage that drafts chapters walks the outline, so the
 template tells the model to write each chapter as
 
 ```
@@ -172,6 +172,10 @@ Leads to: one line connecting it to the next chapter
 
 `OutlineParser` reads that strictly, and a check run when the outline stage finishes refuses an answer it cannot
 read before it is stored (`OUTLINE_INVALID`), so a malformed outline stops the run at the outline rather than after
-drafting has been paid for. Chapters are numbered 1, 2, 3 with no gaps (at most 50). A preamble before the first
+drafting has been paid for. Chapters are numbered 1, 2, 3 with no gaps (at most 50). The template also states
+how many chapters to write: a book with a target length gets one chapter per 3,500 words (between 3 and 30), and
+the same check refuses an outline more than 15% away from that number (`OUTLINE_CHAPTER_COUNT`), before drafting
+starts. A brief with no target has no number, and the model chooses. The outline may run to 8,192 tokens, enough for
+about thirty chapters. A preamble before the first
 heading and a closing paragraph after a blank line are ignored. Because it is a contract, changing the template's
 format means changing the parser too ([ADR 0010](adr/0010-chapters-are-drafted-in-order-in-one-stage.md)).

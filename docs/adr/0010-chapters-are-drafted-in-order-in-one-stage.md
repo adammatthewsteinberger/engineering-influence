@@ -214,5 +214,16 @@ outline (about 36 KB) alone overflowed the window, so drafting stopped at chapte
 - **Summaries may be longer.** The summary call is capped at 1,000 tokens, since reasoning counts against the cap.
 - **The model request timeout is 1,800 seconds**, up from 600, so a long section on a slow laptop is not cut off.
 
-Not yet done: a configurable timeout (it is a constructor default only), and the outline and editing passes, which are the
-next slices of the plan.
+## Amendment (2026-11-25): the outline is sized to the target
+
+- **One rule for the number of chapters.** `ChapterCount` gives one chapter per 3,500 words of the brief's target, rounded and
+  kept between 3 and 30. With no target the model chooses, as before.
+- **The outline is told the number and checked against it.** `stage_outline` (version 5) and `novel_outline` (version 2) state
+  it. The outline check refuses an outline more than 15% away from it, with `OUTLINE_CHAPTER_COUNT`, before any drafting is paid
+  for. The check port now receives the brief's target.
+- **Outlines may run to 8,192 tokens**, up from 4,000 (non-fiction) and 5,000 (novel), enough for about thirty chapters. Thirty
+  chapters that do not fit in one reply are not yet split into batches; a run that hits the cap stops at the outline.
+- **A chapter is at most 6,000 words**, down from 12,000 for sectioned drafts, so each chapter fits one editing call.
+
+Not yet done: a configurable timeout (it is a constructor default only), batching an outline that does not fit one reply, and
+the editing passes, which are the next slices of the plan.
