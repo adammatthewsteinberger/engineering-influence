@@ -143,6 +143,8 @@ def answer(user: str) -> str:
         return NOVEL_OUTLINE if novel else OUTLINE
     if user.startswith("Write the store listing"):
         return NOVEL_LISTING if novel else LISTING
+    if user.startswith("Find the checkable claims"):
+        return "[]"
     if user.startswith("Summarise this chapter"):
         return "Herbs need light and drainage."
     for edit in ("Revise the structure", "Revise the story", "Line-edit", "Copy-edit"):

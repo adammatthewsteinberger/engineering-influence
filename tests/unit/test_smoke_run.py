@@ -48,11 +48,12 @@ def test_every_stage_of_the_plan_advances_and_the_run_completes(tmp_path: Path) 
         "revise_structure",
         "revise_lines",
         "copy_edit",
+        "fact_check",
         "assemble",
         "audit",
         "build",
     ]
-    assert [row.outcome for row in report.rows] == ["advanced"] * 11 + ["completed"]
+    assert [row.outcome for row in report.rows] == ["advanced"] * 12 + ["completed"]
     assert {row.attempts for row in report.rows} == {1}
     assert report.issues == ()
 

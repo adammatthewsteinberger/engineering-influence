@@ -49,7 +49,11 @@ class CostEstimator(CostEstimatorInterface):
     EDIT_INSTRUCTION_TOKENS: ClassVar[int] = 1_500
     # The editing passes of either kind: optional, and priced as one call per chapter.
     EDITING_STAGES: ClassVar[frozenset[str]] = frozenset(
-        (*NonfictionRecipes.REVISION_STAGES, *NovelRecipes.REVISION_STAGES)
+        (
+            *NonfictionRecipes.REVISION_STAGES,
+            NonfictionRecipes.FACT_STAGE,
+            *NovelRecipes.REVISION_STAGES,
+        )
     )
     NO_MODEL: ClassVar[frozenset[str]] = frozenset(
         {

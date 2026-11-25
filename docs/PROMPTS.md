@@ -12,7 +12,7 @@ in `src/engineering_influence/infrastructure/prompt_library/templates/`, one TOM
 is called `templates`, never `prompts`, because the `leak-scan` CI job rejects any path containing
 `prompts/`.
 
-Today twenty-two templates ship, the ten `novel_*` ones among them (see [NOVELS.md](NOVELS.md)). `stage_brief`, `stage_positioning`, `stage_research`, `stage_outline` and `stage_metadata` are the
+Today twenty-five templates ship, the ten `novel_*` ones among them (see [NOVELS.md](NOVELS.md)). `stage_brief`, `stage_positioning`, `stage_research`, `stage_outline` and `stage_metadata` are the
 prompts for five of the non-fiction stages; every blank in them that is filled from outside (the author's idea, and what an earlier stage
 wrote) is declared untrusted. `context_pack` (version 3) is the layout of the prompt that drafts one section of a chapter: its fixed system text and the
 labels the context assembler puts between the parts. **Where each part goes is a trust decision**: the system part
@@ -77,6 +77,9 @@ its shape (`BookMetadata`). Em and en dashes in it are rewritten before it is re
 | `context_pack` | 3 | The fixed instructions and the labels for the prompt that drafts one section of a chapter |
 | `stage_summary` | 1 | Summarises one drafted chapter so that later chapters can be written to follow it |
 | `stage_revise_structure` | 2 | Revises the structure of one non-fiction chapter against the outline and the other chapters |
+| `stage_extract_claims` | 1 | Lists the factual claims in one non-fiction chapter that a reader could check against a source, each with a search query |
+| `stage_check_claim` | 1 | Asks whether one web page states a claim, and for the exact words of the page that do |
+| `stage_soften_claims` | 1 | Softens or removes the sentences of one non-fiction chapter that no source supports, changing nothing else |
 | `stage_revise_lines` | 2 | Line-edits one non-fiction chapter for clarity, rhythm and concision in the book's voice |
 | `stage_copy_edit` | 2 | Copy-edits one non-fiction chapter for spelling, grammar, punctuation and consistency |
 | `novel_brief` | 1 | Turns a rough idea into a precise brief for a novel |
