@@ -1,0 +1,1 @@
+`ei book create` keeps the computer awake for the length of the run: `caffeinate` on macOS and `systemd-inhibit` on Linux, released however the run ends. `--no-keep-awake` turns it off, and a machine without either tool gets a warning. Compatible: one optional flag is added to `book create`.

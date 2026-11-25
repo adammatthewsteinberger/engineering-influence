@@ -1,7 +1,8 @@
 """``ei book create``: the arguments become a brief, the run is made or continued, and the exit status says how it ended."""
 
 import argparse
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterator, Mapping
+from contextlib import contextmanager
 from dataclasses import replace
 from pathlib import Path
 
@@ -9,6 +10,7 @@ import pytest
 
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interactions.cli.book_cli import BookCli
+from engineering_influence.interfaces.keep_awake_interface import KeepAwakeInterface
 from engineering_influence.interfaces.local_book_creator_interface import (
     LocalBookCreatorInterface,
 )
@@ -67,6 +69,18 @@ class Creator(LocalBookCreatorInterface):
         self.closed += 1
 
 
+class Awake(KeepAwakeInterface):
+    """Counts the holds, so a test can tell whether the run was kept awake."""
+
+    def __init__(self) -> None:
+        self.holds = 0
+
+    @contextmanager
+    def hold(self) -> Iterator[None]:
+        self.holds += 1
+        yield
+
+
 class Harness:
     def __init__(
         self,
@@ -75,6 +89,7 @@ class Harness:
         plan: BudgetPlan | None = None,
     ) -> None:
         self.creator = Creator(outcome, plan)
+        self.awake = Awake()
         self.made: list[tuple[Path, Mapping[str, str]]] = []
         self._refuse = refuse
 
@@ -85,10 +100,19 @@ class Harness:
         return self.creator
 
     def run(self, *argv: str) -> int:
-        cli = BookCli(lambda root: None, self.creator_for)  # type: ignore[arg-type, return-value]
+        cli = BookCli(lambda root: None, self.creator_for, self.awake)  # type: ignore[arg-type, return-value]
         parser = argparse.ArgumentParser()
         cli.register(parser.add_subparsers(dest="command", required=True))
         return cli.run(parser.parse_args(["book", "create", *argv]))
+
+
+def test_the_run_is_held_awake_unless_the_author_turns_that_off(tmp_path: Path) -> None:
+    harness = Harness(run_in(RunStatus.COMPLETED))
+    assert harness.run("how to keep bees", *create(tmp_path)) == 0
+    assert harness.awake.holds == 1
+    other = Harness(run_in(RunStatus.COMPLETED))
+    assert other.run("how to keep bees", *create(tmp_path), "--no-keep-awake") == 0
+    assert other.awake.holds == 0
 
 
 def create(tmp_path: Path, *extra: str) -> list[str]:
