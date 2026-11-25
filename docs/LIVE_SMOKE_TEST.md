@@ -101,7 +101,8 @@ In the folder:
 - `smoke-report.json`: the status, the spend against the cap, and each stage's outcome, attempts, cost and seconds.
 - `outline.md`, `metadata.md`, `chapter_NN.md`, `copy_NN.md`: what each stage wrote. Read a draft chapter next to
   its `structure_NN`, `lines_NN` and `copy_NN` versions to judge whether the editing passes helped. The report's
-  `revision-unchanged` issues name chapters an edit changed nothing in or whose edit was not kept.
+  `revision-unchanged` issues name chapters an edit changed nothing in, and its `revision-rejected` issues name
+  chapters whose edit was not kept, with the answer's word count and the bounds it missed.
 - `audit.md` and `audit/`: the book's own audit. A made-up author passes it with warnings about prices.
 - `manuscript/`: the book as a project (`books/<slug>.toml`, `src/chapter_NN.md`).
 - `book/`: the built book: `<slug>.pdf`, `<slug>.epub`, the covers, `listing.md` and `MANIFEST.json`. `build/` holds the

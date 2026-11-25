@@ -354,14 +354,37 @@ def test_an_edit_that_is_blank_or_the_wrong_length_is_not_kept_and_the_chapter_p
     assert report.issues == (
         QualityIssue(
             "revise_structure",
-            "revision-unchanged",
-            "chapter 1 came back from revise_structure unchanged",
+            "revision-rejected",
+            f"chapter 1's answer from revise_structure had {len(answer.split()):,} words, outside the "
+            "34 to 52 the chapter allows, so the chapter was kept as it was",
             blocking=False,
         ),
     )
-    assert "- Chapter 1: The Hive (43 to 43 words, unchanged)" in (
+    assert world.text("revise_structure_rejected_01.md") == f"{len(answer.split())}\n"
+    assert "- Chapter 1: The Hive (43 to 43 words, answer rejected: " in (
         world.text("revise_structure.md") or ""
     )
+    assert "- Chapter 2: The Site (43 to 44 words)" in (world.text("revise_structure.md") or "")
+
+
+def test_a_rejected_answer_is_reported_as_rejected_and_not_as_unchanged() -> None:
+    world = World(STRUCTURE, done("A short essay about the chapter."))
+    codes = [issue.code for issue in world.execute().issues]
+    assert codes == ["revision-rejected"]
+    assert "unchanged" not in (world.text("revise_structure.md") or "")
+
+
+def test_the_rejected_chapters_are_counted_in_the_list_so_a_redelivery_reports_the_same_rejections() -> (
+    None
+):
+    world = World(STRUCTURE, done("too short"), done("also short"))
+    first = world.execute()
+    calls = len(world.loop.calls)
+    assert world.text("revise_structure_rejected_01.md") == "2\n"
+    assert world.text("revise_structure_rejected_02.md") == "2\n"
+    second = world.execute(attempt=2)
+    assert second.issues == first.issues
+    assert len(world.loop.calls) == calls
 
 
 def test_an_edit_that_changed_nothing_is_reported_even_though_it_was_plausible() -> None:

@@ -42,9 +42,11 @@ class RevisionStageExecutor(StageExecutorInterface):
     lines, an essay about the chapter, or nothing. An answer that did not finish stops the stage
     (``STAGE_ANSWER_UNUSABLE``), as in drafting. An answer that did finish but is blank, or whose length in
     words is not within the pass's bounds of the chapter's, is **not stored: the chapter passes through
-    unchanged**, because a retry would replay the same answer. The stage's report says which chapters came back
-    unchanged, as a tolerated issue, worked out from the stored files so it survives a redelivery, and the
-    stage's own artifact, ``<stage>.md``, lists every chapter's length before and after.
+    unchanged**, because a retry would replay the same answer. Each such rejection is a tolerated
+    ``revision-rejected`` issue that gives the answer's length and the bounds it missed, and is recorded in
+    ``<stage>_rejected_NN.md`` for each chapter. A chapter whose answer was plausible but identical to its source is a tolerated
+    ``revision-unchanged`` issue. Both are worked out from the stored files so a redelivery reports the same,
+    and the stage's own artifact, ``<stage>.md``, lists every chapter's length before and after.
 
     **A revision is optional, so a pass that runs out of money does not stop the run.** When a call would pass the
     cap, that chapter and every later one in the pass keep the text they had (it is stored unchanged, so the next pass
@@ -126,7 +128,11 @@ class RevisionStageExecutor(StageExecutorInterface):
                     # An unfinished answer always carries the reasons (see ToolLoopResult).
                     why = "; ".join(f"{i.code}: {i.detail}" for i in outcome.issues)
                     raise self._unusable(chapter.number, why)
-                kept = outcome.text if self._plausible(source, outcome.text) else source
+                plausible = self._plausible(source, outcome.text)
+                if not plausible:
+                    # Recorded before the chapter is stored, so a redelivery reports the same rejection.
+                    await self._reject(run, chapter.number, len(outcome.text.split()))
+                kept = outcome.text if plausible else source
                 await self._store(run, self._name(self._pass.output, chapter.number), kept)
         return await self._report(run, outline, sources, first_skipped)
 
@@ -217,22 +223,26 @@ class RevisionStageExecutor(StageExecutorInterface):
     ) -> StageReport:
         lines = [f"# Revision: {self._pass.stage}", ""]
         issues = []
+        rejected = await self._rejected(run, outline)
         for chapter in outline.chapters:
-            revised = await self._read(run, self._name(self._pass.output, chapter.number)) or ""
-            before, after = len(sources[chapter.number].split()), len(revised.split())
-            unchanged = revised == sources[chapter.number]
-            lines.append(
-                f"- {chapter.heading()} ({before:,} to {after:,} words"
-                + (
-                    ", not revised: out of budget)"
-                    if self._was_skipped(chapter.number, first_skipped)
-                    else ", unchanged)"
-                    if unchanged
-                    else ")"
+            number = chapter.number
+            revised = await self._read(run, self._name(self._pass.output, number)) or ""
+            before, after = len(sources[number].split()), len(revised.split())
+            if self._was_skipped(number, first_skipped):
+                note = ", not revised: out of budget"
+            elif number in rejected:
+                low, high = self._pass.min_ratio * before, self._pass.max_ratio * before
+                note = (
+                    f", answer rejected: {rejected[number]:,} words, outside {low:,.0f} to {high:,.0f}, "
+                    "kept as it was"
                 )
-            )
-            if unchanged and not self._was_skipped(chapter.number, first_skipped):
+                issues.append(self._rejected_issue(run, chapter, rejected[number], low, high))
+            elif revised == sources[number]:
+                note = ", unchanged"
                 issues.append(self._unchanged(run, chapter))
+            else:
+                note = ""
+            lines.append(f"- {chapter.heading()} ({before:,} to {after:,} words{note})")
         if first_skipped is not None:
             issues.append(
                 QualityIssue(
@@ -253,6 +263,32 @@ class RevisionStageExecutor(StageExecutorInterface):
     async def _first_skipped(self, run: BookRun) -> int | None:
         marker = await self._read(run, f"{self._pass.stage}_skipped.md")
         return None if marker is None else int(marker)
+
+    async def _reject(self, run: BookRun, number: int, words: int) -> None:
+        # One file per chapter: run artifacts are written once, so a shared list could not be extended.
+        await self._store(run, self._rejection_name(number), f"{words}\n")
+
+    async def _rejected(self, run: BookRun, outline: Outline) -> dict[int, int]:
+        found = {}
+        for chapter in outline.chapters:
+            text = await self._read(run, self._rejection_name(chapter.number))
+            if text is not None:
+                found[chapter.number] = int(text)
+        return found
+
+    def _rejection_name(self, number: int) -> str:
+        return self._name(f"{self._pass.stage}_rejected", number)
+
+    def _rejected_issue(
+        self, run: BookRun, chapter: ChapterOutline, words: int, low: float, high: float
+    ) -> QualityIssue:
+        return QualityIssue(
+            run.stage,
+            "revision-rejected",
+            f"chapter {chapter.number}'s answer from {run.stage} had {words:,} words, outside the "
+            f"{low:,.0f} to {high:,.0f} the chapter allows, so the chapter was kept as it was",
+            blocking=False,
+        )
 
     @staticmethod
     def _unchanged(run: BookRun, chapter: ChapterOutline) -> QualityIssue:
