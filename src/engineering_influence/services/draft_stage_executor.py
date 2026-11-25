@@ -3,6 +3,7 @@
 
 import asyncio
 from collections.abc import Callable
+from dataclasses import replace
 
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interfaces.artifact_store_interface import ArtifactStoreInterface
@@ -22,6 +23,10 @@ from engineering_influence.models.quality_issue import QualityIssue
 from engineering_influence.models.stage_report import StageReport
 from engineering_influence.models.tool_definition import ToolDefinition
 from engineering_influence.models.tool_loop_result import ToolLoopResult
+from engineering_influence.services.answer_screen import AnswerScreen
+from engineering_influence.services.interfaces.answer_screen_interface import (
+    AnswerScreenInterface,
+)
 from engineering_influence.services.interfaces.context_assembler_interface import (
     ContextAssemblerInterface,
 )
@@ -73,6 +78,11 @@ class DraftStageExecutor(StageExecutorInterface):
         sectioned=True,
     )
     NO_CHECKS = NoDraftChecks()
+    SCREEN = AnswerScreen()
+    REFUSAL_NOTE = (
+        "The book is ordinary non-fiction written for its readers, and the material is lawful. Write the part asked for "
+        "as the next part of the book, with no preface, apology or explanation of why you are writing it."
+    )
     REPORTED_ISSUES = 50
     CONTINUITY = "continuity.md"
     DEFAULT_WORDS = 2_500
@@ -100,6 +110,7 @@ class DraftStageExecutor(StageExecutorInterface):
         tools: ToolRegistryInterface,
         recipe: DraftRecipe = NONFICTION,
         checks: DraftChecksInterface = NO_CHECKS,
+        screen: AnswerScreenInterface = SCREEN,
     ) -> None:
         if context_window < 1 or max_output_tokens < 1:
             raise ValueError("a model has a window and an output limit")
@@ -115,6 +126,7 @@ class DraftStageExecutor(StageExecutorInterface):
         self._tools = tools
         self._recipe = recipe
         self._checks = checks
+        self._screen = screen
 
     async def execute(self, run: BookRun, attempt: int) -> StageReport:
         """Draft the chapters that are not done, then write the index."""
@@ -153,7 +165,7 @@ class DraftStageExecutor(StageExecutorInterface):
             await self._chapter(
                 run, attempt, guard, outline, chapter, texts, words, output_cap, input_cap
             )
-        issues = await self._issues(run, outline, texts)
+        issues = await self._issues(run, outline, texts, words)
         await self._index(run, outline, issues)
         return StageReport(issues=issues[: self.REPORTED_ISSUES])
 
@@ -211,6 +223,7 @@ class DraftStageExecutor(StageExecutorInterface):
                     run, outline, chapter, texts, words, output_cap, input_cap, 1, 1
                 ),
                 f"chapter {chapter.number}",
+                words,
             )
         sections = len(chapter.beats)
         parts = [
@@ -255,6 +268,7 @@ class DraftStageExecutor(StageExecutorInterface):
                 len(chapter.beats),
             ),
             f"chapter {chapter.number} section {section}",
+            self._section_words(words, len(chapter.beats)),
         )
         await self._store(run, name, text)
         return text
@@ -266,11 +280,60 @@ class DraftStageExecutor(StageExecutorInterface):
         guard: SpendGuardInterface,
         request: ModelRequest,
         what: str,
+        asked_words: int,
+    ) -> str:
+        """One answer for a chapter or section, screened: a refusal is asked again in other words, and a
+        section well under its length is asked again for the full length, keeping the longer answer.
+
+        The retries change the prompt, so the journal does not replay the refused or short answer. A second
+        refusal stops the stage with ``DRAFT_REFUSED``; a short answer that stays short is kept, and the
+        report records it as ``DRAFT_SHORT``.
+        """
+        text = await self._answer(run, attempt, guard, request, what)
+        if self._screen.refused(text):
+            text = await self._answer(
+                run, attempt, guard, self._reworded(request, self.REFUSAL_NOTE, "reworded"), what
+            )
+            if self._screen.refused(text):
+                raise ApplicationError(
+                    code="DRAFT_REFUSED",
+                    message=(
+                        f"{self.STAGE}: {what}: the model declined to write it twice; "
+                        "check the brief and the outline for material it will not write"
+                    ),
+                    http_status=502,
+                )
+            return text
+        if self._screen.short(text, asked_words):
+            note = f"Write the part asked for at its full length, about {asked_words} words, not a summary."
+            longer = await self._answer(
+                run, attempt, guard, self._reworded(request, note, "longer"), what
+            )
+            if not self._screen.refused(longer) and len(longer.split()) > len(text.split()):
+                return longer
+        return text
+
+    async def _answer(
+        self,
+        run: BookRun,
+        attempt: int,
+        guard: SpendGuardInterface,
+        request: ModelRequest,
+        what: str,
     ) -> str:
         outcome = await asyncio.to_thread(
             self._loop.run, guard, run.run_id, run.stage, attempt, request
         )
         return self._usable(outcome, what)
+
+    @staticmethod
+    def _reworded(request: ModelRequest, note: str, tag: str) -> ModelRequest:
+        """The same request with a note added after its prompt, under a version that says so."""
+        return replace(
+            request,
+            prompt=f"{request.prompt}\n\n{note}",
+            prompt_version=f"{request.prompt_version}+{tag}",
+        )
 
     def _draft_request(
         self,
@@ -353,7 +416,7 @@ class DraftStageExecutor(StageExecutorInterface):
         return self._stored(run, self._chapter_name(number - 1)) if number > 1 else ""
 
     async def _issues(
-        self, run: BookRun, outline: Outline, texts: dict[str, str]
+        self, run: BookRun, outline: Outline, texts: dict[str, str], words: int
     ) -> tuple[QualityIssue, ...]:
         chapters = tuple(
             [await self._text(run, self._chapter_name(item.number)) for item in outline.chapters]
@@ -362,7 +425,38 @@ class DraftStageExecutor(StageExecutorInterface):
         if found:
             lines = ["# Continuity", ""] + [f"- {item.detail}" for item in found]
             await self._store(run, self.CONTINUITY, "\n".join(lines) + "\n")
-        return found
+        return (*found, *await self._short(run, outline, words))
+
+    async def _short(self, run: BookRun, outline: Outline, words: int) -> tuple[QualityIssue, ...]:
+        """Sections (or chapters) that stayed well under the length asked for, after their retry."""
+        found: list[QualityIssue] = []
+        for chapter in outline.chapters:
+            if self._recipe.sectioned:
+                asked = self._section_words(words, len(chapter.beats))
+                for section in range(1, len(chapter.beats) + 1):
+                    text = await self._text(run, self._section_name(chapter.number, section))
+                    if self._screen.short(text, asked):
+                        found.append(
+                            self._short_issue(
+                                f"chapter {chapter.number} section {section}",
+                                len(text.split()),
+                                asked,
+                            )
+                        )
+            else:
+                text = await self._text(run, self._chapter_name(chapter.number))
+                if self._screen.short(text, words):
+                    found.append(
+                        self._short_issue(f"chapter {chapter.number}", len(text.split()), words)
+                    )
+        return tuple(found)
+
+    def _short_issue(self, where: str, got: int, asked: int) -> QualityIssue:
+        return QualityIssue(
+            stage=self.STAGE,
+            code="DRAFT_SHORT",
+            detail=f"{where} has {got} words where about {asked} were asked",
+        )
 
     async def _index(
         self, run: BookRun, outline: Outline, issues: tuple[QualityIssue, ...]

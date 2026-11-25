@@ -227,3 +227,15 @@ outline (about 36 KB) alone overflowed the window, so drafting stopped at chapte
 
 Not yet done: a configurable timeout (it is a constructor default only), batching an outline that does not fit one reply, and
 the editing passes, which are the next slices of the plan.
+
+## Amendment (2026-11-25): refusals and short sections are caught
+
+- **A refusal is asked again, once, in other words.** `AnswerScreen` reads the first 300 characters of each chapter or section
+  and recognises a model declining ("I can't", "I'm sorry, but", "I must decline"). The retry adds a fixed note to the prompt
+  under a version that says so, so the journal does not replay the refusal. A second refusal stops the stage with
+  `DRAFT_REFUSED`, naming the chapter and section. Nothing is stored for it.
+- **A short section is asked again for its length, once.** A section with under half the words asked for gets a retry that asks
+  for the full length; the longer of the two answers is kept, and a retry that refuses is ignored.
+- **A section that stays short is kept and reported.** The report carries a non-blocking `DRAFT_SHORT` issue naming the chapter,
+  the section and the counts, so the length is visible in the stage report rather than failing the run.
+- **Compatibility.** `DRAFT_REFUSED` is a new error code; `DRAFT_SHORT` is a report issue. Both are additive.
