@@ -252,3 +252,21 @@ the editing passes, which are the next slices of the plan.
   this does not arise.
 - **A rejected part keeps its own text.** The report counts rejected parts (`N of M parts rejected`), and the rejection
   file records that count. Compatible: no error codes or public contracts change.
+
+## Amendment (2026-11-25): novels are sectioned, and edited in three passes
+
+- **A novel's chapter is drafted one beat at a time**, as a non-fiction chapter is (`sectioned`). The instruction says which
+  section and beat to write, and `novel_context_pack` (version 2) tells the model to write the part asked for with no heading:
+  the book adds the chapter's heading.
+- **Three editing passes follow the draft**: `revise_story` (scenes, goals, pacing and beat order, with the story bible,
+  outline and beats), `revise_lines` (sentences, dialogue and point of view, in the brief's voice) and `copy_edit` (spelling
+  and consistency with the bible). The plan has them after `draft`; `assemble` reads the last one.
+- **The revision stages are routed by kind.** The non-fiction and novel passes share stage names (`revise_lines`,
+  `copy_edit`), so the runtime keys each stage by book kind. A novel's passes run behind the content policy.
+- **A novel's voice comes from its brief**, not from `positioning.md`. The revision executor reads the voice from a source the
+  runtime names.
+- **The last novel pass is read against the bible again.** Continuity findings there are non-blocking issues in the stage
+  report; they do not stop the run.
+- **Editing is optional, as for non-fiction**: the cost estimator prices the novel passes as optional, so a run that runs
+  out of money skips them and builds the book from what it has.
+- **Compatibility.** No error codes change. The prompt versions `novel_context_pack` 2 and three new templates are additive.

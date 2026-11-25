@@ -8,6 +8,7 @@ from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.draft_recipe import DraftRecipe
 from engineering_influence.models.stage_plan import StagePlan
 from engineering_influence.models.stage_recipe import StageRecipe
+from engineering_influence.services.novel_revision_passes import NovelRevisionPasses
 
 
 class NovelRecipes(StageRecipesInterface):
@@ -16,12 +17,14 @@ class NovelRecipes(StageRecipesInterface):
     A novel is not argued from sources, so there is no research stage and no tool. The story bible is JSON that
     ``StoryBibleParser`` reads and the chapter outline is the same markdown ``OutlineParser`` reads, so the stages
     after them (drafting, which checks each chapter against the bible) walk the same chapters a non-fiction book has.
-    The metadata stage writes the store listing in the format ``MetadataParser`` reads, so ``assemble`` can write the
-    book's config. After the draft the plan assembles, audits and builds the book. **There are no editing passes for a
-    novel yet**: what the draft stage wrote is what is built, so the book is as good as its draft.
+    The draft writes each chapter one beat at a time (``sectioned``), so a long chapter is not one reply. After the draft
+    the three editing passes (story, lines, copy; see ``NovelRevisionPasses``) revise every chapter, and the plan then
+    assembles, audits and builds the book. The metadata stage writes the store listing in the format ``MetadataParser``
+    reads, so ``assemble`` can write the book's config.
     """
 
     DRAFT_STAGE = "draft"
+    REVISION_STAGES = tuple(editing.stage for editing in NovelRevisionPasses.PASSES)
     ASSEMBLE_STAGE = "assemble"
     AUDIT_STAGE = "audit"
     BUILD_STAGE = "build"
@@ -31,10 +34,11 @@ class NovelRecipes(StageRecipesInterface):
         (("The chapter titles", "outline"), ("The beats of the whole novel", "beats")),
         "novel_context_pack",
         "novel_summary",
-        "Write chapter {number} of {count} now, following the beats above, in about {words} words. "
-        "Begin with the chapter's heading line. Keep to the story bible's names, ages, places and order "
-        "of events. Content limits: violence {violence}, heat {heat}; never go above them, and not given "
-        "means mild violence and sweet heat.",
+        "Write section {section} of {sections} of chapter {number} of {count} now, following beat {section} "
+        "above, in about {words} words. Write only this section, with no heading. Keep to the story bible's "
+        "names, ages, places and order of events. Content limits: violence {violence}, heat {heat}; never go "
+        "above them, and not given means mild violence and sweet heat.",
+        sectioned=True,
     )
     RECIPES: ClassVar[tuple[StageRecipe, ...]] = (
         StageRecipe("brief", "novel_brief", (), 1_500),
@@ -49,6 +53,7 @@ class NovelRecipes(StageRecipesInterface):
         stages = (
             *(recipe.stage for recipe in self.RECIPES),
             self.DRAFT_STAGE,
+            *self.REVISION_STAGES,
             self.ASSEMBLE_STAGE,
             self.AUDIT_STAGE,
             self.BUILD_STAGE,

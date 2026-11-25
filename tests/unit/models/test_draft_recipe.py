@@ -69,10 +69,12 @@ def test_the_novel_recipe_reads_the_bible_and_the_beats_and_carries_the_levels()
     assert (
         value.grounding_text(texts) == "The chapter titles:\nO\n\nThe beats of the whole novel:\nT"
     )
-    sentence = value.instruction_text(3, 12, 2500, "mild", "none")
+    assert value.sectioned
+    sentence = value.instruction_text(3, 12, 2500, "mild", "none", 2, 4)
     assert sentence.startswith(
-        "Write chapter 3 of 12 now, following the beats above, in about 2500 words."
+        "Write section 2 of 4 of chapter 3 of 12 now, following beat 2 above, in about 2500 words."
     )
+    assert "Write only this section, with no heading." in sentence
     assert "violence mild, heat none" in sentence
     assert "Keep to the story bible's names, ages, places and order of events." in sentence
     assert "not given means mild violence and sweet heat." in sentence

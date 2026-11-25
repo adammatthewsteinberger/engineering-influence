@@ -1,8 +1,9 @@
 # Novels
 
-**BLUF:** `--kind novel` writes a novel in nine stages, from a brief to a built book. A novel has no research
+**BLUF:** `--kind novel` writes a novel in twelve stages, from a brief to a built book. A novel has no research
 stage and no built-in tools. Instead it has a story bible, a small set of facts (who, where, when) that every
-chapter is checked against. Novels get no editing passes yet, so a novel is built from its draft as written.
+chapter is checked against. After the draft, three editing passes revise every chapter (story, lines, copy), and the
+book is built from the last of them.
 
 A novel run is a different kind of book from a non-fiction one: it is not argued from sources, so it has no research
 stage and no tools, and it has a story bible that every chapter must agree with. `BookKind.NOVEL` picks it, and the
@@ -27,7 +28,8 @@ runtime dispatches by kind, so a non-fiction run is untouched.
 > **Professor Feynman:** Given it, and then the whole draft is checked against it by a continuity checker that
 > looks for a name, a place, an age or a date that does not match. Here is where the picture thins out: a human
 > script editor would also fix the slip. This one reports it and the run carries on. A repair pass for continuity
-> findings is not built, and neither are editing passes for novels.
+> findings is not built. The editing passes read the chapters again against the bible, and a finding there is reported
+> but does not stop the run.
 >
 > **Daniel:** So the bible prevents most slips, the checker finds the rest, and fixing them is still my job for
 > now.
@@ -46,8 +48,10 @@ runtime dispatches by kind, so a non-fiction run is untouched.
 | `audit` | none | the same publish audits as `ei book audit` (`audit.md`, `audit/`) | a book that fails stops the run |
 | `build` | none | the interior PDF, EPUB, covers, listing and KDP bundle under `book/`, the reports under `build/`, `quality-report.json` and `build.md` | a book that does not pass stops the run (`BUILD_FAILED`) |
 
-The plan is nine stages, from the brief to a built book. Only the editing passes (revision and copy editing) are not
-built, so a novel is built from the draft as written.
+The plan is twelve stages, from the brief to a built book. The draft writes each chapter one beat at a time. Then three
+editing passes revise every chapter: `revise_story` (scenes, goals, pacing, with the bible, the outline and the beats),
+`revise_lines` (sentences, dialogue and point of view, in the brief's voice) and `copy_edit` (spelling and consistency
+with the bible). Each pass may keep a chapter's own text when its answer is implausible, and a novel keeps its dashes.
 
 ## Drafting
 
@@ -89,8 +93,7 @@ outside the bible's range, and events mentioned out of order. The draft stage ca
 
 A novel run ends in a built book, as a non-fiction run does. The `metadata` stage comes right after the outline, so `assemble` can write the config
 from the listing and the draft's own chapters. A novel keeps its em and en dashes (only non-fiction refuses them), and its
-trim size is the brief's (`trim_size`, for example `5.5x8.5`). **There are no editing passes for a novel yet**: the book is built
-from the draft as written, so it is only as good as the draft. The build needs the TeX worker image
+trim size is the brief's (`trim_size`, for example `5.5x8.5`). The book is built from the last editing pass. The build needs the TeX worker image
 ([WORKER_IMAGE.md](WORKER_IMAGE.md)); `EI_BUILD_STRICT_RELEASE` works as for non-fiction ([BOOKS_AND_KDP.md](BOOKS_AND_KDP.md)).
 
 `ei book create --kind novel "<idea>" --budget-usd N --out DIR --profile FILE` makes a novel the same way it makes a
@@ -102,7 +105,7 @@ pinned in `tests/fixtures/prompt_templates.lock.toml`.
 
 ## What is not built or not checked
 
-- Revision and copy editing for a novel; a repair pass that asks the model to fix a continuity finding.
+- A repair pass that asks the model to fix a continuity finding.
 - A paid check of the novel plan against a real model.
 - Nothing here has been run against a real model. The prompts are tested against scripted servers, and how well a
   20-billion-parameter local model writes a story bible as valid JSON is not known: if it often does not, the run stops
