@@ -48,7 +48,7 @@ test = [
   "requests>=2.32,<3",
   "uvicorn>=0.34,<1",
   "pdfplumber>=0.11,<1",
-  "pypdf>=4.2,<7",
+  "pypdf>=4.2,<8",
   "reportlab>=4.2,<6",
   "defusedxml>=0.7,<1",
 ]
@@ -60,7 +60,7 @@ publishing = [
   "defusedxml>=0.7,<1",
   "markdown-it-py>=3.0,<5",
   "pdfplumber>=0.11,<1",
-  "pypdf>=4.2,<7",
+  "pypdf>=4.2,<8",
   "numpy>=1.26,<3",
   "Pillow>=13.0,<14",
 ]
