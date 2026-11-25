@@ -4,6 +4,7 @@
   "TRUNCATED",
   "budget-exceeded",
   "retries-exhausted",
+  "revision-rejected",
   "revision-skipped-budget",
   "revision-unchanged",
   "stage-failed"
