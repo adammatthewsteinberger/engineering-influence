@@ -1,1 +1,0 @@
-`ei acp` now implements `session/load`: a client that reconnects can load a session it started, and see where its run stands. Sessions are stored in the database, so this works from a new `ei acp` process. This needs migration `0002`; run `ei db upgrade` first. See [INTERACTIONS.md](docs/INTERACTIONS.md#agent-client-protocol).

@@ -199,7 +199,7 @@ Stop with `sh examples/down.sh` (keep the data) or `sh examples/down.sh --volume
 git clone https://github.com/adammatthewsteinberger/engineering-influence
 cd engineering-influence
 uv sync --extra test --extra runtime --extra api --extra dev --extra publishing
-uv run ei --version        # engineering-influence 0.1.0a2
+uv run ei --version        # engineering-influence 1.0.0
 ```
 
 The gates a change must pass are in [CONTRIBUTING.md](../CONTRIBUTING.md) and [TESTING.md](TESTING.md).
