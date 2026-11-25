@@ -1,1 +1,0 @@
-The local SearXNG in `examples/searxng/` is now pinned by image digest instead of `latest`: the build it was tested with by hand on 2026-11-21 (the container went healthy, the adapter searched against it, and a default instance gave the expected 403 without `json`). It no longer updates itself; the docs say how to move the digest. A test keeps it pinned.

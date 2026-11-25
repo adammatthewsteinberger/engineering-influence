@@ -844,7 +844,7 @@
         },
         {
           "choices": null,
-          "default": "0.1.0a2",
+          "default": "1.0.0",
           "dest": "release",
           "flags": [
             "--release"

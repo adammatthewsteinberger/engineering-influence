@@ -1,1 +1,0 @@
-The "Status: alpha, and honest about it" notice is removed from the top of the README, and the matching alpha and never-run-against-a-live-model sentences are removed from `llms.txt` and `llms-full.txt`. The README's Limitations section and the per-feature status paragraphs on the technical pages are unchanged.

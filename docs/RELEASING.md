@@ -3,7 +3,7 @@
 **BLUF:** A release is a merge to `main`; a development build is a merge to `develop`. A merge to `main` creates
 the tag and a public GitHub release straight away. Uploading to PyPI, TestPyPI or GHCR happens only when its
 repository variable is `true`, and it waits for a person only if you gave that environment required reviewers. The
-five upload jobs have never run against a real index or registry, so nothing is on PyPI or GHCR yet.
+two TestPyPI upload jobs have run for real; the PyPI, SDK-on-PyPI and image jobs have not, so nothing is on PyPI or GHCR yet.
 
 Publishing is driven by the branch a commit lands on, and a person approves every upload.
 
@@ -186,8 +186,8 @@ base image `python:3.13-slim` is a tag, not a digest, so two builds of one commi
 
 ```bash
 sha256sum -c SHA256SUMS
-gh attestation verify engineering_influence-0.1.0-py3-none-any.whl --repo adammatthewsteinberger/engineering-influence
-gh attestation verify oci://ghcr.io/adammatthewsteinberger/engineering-influence:0.1.0 --repo adammatthewsteinberger/engineering-influence
+gh attestation verify engineering_influence-1.0.0-py3-none-any.whl --repo adammatthewsteinberger/engineering-influence
+gh attestation verify oci://ghcr.io/adammatthewsteinberger/engineering-influence:1.0.0 --repo adammatthewsteinberger/engineering-influence
 ```
 
 ## Keeping the pipeline current
@@ -198,7 +198,7 @@ CI runs `actionlint` and `zizmor` (medium severity and above) on every workflow.
 
 ## What has not been exercised
 
-- The five upload jobs (`testpypi`, `testpypi-sdk`, `pypi`, `pypi-sdk`, `images`) have never run against a real index or registry: they need the trusted publishers and the variables described above.
+- Three of the five upload jobs have never run against a real index or registry: `pypi`, `pypi-sdk` and `images`. They need the trusted publishers, the environments and the variables described above. `testpypi` and `testpypi-sdk` have uploaded development builds.
 - The `github-release` job has not run in its new form, which creates the tag itself instead of reading one.
 - The guard is tested against its own script (`tests/e2e/test_release_guard.py`), and the development-build staging step against the real step (`tests/e2e/test_dev_build_stage.py`).
   The upload jobs are tested only by their shape.
