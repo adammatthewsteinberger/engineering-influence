@@ -20,6 +20,7 @@ from engineering_influence.models.quality_issue import QualityIssue
 from engineering_influence.models.revision_pass import RevisionPass
 from engineering_influence.models.stage_report import StageReport
 from engineering_influence.models.tool_definition import ToolDefinition
+from engineering_influence.models.tool_loop_result import ToolLoopResult
 from engineering_influence.services.interfaces.outline_parser_interface import (
     OutlineParserInterface,
 )
@@ -42,7 +43,10 @@ class RevisionStageExecutor(StageExecutorInterface):
     lines, an essay about the chapter, or nothing. An answer that did not finish stops the stage
     (``STAGE_ANSWER_UNUSABLE``), as in drafting. An answer that did finish but is blank, or whose length in
     words is not within the pass's bounds of the chapter's, is **not stored: the chapter passes through
-    unchanged**, because a retry would replay the same answer. Each such rejection is a tolerated
+    unchanged**. The prompt says how long the chapter is and what range to stay in, because a model asked to edit a
+    chapter in one call otherwise tends to summarise it. An answer that is still rejected is asked for once more, with
+    its length and the range in the prompt, which makes it a different request and so not a replay of the first; if that
+    one does not finish, the first answer's rejection stands. Each such rejection is a tolerated
     ``revision-rejected`` issue that gives the answer's length and the bounds it missed, and is recorded in
     ``<stage>_rejected_NN.md`` for each chapter. A chapter whose answer was plausible but identical to its source is a tolerated
     ``revision-unchanged`` issue. Both are worked out from the stored files so a redelivery reports the same,
@@ -112,12 +116,20 @@ class RevisionStageExecutor(StageExecutorInterface):
                     "summaries": self._others(summaries, chapter.number),
                     "beats": chapter.render(),
                     "chapter": source,
+                    **self._length(source),
                 }
                 request = self._request(run, source, values)
                 try:
-                    outcome = await asyncio.to_thread(
-                        self._loop.run, guard, run.run_id, run.stage, attempt, request
-                    )
+                    outcome = await self._ask(guard, run, attempt, request)
+                    if outcome.complete and not self._plausible(source, outcome.text):
+                        # What was wrong goes in the prompt, so this is a new request and not a replay of the first.
+                        again = await self._ask(
+                            guard,
+                            run,
+                            attempt,
+                            self._request(run, source, values, len(outcome.text.split())),
+                        )
+                        outcome = again if again.complete else outcome
                 except SpendConsentNeededError:
                     # Recorded first, so a redelivery after this knows where the pass stopped and reports the same list.
                     first_skipped = chapter.number
@@ -172,11 +184,30 @@ class RevisionStageExecutor(StageExecutorInterface):
     def _others(summaries: dict[int, str], number: int) -> str:
         return "\n".join(f"Chapter {n}: {text}" for n, text in summaries.items() if n != number)
 
-    def _request(self, run: BookRun, source: str, values: dict[str, str]) -> ModelRequest:
+    async def _ask(
+        self, guard: SpendGuardInterface, run: BookRun, attempt: int, request: ModelRequest
+    ) -> ToolLoopResult:
+        return await asyncio.to_thread(
+            self._loop.run, guard, run.run_id, run.stage, attempt, request
+        )
+
+    def _length(self, source: str) -> dict[str, str]:
+        """The chapter's length and the range the model is asked to stay in, halfway to each bound the pass enforces."""
+        words = len(source.split())
+        floor = round(words * (1 + self._pass.min_ratio) / 2)
+        ceiling = round(words * (1 + self._pass.max_ratio) / 2)
+        return {"words": f"{words:,}", "floor": f"{floor:,}", "ceiling": f"{ceiling:,}"}
+
+    def _request(
+        self, run: BookRun, source: str, values: dict[str, str], rejected: int | None = None
+    ) -> ModelRequest:
         template = self._prompts.get(self._pass.template)
         guidance = self._guidance.for_stage(run.stage)
         system = template.render("system")
         prompt = template.render("user", {name: values[name] for name in self._pass.blanks})
+        if rejected is not None:
+            retry = {name: values[name] for name in ("words", "floor", "ceiling")}
+            prompt = f"{prompt}\n\n{template.render('retry', {'answer': f'{rejected:,}', **retry})}"
         version = template.identifier()
         if not guidance.empty():
             prompt = f"{prompt}\n\n{guidance.text}"

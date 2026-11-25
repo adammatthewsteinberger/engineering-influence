@@ -1,6 +1,6 @@
 # Prompt for one non-fiction revision pass. Change a word and the version must go up (docs/PROMPTS.md).
 name = "stage_revise_structure"
-version = 1
+version = 2
 description = "Revises the structure of one non-fiction chapter against the outline and the other chapters."
 untrusted = ["outline", "summaries", "beats", "chapter"]
 
@@ -18,4 +18,7 @@ This chapter's plan:
 {{beats}}
 
 The chapter:
-{{chapter}}"""
+{{chapter}}
+
+Length: the chapter is {{words}} words. Your answer should be about as long: no fewer than {{floor}} words and no more than {{ceiling}}. Keep every section, table, checklist and example. You are reordering and tightening, not summarising."""
+retry = "Your last answer had {{answer}} words and was discarded, because the chapter has {{words}}. Return the whole chapter again, with no fewer than {{floor}} words and no more than {{ceiling}}: keep every section, table, checklist and example, and only reorder and tighten."

@@ -1,6 +1,6 @@
 # Prompt for one non-fiction revision pass. Change a word and the version must go up (docs/PROMPTS.md).
 name = "stage_revise_lines"
-version = 1
+version = 2
 description = "Line-edits one non-fiction chapter for clarity, rhythm and concision in the book's voice."
 untrusted = ["voice", "chapter"]
 
@@ -12,4 +12,7 @@ The voice of the book:
 {{voice}}
 
 The chapter:
-{{chapter}}"""
+{{chapter}}
+
+Length: the chapter is {{words}} words. Your answer should be about as long: no fewer than {{floor}} words and no more than {{ceiling}}. Keep every section, table, checklist and example. You are tightening sentences, not summarising."""
+retry = "Your last answer had {{answer}} words and was discarded, because the chapter has {{words}}. Return the whole chapter again, with no fewer than {{floor}} words and no more than {{ceiling}}: keep every section, table, checklist and example, and only tighten sentences."

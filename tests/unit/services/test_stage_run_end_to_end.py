@@ -374,12 +374,12 @@ def test_each_stage_is_asked_with_what_the_stages_before_it_wrote() -> None:
         "stage_summary@1",
         "context_pack@2",
         "stage_summary@1",
-        "stage_revise_structure@1",
-        "stage_revise_structure@1",
-        "stage_revise_lines@1",
-        "stage_revise_lines@1",
-        "stage_copy_edit@1",
-        "stage_copy_edit@1",
+        "stage_revise_structure@2",
+        "stage_revise_structure@2",
+        "stage_revise_lines@2",
+        "stage_revise_lines@2",
+        "stage_copy_edit@2",
+        "stage_copy_edit@2",
     ]
     assert [len(r.transcript) for r in (searching, reading, research)] == [0, 1, 2]
     assert [t.name for t in searching.tools] == ["web_search", "fetch_url"]

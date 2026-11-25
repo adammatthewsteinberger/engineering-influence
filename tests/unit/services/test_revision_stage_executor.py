@@ -257,7 +257,9 @@ def test_the_structure_pass_is_given_the_outline_what_the_others_say_this_chapte
     world = World()
     world.execute()
     request = world.loop.calls[1][4]
-    assert request.prompt_version == "stage_revise_structure@1"
+    assert request.prompt_version == "stage_revise_structure@2"
+    assert "Length: the chapter is 43 words." in request.prompt
+    assert "no fewer than 39 words and no more than 47" in request.prompt
     assert "## Chapter 3: The Suit" in request.prompt
     assert "Chapter 1: Colonies work as one." in request.prompt
     assert "Chapter 3: Wear a veil." in request.prompt
@@ -306,7 +308,7 @@ def test_skills_ride_the_prompt_and_name_themselves_in_the_version() -> None:
     world.execute()
     request = world.loop.calls[0][4]
     assert request.prompt.endswith("\n\nADVICE: be kind")
-    assert request.prompt_version == "stage_revise_structure@1+skill_guidance@1:abc"
+    assert request.prompt_version == "stage_revise_structure@2+skill_guidance@1:abc"
 
 
 def test_a_chapter_that_is_done_is_not_revised_again_and_the_rest_are() -> None:
@@ -330,6 +332,7 @@ def test_the_length_bounds_are_exact_for_each_pass(
         world = World(
             editing,
             done(answer),
+            done(answer),
             stored={
                 "outline.md": OUTLINE.split("\n\n")[0],
                 "positioning.md": "p",
@@ -347,8 +350,9 @@ def test_the_length_bounds_are_exact_for_each_pass(
 def test_an_edit_that_is_blank_or_the_wrong_length_is_not_kept_and_the_chapter_passes_through(
     answer: str,
 ) -> None:
-    world = World(STRUCTURE, done(answer))
+    world = World(STRUCTURE, done(answer), done(answer))
     report = world.execute()
+    assert len(world.loop.calls) == 4  # the first chapter was asked for twice
     assert world.out(1) == SOURCES[1]
     assert world.out(2) == SOURCES[2] + " edited"
     assert report.issues == (
@@ -368,7 +372,11 @@ def test_an_edit_that_is_blank_or_the_wrong_length_is_not_kept_and_the_chapter_p
 
 
 def test_a_rejected_answer_is_reported_as_rejected_and_not_as_unchanged() -> None:
-    world = World(STRUCTURE, done("A short essay about the chapter."))
+    world = World(
+        STRUCTURE,
+        done("A short essay about the chapter."),
+        done("A short essay about the chapter."),
+    )
     codes = [issue.code for issue in world.execute().issues]
     assert codes == ["revision-rejected"]
     assert "unchanged" not in (world.text("revise_structure.md") or "")
@@ -377,7 +385,9 @@ def test_a_rejected_answer_is_reported_as_rejected_and_not_as_unchanged() -> Non
 def test_the_rejected_chapters_are_counted_in_the_list_so_a_redelivery_reports_the_same_rejections() -> (
     None
 ):
-    world = World(STRUCTURE, done("too short"), done("also short"))
+    world = World(
+        STRUCTURE, done("too short"), done("too short"), done("also short"), done("also short")
+    )
     first = world.execute()
     calls = len(world.loop.calls)
     assert world.text("revise_structure_rejected_01.md") == "2\n"
@@ -395,7 +405,7 @@ def test_an_edit_that_changed_nothing_is_reported_even_though_it_was_plausible()
 
 
 def test_a_redelivered_stage_reports_the_same_unchanged_chapters_without_calling_again() -> None:
-    world = World(STRUCTURE, done("too short"))
+    world = World(STRUCTURE, done("too short"), done("too short"))
     first = world.execute()
     calls = len(world.loop.calls)
     assert world.execute().issues == first.issues
@@ -502,3 +512,53 @@ def test_guidance_that_asks_for_a_tool_nobody_registered_stops_the_stage_before_
     error = world.refused()
     assert (error.code, error.http_status) == ("STAGE_TOOL_UNKNOWN", 500)
     assert world.loop.calls == []
+
+
+def test_a_rejected_answer_is_asked_for_once_more_with_its_length_and_the_range_in_the_prompt() -> (
+    None
+):
+    world = World(STRUCTURE, done("too short"))
+    report = world.execute()
+    first, second = world.loop.calls[0][4], world.loop.calls[1][4]
+    assert second.prompt.startswith(first.prompt)
+    assert second.prompt != first.prompt
+    assert second.prompt.endswith(
+        "Your last answer had 2 words and was discarded, because the chapter has 43. Return the whole chapter again, "
+        "with no fewer than 39 words and no more than 47: keep every section, table, checklist and example, and only "
+        "reorder and tighten."
+    )
+    assert world.out(1) == SOURCES[1] + " edited"  # the second answer was plausible, so it is kept
+    assert report.issues == ()
+    assert len(world.loop.calls) == 4
+    assert world.text("revise_structure_rejected_01.md") is None
+
+
+def test_an_answer_that_is_plausible_the_first_time_is_not_asked_for_again() -> None:
+    world = World()
+    world.execute()
+    assert len(world.loop.calls) == 3
+
+
+def test_a_second_answer_that_is_also_rejected_is_the_one_reported() -> None:
+    world = World(STRUCTURE, done("a b c"), done("a b c d"))
+    report = world.execute()
+    assert world.out(1) == SOURCES[1]
+    assert world.text("revise_structure_rejected_01.md") == "4\n"
+    assert [issue.code for issue in report.issues] == ["revision-rejected"]
+    assert "had 4 words" in report.issues[0].detail
+
+
+def test_a_second_answer_that_did_not_finish_leaves_the_first_ones_rejection_standing() -> None:
+    world = World(STRUCTURE, done("a b c"), cut())
+    report = world.execute()
+    assert world.out(1) == SOURCES[1]
+    assert world.text("revise_structure_rejected_01.md") == "3\n"
+    assert [issue.code for issue in report.issues] == ["revision-rejected"]
+
+
+def test_a_second_ask_that_runs_out_of_money_skips_the_chapter_like_any_other_call() -> None:
+    world = World(STRUCTURE, done("a b c"), out_of_money())
+    report = world.execute()
+    assert [world.out(n) for n in (1, 2, 3)] == [SOURCES[n] for n in (1, 2, 3)]
+    assert [issue.code for issue in report.issues] == ["revision-skipped-budget"]
+    assert len(world.loop.calls) == 2

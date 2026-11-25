@@ -1,6 +1,6 @@
 # Prompt for one non-fiction revision pass. Change a word and the version must go up (docs/PROMPTS.md).
 name = "stage_copy_edit"
-version = 1
+version = 2
 description = "Copy-edits one non-fiction chapter for spelling, grammar, punctuation and consistency."
 untrusted = ["chapter"]
 
@@ -10,3 +10,4 @@ user = """Copy-edit this chapter.
 
 The chapter:
 {{chapter}}"""
+retry = "Your last answer had {{answer}} words and was discarded, because the chapter has {{words}}. Return the whole chapter again, with no fewer than {{floor}} words and no more than {{ceiling}}: keep every section, table, checklist and example, and only correct errors."
