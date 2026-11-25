@@ -15,6 +15,7 @@ from engineering_influence.services.interfaces.cost_estimator_interface import (
     CostEstimatorInterface,
 )
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
+from engineering_influence.services.novel_recipes import NovelRecipes
 
 
 class CostEstimator(CostEstimatorInterface):
@@ -46,6 +47,10 @@ class CostEstimator(CostEstimatorInterface):
     CONTEXT_PER_CHAPTER_TOKENS: ClassVar[int] = 200
     SUMMARY_OUTPUT_TOKENS: ClassVar[int] = 250
     EDIT_INSTRUCTION_TOKENS: ClassVar[int] = 1_500
+    # The editing passes of either kind: optional, and priced as one call per chapter.
+    EDITING_STAGES: ClassVar[frozenset[str]] = frozenset(
+        (*NonfictionRecipes.REVISION_STAGES, *NovelRecipes.REVISION_STAGES)
+    )
     NO_MODEL: ClassVar[frozenset[str]] = frozenset(
         {
             NonfictionRecipes.ASSEMBLE_STAGE,
@@ -75,7 +80,7 @@ class CostEstimator(CostEstimatorInterface):
         stages = []
         for stage in plan.stages:
             cost = self._stage(brief.kind, stage, chapters, chapter_tokens)
-            stages.append((stage, cost, stage not in NonfictionRecipes.REVISION_STAGES))
+            stages.append((stage, cost, stage not in self.EDITING_STAGES))
         return CostEstimate(tuple(stages))
 
     def _stage(self, kind: BookKind, stage: str, chapters: int, chapter_tokens: int) -> int:
@@ -90,7 +95,7 @@ class CostEstimator(CostEstimatorInterface):
                 + self._call(chapter_tokens, self.SUMMARY_OUTPUT_TOKENS)
                 for number in range(chapters)
             )
-        if stage in NonfictionRecipes.REVISION_STAGES:
+        if stage in self.EDITING_STAGES:
             return chapters * self._call(
                 chapter_tokens + self.EDIT_INSTRUCTION_TOKENS, chapter_tokens
             )

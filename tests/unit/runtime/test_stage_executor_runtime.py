@@ -347,7 +347,7 @@ def test_a_novel_is_assembled_from_its_draft_and_keeps_the_dashes_its_prose_has(
         store.put("run-1", "metadata.md", LISTING.encode())
         store.put(
             "run-1",
-            "chapter_01.md",
+            "copy_01.md",
             "# Chapter 1: The Road\n\n\u201cWait\u2014\u201d she said.".encode(),
         )
         asyncio.run(rt.build(store, InMemoryJournal()).execute(run, 1))
@@ -749,9 +749,7 @@ def test_a_novel_draft_goes_to_the_novel_drafter_and_records_continuity_findings
             rt.build(store, InMemoryJournal()).execute(novel_run("draft", violence="mild"), 1)
         )
         rt.close()
-    assert (store.get("run-1", "chapter_01.md") or b"").startswith(
-        b"Katharine waited in the car park."
-    )
+    assert b"Katharine waited in the car park." in (store.get("run-1", "chapter_01.md") or b"")
     assert [item.code for item in report.issues] == ["CONTINUITY_NAME"]
     assert not report.issues[0].blocking
     first = json.dumps(seen.seen[0][2])

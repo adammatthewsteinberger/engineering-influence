@@ -1,0 +1,1 @@
+A novel is drafted one beat at a time and then edited in three passes: story, lines and copy, each in its own voice and bound to the story bible, with dashes kept. The book is built from the last pass, and continuity is checked again on the edited text. Compatible: new prompt templates and a new prompt version for the novel's context pack; no error codes change.

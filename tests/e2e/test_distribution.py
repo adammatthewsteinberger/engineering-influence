@@ -316,8 +316,9 @@ def test_the_prompt_templates_are_installed_and_load_without_any_extra(
     )
 
     assert result.stdout.strip() == (
-        "['context_pack', 'eval_judge', 'novel_beats', 'novel_brief', 'novel_context_pack', 'novel_metadata', 'novel_outline', "
-        "'novel_story_bible', 'novel_summary', 'skill_guidance', 'stage_brief', 'stage_copy_edit', "
+        "['context_pack', 'eval_judge', 'novel_beats', 'novel_brief', 'novel_context_pack', 'novel_copy_edit', "
+        "'novel_metadata', 'novel_outline', 'novel_revise_lines', 'novel_revise_story', 'novel_story_bible', "
+        "'novel_summary', 'skill_guidance', 'stage_brief', 'stage_copy_edit', "
         "'stage_metadata', "
         "'stage_outline', 'stage_positioning', 'stage_research', 'stage_revise_lines', "
         "'stage_revise_structure', 'stage_summary'] context_pack@3"

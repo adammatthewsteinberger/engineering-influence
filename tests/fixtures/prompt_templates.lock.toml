@@ -18,8 +18,12 @@ version = 1
 fingerprint = "1467a7838d0bd3ba6b4ab29472c2d332ed8b77eac715a4916d7505a256a24397"
 
 [novel_context_pack]
+version = 2
+fingerprint = "d18904b880aabfdbf98c5eff6f7a13f9bd864e6c39648f0c93ee3a1cc7267e5b"
+
+[novel_copy_edit]
 version = 1
-fingerprint = "9c52e5ff3c5a73975bb4acc3fa575e61fb787d2be55c650f7a4beffbea1b87f5"
+fingerprint = "c34e02aca1e1efdc34e245182837c51cfb7d48413cdba23032ec21edb88c8685"
 
 [novel_metadata]
 version = 1
@@ -28,6 +32,14 @@ fingerprint = "7fcfbaa16e3d3d2b7f4bde3d4f69779ad433bdbdd482cc80b7193c9a5c8cd1a5"
 [novel_outline]
 version = 2
 fingerprint = "886b6d1bb7aaffd7056dbfb8901694b5644a48c04a79d634785ab33673fc766c"
+
+[novel_revise_lines]
+version = 1
+fingerprint = "d5ec52dad765847debe71cfdf9ff301ac27458bd411468d2b1fc5bf1c505084f"
+
+[novel_revise_story]
+version = 1
+fingerprint = "26b612ea2c34346525d4f6f62019619809903323d9dc910b128ece566a2c61a7"
 
 [novel_story_bible]
 version = 1

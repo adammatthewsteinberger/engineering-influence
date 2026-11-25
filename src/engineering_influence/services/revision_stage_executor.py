@@ -7,6 +7,7 @@ from collections.abc import Callable
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.errors.spend_consent_needed_error import SpendConsentNeededError
 from engineering_influence.interfaces.artifact_store_interface import ArtifactStoreInterface
+from engineering_influence.interfaces.draft_checks_interface import DraftChecksInterface
 from engineering_influence.interfaces.prompt_library_interface import PromptLibraryInterface
 from engineering_influence.interfaces.stage_executor_interface import StageExecutorInterface
 from engineering_influence.interfaces.stage_guidance_interface import StageGuidanceInterface
@@ -88,10 +89,14 @@ class RevisionStageExecutor(StageExecutorInterface):
         context_window: int,
         max_output_tokens: int,
         tools: ToolRegistryInterface,
+        voice_source: str = "positioning.md",
+        checks: DraftChecksInterface | None = None,
     ) -> None:
         if context_window < 1 or max_output_tokens < 1:
             raise ValueError("a model has a window and an output limit")
         self._pass = revision
+        self._voice_source = voice_source
+        self._checks = checks
         self._artifacts = artifacts
         self._prompts = prompts
         self._outlines = outlines
@@ -104,7 +109,7 @@ class RevisionStageExecutor(StageExecutorInterface):
 
     async def execute(self, run: BookRun, attempt: int) -> StageReport:
         """Revise the chapters that are not done, then write the list."""
-        outline_text, voice = await self._opening(run)
+        outline_text, shared = await self._opening(run)
         outline = self._outlines.parse(outline_text)
         sources = await self._sources(run, outline)
         summaries = await self._summaries(run, outline)
@@ -118,7 +123,7 @@ class RevisionStageExecutor(StageExecutorInterface):
                     await self._store(run, self._name(self._pass.output, chapter.number), source)
                     continue
                 base = {
-                    "voice": voice,
+                    **shared,
                     "outline": outline_text,
                     "summaries": self._others(summaries, chapter.number),
                     "beats": chapter.render(),
@@ -205,13 +210,22 @@ class RevisionStageExecutor(StageExecutorInterface):
         parts.append("\n\n".join(current))
         return tuple(parts)
 
-    async def _opening(self, run: BookRun) -> tuple[str, str]:
-        wanted = ["outline.md"] + (["positioning.md"] if "voice" in self._pass.blanks else [])
+    async def _opening(self, run: BookRun) -> tuple[str, dict[str, str]]:
+        """The outline, and the voice and the story bible when the pass asks for them."""
+        wanted = ["outline.md"]
+        if "voice" in self._pass.blanks:
+            wanted.append(self._voice_source)
+        if "bible" in self._pass.blanks:
+            wanted.append("story_bible.md")
         texts = {name: await self._read(run, name) for name in wanted}
         missing = [name for name, text in texts.items() if text is None]
         if missing:
             raise self._missing(run, missing)
-        return texts["outline.md"] or "", texts.get("positioning.md") or ""
+        shared = {
+            "voice": texts.get(self._voice_source) or "",
+            "bible": texts.get("story_bible.md") or "",
+        }
+        return texts["outline.md"] or "", shared
 
     async def _sources(self, run: BookRun, outline: Outline) -> dict[int, str]:
         texts = {
@@ -312,9 +326,11 @@ class RevisionStageExecutor(StageExecutorInterface):
         lines = [f"# Revision: {self._pass.stage}", ""]
         issues = []
         rejected = await self._rejected(run, outline)
+        revised_texts: list[str] = []
         for chapter in outline.chapters:
             number = chapter.number
             revised = await self._read(run, self._name(self._pass.output, number)) or ""
+            revised_texts.append(revised)
             before, after = len(sources[number].split()), len(revised.split())
             parts = len(self._parts(sources[number]))
             if self._was_skipped(number, first_skipped):
@@ -328,6 +344,10 @@ class RevisionStageExecutor(StageExecutorInterface):
             else:
                 note = ""
             lines.append(f"- {chapter.heading()} ({before:,} to {after:,} words{note})")
+        if self._checks is not None:
+            # The edited chapters are read again against the bible: an edit can rename a character or move an event.
+            bible = await self._read(run, "story_bible.md") or ""
+            issues.extend(self._checks.issues({"story_bible": bible}, tuple(revised_texts)))
         if first_skipped is not None:
             issues.append(
                 QualityIssue(

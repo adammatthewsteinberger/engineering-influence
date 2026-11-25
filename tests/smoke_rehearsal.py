@@ -145,13 +145,16 @@ def answer(user: str) -> str:
         return NOVEL_LISTING if novel else LISTING
     if user.startswith("Summarise this chapter"):
         return "Herbs need light and drainage."
-    for edit in ("Revise the structure", "Line-edit", "Copy-edit"):
+    for edit in ("Revise the structure", "Revise the story", "Line-edit", "Copy-edit"):
         if user.startswith(edit):
             found = CHAPTER.search(user)
             assert found is not None
             return found.group(1) + " Edited."
     if SECTION.search(user) is not None:
-        return " ".join(["Herbs like a bright window."] * 32)
+        line = (
+            "Ana walks the salt road." if "## The novel" in user else "Herbs like a bright window."
+        )
+        return " ".join([line] * 32)
     chapter = NUMBER.search(user)
     assert chapter is not None, user[:80]
     return f"# Chapter {chapter.group(1)}: Title\n\n" + " ".join(

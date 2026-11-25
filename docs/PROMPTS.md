@@ -12,7 +12,7 @@ in `src/engineering_influence/infrastructure/prompt_library/templates/`, one TOM
 is called `templates`, never `prompts`, because the `leak-scan` CI job rejects any path containing
 `prompts/`.
 
-Today nineteen templates ship, the seven `novel_*` ones among them (see [NOVELS.md](NOVELS.md)). `stage_brief`, `stage_positioning`, `stage_research`, `stage_outline` and `stage_metadata` are the
+Today twenty-two templates ship, the ten `novel_*` ones among them (see [NOVELS.md](NOVELS.md)). `stage_brief`, `stage_positioning`, `stage_research`, `stage_outline` and `stage_metadata` are the
 prompts for five of the non-fiction stages; every blank in them that is filled from outside (the author's idea, and what an earlier stage
 wrote) is declared untrusted. `context_pack` (version 3) is the layout of the prompt that drafts one section of a chapter: its fixed system text and the
 labels the context assembler puts between the parts. **Where each part goes is a trust decision**: the system part
@@ -84,8 +84,11 @@ its shape (`BookMetadata`). Em and en dashes in it are rewritten before it is re
 | `novel_beats` | 1 | Plans the beats of a whole novel, in story order, from its brief and story bible |
 | `novel_outline` | 2 | Plans the chapters of a novel from its brief, story bible and beats |
 | `novel_metadata` | 1 | Writes the store listing of a novel: title, subtitle, blurb, keywords and categories |
-| `novel_context_pack` | 1 | The fixed instructions and the labels for the prompt that drafts one chapter of a novel |
+| `novel_context_pack` | 2 | The fixed instructions and the labels for the prompt that drafts one section of a novel's chapter |
 | `novel_summary` | 1 | Summarises one drafted chapter of a novel so that later chapters can be written to follow it |
+| `novel_revise_story` | 1 | Revises the story of one drafted chapter of a novel: scenes, goals, pacing and the order of its beats |
+| `novel_revise_lines` | 1 | Line-edits one drafted chapter of a novel for rhythm, dialogue and point of view, in the book's voice |
+| `novel_copy_edit` | 1 | Copy-edits one drafted chapter of a novel for spelling, grammar and consistency with the story bible |
 | `skill_guidance` | 2 | Frames the installed skills added to the end of a stage's prompt |
 | `eval_judge` | 1 | Scores a finished book on each dimension of the evaluation rubric, with a reason for every score |
 

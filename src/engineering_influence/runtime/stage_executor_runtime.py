@@ -122,6 +122,7 @@ from engineering_influence.services.nonfiction_revision_passes import Nonfiction
 from engineering_influence.services.novel_draft_checks import NovelDraftChecks
 from engineering_influence.services.novel_output_checks import NovelOutputChecks
 from engineering_influence.services.novel_recipes import NovelRecipes
+from engineering_influence.services.novel_revision_passes import NovelRevisionPasses
 from engineering_influence.services.outline_parser import OutlineParser
 from engineering_influence.services.quality_report import QualityReport
 from engineering_influence.services.read_skill_tool import ReadSkillTool
@@ -225,6 +226,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         metadata = MetadataParser(dashes)
         profile = self._author_profile()
         revisions = NonfictionRevisionPasses()
+        novel_revisions = NovelRevisionPasses()
         descriptor = model.describe()
         estimator = CostEstimator(
             descriptor,
@@ -289,27 +291,47 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             ContentPolicy(),
             descriptor,
         )
+        revising: dict[str, dict[BookKind, StageExecutorInterface]] = {}
+        for editing in revisions.passes():
+            revising.setdefault(editing.stage, {})[BookKind.NONFICTION] = RevisionStageExecutor(
+                editing,
+                artifacts,
+                prompts,
+                outlines,
+                loop,
+                guidance,
+                SpendGuard,
+                descriptor.context_window,
+                descriptor.max_output_tokens,
+                tools,
+            )
+        for editing in novel_revisions.passes():
+            # Only the last pass is read against the story bible again: that is the text the book is built from.
+            last = editing.output == novel_revisions.final()
+            revision = RevisionStageExecutor(
+                editing,
+                artifacts,
+                prompts,
+                outlines,
+                loop,
+                guidance,
+                SpendGuard,
+                descriptor.context_window,
+                descriptor.max_output_tokens,
+                tools,
+                voice_source="brief.md",
+                checks=NovelDraftChecks(StoryBibleParser(), ContinuityChecker()) if last else None,
+            )
+            revising.setdefault(editing.stage, {})[BookKind.NOVEL] = ContentPolicyStageExecutor(
+                revision, ContentPolicy(), descriptor
+            )
         return StageExecutorRouter(
             KindStageExecutor({BookKind.NONFICTION: nonfiction, BookKind.NOVEL: novel}),
             {
                 DraftStageExecutor.STAGE: KindStageExecutor(
                     {BookKind.NONFICTION: drafter, BookKind.NOVEL: novel_drafter}
                 ),
-                **{
-                    editing.stage: RevisionStageExecutor(
-                        editing,
-                        artifacts,
-                        prompts,
-                        outlines,
-                        loop,
-                        guidance,
-                        SpendGuard,
-                        descriptor.context_window,
-                        descriptor.max_output_tokens,
-                        tools,
-                    )
-                    for editing in revisions.passes()
-                },
+                **{stage: KindStageExecutor(by_kind) for stage, by_kind in revising.items()},
                 AssembleStageExecutor.STAGE: KindStageExecutor(
                     {
                         BookKind.NONFICTION: AssembleStageExecutor(
@@ -321,8 +343,8 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                             profile,
                             revisions.final(),
                         ),
-                        # A novel has no editing passes yet, so it is assembled from the draft's own chapters,
-                        # and it keeps the dashes its prose has: only non-fiction refuses them.
+                        # A novel is assembled from its last editing pass, and keeps the dashes its prose has:
+                        # only non-fiction refuses them.
                         BookKind.NOVEL: AssembleStageExecutor(
                             artifacts,
                             outlines,
@@ -330,7 +352,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                             ChapterCleaner(VerbatimDashes()),
                             BookConfigWriter(),
                             profile,
-                            "chapter",
+                            novel_revisions.final(),
                         ),
                     }
                 ),

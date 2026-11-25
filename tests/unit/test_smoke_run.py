@@ -67,11 +67,14 @@ def test_a_novel_runs_from_its_brief_to_a_built_book(tmp_path: Path) -> None:
         "outline",
         "metadata",
         "draft",
+        "revise_story",
+        "revise_lines",
+        "copy_edit",
         "assemble",
         "audit",
         "build",
     ]
-    assert [row.outcome for row in report.rows] == ["advanced"] * 8 + ["completed"]
+    assert [row.outcome for row in report.rows] == ["advanced"] * 11 + ["completed"]
     files = report.artifacts
     config = files["manuscript/books/the-salt-road.toml"].decode()
     assert 'kind = "novel"' in config and 'trim_size = "5.5x8.5"' in config
