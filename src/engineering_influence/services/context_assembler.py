@@ -18,7 +18,7 @@ class ContextAssembler(ContextAssemblerInterface):
     """Keep everything that must be there, then spend what is left on history.
 
     The layout comes from the ``context_pack`` prompt template, and its identifier
-    (``context_pack@2``) is the prompt version recorded in the journal.
+    (``context_pack@3``) is the prompt version recorded in the journal.
 
     **Where each part goes is a trust decision.** The ``system`` part is fixed text the product
     wrote and is the same for every call. Everything else came from outside it: the style and
