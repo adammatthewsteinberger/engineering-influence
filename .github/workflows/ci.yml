@@ -135,10 +135,33 @@ jobs:
       # requests that Dependabot opened are exempt from the provenance check only
       # (conventional commits are still checked below). The PR author is used, not the
       # pusher, so a maintainer's follow-up push to the branch does not break the PR.
+      # A release pull request (develop into main) adds everything since the last release, and that includes
+      # squash commits that lost their trailer before the squash message kept it. History is not rewritten, so a
+      # pull request into main is judged from the newest of those commits onward; every other pull request is
+      # judged over its own range, as before. Once main holds the release, its tip is later than this commit and
+      # the range is the pull request's own again.
+      - id: range
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          set -eu
+          baseline=7e80218753c42305318ce6c65c1c52a1da900b3f
+          start="$BASE"
+          if [ "$BASE_REF" = main ] && git merge-base --is-ancestor "$BASE" "$baseline"; then
+            start="$baseline"
+          fi
+          echo "commits=$start..$HEAD" >> "$GITHUB_OUTPUT"
       - if: github.event_name == 'pull_request' && github.event.pull_request.user.login != 'dependabot[bot]'
-        run: uv run vibey-gh provenance-check --commits "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+        env:
+          COMMITS: ${{ steps.range.outputs.commits }}
+        run: uv run vibey-gh provenance-check --commits "$COMMITS"
       - if: github.event_name == 'pull_request'
-        run: uv run vibey-gh conventional-check --commits "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+        env:
+          COMMITS: ${{ steps.range.outputs.commits }}
+        run: uv run vibey-gh conventional-check --commits "$COMMITS"
 
   compose-smoke:
     runs-on: ubuntu-latest
