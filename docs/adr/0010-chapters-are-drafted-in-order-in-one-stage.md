@@ -198,3 +198,21 @@ so a 100,000-word book came out at 15,479 words.
 
 Not yet checked: that a section keeps to its beat, that a refusal is caught, and that a chapter reaches its length. Those
 belong to the refusal and outline-sizing slices (PR 2 and PR 3 of the plan). Nothing here has run against a live model.
+
+## Amendment: fitting a prompt does not use the spend count (2026-11-26)
+
+`ContextAssembler` fitted prompts with the model's `count_tokens`, which for the local model is the UTF-8 byte count:
+a deliberate upper bound for spend reservations, but about four times the real token count of English prose. A 30-chapter
+outline (about 36 KB) alone overflowed the window, so drafting stopped at chapter 1.
+
+- **Fitting uses its own estimate.** `FittingModel` wraps the model for the assembler only: everything is delegated, and
+  the token count is characters divided by three, rounded up. Three characters a token is generous for English prose, so
+  a fitted prompt still fits the window.
+- **Reservation is unchanged.** `CallModel` still reserves with the wrapped model's own count, so spend stays bounded.
+- **Each section sees the chapter titles, not the whole outline.** The grounding labels the list "The chapter titles" and
+  holds one heading a line; the section's own beats come from the chapter's entry, as before. Novels get the same grounding.
+- **Summaries may be longer.** The summary call is capped at 1,000 tokens, since reasoning counts against the cap.
+- **The model request timeout is 1,800 seconds**, up from 600, so a long section on a slow laptop is not cut off.
+
+Not yet done: a configurable timeout (it is a constructor default only), and the outline and editing passes, which are the
+next slices of the plan.

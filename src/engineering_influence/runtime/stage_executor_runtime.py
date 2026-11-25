@@ -101,6 +101,7 @@ from engineering_influence.services.dash_rewriter import DashRewriter
 from engineering_influence.services.draft_stage_executor import DraftStageExecutor
 from engineering_influence.services.fallback_search_provider import FallbackSearchProvider
 from engineering_influence.services.fetch_url_tool import FetchUrlTool
+from engineering_influence.services.fitting_model import FittingModel
 from engineering_influence.services.interfaces.cost_estimator_interface import (
     CostEstimatorInterface,
 )
@@ -180,7 +181,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         environment: Mapping[str, str],
         secrets: SecretProviderInterface,
         today: date,
-        request_timeout_seconds: float = 600.0,
+        request_timeout_seconds: float = 1_800.0,
         builder: ManuscriptBuilderInterface | None = None,
     ) -> None:
         self._environment = environment
@@ -235,7 +236,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             artifacts,
             prompts,
             outlines,
-            ContextAssembler(model, prompts.get("context_pack")),
+            ContextAssembler(FittingModel(model), prompts.get("context_pack")),
             loop,
             guidance,
             SpendGuard,
@@ -248,7 +249,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                 artifacts,
                 prompts,
                 outlines,
-                ContextAssembler(model, prompts.get("novel_context_pack")),
+                ContextAssembler(FittingModel(model), prompts.get("novel_context_pack")),
                 loop,
                 guidance,
                 SpendGuard,

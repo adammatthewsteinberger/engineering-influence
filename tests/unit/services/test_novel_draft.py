@@ -174,7 +174,7 @@ def test_the_prompt_is_built_from_the_brief_the_bible_the_beats_and_the_outline(
     assert plan.style == f"The author's brief:\nBRIEF: a reunion\n\nThe story bible:\n{BIBLE}"
     assert (
         plan.grounding
-        == f"The whole outline:\n{OUTLINE}\n\nThe beats of the whole novel:\nBEATS: 1. They meet."
+        == "The chapter titles:\nChapter 1: The Car Park\nChapter 2: The Hearing\n\nThe beats of the whole novel:\nBEATS: 1. They meet."
     )
     assert "violence mild, heat sweet" in plan.instruction
     assert plan.instruction.startswith("Write chapter 1 of 2 now")
