@@ -1,0 +1,1 @@
+A draft that a model declines to write is asked again once in other words, and a second refusal stops the stage with `DRAFT_REFUSED` naming the chapter and section. A section well under its length is asked again for the full length; one that stays short is kept and reported as `DRAFT_SHORT`. Compatible: one error code is added, and the report gains a non-blocking issue code.

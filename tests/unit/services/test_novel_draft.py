@@ -22,8 +22,12 @@ from engineering_influence.models.model_request import ModelRequest
 from engineering_influence.models.quality_issue import QualityIssue
 from engineering_influence.models.stage_report import StageReport
 from engineering_influence.models.tool_loop_result import ToolLoopResult
+from engineering_influence.services.answer_screen import AnswerScreen
 from engineering_influence.services.continuity_checker import ContinuityChecker
 from engineering_influence.services.draft_stage_executor import DraftStageExecutor
+from engineering_influence.services.interfaces.answer_screen_interface import (
+    AnswerScreenInterface,
+)
 from engineering_influence.services.interfaces.context_assembler_interface import (
     ContextAssemblerInterface,
 )
@@ -110,12 +114,23 @@ class Checks(DraftChecksInterface):
         return self._issues
 
 
+class PassScreen(AnswerScreenInterface):
+    """Lets every answer through, so the flow tests are not about length or refusal."""
+
+    def refused(self, text: str) -> bool:
+        return False
+
+    def short(self, text: str, asked_words: int) -> bool:
+        return False
+
+
 class World:
     def __init__(
         self,
         *chapters: str,
         checks: DraftChecksInterface | None = None,
         stored: dict[str, str] | None = None,
+        screen: AnswerScreenInterface | None = None,
         **brief: str,
     ) -> None:
         self.store = InMemoryArtifactStore()
@@ -134,6 +149,7 @@ class World:
             ToolRegistry(()),
             NovelRecipes.DRAFT,
             checks or NovelDraftChecks(StoryBibleParser(), ContinuityChecker()),
+            screen=screen or PassScreen(),
         )
         self.run = BookRun(
             "run-1",
@@ -277,3 +293,19 @@ def test_the_novel_checks_turn_each_finding_into_one_issue_of_its_kind() -> None
     ]
     assert all(item.stage == "draft" and not item.blocking for item in found)
     assert found[3].detail.startswith("chapter 3 (timeline): ")
+
+
+def test_a_novel_chapter_far_short_of_its_length_is_reported_as_draft_short() -> None:
+    long_two = " ".join(["word"] * 1_300)
+    world = World(
+        "Tiny.",
+        "Tiny again.",
+        "A summary of one.",
+        long_two,
+        "A summary of two.",
+        screen=AnswerScreen(),
+    )
+    report = world.execute()
+    (issue,) = [item for item in report.issues if item.code == "DRAFT_SHORT"]
+    assert issue.detail == "chapter 1 has 2 words where about 2500 were asked"
+    assert not issue.blocking

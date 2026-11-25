@@ -25,7 +25,11 @@ from engineering_influence.models.quality_issue import QualityIssue
 from engineering_influence.models.skill import Skill
 from engineering_influence.models.stage_report import StageReport
 from engineering_influence.models.tool_loop_result import ToolLoopResult
+from engineering_influence.services.answer_screen import AnswerScreen
 from engineering_influence.services.draft_stage_executor import DraftStageExecutor
+from engineering_influence.services.interfaces.answer_screen_interface import (
+    AnswerScreenInterface,
+)
 from engineering_influence.services.interfaces.context_assembler_interface import (
     ContextAssemblerInterface,
 )
@@ -129,6 +133,16 @@ class FixedGuidance(StageGuidanceInterface):
         return Guidance("ADVICE: be kind", "skill_guidance@1:abc")
 
 
+class PassScreen(AnswerScreenInterface):
+    """Lets every answer through, so the flow tests are not about length or refusal."""
+
+    def refused(self, text: str) -> bool:
+        return False
+
+    def short(self, text: str, asked_words: int) -> bool:
+        return False
+
+
 def done(text: str) -> ToolLoopResult:
     return ToolLoopResult(text, True, (), 0, 1, 0, 1, ())
 
@@ -149,6 +163,7 @@ class World:
         model_max: int = 32_000,
         guidance: StageGuidanceInterface | None = None,
         tools: ToolRegistry | None = None,
+        screen: AnswerScreenInterface | None = None,
     ) -> None:
         self.store = InMemoryArtifactStore()
         self.contexts = Contexts()
@@ -166,6 +181,7 @@ class World:
             window,
             model_max,
             tools or ToolRegistry(()),
+            screen=screen or PassScreen(),
         )
         self.run = BookRun(
             run_id="run-1",
@@ -537,3 +553,53 @@ def test_a_section_is_stored_as_it_is_written_so_a_redelivery_skips_it() -> None
         world.execute()
     assert world.text("chapter_01_s01.md") == "first section"
     assert world.text("chapter_01.md") is None
+
+
+LONG = " ".join(["word"] * 1_300)
+
+
+def one_chapter_world(
+    *scripted: ToolLoopResult, screen: AnswerScreenInterface | None = None
+) -> "World":
+    return World(
+        *scripted, outline="## Chapter 1: Only\nPurpose: One.\nBeats:\n- The beat\n", screen=screen
+    )
+
+
+def test_a_refusal_is_asked_again_in_other_words_and_the_second_answer_is_kept() -> None:
+    world = one_chapter_world(
+        done("I'm sorry, but I can't write that."), done(LONG), screen=AnswerScreen()
+    )
+    report = world.execute()
+    drafting = world.loop.calls[:2]
+    assert drafting[1][4].prompt_version.endswith("+reworded")
+    assert DraftStageExecutor.REFUSAL_NOTE in drafting[1][4].prompt
+    assert world.store.get("run-1", "chapter_01_s01.md") == LONG.encode("utf-8")
+    assert report.issues == ()
+
+
+def test_a_second_refusal_stops_the_stage_and_names_the_section() -> None:
+    world = one_chapter_world(
+        done("I cannot help with this."), done("I'm not able to do that."), screen=AnswerScreen()
+    )
+    error = world.refused()
+    assert error.code == "DRAFT_REFUSED"
+    assert "chapter 1 section 1" in error.message
+    assert world.store.get("run-1", "chapter_01.md") is None
+
+
+def test_a_short_section_is_asked_again_for_its_length_and_the_longer_answer_is_kept() -> None:
+    world = one_chapter_world(done("A short bit."), done(LONG), screen=AnswerScreen())
+    report = world.execute()
+    assert world.loop.calls[1][4].prompt_version.endswith("+longer")
+    assert world.store.get("run-1", "chapter_01_s01.md") == LONG.encode("utf-8")
+    assert report.issues == ()
+
+
+def test_a_section_that_stays_short_is_kept_and_reported_as_draft_short() -> None:
+    world = one_chapter_world(done("A short bit."), done("Tiny."), screen=AnswerScreen())
+    report = world.execute()
+    assert world.store.get("run-1", "chapter_01_s01.md") == b"A short bit."
+    (issue,) = report.issues
+    assert (issue.code, issue.blocking) == ("DRAFT_SHORT", False)
+    assert issue.detail == "chapter 1 section 1 has 3 words where about 2500 were asked"

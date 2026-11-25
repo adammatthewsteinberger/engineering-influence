@@ -90,6 +90,10 @@ RECIPES = NonfictionRecipes()
 RUN_ID = "run-1"
 
 
+# Long enough that a drafted section is not short for its length (see AnswerScreen).
+FILLER = " ".join(["filler"] * 1_300)
+
+
 class Model(ModelInterface):
     """Answers each call from a script, and keeps every request it was sent."""
 
@@ -277,18 +281,18 @@ METADATA_TEXT = (
     + "Categories:\n- Books > Science & Math\n"
 )
 DRAFTING = (
-    ("CHAPTER ONE text", "end_turn"),
+    (f"CHAPTER ONE text {FILLER}", "end_turn"),
     ("SUMMARY ONE text", "end_turn"),
-    ("CHAPTER TWO text", "end_turn"),
+    (f"CHAPTER TWO text {FILLER}", "end_turn"),
     ("SUMMARY TWO text", "end_turn"),
 )
 REVISING = (
-    ("# Chapter 1: The Hive\n\nCHAPTER ONE revised", "end_turn"),
-    ("# Chapter 2: The Site\n\nCHAPTER TWO revised", "end_turn"),
-    ("# Chapter 1: The Hive\n\nCHAPTER ONE polished", "end_turn"),
-    ("# Chapter 2: The Site\n\nCHAPTER TWO polished", "end_turn"),
-    ("# Chapter 1: The Hive\n\nCHAPTER ONE final", "end_turn"),
-    ("# Chapter 2: The Site\n\nCHAPTER TWO final", "end_turn"),
+    (f"# Chapter 1: The Hive\n\nCHAPTER ONE revised {FILLER}", "end_turn"),
+    (f"# Chapter 2: The Site\n\nCHAPTER TWO revised {FILLER}", "end_turn"),
+    (f"# Chapter 1: The Hive\n\nCHAPTER ONE polished {FILLER}", "end_turn"),
+    (f"# Chapter 2: The Site\n\nCHAPTER TWO polished {FILLER}", "end_turn"),
+    (f"# Chapter 1: The Hive\n\nCHAPTER ONE final {FILLER}", "end_turn"),
+    (f"# Chapter 2: The Site\n\nCHAPTER TWO final {FILLER}", "end_turn"),
 )
 GOOD = (
     ("BRIEF text", "end_turn"),
@@ -344,11 +348,14 @@ def test_a_run_goes_from_brief_to_draft_and_completes_with_each_answer_stored() 
     ]
     assert (
         world.store.get(RUN_ID, "manuscript/src/chapter_02.md")
-        == b"# The Site\n\nCHAPTER TWO final\n"
+        == f"# The Site\n\nCHAPTER TWO final {FILLER}\n".encode()
     )
     assert world.store.get(RUN_ID, "research.md") == b"RESEARCH text"
     assert world.store.get(RUN_ID, "outline.md") == OUTLINE_TEXT.encode()
-    assert world.store.get(RUN_ID, "chapter_02.md") == b"# Chapter 2: The Site\n\nCHAPTER TWO text"
+    assert (
+        world.store.get(RUN_ID, "chapter_02.md")
+        == f"# Chapter 2: The Site\n\nCHAPTER TWO text {FILLER}".encode()
+    )
     assert world.run().issues == ()
 
 
@@ -566,7 +573,7 @@ def test_each_chapter_is_drafted_from_the_summaries_and_tail_of_the_ones_before_
     assert "SUMMARY ONE" not in first.prompt and "CHAPTER ONE" not in first.prompt
     assert "Chapter 2: The Site" in second.prompt
     assert "SUMMARY ONE text" in second.prompt
-    assert "CHAPTER ONE text" in second.prompt
+    assert FILLER[-200:] in second.prompt
     assert "CHAPTER ONE text" in first_summary.prompt
     assert "CHAPTER TWO text" in second_summary.prompt
     assert "BRIEF text" in first.prompt and "RESEARCH text" in first.prompt
@@ -631,8 +638,8 @@ def test_each_editing_pass_is_given_what_the_pass_before_it_wrote() -> None:
     assert "CHAPTER TWO polished" in copy_two.prompt
     assert world.store.get(RUN_ID, "copy_edit.md") == (
         b"# Revision: copy_edit\n\n"
-        b"- Chapter 1: The Hive (8 to 8 words)\n"
-        b"- Chapter 2: The Site (8 to 8 words)\n"
+        b"- Chapter 1: The Hive (1,308 to 1,308 words)\n"
+        b"- Chapter 2: The Site (1,308 to 1,308 words)\n"
     )
 
 
