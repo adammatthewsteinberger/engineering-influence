@@ -86,6 +86,7 @@ nav:
           - "ADR 0009: Publishing follows the branch: develop to TestPyPI, main to PyPI": adr/0009-branch-driven-publishing.md
           - "ADR 0010: Chapters are drafted in order, inside one stage": adr/0010-chapters-are-drafted-in-order-in-one-stage.md
           - "ADR 0011: Run inputs are untrusted text carried inside the brief": adr/0011-run-inputs.md
+          - "ADR 0012: Scripture quotations are checked against bundled translations": adr/0012-scripture-quotations-are-checked-against-bundled-translations.md
       - Changelog: changelog.md
       - Security: security.md
       - Support: support.md

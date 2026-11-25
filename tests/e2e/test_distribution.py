@@ -323,3 +323,18 @@ def test_the_prompt_templates_are_installed_and_load_without_any_extra(
         "'stage_outline', 'stage_positioning', 'stage_research', 'stage_revise_lines', "
         "'stage_revise_structure', 'stage_summary'] context_pack@3"
     )
+
+
+def test_the_bundled_scripture_is_installed_and_reads_offline(dist: Path, clean_env: Path) -> None:
+    install(clean_env, str(wheel(dist)))
+
+    result = run(
+        clean_env / "bin" / "python",
+        "-c",
+        "from engineering_influence.infrastructure.bundled_scripture import BundledScripture;"
+        "from engineering_influence.models.verse_ref import VerseRef;"
+        "scripture = BundledScripture();"
+        "print(scripture.translations(), scripture.text('bsb', (VerseRef('JHN', 3, 16),)) is not None)",
+    )
+
+    assert result.stdout.strip() == "('asv', 'bsb', 'dra', 'kjv', 'web', 'ylt') True"

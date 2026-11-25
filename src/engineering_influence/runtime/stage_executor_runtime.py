@@ -18,6 +18,7 @@ from engineering_influence.infrastructure.author.toml_author_profile_loader impo
 from engineering_influence.infrastructure.book_build.temp_project_manuscript_builder import (
     TempProjectManuscriptBuilder,
 )
+from engineering_influence.infrastructure.bundled_scripture import BundledScripture
 from engineering_influence.infrastructure.deterministic_stage_executor import (
     DeterministicStageExecutor,
 )
@@ -126,8 +127,11 @@ from engineering_influence.services.novel_revision_passes import NovelRevisionPa
 from engineering_influence.services.outline_parser import OutlineParser
 from engineering_influence.services.quality_report import QualityReport
 from engineering_influence.services.read_skill_tool import ReadSkillTool
+from engineering_influence.services.reference_parser import ReferenceParser
 from engineering_influence.services.revision_stage_executor import RevisionStageExecutor
 from engineering_influence.services.run_tool_loop import RunToolLoop
+from engineering_influence.services.scripture_checker import ScriptureChecker
+from engineering_influence.services.scripture_draft_checks import ScriptureDraftChecks
 from engineering_influence.services.skill_lock_verifier import SkillLockVerifier
 from engineering_influence.services.spend_guard import SpendGuard
 from engineering_influence.services.stage_executor_router import StageExecutorRouter
@@ -245,6 +249,9 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             descriptor.context_window,
             descriptor.max_output_tokens,
             tools,
+            checks=ScriptureDraftChecks(
+                ScriptureChecker(BundledScripture(), ReferenceParser()),
+            ),
         )
         novel_drafter = ContentPolicyStageExecutor(
             DraftStageExecutor(
