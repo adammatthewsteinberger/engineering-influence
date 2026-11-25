@@ -17,6 +17,7 @@ from engineering_influence.interfaces.tool_grants_interface import ToolGrantsInt
 from engineering_influence.interfaces.tool_registry_interface import ToolRegistryInterface
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget import Budget
+from engineering_influence.models.chapter_count import ChapterCount
 from engineering_influence.models.model_request import ModelRequest
 from engineering_influence.models.prompt_template import PromptTemplate
 from engineering_influence.models.stage_recipe import StageRecipe
@@ -62,6 +63,7 @@ class ModelStageExecutor(StageExecutorInterface):
     """
 
     UNSET = "not given"
+    ANY_CHAPTERS = "as many chapters as the book needs"
 
     def __init__(
         self,
@@ -121,7 +123,7 @@ class ModelStageExecutor(StageExecutorInterface):
             raise ApplicationError(
                 code="STAGE_ANSWER_UNUSABLE", message=self._why(outcome, run.stage), http_status=502
             )
-        self._checks.check(run.stage, outcome.text)
+        self._checks.check(run.stage, outcome.text, run.brief.target_words)
         await asyncio.to_thread(
             self._artifacts.put, run.run_id, recipe.output_name(), outcome.text.encode("utf-8")
         )
@@ -155,7 +157,9 @@ class ModelStageExecutor(StageExecutorInterface):
 
     def _brief_values(self, run: BookRun) -> dict[str, str]:
         brief = run.brief
+        chapters = ChapterCount.for_target(brief.target_words)
         return {
+            "chapters": f"exactly {chapters} chapters" if chapters else self.ANY_CHAPTERS,
             "idea": brief.idea,
             "audience": brief.audience or self.UNSET,
             "title_hint": brief.title_hint or self.UNSET,

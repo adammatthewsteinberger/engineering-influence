@@ -32,6 +32,14 @@ GOOD_METADATA = (
 GOOD = "## Chapter 1: The Hive\nPurpose: Show how a colony works.\nBeats:\n- Workers\n"
 
 
+def chapters(count: int) -> str:
+    """An outline of ``count`` chapters, each readable, for the count rule."""
+    return "\n".join(
+        f"## Chapter {n}: Part {n}\nPurpose: Say one thing.\nBeats:\n- A beat\nLeads to: Onward.\n"
+        for n in range(1, count + 1)
+    )
+
+
 class MetadataSpy(MetadataParserInterface):
     def __init__(self) -> None:
         self.texts: list[str] = []
@@ -57,32 +65,46 @@ def test_they_are_stage_output_checks() -> None:
 
 def test_the_outline_is_parsed_and_a_good_one_passes() -> None:
     spy = Spy()
-    NonfictionOutputChecks(spy, MetadataSpy()).check("outline", "the text")
+    NonfictionOutputChecks(spy, MetadataSpy()).check("outline", "the text", None)
     assert spy.texts == ["the text"]
-    NonfictionOutputChecks(OutlineParser(), MetadataSpy()).check("outline", GOOD)
+    NonfictionOutputChecks(OutlineParser(), MetadataSpy()).check("outline", GOOD, None)
 
 
 def test_an_outline_that_cannot_be_read_is_refused_with_the_parsers_reason() -> None:
     with pytest.raises(ApplicationError) as error:
         NonfictionOutputChecks(OutlineParser(), MetadataSpy()).check(
-            "outline", "Just a paragraph about bees."
+            "outline", "Just a paragraph about bees.", None
         )
     assert error.value.code == "OUTLINE_INVALID" and "no chapters" in error.value.message
 
 
+def test_an_outline_about_the_right_size_for_the_target_passes() -> None:
+    # 100,000 words is 29 chapters; 27 is inside the 15% tolerance.
+    NonfictionOutputChecks(OutlineParser(), MetadataSpy()).check("outline", chapters(27), 100_000)
+
+
+def test_an_outline_far_short_of_the_target_is_refused_before_drafting() -> None:
+    with pytest.raises(ApplicationError) as error:
+        NonfictionOutputChecks(OutlineParser(), MetadataSpy()).check(
+            "outline", chapters(9), 100_000
+        )
+    assert error.value.code == "OUTLINE_CHAPTER_COUNT"
+    assert "9 chapters" in error.value.message and "about 29" in error.value.message
+
+
 def test_the_metadata_is_parsed_and_a_good_one_passes() -> None:
     spy = MetadataSpy()
-    NonfictionOutputChecks(Spy(), spy).check("metadata", "the text")
+    NonfictionOutputChecks(Spy(), spy).check("metadata", "the text", None)
     assert spy.texts == ["the text"]
     NonfictionOutputChecks(OutlineParser(), MetadataParser(DashRewriter())).check(
-        "metadata", GOOD_METADATA
+        "metadata", GOOD_METADATA, None
     )
 
 
 def test_a_listing_that_cannot_be_read_is_refused_with_the_parsers_reason() -> None:
     checks = NonfictionOutputChecks(OutlineParser(), MetadataParser(DashRewriter()))
     with pytest.raises(ApplicationError) as error:
-        checks.check("metadata", "A paragraph about bees.")
+        checks.check("metadata", "A paragraph about bees.", None)
     assert error.value.code == "METADATA_INVALID" and "has no 'Title:'" in error.value.message
 
 
@@ -91,10 +113,10 @@ def test_a_listing_that_cannot_be_read_is_refused_with_the_parsers_reason() -> N
 )
 def test_no_other_stage_is_parsed_and_any_text_passes(stage: str) -> None:
     spy, metadata = Spy(), MetadataSpy()
-    NonfictionOutputChecks(spy, metadata).check(stage, "no chapters here at all")
+    NonfictionOutputChecks(spy, metadata).check(stage, "no chapters here at all", 100_000)
     assert spy.texts == [] and metadata.texts == []
 
 
 def test_no_checks_accepts_everything() -> None:
-    NoOutputChecks().check("outline", "not an outline")
-    NoOutputChecks().check("brief", "")
+    NoOutputChecks().check("outline", "not an outline", 100_000)
+    NoOutputChecks().check("brief", "", None)

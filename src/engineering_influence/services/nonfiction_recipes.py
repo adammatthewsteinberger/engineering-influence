@@ -36,7 +36,7 @@ class NonfictionRecipes(StageRecipesInterface):
             4_000,
             ("web_search", "fetch_url"),
         ),
-        StageRecipe("outline", "stage_outline", ("brief", "positioning", "research"), 4_000),
+        StageRecipe("outline", "stage_outline", ("brief", "positioning", "research"), 8_192),
         StageRecipe("metadata", "stage_metadata", ("brief", "positioning", "outline"), 2_500),
     )
 

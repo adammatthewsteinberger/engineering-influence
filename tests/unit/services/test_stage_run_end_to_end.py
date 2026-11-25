@@ -370,7 +370,7 @@ def test_each_stage_is_asked_with_what_the_stages_before_it_wrote() -> None:
         "stage_research@2",
         "stage_research@2",
         "stage_research@2",
-        "stage_outline@4",
+        "stage_outline@5",
         "stage_metadata@1",
         "context_pack@3",
         "stage_summary@1",

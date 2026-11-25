@@ -68,7 +68,7 @@ def test_it_is_a_set_of_recipes() -> None:
         ("brief", "novel_brief", (), 1_500),
         ("story_bible", "novel_story_bible", ("brief",), 4_000),
         ("beats", "novel_beats", ("brief", "story_bible"), 3_000),
-        ("outline", "novel_outline", ("brief", "story_bible", "beats"), 5_000),
+        ("outline", "novel_outline", ("brief", "story_bible", "beats"), 8_192),
         ("metadata", "novel_metadata", ("brief", "story_bible", "outline"), 2_500),
     ],
 )
@@ -108,40 +108,46 @@ def test_it_is_an_output_check() -> None:
 
 
 def test_a_readable_bible_outline_and_listing_pass() -> None:
-    CHECKS.check("story_bible", BIBLE)
-    CHECKS.check("outline", OUTLINE)
-    CHECKS.check("metadata", LISTING)
+    CHECKS.check("story_bible", BIBLE, None)
+    CHECKS.check("outline", OUTLINE, None)
+    CHECKS.check("metadata", LISTING, None)
+
+
+def test_a_novel_outline_the_wrong_size_for_the_target_is_refused_before_drafting() -> None:
+    with pytest.raises(ApplicationError) as caught:
+        CHECKS.check("outline", OUTLINE, 100_000)
+    assert caught.value.code == "OUTLINE_CHAPTER_COUNT"
 
 
 def test_an_unreadable_listing_stops_the_run_where_it_was_written() -> None:
     with pytest.raises(ApplicationError) as caught:
-        CHECKS.check("metadata", "a blurb with none of the labelled sections")
+        CHECKS.check("metadata", "a blurb with none of the labelled sections", None)
     assert caught.value.code == "METADATA_INVALID"
 
 
 def test_an_unreadable_bible_stops_the_run_where_it_was_written() -> None:
     with pytest.raises(ApplicationError) as caught:
-        CHECKS.check("story_bible", "no json here")
+        CHECKS.check("story_bible", "no json here", None)
     assert caught.value.code == "STORY_BIBLE_INVALID"
 
 
 def test_an_unreadable_outline_stops_the_run_where_it_was_written() -> None:
     with pytest.raises(ApplicationError) as caught:
-        CHECKS.check("outline", "no chapters here")
+        CHECKS.check("outline", "no chapters here", None)
     assert caught.value.code == "OUTLINE_INVALID"
 
 
 @pytest.mark.parametrize("stage", ["brief", "beats", "anything_else"])
 def test_the_other_stages_write_prose_that_nothing_reads(stage: str) -> None:
-    CHECKS.check(stage, "free prose that is not JSON and not an outline")
+    CHECKS.check(stage, "free prose that is not JSON and not an outline", None)
 
 
 def test_a_bible_is_not_checked_as_an_outline_or_the_reverse() -> None:
-    CHECKS.check("beats", BIBLE)
+    CHECKS.check("beats", BIBLE, None)
     with pytest.raises(ApplicationError):
-        CHECKS.check("story_bible", OUTLINE)
+        CHECKS.check("story_bible", OUTLINE, None)
     with pytest.raises(ApplicationError):
-        CHECKS.check("outline", BIBLE)
+        CHECKS.check("outline", BIBLE, None)
 
 
 class Recorder(StageExecutorInterface):

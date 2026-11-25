@@ -129,7 +129,7 @@ def test_each_book_is_made_by_the_pipeline_scored_by_the_judge_and_written_to_th
     assert [s["dimension"] for s in herbs["scores"]] == ["voice"]
     assert [s["dimension"] for s in road["scores"]] == ["voice", "plot"]
     assert herbs["title"] == "Herbs Indoors" and road["title"] == "The Salt Road"
-    assert herbs["chapters"] == 2 and herbs["words"] > 0
+    assert herbs["chapters"] == 3 and herbs["words"] > 0
     assert report["dimension_means"] == {"plot": 4.0, "voice": 4.0}
     assert len(judge_calls) == 2 and report["spend"]["judging_micro_usd"] > 0
     assert report["spend"]["making_micro_usd"] == herbs["spent_micro_usd"] + road["spent_micro_usd"]

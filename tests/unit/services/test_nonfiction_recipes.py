@@ -12,8 +12,16 @@ from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.stage_recipe import StageRecipe
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 
-FROM_THE_BRIEF = {"idea", "audience", "title_hint", "target_words", "language", "inputs"}
-TRUSTED = {"target_words"}
+FROM_THE_BRIEF = {
+    "idea",
+    "audience",
+    "title_hint",
+    "target_words",
+    "chapters",
+    "language",
+    "inputs",
+}
+TRUSTED = {"target_words", "chapters"}
 RECIPES = NonfictionRecipes()
 
 
