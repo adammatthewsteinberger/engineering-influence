@@ -239,3 +239,16 @@ the editing passes, which are the next slices of the plan.
 - **A section that stays short is kept and reported.** The report carries a non-blocking `DRAFT_SHORT` issue naming the chapter,
   the section and the counts, so the length is visible in the stage report rather than failing the run.
 - **Compatibility.** `DRAFT_REFUSED` is a new error code; `DRAFT_SHORT` is a report issue. Both are additive.
+
+## Amendment (2026-11-25): long chapters are edited in parts
+
+- **A chapter above 4,000 words is revised in parts.** The revision passes cut it at its blank lines into parts of at most
+  4,000 words, edit each in its own call with its own length bounds, and join the answers with the blank lines they were cut
+  at. A chapter of up to 4,000 words is one part, as before, so ordinary chapters are unaffected.
+- **Why 4,000.** A whole-chapter edit must fit the reply cap; a 4,000-word part, edited at the widest bound, fits it with
+  room for reasoning. Above about 5,800 words a whole chapter was cut off, which is what this prevents.
+- **The structure pass reorders within a part.** Moving material between parts is not done, so a book's chapters above
+  4,000 words are reordered only inside each part. Within the book's chapter budget (about 3,500 words, see ChapterCount)
+  this does not arise.
+- **A rejected part keeps its own text.** The report counts rejected parts (`N of M parts rejected`), and the rejection
+  file records that count. Compatible: no error codes or public contracts change.

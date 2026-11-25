@@ -359,13 +359,13 @@ def test_an_edit_that_is_blank_or_the_wrong_length_is_not_kept_and_the_chapter_p
         QualityIssue(
             "revise_structure",
             "revision-rejected",
-            f"chapter 1's answer from revise_structure had {len(answer.split()):,} words, outside the "
-            "34 to 52 the chapter allows, so the chapter was kept as it was",
+            "chapter 1: 1 of 1 parts of the answer from revise_structure fell outside the bounds the chapter "
+            "allows, so those parts were kept as they were",
             blocking=False,
         ),
     )
-    assert world.text("revise_structure_rejected_01.md") == f"{len(answer.split())}\n"
-    assert "- Chapter 1: The Hive (43 to 43 words, answer rejected: " in (
+    assert world.text("revise_structure_rejected_01.md") == "1\n"
+    assert "- Chapter 1: The Hive (43 to 43 words, 1 of 1 parts rejected, kept as they were)" in (
         world.text("revise_structure.md") or ""
     )
     assert "- Chapter 2: The Site (43 to 44 words)" in (world.text("revise_structure.md") or "")
@@ -390,8 +390,8 @@ def test_the_rejected_chapters_are_counted_in_the_list_so_a_redelivery_reports_t
     )
     first = world.execute()
     calls = len(world.loop.calls)
-    assert world.text("revise_structure_rejected_01.md") == "2\n"
-    assert world.text("revise_structure_rejected_02.md") == "2\n"
+    assert world.text("revise_structure_rejected_01.md") == "1\n"
+    assert world.text("revise_structure_rejected_02.md") == "1\n"
     second = world.execute(attempt=2)
     assert second.issues == first.issues
     assert len(world.loop.calls) == calls
@@ -543,16 +543,16 @@ def test_a_second_answer_that_is_also_rejected_is_the_one_reported() -> None:
     world = World(STRUCTURE, done("a b c"), done("a b c d"))
     report = world.execute()
     assert world.out(1) == SOURCES[1]
-    assert world.text("revise_structure_rejected_01.md") == "4\n"
+    assert world.text("revise_structure_rejected_01.md") == "1\n"
     assert [issue.code for issue in report.issues] == ["revision-rejected"]
-    assert "had 4 words" in report.issues[0].detail
+    assert "1 of 1 parts" in report.issues[0].detail
 
 
 def test_a_second_answer_that_did_not_finish_leaves_the_first_ones_rejection_standing() -> None:
     world = World(STRUCTURE, done("a b c"), cut())
     report = world.execute()
     assert world.out(1) == SOURCES[1]
-    assert world.text("revise_structure_rejected_01.md") == "3\n"
+    assert world.text("revise_structure_rejected_01.md") == "1\n"
     assert [issue.code for issue in report.issues] == ["revision-rejected"]
 
 
@@ -562,3 +562,38 @@ def test_a_second_ask_that_runs_out_of_money_skips_the_chapter_like_any_other_ca
     assert [world.out(n) for n in (1, 2, 3)] == [SOURCES[n] for n in (1, 2, 3)]
     assert [issue.code for issue in report.issues] == ["revision-skipped-budget"]
     assert len(world.loop.calls) == 2
+
+
+FIRST_HALF = "ALPHA " + "one " * 2_499
+SECOND_HALF = "BRAVO " + "two " * 2_499
+LONG = FIRST_HALF + "\n\n" + SECOND_HALF
+
+
+def long_world(*scripted: ToolLoopResult) -> "World":
+    files = {
+        "outline.md": OUTLINE,
+        "positioning.md": "POSITIONING: the calm guide",
+        "chapter_01.md": LONG,
+        **{f"chapter_{n:02d}.md": text for n, text in SOURCES.items() if n != 1},
+        **{f"summary_{n:02d}.md": text for n, text in SUMMARIES.items()},
+    }
+    return World(STRUCTURE, *scripted, stored=files)
+
+
+def test_a_chapter_longer_than_a_call_is_revised_in_parts_and_rejoined() -> None:
+    world = long_world(done(FIRST_HALF + " edited"), done(SECOND_HALF + " edited"))
+    report = world.execute()
+    first, second = world.loop.calls[0][4], world.loop.calls[1][4]
+    assert "ALPHA" in first.prompt and "BRAVO" not in first.prompt
+    assert "BRAVO" in second.prompt and "ALPHA" not in second.prompt
+    assert world.out(1) == FIRST_HALF + " edited\n\n" + SECOND_HALF + " edited"
+    assert report.issues == ()
+
+
+def test_a_part_whose_answer_is_implausible_keeps_its_own_text_and_the_rest_is_revised() -> None:
+    world = long_world(done(FIRST_HALF + " edited"), done("short"), done("tiny"))
+    report = world.execute()
+    assert world.out(1) == FIRST_HALF + " edited\n\n" + SECOND_HALF
+    assert world.text("revise_structure_rejected_01.md") == "1\n"
+    assert [issue.code for issue in report.issues] == ["revision-rejected"]
+    assert "1 of 2 parts" in report.issues[0].detail
