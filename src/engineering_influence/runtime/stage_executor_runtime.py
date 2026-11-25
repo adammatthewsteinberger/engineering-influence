@@ -68,6 +68,7 @@ from engineering_influence.interfaces.model_interface import ModelInterface
 from engineering_influence.interfaces.publish_pipeline_interface import PublishPipelineInterface
 from engineering_influence.interfaces.search_provider_interface import SearchProviderInterface
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
+from engineering_influence.interfaces.source_fetcher_interface import SourceFetcherInterface
 from engineering_influence.interfaces.stage_executor_interface import StageExecutorInterface
 from engineering_influence.interfaces.stage_guidance_interface import StageGuidanceInterface
 from engineering_influence.interfaces.tool_interface import ToolInterface
@@ -100,6 +101,8 @@ from engineering_influence.services.cost_estimator import CostEstimator
 from engineering_influence.services.create_run import CreateRun
 from engineering_influence.services.dash_rewriter import DashRewriter
 from engineering_influence.services.draft_stage_executor import DraftStageExecutor
+from engineering_influence.services.fact_check_stage_executor import FactCheckStageExecutor
+from engineering_influence.services.fact_claim_parser import FactClaimParser
 from engineering_influence.services.fallback_search_provider import FallbackSearchProvider
 from engineering_influence.services.fetch_url_tool import FetchUrlTool
 from engineering_influence.services.fitting_model import FittingModel
@@ -218,7 +221,10 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         model = self._local_model() if self._free else self._model()
         guidance, skill_tools = self._guidance()
         lock, locked_tools = self._locked_servers()
-        tools = ToolRegistry((*self._tools(), *locked_tools, *skill_tools))
+        search, fetcher = self._research()
+        tools = ToolRegistry(
+            (WebSearchTool(search), FetchUrlTool(fetcher), *locked_tools, *skill_tools)
+        )
         limits = ToolLoopLimits()
         runner = ToolRunner(tools, journal, limits)
         self._runner = runner
@@ -332,6 +338,17 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             revising.setdefault(editing.stage, {})[BookKind.NOVEL] = ContentPolicyStageExecutor(
                 revision, ContentPolicy(), descriptor
             )
+        fact_checker = FactCheckStageExecutor(
+            artifacts,
+            prompts,
+            outlines,
+            loop,
+            SpendGuard,
+            search,
+            fetcher,
+            FactClaimParser(),
+            descriptor.max_output_tokens,
+        )
         return StageExecutorRouter(
             KindStageExecutor({BookKind.NONFICTION: nonfiction, BookKind.NOVEL: novel}),
             {
@@ -339,6 +356,9 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                     {BookKind.NONFICTION: drafter, BookKind.NOVEL: novel_drafter}
                 ),
                 **{stage: KindStageExecutor(by_kind) for stage, by_kind in revising.items()},
+                FactCheckStageExecutor.STAGE: KindStageExecutor(
+                    {BookKind.NONFICTION: fact_checker}
+                ),
                 AssembleStageExecutor.STAGE: KindStageExecutor(
                     {
                         BookKind.NONFICTION: AssembleStageExecutor(
@@ -348,7 +368,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                             ChapterCleaner(dashes),
                             BookConfigWriter(),
                             profile,
-                            revisions.final(),
+                            FactCheckStageExecutor.OUTPUT,
                         ),
                         # A novel is assembled from its last editing pass, and keeps the dashes its prose has:
                         # only non-fiction refuses them.
@@ -549,8 +569,8 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             timeout=httpx.Timeout(self.SERVER_REQUEST_SECONDS, connect=self.CONNECT_TIMEOUT_SECONDS)
         )
 
-    def _tools(self) -> tuple[ToolInterface, ...]:
-        """Search and page reading, which the research stage names."""
+    def _research(self) -> tuple[SearchProviderInterface, SourceFetcherInterface]:
+        """The web search and the page reader, which the research stage and the fact checker share."""
         client = httpx.Client(
             timeout=httpx.Timeout(
                 self.RESEARCH_TIMEOUT_SECONDS, connect=self.CONNECT_TIMEOUT_SECONDS
@@ -560,7 +580,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         fetcher = HttpSourceFetcher(
             client, PublicHttpsUrlPinner(PublicHttpsUrlPolicy()), HtmlTextExtractor()
         )
-        return (WebSearchTool(self._search(client)), FetchUrlTool(fetcher))
+        return self._search(client), fetcher
 
     def _search(self, client: httpx.Client) -> SearchProviderInterface:
         """SearXNG first when ``EI_SEARXNG_URL`` is set, Brave behind it when its key is set."""

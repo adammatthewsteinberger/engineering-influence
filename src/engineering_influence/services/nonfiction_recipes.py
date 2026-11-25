@@ -22,6 +22,7 @@ class NonfictionRecipes(StageRecipesInterface):
 
     DRAFT_STAGE = "draft"
     REVISION_STAGES = ("revise_structure", "revise_lines", "copy_edit")
+    FACT_STAGE = "fact_check"
     ASSEMBLE_STAGE = "assemble"
     AUDIT_STAGE = "audit"
     BUILD_STAGE = "build"
@@ -46,6 +47,7 @@ class NonfictionRecipes(StageRecipesInterface):
             *(recipe.stage for recipe in self.RECIPES),
             self.DRAFT_STAGE,
             *self.REVISION_STAGES,
+            self.FACT_STAGE,
             self.ASSEMBLE_STAGE,
             self.AUDIT_STAGE,
             self.BUILD_STAGE,

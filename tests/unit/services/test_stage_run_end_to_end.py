@@ -52,6 +52,8 @@ from engineering_influence.services.chapter_cleaner import ChapterCleaner
 from engineering_influence.services.context_assembler import ContextAssembler
 from engineering_influence.services.dash_rewriter import DashRewriter
 from engineering_influence.services.draft_stage_executor import DraftStageExecutor
+from engineering_influence.services.fact_check_stage_executor import FactCheckStageExecutor
+from engineering_influence.services.fact_claim_parser import FactClaimParser
 from engineering_influence.services.failure_classifier import FailureClassifier
 from engineering_influence.services.fetch_url_tool import FetchUrlTool
 from engineering_influence.services.lock_tool_grants import LockToolGrants
@@ -149,6 +151,18 @@ class Builder(ManuscriptBuilderInterface):
         )
 
 
+class NoSearch(SearchProviderInterface):
+    """Finds nothing, so the fact checker has no page and leaves every claim unchecked."""
+
+    def search(self, query: str, count: int) -> tuple[SearchHit, ...]:
+        return ()
+
+
+class NoPages(SourceFetcherInterface):
+    def fetch(self, url: str) -> FetchedPage:
+        raise AssertionError("no page should be fetched when no search finds one")
+
+
 class Search(SearchProviderInterface):
     def search(self, query: str, count: int) -> tuple[SearchHit, ...]:
         return (SearchHit("https://example.test/bees", "All about bees"),)
@@ -196,6 +210,17 @@ class World:
                 SpendGuard,
             ),
             {
+                FactCheckStageExecutor.STAGE: FactCheckStageExecutor(
+                    self.store,
+                    prompts,
+                    OutlineParser(),
+                    loop,
+                    SpendGuard,
+                    NoSearch(),
+                    NoPages(),
+                    FactClaimParser(),
+                    DESCRIPTOR.max_output_tokens,
+                ),
                 DraftStageExecutor.STAGE: DraftStageExecutor(
                     self.store,
                     prompts,
@@ -215,7 +240,7 @@ class World:
                     ChapterCleaner(DashRewriter()),
                     BookConfigWriter(),
                     None,
-                    NonfictionRevisionPasses().final(),
+                    FactCheckStageExecutor.OUTPUT,
                 ),
                 **{
                     editing.stage: RevisionStageExecutor(
@@ -304,13 +329,15 @@ GOOD = (
     (METADATA_TEXT, "end_turn"),
     *DRAFTING,
     *REVISING,
+    ("[]", "end_turn"),
+    ("[]", "end_turn"),
 )
 
 
 def test_a_run_goes_from_brief_to_draft_and_completes_with_each_answer_stored() -> None:
     world = World(Model(*GOOD))
     outcomes = [world.advance(stage) for stage in RECIPES.plan().stages]
-    assert outcomes == [AdvanceOutcome.ADVANCED] * 11 + [AdvanceOutcome.COMPLETED]
+    assert outcomes == [AdvanceOutcome.ADVANCED] * 12 + [AdvanceOutcome.COMPLETED]
     assert world.run().status is RunStatus.COMPLETED
     assert world.store.names(RUN_ID) == [
         "assemble.md",
@@ -329,6 +356,11 @@ def test_a_run_goes_from_brief_to_draft_and_completes_with_each_answer_stored() 
         "copy_02.md",
         "copy_edit.md",
         "draft.md",
+        "fact_01.md",
+        "fact_02.md",
+        "fact_check.json",
+        "factrec_01.json",
+        "factrec_02.json",
         "lines_01.md",
         "lines_02.md",
         "manuscript/books/hive-mind.toml",
@@ -389,6 +421,8 @@ def test_each_stage_is_asked_with_what_the_stages_before_it_wrote() -> None:
         "stage_revise_lines@2",
         "stage_copy_edit@2",
         "stage_copy_edit@2",
+        "stage_extract_claims@1",
+        "stage_extract_claims@1",
     ]
     assert [len(r.transcript) for r in (searching, reading, research)] == [0, 1, 2]
     assert [t.name for t in searching.tools] == ["web_search", "fetch_url"]
@@ -414,7 +448,7 @@ def test_spend_is_what_the_calls_cost_and_stays_under_the_cap() -> None:
     for stage in RECIPES.plan().stages:
         world.advance(stage)
     budget = world.run().budget
-    assert budget.spent == DESCRIPTOR.cost_micro_usd(ModelUsage(100, 50)) * 17 > 0
+    assert budget.spent == DESCRIPTOR.cost_micro_usd(ModelUsage(100, 50)) * 19 > 0
     assert (budget.reserved, budget.spent <= budget.cap) == (0, True)
 
 
@@ -628,7 +662,7 @@ def test_each_editing_pass_is_given_what_the_pass_before_it_wrote() -> None:
     world = World(Model(*GOOD))
     for stage in RECIPES.plan().stages:
         world.advance(stage)
-    structure_one, _, lines_one, lines_two, copy_one, copy_two = world.model.requests[11:]
+    structure_one, _, lines_one, lines_two, copy_one, copy_two = world.model.requests[11:17]
     assert "CHAPTER ONE text" in structure_one.prompt
     assert "Chapter 2: SUMMARY TWO text" in structure_one.prompt
     assert "SUMMARY ONE text" not in structure_one.prompt

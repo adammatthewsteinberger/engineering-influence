@@ -57,9 +57,17 @@ fingerprint = "a4201ec270b5535eadbad3b7fa5df2ad493f34e1036f55f10a04da2dd13ea9aa"
 version = 2
 fingerprint = "0c8a89733fbb2f3ed2d11958cafcc15ba4b7be615130a9194448fcba65a2ae3b"
 
+[stage_check_claim]
+version = 1
+fingerprint = "b82826cdc2910b02bfb193bc3b9de0fb1f727b3d3ee3d475f369fd1bf6de0992"
+
 [stage_copy_edit]
 version = 2
 fingerprint = "0f7fe6160a2e1e7864101f98e580c58a5d49129033b1c00eb42774ef50614391"
+
+[stage_extract_claims]
+version = 1
+fingerprint = "680d722ce3a00b9d54613dd9c44670c0d892e9c39bbee943cfa69d00e38b45c4"
 
 [stage_metadata]
 version = 1
@@ -84,6 +92,10 @@ fingerprint = "5e99b86a60e85631e8297ec535e97d6f3b663360ffabbdc202ae2122bec04fda"
 [stage_revise_structure]
 version = 2
 fingerprint = "685a359337927389c02736a1e2690273a9cae66965bebca7336278b39ab2d203"
+
+[stage_soften_claims]
+version = 1
+fingerprint = "776435307f27f3c0f604314bdbcb8593358a3c9b0e008a8d95ec253495ee4479"
 
 [stage_summary]
 version = 1

@@ -327,7 +327,7 @@ def assemble(tmp_path: Path, **extra: str) -> tuple[InMemoryArtifactStore, list[
         store = InMemoryArtifactStore()
         store.put("run-1", "outline.md", outline.encode())
         store.put("run-1", "metadata.md", LISTING.encode())
-        store.put("run-1", "copy_01.md", b"Chapter 1: The Hive\n\nBees live in colonies.")
+        store.put("run-1", "fact_01.md", b"Chapter 1: The Hive\n\nBees live in colonies.")
         executor = rt.build(store, InMemoryJournal())
         asyncio.run(executor.execute(run_for("assemble"), 1))
         rt.close()
