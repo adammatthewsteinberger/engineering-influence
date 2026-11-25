@@ -46,8 +46,8 @@ version = 2
 fingerprint = "0c8a89733fbb2f3ed2d11958cafcc15ba4b7be615130a9194448fcba65a2ae3b"
 
 [stage_copy_edit]
-version = 1
-fingerprint = "61e67b6f7173155c5c4f403ebea1049e515544f6d9b730c1245d0288e14d4bab"
+version = 2
+fingerprint = "0f7fe6160a2e1e7864101f98e580c58a5d49129033b1c00eb42774ef50614391"
 
 [stage_metadata]
 version = 1
@@ -66,12 +66,12 @@ version = 2
 fingerprint = "a3bae15acc01c5bd769e60a75bbbe6e473dbff3bcfb58edfdecda8e4b2d5e4e8"
 
 [stage_revise_lines]
-version = 1
-fingerprint = "d0ad9cd0c81742bbb631b3e447baf2e81faa87c0c866d714d2793c9c65f067a8"
+version = 2
+fingerprint = "5e99b86a60e85631e8297ec535e97d6f3b663360ffabbdc202ae2122bec04fda"
 
 [stage_revise_structure]
-version = 1
-fingerprint = "8c2f98b96f5a4557dea6287b53edc15b7a4a7aa6e35943a548d81dd92d54c613"
+version = 2
+fingerprint = "685a359337927389c02736a1e2690273a9cae66965bebca7336278b39ab2d203"
 
 [stage_summary]
 version = 1

@@ -49,5 +49,6 @@ def test_every_blank_a_pass_fills_is_one_its_template_declares_untrusted() -> No
     library = TomlPromptLibrary()
     for editing in PASSES.passes():
         template = library.get(editing.template)
-        assert template.untrusted == frozenset(editing.blanks)
-        assert template.identifier() == f"{editing.template}@1"
+        lengths = {"words", "floor", "ceiling"}
+        assert template.untrusted == frozenset(editing.blanks) - lengths
+        assert template.identifier() == f"{editing.template}@2"

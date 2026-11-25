@@ -24,10 +24,13 @@ just written, which later chapters are given in place of the chapter itself; its
 one blank is not declared untrusted, because the text that fills it is built by the product from skills a person
 installed, defused and delimited, and is meant to instruct.
 
-`stage_revise_structure`, `stage_revise_lines` and `stage_copy_edit` (version 1 each) are the three editing passes over a drafted
-chapter, from the widest to the narrowest. Every blank in them is untrusted (the chapter, the outline, what the other chapters say and
-the voice), and each tells the model to return only the whole edited chapter and to stay within a stated length of the original; the
-executor enforces the bound (see ADR 0010).
+`stage_revise_structure`, `stage_revise_lines` and `stage_copy_edit` (version 2 each) are the three editing passes over a drafted
+chapter, from the widest to the narrowest. The blanks that carry text from the book are untrusted (the chapter, the outline, what the
+other chapters say and the voice); the three numbers that give the chapter's length and the range to stay in are not. Each prompt tells the
+model to return only the whole edited chapter and to stay within a stated length of the original. The structure and lines prompts also say
+how long the chapter is, because a model told only to "cut" and "tighten" tends to summarise; each template has a `retry` part, which the
+executor adds, with the rejected answer's length, to ask once more when an answer is outside the bound. The executor enforces the bound
+(see ADR 0010).
 
 `eval_judge` (version 1) is the one prompt that is not part of making a book: the evaluation's judge ([EVALUATION.md](EVALUATION.md)).
 It is given a finished book and the rubric and answers one JSON object of scores and reasons; the book is its one untrusted blank, so
@@ -73,9 +76,9 @@ its shape (`BookMetadata`). Em and en dashes in it are rewritten before it is re
 | `stage_metadata` | 1 | Writes the store listing of a non-fiction book: title, subtitle, description, keywords and categories |
 | `context_pack` | 2 | The fixed instructions and the labels for the prompt that drafts one chapter |
 | `stage_summary` | 1 | Summarises one drafted chapter so that later chapters can be written to follow it |
-| `stage_revise_structure` | 1 | Revises the structure of one non-fiction chapter against the outline and the other chapters |
-| `stage_revise_lines` | 1 | Line-edits one non-fiction chapter for clarity, rhythm and concision in the book's voice |
-| `stage_copy_edit` | 1 | Copy-edits one non-fiction chapter for spelling, grammar, punctuation and consistency |
+| `stage_revise_structure` | 2 | Revises the structure of one non-fiction chapter against the outline and the other chapters |
+| `stage_revise_lines` | 2 | Line-edits one non-fiction chapter for clarity, rhythm and concision in the book's voice |
+| `stage_copy_edit` | 2 | Copy-edits one non-fiction chapter for spelling, grammar, punctuation and consistency |
 | `novel_brief` | 1 | Turns a rough idea into a precise brief for a novel |
 | `novel_story_bible` | 1 | Writes the story bible, as JSON, that every chapter of a novel must agree with |
 | `novel_beats` | 1 | Plans the beats of a whole novel, in story order, from its brief and story bible |
