@@ -53,9 +53,10 @@ def test_the_nonfiction_recipe_gives_the_same_words_the_drafter_always_gave() ->
     value = DraftStageExecutor.NONFICTION
     assert value.style_text(texts) == "The author's brief:\nB\n\nThe positioning:\nP"
     assert value.grounding_text(texts) == "The whole outline:\nO\n\nThe research notes:\nR"
-    assert value.instruction_text(2, 5, 800, "not given", "not given") == (
-        "Write chapter 2 of 5 now, following the beats above, in about 800 words. "
-        "Begin with the chapter's heading line."
+    assert value.sectioned is True
+    assert value.instruction_text(2, 5, 800, "not given", "not given", 1, 2) == (
+        "Write section 1 of 2 of chapter 2 of 5 now, covering beat 1 above, in about 800 words. "
+        "Write only this section."
     )
     assert (value.context_template, value.summary_template) == ("context_pack", "stage_summary")
 
@@ -125,5 +126,21 @@ def test_a_draft_needs_both_templates(field: str) -> None:
     ],
 )
 def test_the_instruction_has_the_three_numbers_and_no_other_blank(instruction: str) -> None:
-    with pytest.raises(ValueError, match="number, count and words, and no other blank"):
+    with pytest.raises(ValueError, match="and no other blank"):
         recipe(instruction=instruction)
+
+
+def test_a_sectioned_instruction_fills_the_section_and_the_section_count() -> None:
+    value = recipe(
+        instruction="Section {section} of {sections}, chapter {number} of {count} in {words} words.",
+        sectioned=True,
+    )
+    assert (
+        value.instruction_text(2, 9, 700, "mild", "none", 3, 4)
+        == "Section 3 of 4, chapter 2 of 9 in 700 words."
+    )
+
+
+def test_a_sectioned_instruction_also_needs_the_section_and_the_section_count() -> None:
+    with pytest.raises(ValueError, match="and no other blank"):
+        recipe(instruction="Chapter {number} of {count} in {words} words.", sectioned=True)

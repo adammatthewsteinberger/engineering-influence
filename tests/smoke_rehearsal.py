@@ -68,6 +68,7 @@ Beats:
 """
 CHAPTER = re.compile(r'<untrusted name="chapter">\n(.*?)\n</untrusted>', re.DOTALL)
 NUMBER = re.compile(r"Write chapter (\d+) of")
+SECTION = re.compile(r"Write section \d+ of \d+ of chapter (\d+) of")
 CATALOG = """
 [[model]]
 provider = "local"
@@ -138,6 +139,8 @@ def answer(user: str) -> str:
             found = CHAPTER.search(user)
             assert found is not None
             return found.group(1) + " Edited."
+    if SECTION.search(user) is not None:
+        return " ".join(["Herbs like a bright window."] * 12)
     chapter = NUMBER.search(user)
     assert chapter is not None, user[:80]
     return f"# Chapter {chapter.group(1)}: Title\n\n" + " ".join(
