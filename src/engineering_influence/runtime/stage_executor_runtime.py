@@ -19,6 +19,7 @@ from engineering_influence.infrastructure.book_build.temp_project_manuscript_bui
     TempProjectManuscriptBuilder,
 )
 from engineering_influence.infrastructure.bundled_scripture import BundledScripture
+from engineering_influence.infrastructure.canon.command_canon_check import CommandCanonCheck
 from engineering_influence.infrastructure.deterministic_stage_executor import (
     DeterministicStageExecutor,
 )
@@ -105,6 +106,8 @@ from engineering_influence.services.build_screenplay_epub_stage_executor import 
 )
 from engineering_influence.services.build_stage_executor import BuildStageExecutor
 from engineering_influence.services.call_model import CallModel
+from engineering_influence.services.canon_check_stage_executor import CanonCheckStageExecutor
+from engineering_influence.services.canon_finding_parser import CanonFindingParser
 from engineering_influence.services.chapter_cleaner import ChapterCleaner
 from engineering_influence.services.content_policy import ContentPolicy
 from engineering_influence.services.content_policy_stage_executor import (
@@ -494,6 +497,18 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                             SceneCardList(),
                             ShootingLockCodec(),
                             RevisionReportWriter(),
+                        ),
+                    }
+                ),
+                CanonCheckStageExecutor.STAGE: KindStageExecutor(
+                    {
+                        BookKind.SCREENPLAY: CanonCheckStageExecutor(
+                            CommandCanonCheck.from_environment(self._environment),
+                            CanonFindingParser(),
+                            self._environment.get("EI_SCREENPLAY_CANON_BLOCKING", "")
+                            .strip()
+                            .lower()
+                            in ("1", "true", "yes"),
                         ),
                     }
                 ),
