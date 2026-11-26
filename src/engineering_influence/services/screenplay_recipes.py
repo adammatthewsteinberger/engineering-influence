@@ -27,14 +27,16 @@ class ScreenplayRecipes(StageRecipesInterface):
     DRAFT_STAGE: ClassVar[str] = "draft"
     REVISE_STAGE: ClassVar[str] = "revise_scenes"
     ASSEMBLE_STAGE: ClassVar[str] = "assemble_script"
+    RENDER_STAGE: ClassVar[str] = "render_script"
 
     def plan(self) -> StagePlan:
-        """The stages of a screenplay run, in order: the architecture, every scene drafted, revised and assembled."""
+        """The stages of a screenplay run, in order: the architecture, every scene drafted, revised, assembled and rendered."""
         stages = (
             *(recipe.stage for recipe in self.RECIPES),
             self.DRAFT_STAGE,
             self.REVISE_STAGE,
             self.ASSEMBLE_STAGE,
+            self.RENDER_STAGE,
         )
         return StagePlan(BookKind.SCREENPLAY, stages)
 

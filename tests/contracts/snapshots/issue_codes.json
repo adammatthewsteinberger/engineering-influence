@@ -8,8 +8,10 @@
   "TRUNCATED",
   "budget-exceeded",
   "retries-exhausted",
+  "revision-kept-draft",
   "revision-rejected",
   "revision-skipped-budget",
   "revision-unchanged",
+  "screenplay-length",
   "stage-failed"
 ]
