@@ -138,6 +138,8 @@ from engineering_influence.services.read_skill_tool import ReadSkillTool
 from engineering_influence.services.reference_parser import ReferenceParser
 from engineering_influence.services.revision_stage_executor import RevisionStageExecutor
 from engineering_influence.services.run_tool_loop import RunToolLoop
+from engineering_influence.services.screenplay_output_checks import ScreenplayOutputChecks
+from engineering_influence.services.screenplay_recipes import ScreenplayRecipes
 from engineering_influence.services.scripture_checker import ScriptureChecker
 from engineering_influence.services.scripture_draft_checks import ScriptureDraftChecks
 from engineering_influence.services.skill_lock_verifier import SkillLockVerifier
@@ -309,6 +311,17 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             ContentPolicy(),
             descriptor,
         )
+        screenplay = ModelStageExecutor(
+            ScreenplayRecipes(),
+            prompts,
+            artifacts,
+            loop,
+            tools,
+            grants,
+            guidance,
+            ScreenplayOutputChecks(),
+            SpendGuard,
+        )
         revising: dict[str, dict[BookKind, StageExecutorInterface]] = {}
         for editing in revisions.passes():
             revising.setdefault(editing.stage, {})[BookKind.NONFICTION] = RevisionStageExecutor(
@@ -355,7 +368,13 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             descriptor.max_output_tokens,
         )
         return StageExecutorRouter(
-            KindStageExecutor({BookKind.NONFICTION: nonfiction, BookKind.NOVEL: novel}),
+            KindStageExecutor(
+                {
+                    BookKind.NONFICTION: nonfiction,
+                    BookKind.NOVEL: novel,
+                    BookKind.SCREENPLAY: screenplay,
+                }
+            ),
             {
                 DraftStageExecutor.STAGE: KindStageExecutor(
                     {BookKind.NONFICTION: drafter, BookKind.NOVEL: novel_drafter}

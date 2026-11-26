@@ -98,6 +98,7 @@ recorded cassettes) and need no action from you.
 | `SOURCE_EMPTY` | `the source folder ... has no readable source files` | A screenplay's source folder holds no `.md` or `.txt` files. Put the manuscript files in it (ADR 0017) |
 | `SOURCE_FOLDER_MISSING` | `the source folder ... does not exist` | The path given for the source folder is wrong. Check it |
 | `SOURCE_TOO_LARGE` | `source file ... is over 2000000 bytes; split it` | A source file is larger than the limit. Split it into several files in the folder |
+| `STAGE_OUTPUT_INVALID` | `beats: the beat sheet needs the fifteen beats in order ...` | A screenplay stage's answer broke a format rule, so the run stopped at that stage. Read the named problems; a re-run of the stage asks again |
 
 ## Collecting evidence for a bug report
 

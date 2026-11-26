@@ -1,6 +1,6 @@
 # Prompts
 
-**BLUF:** The prompts are code: nineteen versioned TOML templates, generic, with no author's voice in them. Change
+**BLUF:** The prompts are code: twenty-nine versioned TOML templates, generic, with no author's voice in them. Change
 one word and its version must go up, which a locked test enforces. Every blank that takes free text from outside
 (your idea, a web page, an earlier stage's output) is declared untrusted and reaches the model fenced off as data,
 never as instructions. The exceptions are checked numbers and levels, and the skills a person installed, which are
@@ -85,6 +85,10 @@ its shape (`BookMetadata`). Em and en dashes in it are rewritten before it is re
 | `novel_brief` | 1 | Turns a rough idea into a precise brief for a novel |
 | `novel_story_bible` | 1 | Writes the story bible, as JSON, that every chapter of a novel must agree with |
 | `novel_beats` | 1 | Plans the beats of a whole novel, in story order, from its brief and story bible |
+| `screenplay_brief` | 1 | Turns the author's idea into a short screenplay brief: logline, length and the source to adapt |
+| `screenplay_anchors` | 1 | Writes the anchors of a screenplay: spine, opening and closing images, All Is Lost, what can and cannot be lost, and the structural mode |
+| `screenplay_beats` | 1 | Writes the fifteen-beat sheet of a screenplay: pages, scene, central character and relationship function |
+| `screenplay_scene_cards` | 1 | Writes one scene card per scene, linked causally to the next and placed under a beat |
 | `novel_outline` | 2 | Plans the chapters of a novel from its brief, story bible and beats |
 | `novel_metadata` | 1 | Writes the store listing of a novel: title, subtitle, blurb, keywords and categories |
 | `novel_context_pack` | 2 | The fixed instructions and the labels for the prompt that drafts one section of a novel's chapter |

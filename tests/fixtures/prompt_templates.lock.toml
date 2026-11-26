@@ -49,6 +49,22 @@ fingerprint = "94f201acab95ae06de536bdc086f96f7e3ec2177a7c5aed70c43bd7daec18aac"
 version = 1
 fingerprint = "6f4e44f3c43f42730bba78da0ba2277a2b266f2e3313fdf20c6132f68da78015"
 
+[screenplay_anchors]
+version = 1
+fingerprint = "f7575989cc0af8485b378f175e23c655538ba464943495073522c4eecfb01fb3"
+
+[screenplay_beats]
+version = 1
+fingerprint = "8baceecb28ebbadacab193ad4b2d611b0703443f0d8a421f39c6e17e33244627"
+
+[screenplay_brief]
+version = 1
+fingerprint = "c7835a27b384260094883858cb207fe4c68eff8a7f0383152ffafcc5030f35b5"
+
+[screenplay_scene_cards]
+version = 1
+fingerprint = "30d61a202e7b6bc86a478d3f21ab30706ffdd9eef0275a19cfbbc99f479c4bdc"
+
 [skill_guidance]
 version = 2
 fingerprint = "a4201ec270b5535eadbad3b7fa5df2ad493f34e1036f55f10a04da2dd13ea9aa"
