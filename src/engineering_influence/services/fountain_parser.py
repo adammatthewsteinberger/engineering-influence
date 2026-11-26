@@ -26,6 +26,7 @@ class FountainParser(FountainParserInterface):
     HEADING: ClassVar[re.Pattern[str]] = re.compile(
         r"^\s*(?:\.(?!\.)|(?:INT|EXT|EST|INT\./EXT|INT/EXT|I/E)[. ])", re.IGNORECASE
     )
+    TITLE_KEY: ClassVar[re.Pattern[str]] = re.compile(r"^[A-Za-z][A-Za-z ]*:")
     CENTERED: ClassVar[re.Pattern[str]] = re.compile(r"^>\s*(.*?)\s*<$")
     FORCED_TRANSITION: ClassVar[re.Pattern[str]] = re.compile(r"^>\s*(.*)$")
     TRANSITION: ClassVar[re.Pattern[str]] = re.compile(
@@ -34,10 +35,11 @@ class FountainParser(FountainParserInterface):
 
     def title_page(self, text: str) -> tuple[tuple[str, str], ...]:
         """The title page: `Key: value` lines up to the first blank line, with indented continuation lines."""
-        if not text.startswith("Title:"):
+        head = self._title_block(text)
+        if head is None:
             return ()
         pairs: list[tuple[str, str]] = []
-        for line in text.split("\n\n", 1)[0].splitlines():
+        for line in head.splitlines():
             if line[:1].isspace() and pairs:
                 key, value = pairs[-1]
                 pairs[-1] = (key, f"{value}\n{line.strip()}")
@@ -45,6 +47,20 @@ class FountainParser(FountainParserInterface):
                 key, value = line.split(":", 1)
                 pairs.append((key.strip(), value.strip()))
         return tuple(pairs)
+
+    def _title_block(self, text: str) -> str | None:
+        """The title page: the first paragraph, when its first line is a `Key:` and one of its keys is Title. Fountain
+        takes the keys in any order, so a Credit line before the Title is still a title page."""
+        head = text.split("\n\n", 1)[0]
+        lines = head.splitlines()
+        if not lines or self.TITLE_KEY.match(lines[0]) is None:
+            return None
+        keys = {
+            line.split(":", 1)[0].strip().lower()
+            for line in lines
+            if ":" in line and not line[:1].isspace()
+        }
+        return head if "title" in keys else None
 
     def blocks(self, text: str) -> tuple[FountainBlock, ...]:
         """Every element after the title page."""
@@ -75,7 +91,7 @@ class FountainParser(FountainParserInterface):
         the next, in order. The same lines and the same headings as `scenes`, with boneyard comments removed."""
         body = self.BONEYARD.sub("", text)
         front = ""
-        if body.startswith("Title:"):
+        if self._title_block(body) is not None:
             title, _, body = body.partition("\n\n")
             front = f"{title}\n\n"
         before: list[str] = []
@@ -102,7 +118,7 @@ class FountainParser(FountainParserInterface):
     def _body(self, text: str) -> str:
         """The script with the title page and boneyard comments taken out."""
         body = self.BONEYARD.sub("", text)
-        if body.startswith("Title:"):
+        if self._title_block(body) is not None:
             body = body.split("\n\n", 1)[1] if "\n\n" in body else ""
         return body
 
