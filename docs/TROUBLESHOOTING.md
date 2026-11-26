@@ -99,6 +99,9 @@ recorded cassettes) and need no action from you.
 | `SOURCE_FOLDER_MISSING` | `the source folder ... does not exist` | The path given for the source folder is wrong. Check it |
 | `SOURCE_TOO_LARGE` | `source file ... is over 2000000 bytes; split it` | A source file is larger than the limit. Split it into several files in the folder |
 | `STAGE_OUTPUT_INVALID` | `beats: the beat sheet needs the fifteen beats in order ...` | A screenplay stage's answer broke a format rule, so the run stopped at that stage. Read the named problems; a re-run of the stage asks again |
+| `SCREENPLAY_NO_TITLE` | `the title page must name the title` | A screenplay's title page has no `Title:` line. Add one to the screenplay settings |
+| `SCREENPLAY_NO_SCENES` | `a screenplay has at least one scene` | The screenplay has no scenes to join. Check the drafted scenes |
+| `SCREENPLAY_SCENE_INVALID` | `scene N must be exactly one scene heading and its elements` | A drafted scene holds more than one scene heading. Split it or redraft it |
 
 ## Collecting evidence for a bug report
 
