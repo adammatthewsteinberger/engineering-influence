@@ -21,6 +21,7 @@ from engineering_influence.services.interfaces.spend_ceiling_interface import (
 )
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 from engineering_influence.services.novel_recipes import NovelRecipes
+from engineering_influence.services.screenplay_recipes import ScreenplayRecipes
 
 
 class CreateRun(CreateRunInterface):
@@ -36,6 +37,7 @@ class CreateRun(CreateRunInterface):
     PLANS: ClassVar[Mapping[BookKind, StagePlan]] = {
         BookKind.NONFICTION: NonfictionRecipes().plan(),
         BookKind.NOVEL: NovelRecipes().plan(),
+        BookKind.SCREENPLAY: ScreenplayRecipes().plan(),
     }
 
     def __init__(

@@ -22,9 +22,12 @@ class ScreenplayRecipes(StageRecipesInterface):
         StageRecipe("scene_cards", "screenplay_scene_cards", ("brief", "anchors", "beats"), 8_192),
     )
 
+    DRAFT_STAGE: ClassVar[str] = "draft"
+
     def plan(self) -> StagePlan:
-        """The stages of a screenplay run, in order."""
-        return StagePlan(BookKind.SCREENPLAY, tuple(recipe.stage for recipe in self.RECIPES))
+        """The stages of a screenplay run, in order: the brief and architecture, then every scene drafted."""
+        stages = (*(recipe.stage for recipe in self.RECIPES), self.DRAFT_STAGE)
+        return StagePlan(BookKind.SCREENPLAY, stages)
 
     def recipe(self, stage: str) -> StageRecipe:
         """The recipe for the stage, or a ValueError when a screenplay run has none for it."""

@@ -16,6 +16,7 @@ from engineering_influence.services.interfaces.cost_estimator_interface import (
 )
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 from engineering_influence.services.novel_recipes import NovelRecipes
+from engineering_influence.services.screenplay_recipes import ScreenplayRecipes
 
 
 class CostEstimator(CostEstimatorInterface):
@@ -99,9 +100,19 @@ class CostEstimator(CostEstimatorInterface):
             )
         return CostEstimate(tuple(stages))
 
+    # A screenplay's drafting is one call per scene: the scene count is not known until the cards exist, so the
+    # estimate assumes the three-hour target (about 180 scenes), a planning figure the budget cap then enforces.
+    SCREENPLAY_SCENES: ClassVar[int] = 180
+    SCENE_INPUT_TOKENS: ClassVar[int] = 4_000
+    SCENE_OUTPUT_TOKENS: ClassVar[int] = 1_500
+
     def _stage(self, kind: BookKind, stage: str, chapters: int, chapter_tokens: int) -> int:
         if stage in self.NO_MODEL:
             return 0
+        if kind is BookKind.SCREENPLAY and stage == ScreenplayRecipes.DRAFT_STAGE:
+            return self.SCREENPLAY_SCENES * self._call(
+                self.SCENE_INPUT_TOKENS, self.SCENE_OUTPUT_TOKENS
+            )
         if stage == NonfictionRecipes.DRAFT_STAGE:
             return sum(
                 self._call(

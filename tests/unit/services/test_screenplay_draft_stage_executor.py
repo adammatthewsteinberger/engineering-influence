@@ -50,7 +50,7 @@ class Drafter(SceneDrafterInterface):
 
 
 def run() -> BookRun:
-    brief = BookBrief(BookKind.SCREENPLAY, "a film", 5_000_000)
+    brief = BookBrief(BookKind.SCREENPLAY, "a film", 5_000_000, title_hint="TEST FILM")
     return BookRun(
         run_id="run-1", brief=brief, plan=ScreenplayRecipes().plan(), budget=Budget(cap=5_000_000)
     )
@@ -65,7 +65,6 @@ def stage(
         SceneCardList(),
         ScreenplaySectionCheck(FountainParser()),
         ScreenplayAssembler(FountainParser()),
-        (("Title", "TEST FILM"),),
         shareable,
     )
 
@@ -170,3 +169,26 @@ def test_text_with_no_card_is_unreadable() -> None:
     with pytest.raises(ApplicationError) as error:
         SceneCardList().parse("# Cards\n\nNothing here.\n")
     assert error.value.code == "SCENE_CARDS_UNREADABLE"
+
+
+def test_the_plan_drafts_scenes_after_the_architecture() -> None:
+    assert tuple(ScreenplayRecipes().plan().stages) == (
+        "brief",
+        "anchors",
+        "beats",
+        "scene_cards",
+        "draft",
+    )
+
+
+def test_the_title_is_the_brief_title_or_untitled() -> None:
+    titled = ScreenplayDraftStageExecutor._title_page(run())
+    assert titled == (("Title", "TEST FILM"),)
+    untitled_brief = BookBrief(BookKind.SCREENPLAY, "a film", 5_000_000)
+    untitled = BookRun(
+        run_id="run-2",
+        brief=untitled_brief,
+        plan=ScreenplayRecipes().plan(),
+        budget=Budget(cap=5_000_000),
+    )
+    assert ScreenplayDraftStageExecutor._title_page(untitled) == (("Title", "UNTITLED"),)

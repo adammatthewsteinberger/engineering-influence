@@ -108,6 +108,7 @@ from engineering_influence.services.fact_claim_parser import FactClaimParser
 from engineering_influence.services.fallback_search_provider import FallbackSearchProvider
 from engineering_influence.services.fetch_url_tool import FetchUrlTool
 from engineering_influence.services.fitting_model import FittingModel
+from engineering_influence.services.fountain_parser import FountainParser
 from engineering_influence.services.interfaces.cost_estimator_interface import (
     CostEstimatorInterface,
 )
@@ -120,6 +121,7 @@ from engineering_influence.services.mcp_client_factory import McpClientFactory
 from engineering_influence.services.mcp_server_launcher import McpServerLauncher
 from engineering_influence.services.mcp_tool_factory import McpToolFactory
 from engineering_influence.services.metadata_parser import MetadataParser
+from engineering_influence.services.model_scene_drafter import ModelSceneDrafter
 from engineering_influence.services.model_stage_executor import ModelStageExecutor
 from engineering_influence.services.narration_gate import NarrationGate
 from engineering_influence.services.narration_stage_executor import NarrationStageExecutor
@@ -138,8 +140,14 @@ from engineering_influence.services.read_skill_tool import ReadSkillTool
 from engineering_influence.services.reference_parser import ReferenceParser
 from engineering_influence.services.revision_stage_executor import RevisionStageExecutor
 from engineering_influence.services.run_tool_loop import RunToolLoop
+from engineering_influence.services.scene_card_list import SceneCardList
+from engineering_influence.services.screenplay_assembler import ScreenplayAssembler
+from engineering_influence.services.screenplay_draft_stage_executor import (
+    ScreenplayDraftStageExecutor,
+)
 from engineering_influence.services.screenplay_output_checks import ScreenplayOutputChecks
 from engineering_influence.services.screenplay_recipes import ScreenplayRecipes
+from engineering_influence.services.screenplay_section_check import ScreenplaySectionCheck
 from engineering_influence.services.scripture_checker import ScriptureChecker
 from engineering_influence.services.scripture_draft_checks import ScriptureDraftChecks
 from engineering_influence.services.skill_lock_verifier import SkillLockVerifier
@@ -247,7 +255,11 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         descriptor = model.describe()
         estimator = CostEstimator(
             descriptor,
-            {BookKind.NONFICTION: NonfictionRecipes(), BookKind.NOVEL: NovelRecipes()},
+            {
+                BookKind.NONFICTION: NonfictionRecipes(),
+                BookKind.NOVEL: NovelRecipes(),
+                BookKind.SCREENPLAY: ScreenplayRecipes(),
+            },
             CreateRun.PLANS,
         )
         self._estimator = estimator
@@ -377,7 +389,17 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             ),
             {
                 DraftStageExecutor.STAGE: KindStageExecutor(
-                    {BookKind.NONFICTION: drafter, BookKind.NOVEL: novel_drafter}
+                    {
+                        BookKind.NONFICTION: drafter,
+                        BookKind.NOVEL: novel_drafter,
+                        BookKind.SCREENPLAY: ScreenplayDraftStageExecutor(
+                            artifacts,
+                            ModelSceneDrafter(prompts, loop, SpendGuard),
+                            SceneCardList(),
+                            ScreenplaySectionCheck(FountainParser()),
+                            ScreenplayAssembler(FountainParser()),
+                        ),
+                    }
                 ),
                 **{stage: KindStageExecutor(by_kind) for stage, by_kind in revising.items()},
                 FactCheckStageExecutor.STAGE: KindStageExecutor(
