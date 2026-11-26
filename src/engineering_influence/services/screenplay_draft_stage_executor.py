@@ -31,6 +31,7 @@ class ScreenplayDraftStageExecutor(StageExecutorInterface):
     SCRIPT: ClassVar[str] = "screenplay.fountain"
     DRAFT_ATTEMPTS: ClassVar[int] = 2
     MAX_PROBLEMS_SHOWN: ClassVar[int] = 5
+    UNTITLED: ClassVar[str] = "UNTITLED"
 
     def __init__(
         self,
@@ -39,7 +40,6 @@ class ScreenplayDraftStageExecutor(StageExecutorInterface):
         cards: SceneCardListInterface,
         checks: ScreenplaySectionCheckInterface,
         assembler: ScreenplayAssemblerInterface,
-        title_page: tuple[tuple[str, str], ...],
         shareable: frozenset[int] = frozenset(),
     ) -> None:
         self._artifacts = artifacts
@@ -47,7 +47,6 @@ class ScreenplayDraftStageExecutor(StageExecutorInterface):
         self._cards = cards
         self._checks = checks
         self._assembler = assembler
-        self._title_page = title_page
         self._shareable = shareable
 
     async def execute(self, run: BookRun, attempt: int) -> StageReport:
@@ -68,9 +67,14 @@ class ScreenplayDraftStageExecutor(StageExecutorInterface):
             await self._put(run, card.artifact(), scene)
         if self.SCRIPT not in stored:
             scenes = tuple([await self._required(run, card.artifact()) for card in cards])
-            script = self._assembler.assemble(self._title_page, scenes)
+            script = self._assembler.assemble(self._title_page(run), scenes)
             await self._put(run, self.SCRIPT, script)
         return StageReport()
+
+    @classmethod
+    def _title_page(cls, run: BookRun) -> tuple[tuple[str, str], ...]:
+        """The title page names the brief's title, or UNTITLED when the author gave none."""
+        return (("Title", run.brief.title_hint or cls.UNTITLED),)
 
     async def _scene(self, run: BookRun, card: SceneCard, anchors: str, beats: str) -> str:
         problems: tuple[str, ...] = ()
