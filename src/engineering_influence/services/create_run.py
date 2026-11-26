@@ -7,12 +7,14 @@ from contextlib import nullcontext
 from typing import ClassVar
 
 from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.interfaces.artifact_store_interface import ArtifactStoreInterface
 from engineering_influence.interfaces.queue_interface import QueueInterface
 from engineering_influence.interfaces.run_repository_interface import RunRepositoryInterface
 from engineering_influence.models.book_brief import BookBrief
 from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget import Budget
+from engineering_influence.models.source_entry import SourceEntry
 from engineering_influence.models.stage_plan import StagePlan
 from engineering_influence.services.advance_run import AdvanceRun
 from engineering_influence.services.interfaces.create_run_interface import CreateRunInterface
@@ -47,14 +49,23 @@ class CreateRun(CreateRunInterface):
         plans: Mapping[BookKind, StagePlan] | None = None,
         new_id: Callable[[], str] = lambda: uuid.uuid4().hex,
         ceiling: SpendCeilingInterface | None = None,
+        artifacts: ArtifactStoreInterface | None = None,
     ) -> None:
         self._runs = runs
         self._queue = queue
         self._plans = dict(self.PLANS if plans is None else plans)
         self._new_id = new_id
         self._ceiling = ceiling
+        self._artifacts = artifacts
 
-    def create(self, brief: BookBrief) -> BookRun:
+    def _store_sources(self, run_id: str, sources: tuple[SourceEntry, ...]) -> None:
+        """Write each source as its artifact before the run is saved, so a run never starts without its sources."""
+        if self._artifacts is None:
+            return
+        for entry in sources:
+            self._artifacts.put(run_id, entry.artifact(), entry.text.encode("utf-8"))
+
+    def create(self, brief: BookBrief, sources: tuple[SourceEntry, ...] = ()) -> BookRun:
         """Save a new pending run for the brief and queue its first stage; return the run."""
         plan = self._plans.get(brief.kind)
         if plan is None:
@@ -63,10 +74,17 @@ class CreateRun(CreateRunInterface):
                 message=f"this build cannot start a {brief.kind.value} book",
                 http_status=422,
             )
+        if sources and self._artifacts is None:
+            raise ApplicationError(
+                code="SOURCES_NOT_STORED",
+                message="this build cannot keep source files for a run",
+                http_status=500,
+            )
         with nullcontext() if self._ceiling is None else self._ceiling.hold():
             if self._ceiling is not None:
                 self._ceiling.admit_new(brief.budget_micro_usd)
             run = BookRun(self._new_id(), brief, plan, Budget(cap=brief.budget_micro_usd))
+            self._store_sources(run.run_id, sources)
             self._runs.save(run)
         self._queue.enqueue(
             AdvanceRun.KIND, {"run_id": run.run_id, "stage": run.stage, "attempt": 1}

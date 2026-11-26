@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from engineering_influence.models.book_brief import BookBrief
     from engineering_influence.models.book_run import BookRun
+    from engineering_influence.models.source_entry import SourceEntry
 
 
 class CreateRunInterface(ABC):
@@ -17,5 +18,5 @@ class CreateRunInterface(ABC):
     __slots__ = ()
 
     @abstractmethod
-    def create(self, brief: BookBrief) -> BookRun:
+    def create(self, brief: BookBrief, sources: tuple[SourceEntry, ...] = ()) -> BookRun:
         """Save a new pending run for the brief and queue its first stage; return the run."""

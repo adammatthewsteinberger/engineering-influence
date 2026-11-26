@@ -294,7 +294,12 @@ def test_the_cli_prints_the_package_summary_it_is_given(
             return f"[{slug}] packaged 2 files and the listing in build/{slug}/release/kdp"
 
     argv = argparse.Namespace(book_command="package", root=tmp_path, slugs=["herbs"])
-    assert BookCli(lambda root: Stub(), lambda state, settings: None, NoAwake()).run(argv) == 0
+    assert (
+        BookCli(
+            lambda root: Stub(), lambda state, settings: None, NoAwake(), lambda folder: ()
+        ).run(argv)
+        == 0
+    )
     assert (
         capsys.readouterr().out
         == "[herbs] packaged 2 files and the listing in build/herbs/release/kdp\n"

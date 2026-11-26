@@ -341,6 +341,21 @@
             {
               "choices": null,
               "default": null,
+              "dest": "source",
+              "flags": [
+                "--source"
+              ],
+              "name": "--source",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": null,
               "dest": "state_dir",
               "flags": [
                 "--state-dir"

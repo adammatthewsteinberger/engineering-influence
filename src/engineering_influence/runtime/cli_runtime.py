@@ -37,6 +37,9 @@ from engineering_influence.infrastructure.skills.new_file_skill_sink import NewF
 from engineering_influence.infrastructure.skills.toml_skill_lock_store import TomlSkillLockStore
 from engineering_influence.infrastructure.skills.toml_skill_parser import TomlSkillParser
 from engineering_influence.infrastructure.skills.toml_skill_writer import TomlSkillWriter
+from engineering_influence.infrastructure.source_library.filesystem_source_library import (
+    FilesystemSourceLibrary,
+)
 from engineering_influence.infrastructure.system_keep_awake import SystemKeepAwake
 from engineering_influence.infrastructure.tools.lazy_remote_transport_factory import (
     LazyRemoteTransportFactory,
@@ -80,6 +83,7 @@ from engineering_influence.interfaces.run_repository_interface import RunReposit
 from engineering_influence.interfaces.schema_migrator_interface import SchemaMigratorInterface
 from engineering_influence.interfaces.search_provider_interface import SearchProviderInterface
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
+from engineering_influence.models.source_entry import SourceEntry
 from engineering_influence.models.tool_limits import ToolLimits
 from engineering_influence.runtime.interfaces.cli_runtime_interface import CliRuntimeInterface
 from engineering_influence.runtime.interfaces.publishing_controller_factory_interface import (
@@ -131,6 +135,7 @@ from engineering_influence.services.skill_importer import SkillImporter
 from engineering_influence.services.skill_lock_editor import SkillLockEditor
 from engineering_influence.services.skill_lock_verifier import SkillLockVerifier
 from engineering_influence.services.skill_markdown_parser import SkillMarkdownParser
+from engineering_influence.services.source_intake import SourceIntake
 from engineering_influence.services.start_pipeline import StartPipeline
 from engineering_influence.services.tool_lock_auditor import ToolLockAuditor
 from engineering_influence.services.tool_lock_editor import ToolLockEditor
@@ -180,7 +185,12 @@ class CliRuntime(CliRuntimeInterface):
         controller = ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue()))
         return CliApplication(
             controller,
-            BookCli(self._publishing_controller, self._local_book_creator, self._keep_awake()),
+            BookCli(
+                self._publishing_controller,
+                self._local_book_creator,
+                self._keep_awake(),
+                self._read_sources,
+            ),
             ServeCli(ServeStarter()),
             DbCli(self._schema_migrator, self._secret_provider),
             RunCli(
@@ -508,6 +518,11 @@ class CliRuntime(CliRuntimeInterface):
             baseline,
             date.today(),
         )
+
+    @staticmethod
+    def _read_sources(folder: Path) -> tuple[SourceEntry, ...]:
+        """The source files in a folder, numbered and pinned, as a run keeps them."""
+        return SourceIntake(FilesystemSourceLibrary()).intake(folder)
 
     @staticmethod
     def _keep_awake() -> SystemKeepAwake:

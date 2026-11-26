@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from engineering_influence.models.book_run import BookRun
     from engineering_influence.models.budget_plan import BudgetPlan
     from engineering_influence.models.export_summary import ExportSummary
+    from engineering_influence.models.source_entry import SourceEntry
 
 
 class LocalBookCreatorInterface(ABC):
@@ -26,8 +27,13 @@ class LocalBookCreatorInterface(ABC):
         """The brief's cap set against what the book is expected to cost, or None when no model is priced."""
 
     @abstractmethod
-    def start(self, brief: BookBrief, progress: Callable[[str], None]) -> BookRun:
-        """Run the brief's plan until the run finishes or stops."""
+    def start(
+        self,
+        brief: BookBrief,
+        progress: Callable[[str], None],
+        sources: tuple[SourceEntry, ...] = (),
+    ) -> BookRun:
+        """Run the brief's plan, with its source files, until the run finishes or stops."""
 
     @abstractmethod
     def resume(self, approve_spend: bool, progress: Callable[[str], None]) -> BookRun:

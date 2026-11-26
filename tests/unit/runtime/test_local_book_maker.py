@@ -126,7 +126,7 @@ class FakeCreator:
         self.fail_start = fail_start
         self.closed = 0
 
-    def start(self, brief: object, progress: object) -> SimpleNamespace:
+    def start(self, brief: object, progress: object, sources: object = ()) -> SimpleNamespace:
         if self.fail_start:
             raise ApplicationError(code="BOOM", message="stopped", http_status=500)
         return SimpleNamespace(status=self.status, budget=SimpleNamespace(spent=7), issues=())
