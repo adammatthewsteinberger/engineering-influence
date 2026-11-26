@@ -74,7 +74,7 @@ def run() -> BookRun:
 
 def test_it_is_the_build_stage() -> None:
     assert BuildStageExecutor.STAGE == "build"
-    assert NonfictionRecipes().plan().stages[-1] == BuildStageExecutor.STAGE
+    assert NonfictionRecipes().plan().stages[-3] == BuildStageExecutor.STAGE
 
 
 def test_the_builder_is_given_the_assembled_project() -> None:

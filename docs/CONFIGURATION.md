@@ -185,6 +185,7 @@ when this index names one nothing uses. The two `compose only` rows are read by 
 | `EI_RABBITMQ_URL` | the broker | [Running the stack](#running-the-stack) |
 | `EI_RATE_BURST`, `EI_RATE_PER_SECOND` | the API's rate limit | [Running the stack](#running-the-stack) |
 | `EI_SEARXNG_PORT` (compose only) | the host port of the local search container, default 8888 | [A free local web search](#a-free-local-web-search-searxng) |
+| `EI_NARRATOR` | the narrator for the locally narrated (non-Audible) audiobook; none is built in yet, so a name is refused | [Audiobooks](AUDIOBOOKS.md) |
 | `EI_SEARXNG_URL` | the SearXNG address the research stage searches through | [A free local web search](#a-free-local-web-search-searxng) |
 | `EI_SKILL_LOCK` | the skill lock file | [The skill lock](#the-skill-lock-installed-prompt-text) |
 | `EI_STAGE_EXECUTOR` | what writes a run's stages: `local`, `model` or `deterministic` | [Limits to know](#limits-to-know) |

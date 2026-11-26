@@ -93,6 +93,8 @@ def test_the_editing_passes_are_optional_and_everything_else_is_essential() -> N
         "revise_lines",
         "copy_edit",
         "fact_check",
+        "audiobook",
+        "narration",
     }
     assert {
         name for name, (_, essential) in by_stage(brief(BookKind.NOVEL)).items() if not essential

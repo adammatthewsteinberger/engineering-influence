@@ -270,12 +270,10 @@ def test_a_same_file_anchor_link_resolves(finished: Path, book: Book, rewrite: R
     assert make_verifier().verify(mutant, book) == []
 
 
-def test_external_and_stylesheet_links_are_not_resolved(
-    finished: Path, book: Book, rewrite: Rewrite
-) -> None:
-    links = (
-        '<p><a href="https://e.example">e</a><a href="mailto:a@b.c">m</a><a href="x.css">c</a></p>'
-    )
+def test_external_links_are_not_resolved(finished: Path, book: Book, rewrite: Rewrite) -> None:
+    # A stylesheet is not a valid hyperlink target in body text (epubcheck RSC-010), so only the
+    # external and mail links are checked here.
+    links = '<p><a href="https://e.example">e</a><a href="mailto:a@b.c">m</a></p>'
     mutant = rewrite(
         finished,
         edits={"c1.xhtml": lambda s: s.replace("<p>Chapter one", links + "<p>Chapter one")},

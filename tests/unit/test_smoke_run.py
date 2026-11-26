@@ -52,8 +52,10 @@ def test_every_stage_of_the_plan_advances_and_the_run_completes(tmp_path: Path) 
         "assemble",
         "audit",
         "build",
+        "audiobook",
+        "narration",
     ]
-    assert [row.outcome for row in report.rows] == ["advanced"] * 12 + ["completed"]
+    assert [row.outcome for row in report.rows] == ["advanced"] * 14 + ["completed"]
     assert {row.attempts for row in report.rows} == {1}
     assert report.issues == ()
 
@@ -129,7 +131,7 @@ def test_the_report_and_every_artifact_are_written_to_a_new_folder(tmp_path: Pat
     report.write(folder)
     summary = json.loads((folder / "smoke-report.json").read_text(encoding="utf-8"))
     assert summary["status"] == "completed" and summary["budget"]["cap_micro_usd"] == 5_000_000
-    assert [row["stage"] for row in summary["stages"]][-1] == "build"
+    assert [row["stage"] for row in summary["stages"]][-1] == "narration"
     assert summary["budget"]["spent_usd"] == round(report.spent_micro_usd / 1_000_000, 4)
     assert (folder / "manuscript" / "src" / "chapter_01.md").is_file()
     assert (folder / "audit" / "release-readiness.json").is_file()
