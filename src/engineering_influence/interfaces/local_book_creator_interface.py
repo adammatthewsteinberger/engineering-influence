@@ -33,6 +33,7 @@ class LocalBookCreatorInterface(ABC):
         progress: Callable[[str], None],
         sources: tuple[SourceEntry, ...] = (),
         previous_lock: str | None = None,
+        stop_after: str | None = None,
     ) -> BookRun:
         """Run the brief's plan, with its source files, until the run finishes or stops."""
 

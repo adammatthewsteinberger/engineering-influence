@@ -25,6 +25,7 @@ class LocalBookRunInterface(ABC):
         progress: Callable[[str], None],
         sources: tuple[SourceEntry, ...] = (),
         previous_lock: str | None = None,
+        stop_after: str | None = None,
     ) -> BookRun:
         """Create the run with its source files and drive it until it finishes or stops; ``progress`` hears one line per stage."""
 
