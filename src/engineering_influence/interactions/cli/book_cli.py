@@ -103,6 +103,11 @@ class BookCli(BookCliInterface):
             help="a folder of source files (.md, .txt) the run adapts; each file is kept in the run",
         )
         create.add_argument(
+            "--previous-lock",
+            type=Path,
+            help="the shooting_lock.json of an earlier run, so its scene numbers carry over (screenplay runs only)",
+        )
+        create.add_argument(
             "--budget-usd", help="the most the run may spend, in dollars (no default)"
         )
         create.add_argument("--profile", type=Path, help="the author's details and pricing (TOML)")
@@ -220,7 +225,12 @@ class BookCli(BookCliInterface):
                 run = (
                     creator.resume(arguments.approve_spend, progress)
                     if brief is None
-                    else creator.start(brief, progress, self._sources(arguments.source))
+                    else creator.start(
+                        brief,
+                        progress,
+                        self._sources(arguments.source),
+                        self._previous_lock(arguments.previous_lock),
+                    )
                 )
             return self._finish(creator, run, arguments.out, state)
         except ApplicationError as error:
@@ -228,6 +238,11 @@ class BookCli(BookCliInterface):
             return 2
         finally:
             creator.close()
+
+    @staticmethod
+    def _previous_lock(path: Path | None) -> str | None:
+        """The previous run's shooting script lock, as text, or none when no lock file was given."""
+        return None if path is None else path.read_text(encoding="utf-8")
 
     def _sources(self, folder: Path | None) -> tuple[SourceEntry, ...]:
         """The folder's source files, numbered and pinned, or none when no folder was given."""

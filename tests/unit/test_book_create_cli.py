@@ -46,6 +46,7 @@ class Creator(LocalBookCreatorInterface):
         self.planned = plan
         self.started: list[BookBrief] = []
         self.sources: list[tuple[SourceEntry, ...]] = []
+        self.previous_locks: list[str | None] = []
         self.resumed: list[bool] = []
         self.exported: list[Path] = []
         self.closed = 0
@@ -63,9 +64,11 @@ class Creator(LocalBookCreatorInterface):
         brief: BookBrief,
         progress: Callable[[str], None],
         sources: tuple[object, ...] = (),
+        previous_lock: str | None = None,
     ) -> BookRun:
         self.started.append(brief)
         self.sources.append(sources)
+        self.previous_locks.append(previous_lock)
         progress("brief: advanced")
         return self._result()
 
@@ -134,6 +137,14 @@ def test_the_run_is_held_awake_unless_the_author_turns_that_off(tmp_path: Path) 
 
 def create(tmp_path: Path, *extra: str) -> list[str]:
     return ["--kind", "nonfiction", "--budget-usd", "5", "--out", str(tmp_path / "out"), *extra]
+
+
+def test_a_previous_shooting_lock_file_is_passed_to_the_run_as_text(tmp_path: Path) -> None:
+    harness = Harness(run_in(RunStatus.COMPLETED))
+    lock = tmp_path / "shooting_lock.json"
+    lock.write_text('{"version": 1, "entries": []}', encoding="utf-8")
+    assert harness.run("a film", *create(tmp_path, "--previous-lock", str(lock))) == 0
+    assert harness.creator.previous_locks == ['{"version": 1, "entries": []}']
 
 
 def test_a_finished_book_is_written_and_the_command_succeeds(

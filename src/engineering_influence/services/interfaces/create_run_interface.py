@@ -18,5 +18,10 @@ class CreateRunInterface(ABC):
     __slots__ = ()
 
     @abstractmethod
-    def create(self, brief: BookBrief, sources: tuple[SourceEntry, ...] = ()) -> BookRun:
+    def create(
+        self,
+        brief: BookBrief,
+        sources: tuple[SourceEntry, ...] = (),
+        previous_lock: str | None = None,
+    ) -> BookRun:
         """Save a new pending run for the brief and queue its first stage; return the run."""

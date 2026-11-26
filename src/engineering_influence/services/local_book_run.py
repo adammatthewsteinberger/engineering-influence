@@ -67,6 +67,7 @@ class LocalBookRun(LocalBookRunInterface):
         brief: BookBrief,
         progress: Callable[[str], None],
         sources: tuple[SourceEntry, ...] = (),
+        previous_lock: str | None = None,
     ) -> BookRun:
         """Create the run for the brief, with its source files, and drive it."""
         if self._runs.run_ids():
@@ -75,7 +76,7 @@ class LocalBookRun(LocalBookRunInterface):
                 message="this folder already holds a run; resume it, or start in a new folder",
                 http_status=409,
             )
-        run = self._creator.create(brief, sources)
+        run = self._creator.create(brief, sources, previous_lock)
         return self._drive(run.run_id, progress)
 
     def resume(self, approve_spend: bool, progress: Callable[[str], None]) -> BookRun:
