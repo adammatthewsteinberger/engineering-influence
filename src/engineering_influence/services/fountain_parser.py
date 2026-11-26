@@ -70,6 +70,27 @@ class FountainParser(FountainParserInterface):
             scenes.append(self._scene(len(scenes) + 1, heading, lines))
         return tuple(scenes)
 
+    def scene_chunks(self, text: str) -> tuple[str, tuple[str, ...]]:
+        """The title page and any text before the first scene, then each scene's raw text from its heading line up to
+        the next, in order. The same lines and the same headings as `scenes`, with boneyard comments removed."""
+        body = self.BONEYARD.sub("", text)
+        front = ""
+        if body.startswith("Title:"):
+            title, _, body = body.partition("\n\n")
+            front = f"{title}\n\n"
+        before: list[str] = []
+        chunks: list[list[str]] = []
+        for raw in body.splitlines():
+            cleaned = self._without_notes([raw])
+            if cleaned and self.HEADING.match(cleaned[0]):
+                chunks.append([raw])
+            elif chunks:
+                chunks[-1].append(raw)
+            else:
+                before.append(raw)
+        preamble = "\n".join(before)
+        return f"{front}{preamble}", tuple("\n".join(chunk) for chunk in chunks)
+
     def _scene(self, number: int, heading: str, lines: list[str]) -> FountainScene:
         notes = tuple(self._note(content) for content in self.NOTE.findall(heading))
         clean = self._without_notes([heading])[0]

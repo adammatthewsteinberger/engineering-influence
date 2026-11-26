@@ -64,6 +64,7 @@ class CostEstimator(CostEstimatorInterface):
             NonfictionRecipes.AUDIOBOOK_STAGE,
             NonfictionRecipes.NARRATION_STAGE,
             ScreenplayRecipes.ASSEMBLE_STAGE,
+            ScreenplayRecipes.LOCK_STAGE,
             ScreenplayRecipes.RENDER_STAGE,
             ScreenplayRecipes.EPUB_STAGE,
         }
