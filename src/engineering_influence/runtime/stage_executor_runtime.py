@@ -38,6 +38,7 @@ from engineering_influence.infrastructure.models.toml_model_catalog_loader impor
 from engineering_influence.infrastructure.models.toml_model_profile_loader import (
     TomlModelProfileLoader,
 )
+from engineering_influence.infrastructure.narration.kokoro_mlx_narrator import KokoroMlxNarrator
 from engineering_influence.infrastructure.prompt_library.toml_prompt_library import (
     TomlPromptLibrary,
 )
@@ -754,12 +755,15 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
     def _narrator(environment: Mapping[str, str]) -> NarratorInterface | None:
         """The narrator for the non-Audible audiobook: none unless ``EI_NARRATOR`` names one.
 
-        No engine is built into this release yet (ADR 0014 follows a listening test on the Mac). Naming one is refused
-        now, rather than producing a book without the audio that was asked for.
+        ``kokoro`` is the built-in engine (Kokoro-82M through mlx-audio, ADR 0014), with the voice ``EI_NARRATOR_VOICE``
+        names. Any other name is refused, rather than producing a book without the audio that was asked for.
         """
         name = environment.get("EI_NARRATOR", "").strip()
         if not name:
             return None
+        if name == "kokoro":
+            voice = environment.get("EI_NARRATOR_VOICE", "").strip() or "af_heart"
+            return KokoroMlxNarrator(voice)
         raise ApplicationError(
             code="NARRATOR_UNAVAILABLE",
             message=(
