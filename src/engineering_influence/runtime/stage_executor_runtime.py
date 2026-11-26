@@ -35,6 +35,7 @@ from engineering_influence.infrastructure.models.toml_model_profile_loader impor
 from engineering_influence.infrastructure.prompt_library.toml_prompt_library import (
     TomlPromptLibrary,
 )
+from engineering_influence.infrastructure.publishing.pypdf_pdf_inspector import PypdfPdfInspector
 from engineering_influence.infrastructure.research.brave_search_provider import (
     BraveSearchProvider,
 )
@@ -60,6 +61,10 @@ from engineering_influence.infrastructure.tools.stdio_mcp_transport_factory impo
     StdioMcpTransportFactory,
 )
 from engineering_influence.infrastructure.tools.toml_tool_lock_store import TomlToolLockStore
+from engineering_influence.infrastructure.typesetting.latex_compiler import LatexCompiler
+from engineering_influence.infrastructure.typesetting.latex_screenplay_typesetter import (
+    LatexScreenplayTypesetter,
+)
 from engineering_influence.interfaces.artifact_store_interface import ArtifactStoreInterface
 from engineering_influence.interfaces.book_publisher_interface import BookPublisherInterface
 from engineering_influence.interfaces.journal_interface import JournalInterface
@@ -139,6 +144,9 @@ from engineering_influence.services.outline_parser import OutlineParser
 from engineering_influence.services.quality_report import QualityReport
 from engineering_influence.services.read_skill_tool import ReadSkillTool
 from engineering_influence.services.reference_parser import ReferenceParser
+from engineering_influence.services.render_screenplay_stage_executor import (
+    RenderScreenplayStageExecutor,
+)
 from engineering_influence.services.revision_stage_executor import RevisionStageExecutor
 from engineering_influence.services.run_tool_loop import RunToolLoop
 from engineering_influence.services.scene_card_list import SceneCardList
@@ -149,6 +157,8 @@ from engineering_influence.services.screenplay_assembler import ScreenplayAssemb
 from engineering_influence.services.screenplay_draft_stage_executor import (
     ScreenplayDraftStageExecutor,
 )
+from engineering_influence.services.screenplay_latex_source import ScreenplayLatexSource
+from engineering_influence.services.screenplay_length import ScreenplayLength
 from engineering_influence.services.screenplay_output_checks import ScreenplayOutputChecks
 from engineering_influence.services.screenplay_recipes import ScreenplayRecipes
 from engineering_influence.services.screenplay_revise_stage_executor import (
@@ -414,6 +424,16 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                             ModelSceneReviser(prompts, loop, SpendGuard),
                             SceneCardList(),
                             ScreenplaySectionCheck(FountainParser()),
+                        ),
+                    }
+                ),
+                RenderScreenplayStageExecutor.STAGE: KindStageExecutor(
+                    {
+                        BookKind.SCREENPLAY: RenderScreenplayStageExecutor(
+                            artifacts,
+                            ScreenplayLatexSource(FountainParser()),
+                            LatexScreenplayTypesetter(LatexCompiler(), PypdfPdfInspector()),
+                            ScreenplayLength(),
                         ),
                     }
                 ),
