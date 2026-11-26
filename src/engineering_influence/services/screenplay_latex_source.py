@@ -54,16 +54,23 @@ class ScreenplayLatexSource(ScreenplayLatexSourceInterface):
         return [(block.kind, block.lines) for block in self._parser.blocks(script)]
 
     def _element(self, kind: str, lines: tuple[str, ...]) -> str:
-        text = " \\\\\n".join(self._escape(line) for line in lines)
         if kind == "heading":
-            text = text.upper()
-            return f"\\par\\noindent{{\\bfseries {text}}}\\par"
+            return self._heading(lines)
+        text = " \\\\\n".join(self._escape(line) for line in lines)
         if kind == "transition":
             return f"\\par{{\\raggedleft {text}\\par}}"
         if kind == "centered":
             return f"\\par{{\\centering {text}\\par}}"
         left, right = self.INDENTS[kind]
         return f"\\par{{\\leftskip={left}in \\rightskip={right}in \\noindent {text}\\par}}"
+
+    def _heading(self, lines: tuple[str, ...]) -> str:
+        """The heading in bold capitals, with its locked scene number at the right margin when it has one."""
+        plain, number = self._parser.split_scene_number(" ".join(lines))
+        text = self._escape(plain.upper())
+        if number is None:
+            return f"\\par\\noindent{{\\bfseries {text}}}\\par"
+        return f"\\par\\noindent{{\\bfseries {text}\\hfill {self._escape(number)}}}\\par"
 
     def _title_page(self, script: str) -> str:
         pairs = self._parser.title_page(script)

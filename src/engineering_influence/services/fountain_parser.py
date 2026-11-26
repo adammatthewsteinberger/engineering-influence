@@ -26,6 +26,7 @@ class FountainParser(FountainParserInterface):
     HEADING: ClassVar[re.Pattern[str]] = re.compile(
         r"^\s*(?:\.(?!\.)|(?:INT|EXT|EST|INT\./EXT|INT/EXT|I/E)[. ])", re.IGNORECASE
     )
+    SCENE_NUMBER: ClassVar[re.Pattern[str]] = re.compile(r"^(.*?)\s*#([0-9]+[A-Z]?)#\s*$")
     TITLE_KEY: ClassVar[re.Pattern[str]] = re.compile(r"^[A-Za-z][A-Za-z ]*:")
     CENTERED: ClassVar[re.Pattern[str]] = re.compile(r"^>\s*(.*?)\s*<$")
     FORCED_TRANSITION: ClassVar[re.Pattern[str]] = re.compile(r"^>\s*(.*)$")
@@ -47,6 +48,11 @@ class FountainParser(FountainParserInterface):
                 key, value = line.split(":", 1)
                 pairs.append((key.strip(), value.strip()))
         return tuple(pairs)
+
+    def split_scene_number(self, heading: str) -> tuple[str, str | None]:
+        """The heading without its locked scene number, and that number (such as 42A) when the heading has one."""
+        match = self.SCENE_NUMBER.match(heading)
+        return (match.group(1), match.group(2)) if match is not None else (heading, None)
 
     def _title_block(self, text: str) -> str | None:
         """The title page: the first paragraph, when its first line is a `Key:` and one of its keys is Title. Fountain

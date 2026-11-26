@@ -33,6 +33,7 @@ class RenderScreenplayStageExecutor(StageExecutorInterface):
 
     STAGE: ClassVar[str] = "render_script"
     SCRIPT: ClassVar[str] = "screenplay.fountain"
+    SHOOTING_SCRIPT: ClassVar[str] = "shooting_script.fountain"
     PDF: ClassVar[str] = "screenplay.pdf"
     REPORT: ClassVar[str] = "render.md"
 
@@ -50,7 +51,7 @@ class RenderScreenplayStageExecutor(StageExecutorInterface):
 
     async def execute(self, run: BookRun, attempt: int) -> StageReport:
         """Typeset the script, check its length, and store the PDF and the report."""
-        script = await self._required(run, self.SCRIPT)
+        script = await self._printed_script(run)
         result = await asyncio.to_thread(self._typesetter.typeset, self._source.render(script))
         if result.status != 0:
             raise ApplicationError(
@@ -72,6 +73,13 @@ class RenderScreenplayStageExecutor(StageExecutorInterface):
             for problem in problems
         )
         return StageReport(issues)
+
+    async def _printed_script(self, run: BookRun) -> str:
+        """The locked script with its scene numbers when the lock stage stored one, otherwise the plain script."""
+        numbered = await asyncio.to_thread(self._artifacts.get, run.run_id, self.SHOOTING_SCRIPT)
+        if numbered is not None:
+            return numbered.decode("utf-8")
+        return await self._required(run, self.SCRIPT)
 
     async def _required(self, run: BookRun, name: str) -> str:
         data = await asyncio.to_thread(self._artifacts.get, run.run_id, name)
