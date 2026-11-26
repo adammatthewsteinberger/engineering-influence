@@ -40,3 +40,17 @@ def test_the_message_shows_at_most_five_problems() -> None:
     with pytest.raises(ApplicationError) as error:
         ScreenplayOutputChecks().check("anchors", "", None)
     assert error.value.message.count(";") == 4
+
+
+def test_an_audit_that_breaks_its_format_is_refused_as_invalid_output() -> None:
+    with pytest.raises(ApplicationError) as error:
+        ScreenplayOutputChecks().check("audit", "## Source verdicts\n", None)
+    assert error.value.code == "STAGE_OUTPUT_INVALID"
+    assert error.value.message.startswith("audit: ")
+
+
+def test_a_visual_grammar_that_breaks_its_format_is_refused_as_invalid_output() -> None:
+    with pytest.raises(ApplicationError) as error:
+        ScreenplayOutputChecks().check("visual_grammar", "## Primary sets\n", None)
+    assert error.value.code == "STAGE_OUTPUT_INVALID"
+    assert error.value.message.startswith("visual_grammar: ")

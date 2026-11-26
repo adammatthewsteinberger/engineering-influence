@@ -6,12 +6,17 @@ from typing import ClassVar
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interfaces.stage_output_check_interface import StageOutputCheckInterface
 from engineering_influence.services.screenplay_anchors_check import ScreenplayAnchorsCheck
+from engineering_influence.services.screenplay_audit_check import ScreenplayAuditCheck
 from engineering_influence.services.screenplay_beat_sheet_check import ScreenplayBeatSheetCheck
 from engineering_influence.services.screenplay_scene_cards_check import ScreenplaySceneCardsCheck
+from engineering_influence.services.screenplay_visual_grammar_check import (
+    ScreenplayVisualGrammarCheck,
+)
 
 
 class ScreenplayOutputChecks(StageOutputCheckInterface):
-    """The anchors, the beat sheet and the scene cards are each checked; the brief is not, since it is prose. A stage
+    """The anchors, the audit, the beat sheet, the scene cards and the visual grammar are each checked; the brief is not,
+    since it is prose. A stage
     whose answer breaks a check raises `STAGE_OUTPUT_INVALID` naming up to five problems."""
 
     MAX_PROBLEMS_SHOWN: ClassVar[int] = 5
@@ -38,4 +43,8 @@ class ScreenplayOutputChecks(StageOutputCheckInterface):
             return ScreenplayBeatSheetCheck(self._target_pages).problems(text)
         if stage == "scene_cards":
             return ScreenplaySceneCardsCheck().problems(text)
+        if stage == "audit":
+            return ScreenplayAuditCheck().problems(text)
+        if stage == "visual_grammar":
+            return ScreenplayVisualGrammarCheck().problems(text)
         return ()

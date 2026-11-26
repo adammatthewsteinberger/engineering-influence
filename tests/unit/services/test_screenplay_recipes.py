@@ -11,7 +11,15 @@ from engineering_influence.services.screenplay_recipes import ScreenplayRecipes
 def test_the_plan_is_the_brief_and_the_architecture_in_order() -> None:
     plan = ScreenplayRecipes().plan()
     assert plan.kind is BookKind.SCREENPLAY
-    assert tuple(plan.stages) == ("brief", "anchors", "beats", "scene_cards", "draft")
+    assert tuple(plan.stages) == (
+        "brief",
+        "anchors",
+        "audit",
+        "beats",
+        "scene_cards",
+        "visual_grammar",
+        "draft",
+    )
 
 
 def test_each_stage_has_its_template_and_inputs() -> None:

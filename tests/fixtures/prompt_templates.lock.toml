@@ -50,12 +50,16 @@ version = 1
 fingerprint = "6f4e44f3c43f42730bba78da0ba2277a2b266f2e3313fdf20c6132f68da78015"
 
 [screenplay_anchors]
+version = 2
+fingerprint = "67bad9bf0cbae1d23c654d158c5a3167b20345420b682b166ff0db37268d05ad"
+
+[screenplay_audit]
 version = 1
-fingerprint = "f7575989cc0af8485b378f175e23c655538ba464943495073522c4eecfb01fb3"
+fingerprint = "94b20d28af85b3cf83ec3086527056d811dcfe20331f7efd6bbed1c9dcba462f"
 
 [screenplay_beats]
-version = 1
-fingerprint = "8baceecb28ebbadacab193ad4b2d611b0703443f0d8a421f39c6e17e33244627"
+version = 2
+fingerprint = "826200295354f69e2b8c8b3f8d35f0dbfdf91a6c06540acc86877eb365aae209"
 
 [screenplay_brief]
 version = 1
@@ -68,6 +72,10 @@ fingerprint = "84f372c9c8c6817087d8d824aaa57062e4b162b7b73c448a50b9c58383c14e8b"
 [screenplay_scene_cards]
 version = 2
 fingerprint = "7502004ce04df5446a535a52eba13efccf3720421301b9dff83ace600a3b3820"
+
+[screenplay_visual_grammar]
+version = 1
+fingerprint = "571feeae0eda7dfc27af080958c82f6fc380b1af5bba598359a7aa8d8861a9b2"
 
 [skill_guidance]
 version = 2

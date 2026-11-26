@@ -43,4 +43,12 @@ def test_the_screenplay_estimate_covers_every_planned_stage() -> None:
     estimator = CostEstimator(PRICED, {BookKind.SCREENPLAY: ScreenplayRecipes()}, CreateRun.PLANS)
     brief = BookBrief(BookKind.SCREENPLAY, "a bee colony", 5_000_000)
     names = [name for name, _, _ in estimator.estimate(brief).stages]
-    assert names == ["brief", "anchors", "beats", "scene_cards", "draft"]
+    assert names == [
+        "brief",
+        "anchors",
+        "audit",
+        "beats",
+        "scene_cards",
+        "visual_grammar",
+        "draft",
+    ]

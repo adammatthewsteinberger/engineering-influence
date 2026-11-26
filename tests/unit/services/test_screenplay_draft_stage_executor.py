@@ -184,8 +184,10 @@ def test_the_plan_drafts_scenes_after_the_architecture() -> None:
     assert tuple(ScreenplayRecipes().plan().stages) == (
         "brief",
         "anchors",
+        "audit",
         "beats",
         "scene_cards",
+        "visual_grammar",
         "draft",
     )
 

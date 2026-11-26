@@ -12,14 +12,16 @@ from engineering_influence.models.stage_recipe import StageRecipe
 class ScreenplayRecipes(StageRecipesInterface):
     """Each stage is one prompt. Each stage's answer is checked by `ScreenplayOutputChecks` before it is stored, so a
     beat sheet with a missing beat stops the run where it was written. The drafting and the production layer come in
-    later stages; until then a screenplay run's plan ends at the scene cards.
+    later stages.
     """
 
     RECIPES: ClassVar[tuple[StageRecipe, ...]] = (
         StageRecipe("brief", "screenplay_brief", (), 1_500),
         StageRecipe("anchors", "screenplay_anchors", ("brief",), 4_000),
+        StageRecipe("audit", "screenplay_audit", ("brief", "anchors"), 8_192),
         StageRecipe("beats", "screenplay_beats", ("brief", "anchors"), 3_000),
         StageRecipe("scene_cards", "screenplay_scene_cards", ("brief", "anchors", "beats"), 8_192),
+        StageRecipe("visual_grammar", "screenplay_visual_grammar", ("anchors", "beats"), 4_000),
     )
 
     DRAFT_STAGE: ClassVar[str] = "draft"
