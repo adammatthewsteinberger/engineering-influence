@@ -2,24 +2,35 @@
 
 An optional phase after the build makes two outputs. Both are off by default.
 
-## For Audible (ACX): text for Virtual Voice
+## For Audible (ACX): text and audio for each part
 
-The `audiobook` stage writes the four things ACX asks for, as text for Virtual Voice:
+The `audiobook` stage writes the four parts ACX asks for, each as text and as audio:
 
-| ACX upload | File | What the pipeline does |
+| ACX upload | Text | Audio |
 |---|---|---|
-| Opening credits | `acx/opening-credits.txt` | Drafts the title and the author's name. The narrator line is for you to add in ACX. |
-| Chapters (one per chapter) | `acx/chapter_NN.txt` | The chapter's speakable text, with its heading first. |
-| Closing credits | `acx/closing-credits.txt` | Drafts a closing line from the title and author. |
-| Retail sample | `acx/retail-sample.txt` | The opening of chapter 1, up to 300 words. Set the length ACX requires when you choose the sample. |
+| Opening credits | `acx/opening-credits.txt` | `acx/audio/opening-credits.wav` |
+| Chapters (one per chapter) | `acx/chapter_NN.txt` | `acx/audio/chapter_NN.wav` |
+| Closing credits | `acx/closing-credits.txt` | `acx/audio/closing-credits.wav` |
+| Retail sample (first 300 words of chapter 1) | `acx/retail-sample.txt` | `acx/audio/retail-sample.wav` |
 
-`acx-export.json` names Amazon's Virtual Voice (set up inside ACX) as the narrator and sets
-`review_before_upload` to true. The credit wording and the sample length are drafts: ACX's own credit and sample rules
-are not checked by this pipeline, so read them on ACX's page before uploading.
+The audio is read by the narrator named in `EI_NARRATOR`, gated and levelled the same way as the other-store audiobook
+below. `acx-export.json` records each part's outcome.
 
-This pipeline does not generate Audible audio. ACX prohibits unauthorized text-to-speech. To use Virtual Voice,
-upload the text in ACX and choose the narrator there. Check ACX's current Virtual Voice terms and upload format on
-ACX's own page before you upload.
+**Virtual Voice is not assumed.** Amazon's Virtual Voice is available only after you apply for access inside ACX. The
+text files are the script for it, to paste into ACX if access is granted. Nothing here assumes you have that access.
+
+**Check ACX's terms first.** ACX prohibits unauthorized text-to-speech. This pipeline does not upload anything, and the
+audio it writes is for your review. Read ACX's current terms on synthetic narration, and its upload format, before you
+upload any of it. The credit wording and the sample length are drafts: ACX's own credit and sample rules are not checked
+here.
+
+No narrator engine is built into this release, so the audio parts are not made yet. A name in `EI_NARRATOR` is refused
+with `NARRATOR_UNAVAILABLE` until an engine is added (ADR 0014 follows a listening test). With `EI_NARRATOR` unset,
+`acx-export.json` says the audio was not narrated, and the text is still written.
+
+A part whose audio the gate refuses is reported as `ACX_AUDIO_REJECTED`, and one whose narrator fails as
+`ACX_AUDIO_FAILED`. Both are reported without stopping the run, and a chapter with no speakable words is reported as
+`ACX_EMPTY_CHAPTER`.
 
 ## For other stores: a locally narrated audiobook
 
@@ -31,8 +42,8 @@ No narrator engine is built into this release. Setting `EI_NARRATOR` is refused 
 listening test). The manifest, `narration.json`, carries an AI-narration disclosure. Store listings for these
 audiobooks must carry the same disclosure, which this release does not yet add to the listing.
 
-Do not upload these audiobooks to ACX or to Audible.
+Do not upload the narrated audiobook to Audible. Google Play Books, Kobo and Spotify accept disclosed AI narration;
+confirm each store's current rule before you upload.
 
-A name in `EI_NARRATOR` is refused with `NARRATOR_UNAVAILABLE` until an engine is built.
-
-The narration stage also refuses a chapter with no speakable text (`AUDIO_NO_TEXT`) or a narrator that changes its sample rate mid-chapter (`AUDIO_RATE_CHANGED`); both are reported without stopping the run.
+The narration stage also refuses a chapter with no speakable text (`AUDIO_NO_TEXT`) or a narrator that changes its
+sample rate mid-chapter (`AUDIO_RATE_CHANGED`); both are reported without stopping the run.

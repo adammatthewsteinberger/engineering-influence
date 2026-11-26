@@ -166,7 +166,7 @@ def test_a_narrator_that_changes_its_sample_rate_partway_is_a_failed_chapter() -
     executor, _store = world(Wobbling())
     report = run(executor)
     assert "NARRATION_FAILED" in [issue.code for issue in report.issues]
-    assert "partway through a chapter" in report.issues[0].detail
+    assert "partway through a text" in report.issues[0].detail
 
 
 def test_a_chapter_with_no_speakable_text_is_a_failed_chapter_not_a_crash() -> None:
@@ -179,4 +179,4 @@ def test_a_chapter_with_no_speakable_text_is_a_failed_chapter_not_a_crash() -> N
     )
     report = run(executor)
     assert [issue.code for issue in report.issues] == ["NARRATION_FAILED"]
-    assert "no text to narrate" in report.issues[0].detail
+    assert "no speakable words to narrate" in report.issues[0].detail
