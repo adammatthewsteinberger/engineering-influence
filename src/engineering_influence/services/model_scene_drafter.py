@@ -36,11 +36,17 @@ class ModelSceneDrafter(SceneDrafterInterface):
         self._guards = guards
 
     def draft(
-        self, run: BookRun, card: SceneCard, anchors: str, beats: str, try_number: int
+        self, run: BookRun, card: SceneCard, anchors: str, beats: str, sources: str, try_number: int
     ) -> str:
         """The scene as Fountain, or ApplicationError when the model's answer cannot be used."""
         template = self._prompts.get(self.TEMPLATE)
-        values = {"idea": run.brief.idea, "anchors": anchors, "beats": beats, "card": card.body}
+        values = {
+            "idea": run.brief.idea,
+            "anchors": anchors,
+            "beats": beats,
+            "card": card.body,
+            "sources": sources,
+        }
         request = ModelRequest(
             system=self._render(template, "system", values),
             prompt=self._render(template, "user", values),

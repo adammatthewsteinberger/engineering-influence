@@ -45,3 +45,13 @@ def test_sources_are_refused_by_a_build_that_cannot_keep_them_and_no_run_is_save
         creator.create(BRIEF, (entry(1, "one"),))
     assert refused.value.code == "SOURCES_NOT_STORED"
     assert list(runs.run_ids()) == []
+
+
+def test_a_screenplay_run_is_refused_without_a_source_folder_before_anything_is_saved() -> None:
+    runs = InMemoryRunRepository()
+    creator = CreateRun(runs, InMemoryQueue(), artifacts=InMemoryArtifactStore())
+    screenplay = BookBrief(BookKind.SCREENPLAY, "a film", 1_000_000)
+    with pytest.raises(ApplicationError) as refused:
+        creator.create(screenplay)
+    assert refused.value.code == "SCREENPLAY_NO_SOURCES"
+    assert list(runs.run_ids()) == []

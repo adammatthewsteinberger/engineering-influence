@@ -12,7 +12,8 @@ from engineering_influence.services.interfaces.screenplay_scene_cards_check_inte
 
 class ScreenplaySceneCardsCheck(ScreenplaySceneCardsCheckInterface):
     """A card is a `## S01 · heading` section with bullet fields: `**What changes:**`, `**Therefore:**` or `**But:**`
-    (not on the last card), `**Beat:**` (one of the fifteen beats), and `**Storyline:**` (A, B, M, T or E).
+    (not on the last card), `**Beat:**` (one of the fifteen beats), `**Storyline:**` (A, B, M, T or E), and `**Sources:**` (source numbers such as
+    `003, 007`).
 
     What it refuses: card numbers that are not 1, 2, 3 in order; a missing field; a card other than the last with
     neither Therefore nor But; a beat out of order; a storyline outside A, B, M, T, E; and All Is Lost not at
@@ -59,7 +60,7 @@ class ScreenplaySceneCardsCheck(ScreenplaySceneCardsCheckInterface):
 
     def _card_problems(self, number: int, body: str, last: bool) -> list[str]:
         found: list[str] = []
-        for field in ("What changes", "Beat", "Storyline"):
+        for field in ("What changes", "Beat", "Storyline", "Sources"):
             if f"**{field}:**" not in body:
                 found.append(f"card S{number:02d} has no '**{field}:**' field")
         if not last and "**Therefore:**" not in body and "**But:**" not in body:
@@ -69,6 +70,11 @@ class ScreenplaySceneCardsCheck(ScreenplaySceneCardsCheckInterface):
         storyline = self._field(body, "Storyline")
         if storyline is not None and storyline not in self.STORYLINES:
             found.append(f"card S{number:02d}: storyline {storyline!r} is not A, B, M, T or E")
+        sources = self._field(body, "Sources")
+        if sources is not None and not re.fullmatch(r"\d{1,3}(\s*,\s*\d{1,3})*", sources):
+            found.append(
+                f"card S{number:02d}: sources {sources!r} are not source numbers such as 003, 007"
+            )
         return found
 
     def _order_problems(self, cards: tuple[tuple[int, str], ...]) -> list[str]:

@@ -98,11 +98,13 @@ class ModelStageExecutor(StageExecutorInterface):
                 message=f"stage {run.stage!r} needs {', '.join(missing)}, which this run has not stored",
                 http_status=409,
             )
+        template = self._prompts.get(recipe.template)
         values = self._brief_values(run)
+        if "sources" in template.BLANK.findall(template.parts.get("user", "")):
+            values["sources"] = await self._source_blocks(run)
         for blank, artifact in recipe.input_artifacts().items():
             data = await asyncio.to_thread(self._artifacts.get, run.run_id, artifact)
             values[blank] = (data or b"").decode("utf-8")
-        template = self._prompts.get(recipe.template)
         prompt = self._render(template, "user", values)
         version = template.identifier()
         guidance = self._guidance.for_stage(run.stage)
@@ -128,6 +130,16 @@ class ModelStageExecutor(StageExecutorInterface):
             self._artifacts.put, run.run_id, recipe.output_name(), outcome.text.encode("utf-8")
         )
         return StageReport()
+
+    async def _source_blocks(self, run: BookRun) -> str:
+        """Every source file the run keeps, each under its number, for a stage that reads them all."""
+        names = await asyncio.to_thread(self._artifacts.names, run.run_id)
+        blocks = []
+        for name in sorted(n for n in names if n.startswith("source/")):
+            data = await asyncio.to_thread(self._artifacts.get, run.run_id, name)
+            number = name.removeprefix("source/").removesuffix(".md")
+            blocks.append(f"Source {number}:\n{(data or b'').decode('utf-8')}")
+        return "\n\n".join(blocks) or self.UNSET
 
     def _recipe(self, stage: str) -> StageRecipe:
         try:

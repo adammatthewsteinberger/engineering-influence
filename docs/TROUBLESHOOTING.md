@@ -102,7 +102,8 @@ recorded cassettes) and need no action from you.
 | `SCREENPLAY_NO_TITLE` | `the title page must name the title` | A screenplay's title page has no `Title:` line. Add one to the screenplay settings |
 | `SCREENPLAY_NO_SCENES` | `a screenplay has at least one scene` | The screenplay has no scenes to join. Check the drafted scenes |
 | `SCREENPLAY_SCENE_INVALID` | `scene N must be exactly one scene heading and its elements` | A drafted scene holds more than one scene heading. Split it or redraft it |
-| `SCENE_CARDS_UNREADABLE` | `the scene cards have no '## S01 ·' card` | The scene cards from the architecture stage cannot be read: a card has no `**Beat:**` field, or there are no cards at all. Re-run the scene-cards stage |
+| `SCENE_CARDS_UNREADABLE` | `the scene cards have no '## S01 ·' card` | The scene cards from the architecture stage cannot be read: a card has no `**Beat:**` field, no `**Sources:**` field of source numbers, or there are no cards at all. Re-run the scene-cards stage |
+| `SCREENPLAY_NO_SOURCES` | `a screenplay run needs a source folder, given with --source` | A screenplay is written from the author's source files, so the run needs `--source DIR`. Give the folder and start again |
 
 ## Collecting evidence for a bug report
 

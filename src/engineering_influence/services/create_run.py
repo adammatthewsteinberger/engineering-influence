@@ -74,6 +74,12 @@ class CreateRun(CreateRunInterface):
                 message=f"this build cannot start a {brief.kind.value} book",
                 http_status=422,
             )
+        if brief.kind is BookKind.SCREENPLAY and not sources:
+            raise ApplicationError(
+                code="SCREENPLAY_NO_SOURCES",
+                message="a screenplay run needs a source folder, given with --source",
+                http_status=422,
+            )
         if sources and self._artifacts is None:
             raise ApplicationError(
                 code="SOURCES_NOT_STORED",

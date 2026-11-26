@@ -18,6 +18,6 @@ class SceneDrafterInterface(ABC):
 
     @abstractmethod
     def draft(
-        self, run: BookRun, card: SceneCard, anchors: str, beats: str, try_number: int
+        self, run: BookRun, card: SceneCard, anchors: str, beats: str, sources: str, try_number: int
     ) -> str:
         """The scene as Fountain: its heading and its elements. Raise an ApplicationError when no scene can be drafted."""

@@ -20,7 +20,12 @@ BEATS = [
 
 
 def card(
-    number: int, beat: str, link: bool = True, storyline: str = "A", changes: bool = True
+    number: int,
+    beat: str,
+    link: bool = True,
+    storyline: str = "A",
+    changes: bool = True,
+    sources: str | None = "001",
 ) -> str:
     lines = [f"## S{number:02d} · a scene"]
     if changes:
@@ -29,6 +34,8 @@ def card(
         lines.append("**Therefore:** the next scene follows.")
     lines.append(f"**Beat:** {beat}")
     lines.append(f"**Storyline:** {storyline}")
+    if sources is not None:
+        lines.append(f"**Sources:** {sources}")
     return "\n".join(lines) + "\n\n"
 
 
@@ -101,3 +108,12 @@ def test_a_card_without_a_beat_is_reported_and_left_out_of_the_order() -> None:
     problems = check(card(1, "Opening Image") + no_beat + "\n\n" + card(3, "Set-Up"))
     assert any("no '**Beat:**' field" in p for p in problems)
     assert not any("out of order" in p for p in problems)
+
+
+def test_a_card_with_no_sources_field_is_a_problem() -> None:
+    assert any("'**Sources:**' field" in p or "Sources" in p for p in check(cards(sources=None)))
+
+
+def test_sources_must_be_source_numbers() -> None:
+    text = card(1, "Opening Image", sources="the first file") + card(2, "Finale")
+    assert any("sources 'the first file' are not source numbers" in p for p in check(text))

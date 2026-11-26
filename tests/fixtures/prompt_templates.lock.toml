@@ -62,12 +62,12 @@ version = 1
 fingerprint = "c7835a27b384260094883858cb207fe4c68eff8a7f0383152ffafcc5030f35b5"
 
 [screenplay_draft_scene]
-version = 1
-fingerprint = "4693b99f343f2f4ff1b87e7be02d8dbc72635f4205f5fa4dae5864d55f51e30b"
+version = 2
+fingerprint = "84f372c9c8c6817087d8d824aaa57062e4b162b7b73c448a50b9c58383c14e8b"
 
 [screenplay_scene_cards]
-version = 1
-fingerprint = "30d61a202e7b6bc86a478d3f21ab30706ffdd9eef0275a19cfbbc99f479c4bdc"
+version = 2
+fingerprint = "7502004ce04df5446a535a52eba13efccf3720421301b9dff83ace600a3b3820"
 
 [skill_guidance]
 version = 2
