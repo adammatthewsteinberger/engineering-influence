@@ -22,6 +22,7 @@ from engineering_influence.models.book_brief import BookBrief
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget_plan import BudgetPlan
 from engineering_influence.models.export_summary import ExportSummary
+from engineering_influence.models.source_entry import SourceEntry
 from engineering_influence.repositories.sqlmodel_artifact_store import SqlModelArtifactStore
 from engineering_influence.repositories.sqlmodel_journal import SqlModelJournal
 from engineering_influence.repositories.sqlmodel_run_repository import SqlModelRunRepository
@@ -73,7 +74,7 @@ class LocalBookRuntime(LocalBookCreatorInterface):
         queue = InMemoryQueue()
         executor = self._stages.build(artifacts, journal)
         self._book = LocalBookRun(
-            CreateRun(runs, queue),
+            CreateRun(runs, queue, artifacts=artifacts),
             AdvanceRun(runs, journal, executor, queue, FailureClassifier()),
             ResumeRun(runs, queue),
             ResolveSpendConsent(runs, queue),
@@ -109,9 +110,14 @@ class LocalBookRuntime(LocalBookCreatorInterface):
         estimator = self._stages.estimator()
         return None if estimator is None else BudgetPlanner(estimator).plan(brief)
 
-    def start(self, brief: BookBrief, progress: Callable[[str], None]) -> BookRun:
-        """Run the brief's plan until the run finishes or stops."""
-        return self._book.start(brief, progress)
+    def start(
+        self,
+        brief: BookBrief,
+        progress: Callable[[str], None],
+        sources: tuple[SourceEntry, ...] = (),
+    ) -> BookRun:
+        """Run the brief's plan, with its source files, until the run finishes or stops."""
+        return self._book.start(brief, progress, sources)
 
     def resume(self, approve_spend: bool, progress: Callable[[str], None]) -> BookRun:
         """Continue the run this folder holds."""

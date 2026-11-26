@@ -9,6 +9,9 @@ from pathlib import Path
 import pytest
 
 from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.infrastructure.source_library.filesystem_source_library import (
+    FilesystemSourceLibrary,
+)
 from engineering_influence.interactions.cli.book_cli import BookCli
 from engineering_influence.interfaces.keep_awake_interface import KeepAwakeInterface
 from engineering_influence.interfaces.local_book_creator_interface import (
@@ -23,8 +26,10 @@ from engineering_influence.models.cost_estimate import CostEstimate
 from engineering_influence.models.export_summary import ExportSummary
 from engineering_influence.models.quality_issue import QualityIssue
 from engineering_influence.models.run_status import RunStatus
+from engineering_influence.models.source_entry import SourceEntry
 from engineering_influence.models.spend_request import SpendRequest
 from engineering_influence.models.stage_plan import StagePlan
+from engineering_influence.services.source_intake import SourceIntake
 
 PLAN = StagePlan(BookKind.NONFICTION, ("brief", "build"))
 
@@ -40,6 +45,7 @@ class Creator(LocalBookCreatorInterface):
         self.outcome = outcome
         self.planned = plan
         self.started: list[BookBrief] = []
+        self.sources: list[tuple[SourceEntry, ...]] = []
         self.resumed: list[bool] = []
         self.exported: list[Path] = []
         self.closed = 0
@@ -52,8 +58,14 @@ class Creator(LocalBookCreatorInterface):
     def plan(self, brief: BookBrief) -> BudgetPlan | None:
         return self.planned
 
-    def start(self, brief: BookBrief, progress: Callable[[str], None]) -> BookRun:
+    def start(
+        self,
+        brief: BookBrief,
+        progress: Callable[[str], None],
+        sources: tuple[object, ...] = (),
+    ) -> BookRun:
         self.started.append(brief)
+        self.sources.append(sources)
         progress("brief: advanced")
         return self._result()
 
@@ -100,7 +112,12 @@ class Harness:
         return self.creator
 
     def run(self, *argv: str) -> int:
-        cli = BookCli(lambda root: None, self.creator_for, self.awake)  # type: ignore[arg-type, return-value]
+        cli = BookCli(
+            lambda root: None,  # type: ignore[arg-type, return-value]
+            self.creator_for,
+            self.awake,
+            lambda folder: SourceIntake(FilesystemSourceLibrary()).intake(folder),
+        )
         parser = argparse.ArgumentParser()
         cli.register(parser.add_subparsers(dest="command", required=True))
         return cli.run(parser.parse_args(["book", "create", *argv]))
@@ -434,3 +451,28 @@ def test_a_run_that_already_exists_is_reported_before_the_out_folder_is(
 
     assert Harness(run_in(RunStatus.COMPLETED)).run("bees", *create(tmp_path)) == 2
     assert "already holds a run; add --resume" in capsys.readouterr().err
+
+
+def test_source_files_in_the_folder_reach_the_run_in_name_order(tmp_path: Path) -> None:
+    folder = tmp_path / "source"
+    folder.mkdir()
+    (folder / "b.md").write_text("second", encoding="utf-8")
+    (folder / "a.md").write_text("first", encoding="utf-8")
+    harness = Harness(run_in(RunStatus.COMPLETED))
+    assert harness.run("bees", *create(tmp_path), "--source", str(folder)) == 0
+    assert [entry.text for entry in harness.creator.sources[0]] == ["first", "second"]
+
+
+def test_a_run_without_a_source_folder_is_given_no_sources(tmp_path: Path) -> None:
+    harness = Harness(run_in(RunStatus.COMPLETED))
+    assert harness.run("bees", *create(tmp_path)) == 0
+    assert harness.creator.sources == [()]
+
+
+def test_a_source_folder_that_is_missing_is_refused_before_the_run_starts(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    harness = Harness(run_in(RunStatus.COMPLETED))
+    assert harness.run("bees", *create(tmp_path), "--source", str(tmp_path / "nowhere")) == 2
+    assert harness.creator.started == []
+    assert capsys.readouterr().err.startswith("error: ")

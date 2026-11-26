@@ -25,6 +25,7 @@ from engineering_influence.models.book_brief import BookBrief
 from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.run_status import RunStatus
+from engineering_influence.models.source_entry import SourceEntry
 
 if TYPE_CHECKING:
     from engineering_influence.controllers.publishing_controller import PublishingController
@@ -46,10 +47,12 @@ class BookCli(BookCliInterface):
         controller_for: Callable[[Path], PublishingController],
         creator_for: Callable[[Path, Mapping[str, str]], LocalBookCreatorInterface],
         keep_awake: KeepAwakeInterface,
+        read_sources: Callable[[Path], tuple[SourceEntry, ...]],
     ) -> None:
         self._controller_for = controller_for
         self._creator_for = creator_for
         self._keep_awake = keep_awake
+        self._read_sources = read_sources
 
     def register(self, subparsers: Any) -> None:
         """Add the `book` command and its subcommands."""
@@ -93,6 +96,11 @@ class BookCli(BookCliInterface):
         create.add_argument("--kind", choices=[kind.value for kind in BookKind])
         create.add_argument(
             "--out", type=Path, required=True, help="a new or empty folder for the book"
+        )
+        create.add_argument(
+            "--source",
+            type=Path,
+            help="a folder of source files (.md, .txt) the run adapts; each file is kept in the run",
         )
         create.add_argument(
             "--budget-usd", help="the most the run may spend, in dollars (no default)"
@@ -212,7 +220,7 @@ class BookCli(BookCliInterface):
                 run = (
                     creator.resume(arguments.approve_spend, progress)
                     if brief is None
-                    else creator.start(brief, progress)
+                    else creator.start(brief, progress, self._sources(arguments.source))
                 )
             return self._finish(creator, run, arguments.out, state)
         except ApplicationError as error:
@@ -220,6 +228,12 @@ class BookCli(BookCliInterface):
             return 2
         finally:
             creator.close()
+
+    def _sources(self, folder: Path | None) -> tuple[SourceEntry, ...]:
+        """The folder's source files, numbered and pinned, or none when no folder was given."""
+        if folder is None:
+            return ()
+        return self._read_sources(folder)
 
     def _awake(self, arguments: argparse.Namespace) -> AbstractContextManager[None]:
         """The keep-awake hold for the run, or nothing when the author asked for none."""

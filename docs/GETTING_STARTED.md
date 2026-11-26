@@ -131,6 +131,8 @@ It prints an estimate, then one line per stage as each finishes, then a summary.
 `--out` must be a new or empty folder. `--budget-usd` is required even with the free model, where it is only a
 cap. A whole book takes a long time; how long on your machine is not yet measured.
 
+`--source DIR` gives the run a folder of source files (`.md` and `.txt`, hidden files skipped, at most 2,000,000 bytes each). They are read when the run is created, numbered in name order, and kept inside the run as `source/NNN.md`, so the run never reads the folder again and the folder may be moved or deleted afterwards. An empty or missing folder is refused before any money is spent.
+
 | Exit | Meaning | What to do |
 |---|---|---|
 | `0` | The book is written | Open `my-book/run/book/` and read `my-book/run/quality-report.json` |

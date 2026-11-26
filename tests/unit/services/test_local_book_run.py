@@ -1,16 +1,19 @@
 """One book run driven to the end of its plan in this process, and picked up again from where it stopped."""
 
+import hashlib
 from dataclasses import replace
 
 import pytest
 
 from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.infrastructure.in_memory_artifact_store import InMemoryArtifactStore
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
 from engineering_influence.infrastructure.in_memory_run_repository import InMemoryRunRepository
 from engineering_influence.models.advance_outcome import AdvanceOutcome
 from engineering_influence.models.book_brief import BookBrief
 from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.run_status import RunStatus
+from engineering_influence.models.source_entry import SourceEntry
 from engineering_influence.models.spend_request import SpendRequest
 from engineering_influence.models.stage_plan import StagePlan
 from engineering_influence.services.create_run import CreateRun
@@ -200,3 +203,21 @@ def test_a_finished_run_is_returned_as_it_is() -> None:
     calls = len(advancer.calls)
     assert book.resume(True, heard.append).status is RunStatus.COMPLETED
     assert len(advancer.calls) == calls
+
+
+def test_the_sources_are_kept_in_the_run_that_is_started() -> None:
+    runs, queue = InMemoryRunRepository(), InMemoryQueue()
+    store = InMemoryArtifactStore()
+    advancer = Advancer(runs)
+    book = LocalBookRun(
+        CreateRun(runs, queue, {BookKind.NONFICTION: PLAN}, artifacts=store),
+        advancer,
+        ResumeRun(runs, queue),
+        ResolveSpendConsent(runs, queue),
+        runs,
+        advancer.slept.append,
+    )
+    text = "the bees"
+    source = SourceEntry(1, text, hashlib.sha256(text.encode("utf-8")).hexdigest())
+    run = book.start(BRIEF, lambda line: None, (source,))
+    assert store.names(run.run_id) == ["source/001.md"]
