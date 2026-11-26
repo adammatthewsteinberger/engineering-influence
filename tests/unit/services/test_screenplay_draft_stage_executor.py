@@ -39,7 +39,9 @@ class Drafter(SceneDrafterInterface):
         self.calls: list[int] = []
         self._failed: set[int] = set()
 
-    def draft(self, run: BookRun, card: SceneCard, anchors: str, beats: str) -> str:
+    def draft(
+        self, run: BookRun, card: SceneCard, anchors: str, beats: str, try_number: int
+    ) -> str:
         self.calls.append(card.number)
         if card.number in self.bad and card.number not in self._failed:
             self._failed.add(card.number)
@@ -105,7 +107,9 @@ def test_a_scene_that_fails_its_check_is_drafted_once_more() -> None:
 
 def test_a_scene_that_fails_twice_stops_the_stage_with_its_problems() -> None:
     class Always(Drafter):
-        def draft(self, run: BookRun, card: SceneCard, anchors: str, beats: str) -> str:
+        def draft(
+            self, run: BookRun, card: SceneCard, anchors: str, beats: str, try_number: int
+        ) -> str:
             return "INT. ROOM - MORNING\n\nNever right."
 
     with pytest.raises(ApplicationError) as error:
