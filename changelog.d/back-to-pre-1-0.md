@@ -1,0 +1,1 @@
+The package version goes back to `0.1.0`, and the classifier to Alpha. The 1.0.0 release is not final until its tests have been run thoroughly, so the package says what it is. Compatible: the REST version in the OpenAPI document changes to match; no behaviour changes.
