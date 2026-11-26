@@ -42,6 +42,10 @@ class BookBriefV1(BookBriefV1Interface, BaseModel):
 
     @model_validator(mode="after")
     def _check(self) -> "BookBriefV1":
+        if self.kind is BookKind.SCREENPLAY:
+            raise ValueError(
+                "screenplay runs are not yet available; the screenplay plan lands in later pull requests"
+            )
         self.to_model()
         return self
 

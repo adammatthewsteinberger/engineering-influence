@@ -262,7 +262,8 @@
             {
               "choices": [
                 "nonfiction",
-                "novel"
+                "novel",
+                "screenplay"
               ],
               "default": null,
               "dest": "kind",

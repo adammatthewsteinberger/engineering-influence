@@ -40,3 +40,5 @@ experimental and outside the stable contract.
 - The 1.0.0 release commit sets the version by hand, as every release does (ADR 0005). Conventional
   commits with `BREAKING CHANGE:` footers are still required, but they do not choose the version.
 - Paid model runs, publishing and the KDP upload need the maintainer's explicit go-ahead.
+
+Amended by ADR 0017: a `screenplay` book kind is added as an automated kind. Runs of that kind are refused until its plan lands; the 1.0 scope statement above is otherwise unchanged.

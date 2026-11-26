@@ -187,7 +187,7 @@ def test_book_loader_lets_a_novel_use_em_dashes_and_a_nonfiction_book_not(tmp_pa
 
 def test_book_loader_refuses_an_unknown_kind_before_reading_any_chapter(tmp_path: Path) -> None:
     config = make_book(tmp_path, 'kind = "novell"\n')
-    with pytest.raises(ManuscriptError, match="'nonfiction' or 'novel'"):
+    with pytest.raises(ManuscriptError, match="'nonfiction', 'novel' or 'screenplay'"):
         BookLoader(tmp_path).load(config)
 
 

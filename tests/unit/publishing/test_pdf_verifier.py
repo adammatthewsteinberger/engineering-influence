@@ -110,7 +110,7 @@ def test_a_nonfiction_interior_with_the_same_em_dash_is_refused(tmp_path: Path) 
 
 
 def test_an_unknown_kind_stops_verification_with_a_clear_message(tmp_path: Path) -> None:
-    with pytest.raises(ManuscriptError, match="'nonfiction' or 'novel'"):
+    with pytest.raises(ManuscriptError, match="'nonfiction', 'novel' or 'screenplay'"):
         verify(tmp_path, CONFIG + 'kind = "novell"\n')
 
 

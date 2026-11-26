@@ -91,6 +91,7 @@ nav:
           - "ADR 0013: A factual claim is supported only by a quotation the code found in a page it read": adr/0013-fact-claims-need-a-quotation-the-code-found-in-a-page.md
           - "ADR 0014: Audiobook narration uses Kokoro-82M through mlx-audio (proposed)": adr/0014-audiobook-narration-uses-kokoro-via-mlx-audio.md
           - "ADR 0016: Audible audio is voiced inside ACX; other stores get a locally narrated audiobook": adr/0016-audiobooks-for-audible-are-voiced-in-acx-and-everything-else-is-narrated-locally.md
+          - "ADR 0017: A screenplay's source is a folder of files, read whole and pinned by digest": adr/0017-screenplay-source-is-a-folder-of-files-read-whole.md
       - Changelog: changelog.md
       - Security: security.md
       - Support: support.md

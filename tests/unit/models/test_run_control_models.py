@@ -15,8 +15,8 @@ def issue(*, blocking: bool = False) -> QualityIssue:
     return QualityIssue(stage="draft", code="thin-chapter", detail="400 words", blocking=blocking)
 
 
-def test_the_two_kinds_are_the_1_0_scope() -> None:
-    assert [kind.value for kind in BookKind] == ["nonfiction", "novel"]
+def test_the_book_kinds_are_nonfiction_novel_and_screenplay() -> None:
+    assert [kind.value for kind in BookKind] == ["nonfiction", "novel", "screenplay"]
     assert BookKind("novel") is BookKind.NOVEL
 
 
