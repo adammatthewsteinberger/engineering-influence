@@ -191,6 +191,7 @@ def test_the_plan_drafts_revises_and_assembles_scenes_after_the_architecture() -
         "revise_scenes",
         "assemble_script",
         "lock_script",
+        "log_revisions",
         "render_script",
         "build_epub",
     )
