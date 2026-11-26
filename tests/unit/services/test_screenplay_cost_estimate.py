@@ -54,6 +54,7 @@ def test_the_screenplay_estimate_covers_every_planned_stage() -> None:
         "revise_scenes",
         "assemble_script",
         "lock_script",
+        "log_revisions",
         "render_script",
         "build_epub",
     ]

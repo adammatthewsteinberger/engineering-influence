@@ -158,6 +158,10 @@ from engineering_influence.services.reference_parser import ReferenceParser
 from engineering_influence.services.render_screenplay_stage_executor import (
     RenderScreenplayStageExecutor,
 )
+from engineering_influence.services.revision_report_stage_executor import (
+    RevisionReportStageExecutor,
+)
+from engineering_influence.services.revision_report_writer import RevisionReportWriter
 from engineering_influence.services.revision_stage_executor import RevisionStageExecutor
 from engineering_influence.services.run_tool_loop import RunToolLoop
 from engineering_influence.services.scene_card_list import SceneCardList
@@ -480,6 +484,16 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                             ShootingLockPlanner(),
                             ShootingLockCodec(),
                             ShootingScriptRenderer(FountainParser()),
+                        ),
+                    }
+                ),
+                RevisionReportStageExecutor.STAGE: KindStageExecutor(
+                    {
+                        BookKind.SCREENPLAY: RevisionReportStageExecutor(
+                            artifacts,
+                            SceneCardList(),
+                            ShootingLockCodec(),
+                            RevisionReportWriter(),
                         ),
                     }
                 ),
