@@ -311,6 +311,21 @@
             {
               "choices": null,
               "default": null,
+              "dest": "previous_lock",
+              "flags": [
+                "--previous-lock"
+              ],
+              "name": "--previous-lock",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": null,
               "dest": "profile",
               "flags": [
                 "--profile"

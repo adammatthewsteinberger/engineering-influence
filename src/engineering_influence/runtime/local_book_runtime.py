@@ -115,9 +115,10 @@ class LocalBookRuntime(LocalBookCreatorInterface):
         brief: BookBrief,
         progress: Callable[[str], None],
         sources: tuple[SourceEntry, ...] = (),
+        previous_lock: str | None = None,
     ) -> BookRun:
         """Run the brief's plan, with its source files, until the run finishes or stops."""
-        return self._book.start(brief, progress, sources)
+        return self._book.start(brief, progress, sources, previous_lock)
 
     def resume(self, approve_spend: bool, progress: Callable[[str], None]) -> BookRun:
         """Continue the run this folder holds."""
