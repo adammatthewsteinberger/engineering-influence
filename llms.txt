@@ -25,6 +25,7 @@ Interfaces: CLI (`ei`), REST API, Python SDK, MCP server (stdio, `ei serve mcp`:
 - [Model calls](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/MODEL_CALLS.md): how one call is made at most once, and what happens to an incomplete answer
 - [Research](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/RESEARCH.md): web search and page fetch for the research stage
 - [Audiobooks](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/AUDIOBOOKS.md): an optional text export for Audible (Amazon's Virtual Voice inside ACX), and a locally narrated audiobook for other stores
+- [Webhooks](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/WEBHOOKS.md): the events the worker sends to your receivers, the headers, signature verification, and delivery rules
 - [Prompts](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/PROMPTS.md): the prompt templates, their versions and the lock
 - [Skills](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/SKILLS.md): adding reviewed guidance to a stage
 - [Plugins](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/PLUGINS.md): bundles of skills and tool servers

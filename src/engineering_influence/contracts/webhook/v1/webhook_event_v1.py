@@ -20,8 +20,8 @@ class WebhookEventV1(WebhookEventV1Interface, BaseModel):
     schema version (a receiver must ignore what it does not know); removing or renaming either needs version 2, which runs
     beside this one for at least a minor release (docs/COMPATIBILITY.md).
 
-    **Nothing delivers these yet:** the stack's worker records the events and the delivery and signing exist, but no service
-    sends them (docs/CONFIGURATION.md). The catalogue and the envelope are frozen so that a receiver written now keeps working.
+    **The worker delivers these** to each configured receiver (docs/WEBHOOKS.md). The catalogue and the envelope are frozen so
+    that a receiver written against them keeps working.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")

@@ -46,6 +46,7 @@ nav:
       - Driving it from another AI: agents-driving.md
       - Books and KDP: books-and-kdp.md
       - Audiobooks: audiobooks.md
+      - Webhooks: webhooks.md
       - Novels: novels.md
   - Writing books:
       - The local model: local-model.md

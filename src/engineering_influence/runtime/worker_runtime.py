@@ -5,7 +5,10 @@ import asyncio
 import logging
 import os
 import signal
+import time
 from datetime import date
+
+import httpx
 
 from engineering_influence.infrastructure.deterministic_runner import DeterministicRunner
 from engineering_influence.infrastructure.job_message_handler import JobMessageHandler
@@ -24,6 +27,9 @@ from engineering_influence.infrastructure.observability.json_logging_configurato
 from engineering_influence.infrastructure.observability.process_crash_hooks import (
     ProcessCrashHooks,
 )
+from engineering_influence.infrastructure.observability.traced_dispatch_outbox import (
+    TracedDispatchOutbox,
+)
 from engineering_influence.infrastructure.observability.traced_run_phase import TracedRunPhase
 from engineering_influence.infrastructure.observability.worker_heartbeat import WorkerHeartbeat
 from engineering_influence.infrastructure.rabbitmq_job_consumer import RabbitMqJobConsumer
@@ -31,10 +37,15 @@ from engineering_influence.infrastructure.rabbitmq_queue import RabbitMqQueueAda
 from engineering_influence.infrastructure.rabbitmq_topology import RabbitMqTopology
 from engineering_influence.infrastructure.schema_migrator import SchemaMigrator
 from engineering_influence.infrastructure.security.env_secret_provider import EnvSecretProvider
+from engineering_influence.infrastructure.security.public_https_url_policy import (
+    PublicHttpsUrlPolicy,
+)
+from engineering_influence.infrastructure.webhooks.delivery import WebhookDelivery
 from engineering_influence.interfaces.schema_migrator_interface import SchemaMigratorInterface
 from engineering_influence.repositories.sqlmodel_artifact_store import SqlModelArtifactStore
 from engineering_influence.repositories.sqlmodel_journal import SqlModelJournal
 from engineering_influence.repositories.sqlmodel_ledger import SqlModelLedger
+from engineering_influence.repositories.sqlmodel_outbox import SqlModelOutbox
 from engineering_influence.repositories.sqlmodel_run_repository import SqlModelRunRepository
 from engineering_influence.runtime.app_settings import AppSettings
 from engineering_influence.runtime.interfaces.stage_executor_runtime_interface import (
@@ -43,10 +54,13 @@ from engineering_influence.runtime.interfaces.stage_executor_runtime_interface i
 from engineering_influence.runtime.interfaces.worker_runtime_interface import WorkerRuntimeInterface
 from engineering_influence.runtime.stage_executor_runtime import StageExecutorRuntime
 from engineering_influence.services.advance_run import AdvanceRun
+from engineering_influence.services.dispatch_outbox import DispatchOutbox
 from engineering_influence.services.failure_classifier import FailureClassifier
 from engineering_influence.services.job_router import JobRouter
+from engineering_influence.services.outbox_dispatch_loop import OutboxDispatchLoop
 from engineering_influence.services.process_job import ProcessJob
 from engineering_influence.services.process_run_job import ProcessRunJob
+from engineering_influence.services.run_event_builder import RunEventBuilder
 from engineering_influence.services.run_phase import RunPhase
 
 _LOGGER = logging.getLogger(__name__)
@@ -72,6 +86,8 @@ class WorkerRuntime(WorkerRuntimeInterface):
         )
         self._ledger: SqlModelLedger | None = None
         self._stores: list[SqlModelRunRepository | SqlModelJournal | SqlModelArtifactStore] = []
+        self._dispatch: OutboxDispatchLoop | None = None
+        self._http: httpx.AsyncClient | None = None
 
     def build(self) -> tuple[RabbitMqJobConsumer, WorkerHeartbeat]:
         """Wire the consumer and the heartbeat that watches it."""
@@ -98,7 +114,9 @@ class WorkerRuntime(WorkerRuntimeInterface):
             self._executors.build(artifacts, journal),
             queue,
             FailureClassifier(),
+            events=RunEventBuilder(self._settings.webhook_urls),
         )
+        self._dispatch = self.webhook_dispatch(metrics, alerts)
         process_job = JobRouter(
             {
                 "pipeline": ProcessJob(
@@ -118,14 +136,51 @@ class WorkerRuntime(WorkerRuntimeInterface):
         )
         return consumer, heartbeat
 
+    def webhook_dispatch(
+        self, metrics: BootstrapMetrics, alerts: BootstrapAlertDispatcher
+    ) -> OutboxDispatchLoop | None:
+        """The loop that delivers the run's webhook events, or None when no receiver is configured.
+
+        The signing secret goes only to the dispatcher, and the traced wrapper records it as sensitive.
+        """
+        if not self._settings.webhook_urls:
+            return None
+        self._http = httpx.AsyncClient(timeout=10.0)
+        delivery = WebhookDelivery(self._http, PublicHttpsUrlPolicy(), time.time)
+        dispatch = DispatchOutbox(
+            SqlModelOutbox(self._settings.database_url), delivery, metrics, alerts
+        )
+        return OutboxDispatchLoop(
+            TracedDispatchOutbox(dispatch),
+            self._settings.webhook_secret.encode("utf-8"),
+            self._settings.webhook_interval_seconds,
+        )
+
     async def serve(self, stop: asyncio.Event) -> None:
-        """Run until ``stop`` is set; the heartbeat always stops with the consumer."""
+        """Run until ``stop`` is set: the consumer and, when a receiver is configured, the webhook dispatch loop."""
         consumer, heartbeat = self.build()
+        await self.gather(consumer, heartbeat, self._dispatch, stop)
+
+    async def gather(
+        self,
+        consumer: RabbitMqJobConsumer,
+        heartbeat: WorkerHeartbeat,
+        dispatch: OutboxDispatchLoop | None,
+        stop: asyncio.Event,
+    ) -> None:
+        """Run the consumer and the dispatch loop until ``stop`` is set. The heartbeat always stops with the
+        consumer, and the HTTP client is closed on the way out."""
         heartbeat.start()
+        tasks = [consumer.run(stop)]
+        if dispatch is not None:
+            tasks.append(dispatch.run(stop))
         try:
-            await consumer.run(stop)
+            await asyncio.gather(*tasks)
         finally:
             heartbeat.stop()
+            if self._http is not None:
+                await self._http.aclose()
+                self._http = None
             self.close()
 
     def close(self) -> None:
