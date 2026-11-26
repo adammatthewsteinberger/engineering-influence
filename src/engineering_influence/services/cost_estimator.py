@@ -65,6 +65,7 @@ class CostEstimator(CostEstimatorInterface):
             NonfictionRecipes.NARRATION_STAGE,
             ScreenplayRecipes.ASSEMBLE_STAGE,
             ScreenplayRecipes.RENDER_STAGE,
+            ScreenplayRecipes.EPUB_STAGE,
         }
     )
     # Optional stages: a run that runs out of money leaves them out. The ACX export is one of them, and so is the
