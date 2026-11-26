@@ -50,8 +50,8 @@ version = 1
 fingerprint = "6f4e44f3c43f42730bba78da0ba2277a2b266f2e3313fdf20c6132f68da78015"
 
 [screenplay_anchors]
-version = 2
-fingerprint = "67bad9bf0cbae1d23c654d158c5a3167b20345420b682b166ff0db37268d05ad"
+version = 4
+fingerprint = "c70d42c61ce7182f094e03ec498ee0a6d86b652cf6e56fd9c7d67bd8a47102f3"
 
 [screenplay_audit]
 version = 1

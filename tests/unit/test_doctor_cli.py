@@ -668,7 +668,7 @@ def never_search() -> SearchDoctorInterface:
 
 LOCAL_GOOD = (
     DoctorFinding("local", "server", True, "Ollama answers"),
-    DoctorFinding("local", "context", True, "32768 tokens"),
+    DoctorFinding("local", "context", True, "131072 tokens"),
 )
 LOCAL_BAD = (
     DoctorFinding(
@@ -684,7 +684,7 @@ def test_a_clean_local_check_prints_each_line_and_says_what_was_sent(
     assert DoctorCli(never_models, never_search, lambda: fake, {}, NO_READY).run(local_args()) == 0
     assert capsys.readouterr().out == (
         "ok   local: server: Ollama answers\n"
-        "ok   local: context: 32768 tokens\n"
+        "ok   local: context: 131072 tokens\n"
         "all 2 checks passed; sent: one tiny completion to the local model; it stays on this machine\n"
     )
     assert fake.calls == 1
@@ -785,7 +785,7 @@ def ollama(
 def test_the_local_check_runs_against_a_real_server_and_reads_the_settings(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    with ollama(["gpt-oss:20b"], [{"name": "gpt-oss:20b", "context_length": 32768}]) as (
+    with ollama(["gpt-oss:20b"], [{"name": "gpt-oss:20b", "context_length": 131072}]) as (
         url,
         seen,
         posts,
@@ -796,7 +796,7 @@ def test_the_local_check_runs_against_a_real_server_and_reads_the_settings(
     out = capsys.readouterr().out
     assert f"ok   local: server: Ollama answers at {url}" in out
     assert "ok   local: answers: gpt-oss:20b replied in 2 tokens" in out
-    assert "ok   local: context: 32768 tokens" in out
+    assert "ok   local: context: 131072 tokens" in out
     assert seen == ["/api/tags", "/v1/chat/completions", "/api/ps"]
     ((headers, body),) = posts
     assert "authorization" not in headers
@@ -819,7 +819,7 @@ def test_the_local_check_fails_with_the_fix_when_ollama_loaded_a_small_context(
         monkeypatch.setenv("EI_LOCAL_MODEL", "gpt-oss:20b")
         code = CliRuntime().build().run(["doctor", "--local"])
     assert code == 1
-    assert "OLLAMA_CONTEXT_LENGTH=32768" in capsys.readouterr().out
+    assert "OLLAMA_CONTEXT_LENGTH=131072" in capsys.readouterr().out
 
 
 def test_the_local_check_says_so_when_nothing_answers(
@@ -872,7 +872,7 @@ def test_ready_runs_the_install_checks_then_the_local_model_then_the_search_and_
     assert capsys.readouterr().out == (
         "ok   install: extra runtime: installed\n"
         "ok   local: server: Ollama answers\n"
-        "ok   local: context: 32768 tokens\n"
+        "ok   local: context: 131072 tokens\n"
         "ok   searxng: search: 5 links, the first from example.org\n"
         "all 4 checks passed; sent: one tiny completion to the local model, "
         "and one search request per provider\n"

@@ -35,6 +35,7 @@ class OpenAICompatibleModel(ModelInterface):
         "tool_calls": "tool_use",
     }
     MESSAGE_OVERHEAD_TOKENS = 8
+    CHARACTERS_PER_TOKEN = 3
 
     def __init__(
         self,
@@ -61,6 +62,15 @@ class OpenAICompatibleModel(ModelInterface):
         """What the last call learned: blocked on credit or credentials until a call succeeds."""
         return self._blocked
 
+    def _estimated_tokens(self, request: ModelRequest) -> int:
+        """A conservative token count: three characters to a token, the project's fitting constant, so a prompt the
+        window can hold is not refused by a loose estimate. Measured on the Book One logs the real ratio is about 4.2."""
+        messages = self._messages(request)
+        characters = sum(len(message["content"] or "") for message in messages)
+        return -(-characters // self.CHARACTERS_PER_TOKEN) + self.MESSAGE_OVERHEAD_TOKENS * len(
+            messages
+        )
+
     def count_tokens(self, request: ModelRequest) -> int:
         """An upper bound on the input tokens, since the shape has no counting endpoint.
 
@@ -81,7 +91,19 @@ class OpenAICompatibleModel(ModelInterface):
         return text_bytes + extra_bytes + self.MESSAGE_OVERHEAD_TOKENS * len(messages)
 
     def complete(self, request: ModelRequest) -> ModelResponse:
-        """Send the request and map the reply onto the vendor-neutral response."""
+        """Send the request and map the reply onto the vendor-neutral response. A request that will not fit the model's
+        window is refused here, before it is sent: a server that cannot hold it cuts the middle of the prompt silently."""
+        window = self._descriptor.context_window
+        estimate = self._estimated_tokens(request)
+        if estimate + request.max_output_tokens > window:
+            raise ApplicationError(
+                code="CONTEXT_TOO_LARGE",
+                message=(
+                    f"the prompt is about {estimate} tokens and with {request.max_output_tokens} for the answer it "
+                    f"does not fit the model's window of {window} tokens; give the stage less source text"
+                ),
+                http_status=422,
+            )
         body: dict[str, Any] = {
             "model": self._descriptor.model,
             "messages": self._messages(request),

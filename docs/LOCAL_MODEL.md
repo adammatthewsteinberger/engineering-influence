@@ -3,7 +3,7 @@
 **BLUF:** By default the book is written by `gpt-oss:20b`, an open-source model running on your own machine
 through Ollama. It costs nothing per word and needs no key, and your prompts and manuscript stay on the machine
 (the research stage still sends search queries out and fetches public pages). It uses about 13 GB of memory when
-loaded and needs a context of 32,768 tokens; `ei doctor --local` checks the server, the model, one tiny answer and
+loaded and needs a context of 131,072 tokens; `ei doctor --local` checks the server, the model, one tiny answer and
 the context it really loaded.
 
 With nothing configured, a run is written by an open-source model on your own machine. It costs nothing per token
@@ -14,7 +14,7 @@ and needs no key. The model itself sends nothing off the machine; the research s
 | Model | `gpt-oss:20b`, Apache 2.0, about 13 GB |
 | Server | [Ollama](https://ollama.com) at `http://127.0.0.1:11434` |
 | Search for research | a [SearXNG](RESEARCH.md) at `http://127.0.0.1:8888` (the compose example in `examples/searxng`) |
-| Context | 32,768 tokens, which the server must really offer |
+| Context | 131,072 tokens, which the server must really offer |
 
 ## Why the context size is checked
 
@@ -25,7 +25,7 @@ and needs no key. The model itself sends nothing off the machine; the research s
 > **Daniel:** Most of it. If it were fifty pages I would lose the start.
 >
 > **Professor Feynman:** The context is how much the model can hold at once: its instructions, the outline, what
-> came before. This project packs a prompt to fit 32,768 tokens. If the server quietly offers fewer, it does not
+> came before. This project packs a prompt to fit 131,072 tokens. If the server quietly offers fewer, it does not
 > complain. It cuts the prompt short.
 >
 > **Daniel:** And whatever was cut might be the instructions, or the outline.
@@ -41,19 +41,19 @@ and needs no key. The model itself sends nothing off the machine; the research s
 
 ```bash
 ollama pull gpt-oss:20b
-OLLAMA_CONTEXT_LENGTH=32768 ollama serve
+OLLAMA_CONTEXT_LENGTH=131072 ollama serve
 ```
 
-The second line matters. Ollama's own default context is much smaller, and a prompt is assembled to fit the 32,768
+The second line matters. Ollama's own default context is much smaller, and a prompt is assembled to fit the 131,072
 tokens this project assumes, so a server that quietly offers less would cut a prompt short. Set the variable wherever
-you start Ollama (the macOS app reads it from `launchctl setenv OLLAMA_CONTEXT_LENGTH 32768`), then run
+you start Ollama (the macOS app reads it from `launchctl setenv OLLAMA_CONTEXT_LENGTH 131072`), then run
 `ei doctor --local` to confirm. A model on a laptop with 24 GB of memory used about 13 GB loaded.
 
 ## Use another model or server
 
 `EI_LOCAL_MODEL` names another model and `EI_LOCAL_URL` another server that speaks the OpenAI chat shape (Ollama,
 llama.cpp's `llama-server`, vLLM, LM Studio). Both are trimmed, and blank means the default. A model other than the
-default is yours to vet: the cost is zero by construction, but the 32,768 window and the `low` reasoning effort are
+default is yours to vet: the cost is zero by construction, but the 131,072 window and the `low` reasoning effort are
 still what a run assumes.
 
 A model you pay for is `EI_STAGE_EXECUTOR=model` with your own profile and price catalog
@@ -90,7 +90,7 @@ It makes four checks and stops at the first thing that makes the rest pointless:
 | `server` | something answers at `EI_LOCAL_URL` | install and start Ollama, or set `EI_LOCAL_URL` |
 | `model` | the model is pulled | `ollama pull <model>` |
 | `answers` | one tiny real completion comes back non-empty | the model spent its whole cap before writing a word |
-| `context` | the loaded context is at least 32,768 tokens | set `OLLAMA_CONTEXT_LENGTH` and restart Ollama |
+| `context` | the loaded context is at least 131,072 tokens | set `OLLAMA_CONTEXT_LENGTH` and restart Ollama |
 
 In more detail:
 
@@ -99,7 +99,7 @@ In more detail:
 2. **model**: the model is pulled; if not, it names `ollama pull <model>`.
 3. **answers**: one tiny real completion, free and on this machine. An empty reply fails, because a reasoning model
    can spend its whole cap before it writes a word.
-4. **context**: the context length Ollama loaded the model with is at least the 32,768 a prompt is assembled to fit.
+4. **context**: the context length Ollama loaded the model with is at least the 131,072 a prompt is assembled to fit.
    If not, it names `OLLAMA_CONTEXT_LENGTH`. Ollama would otherwise cut a prompt short without saying so.
 
 Exit 0 when all held, 1 when one failed, 2 when a setting cannot be used. The first call loads the model into memory,
