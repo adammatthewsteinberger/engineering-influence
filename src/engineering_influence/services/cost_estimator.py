@@ -63,11 +63,17 @@ class CostEstimator(CostEstimatorInterface):
             NonfictionRecipes.BUILD_STAGE,
             NonfictionRecipes.AUDIOBOOK_STAGE,
             NonfictionRecipes.NARRATION_STAGE,
+            ScreenplayRecipes.ASSEMBLE_STAGE,
         }
     )
-    # Optional stages: a run that runs out of money leaves them out. The ACX export is one of them.
+    # Optional stages: a run that runs out of money leaves them out. The ACX export is one of them, and so is the
+    # screenplay revision, which keeps each drafted scene when its call is not paid for.
     OPTIONAL_STAGES: ClassVar[frozenset[str]] = frozenset(
-        {NonfictionRecipes.AUDIOBOOK_STAGE, NonfictionRecipes.NARRATION_STAGE}
+        {
+            NonfictionRecipes.AUDIOBOOK_STAGE,
+            NonfictionRecipes.NARRATION_STAGE,
+            ScreenplayRecipes.REVISE_STAGE,
+        }
     )
 
     def __init__(
@@ -109,7 +115,11 @@ class CostEstimator(CostEstimatorInterface):
     def _stage(self, kind: BookKind, stage: str, chapters: int, chapter_tokens: int) -> int:
         if stage in self.NO_MODEL:
             return 0
-        if kind is BookKind.SCREENPLAY and stage == ScreenplayRecipes.DRAFT_STAGE:
+        if kind is BookKind.SCREENPLAY and stage in (
+            ScreenplayRecipes.DRAFT_STAGE,
+            ScreenplayRecipes.REVISE_STAGE,
+        ):
+            # Drafting and revision are each one call per scene.
             return self.SCREENPLAY_SCENES * self._call(
                 self.SCENE_INPUT_TOKENS, self.SCENE_OUTPUT_TOKENS
             )

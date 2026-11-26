@@ -14,3 +14,7 @@ class SceneCardInterface(ABC):
     @abstractmethod
     def artifact(self) -> str:
         """The artifact name the drafted scene is stored under."""
+
+    @abstractmethod
+    def revised(self) -> str:
+        """The artifact name the revised scene is stored under."""

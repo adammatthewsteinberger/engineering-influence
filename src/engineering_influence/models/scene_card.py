@@ -27,3 +27,7 @@ class SceneCard(SceneCardInterface):
     def artifact(self) -> str:
         """The drafted scene's artifact name, `scenes/NNN.md`."""
         return f"scenes/{self.number:03d}.md"
+
+    def revised(self) -> str:
+        """The revised scene's artifact name, `revised/NNN.md`: the scene the assembly reads."""
+        return f"revised/{self.number:03d}.md"

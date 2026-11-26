@@ -51,4 +51,6 @@ def test_the_screenplay_estimate_covers_every_planned_stage() -> None:
         "scene_cards",
         "visual_grammar",
         "draft",
+        "revise_scenes",
+        "assemble_script",
     ]
