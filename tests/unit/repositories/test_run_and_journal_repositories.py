@@ -15,10 +15,12 @@ from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget import Budget
 from engineering_influence.models.journal_entry import JournalEntry
 from engineering_influence.models.journal_key import JournalKey
+from engineering_influence.models.outbox_event import OutboxEvent
 from engineering_influence.models.quality_issue import QualityIssue
 from engineering_influence.models.stage_plan import StagePlan
 from engineering_influence.repositories.book_run_codec import BookRunCodec
 from engineering_influence.repositories.sqlmodel_journal import SqlModelJournal
+from engineering_influence.repositories.sqlmodel_outbox import SqlModelOutbox
 from engineering_influence.repositories.sqlmodel_run_repository import SqlModelRunRepository
 
 RunFactory = Callable[[str], RunRepositoryInterface]
@@ -261,3 +263,62 @@ def test_an_unpooled_sql_repository_works_and_holds_no_connection_open(database_
     assert repository.get("run-1") == make_run()
     assert repository.swap(make_run(), make_run().advance()) is True
     assert type(repository._engine.pool).__name__ == "NullPool"
+
+
+def queued_ids(runs: RunRepositoryInterface, database_url: str) -> list[str]:
+    """The event ids queued so far, read from the outbox table for SQL and from memory otherwise."""
+    if isinstance(runs, SqlModelRunRepository):
+        return sorted(record[0] for record in SqlModelOutbox(database_url).pending())
+    return sorted(event.record_key() for event in runs.queued())  # type: ignore[attr-defined]
+
+
+def test_a_save_with_events_stores_the_run_and_queues_each_event(
+    runs: RunRepositoryInterface, database_url: str
+) -> None:
+    event = OutboxEvent("evt-1", "https://hook.example/in", "run.created", {"run_id": "run-1"})
+    runs.save_with_events(make_run(), (event,))
+    assert runs.get("run-1") == make_run()
+    assert queued_ids(runs, database_url) == ["evt-1"]
+
+
+def test_an_event_already_queued_is_not_queued_twice(
+    runs: RunRepositoryInterface, database_url: str
+) -> None:
+    event = OutboxEvent("evt-1", "https://hook.example/in", "run.created", {})
+    runs.save_with_events(make_run(), (event,))
+    runs.save_with_events(make_run(), (event,))
+    assert queued_ids(runs, database_url) == ["evt-1"]
+
+
+def test_an_event_that_cannot_be_written_leaves_the_run_unsaved(database_url: str) -> None:
+    bad = OutboxEvent("evt-bad", "https://hook.example/in", "run.created", {"value": object()})  # type: ignore[dict-item]
+    repository = SqlModelRunRepository(database_url)
+    with pytest.raises(TypeError):
+        repository.save_with_events(make_run("run-9"), (bad,))
+    assert repository.get("run-9") is None
+    assert SqlModelOutbox(database_url).pending() == []
+    repository.close()
+
+
+def test_a_swap_with_events_queues_them_only_when_the_swap_is_stored(
+    runs: RunRepositoryInterface, database_url: str
+) -> None:
+    before = make_run()
+    after = before.start()
+    event = OutboxEvent(
+        "evt-swap", "https://hook.example/in", "pipeline.started", {"run_id": "run-1"}
+    )
+    runs.save(before)
+    assert runs.swap_with_events(before, after, (event,)) is True
+    assert runs.get("run-1") == after
+    assert queued_ids(runs, database_url) == ["evt-swap"]
+
+
+def test_a_refused_swap_queues_nothing(runs: RunRepositoryInterface, database_url: str) -> None:
+    before = make_run()
+    other = before.start()
+    runs.save(before)
+    runs.save(other)
+    event = OutboxEvent("evt-refused", "https://hook.example/in", "pipeline.started", {})
+    assert runs.swap_with_events(before, before.start(), (event,)) is False
+    assert queued_ids(runs, database_url) == []

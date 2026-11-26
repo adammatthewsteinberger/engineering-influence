@@ -26,6 +26,9 @@ class AppSettings(AppSettingsInterface):
     mcp_allow_spend: bool = False
     mcp_max_run_budget_micro_usd: int = 5_000_000
     spend_limits: SpendLimits = field(default_factory=SpendLimits)
+    webhook_urls: tuple[str, ...] = ()
+    webhook_secret: str = ""
+    webhook_interval_seconds: float = 5.0
 
     def __repr__(self) -> str:
         return (

@@ -85,8 +85,8 @@ The snapshots leave out prose: a docstring, a help line and a name generated fro
 - **Python imports.** Only the SDK's two clients are public Python API. Everything under `engineering_influence` moved when the
   onion layers were introduced and may move again; programs should use the REST API, the SDK, the CLI or MCP.
 - **Prompt templates** are versioned and pinned separately (`docs/PROMPTS.md`), and are not an interface.
-- **Webhooks are not delivered yet.** The envelope, the catalogue, the headers and the signature are frozen so that a receiver written
-  now keeps working; the worker records the events but no service sends them (`docs/CONFIGURATION.md`).
+- **Webhooks are delivered when receivers are configured** (`EI_WEBHOOK_URLS`, see `docs/WEBHOOKS.md`). The envelope, the catalogue,
+  the headers and the signature are frozen, so a receiver written against them keeps working.
 - **Two error shapes.** What the application refuses is `{code, message, retryable}`; a request the framework cannot read (a missing
   field, a wrong type) is FastAPI's `{detail: [...]}`, which the OpenAPI document declares as `HTTPValidationError`.
 - **CLI exit codes** are documented per command in `docs/INTERACTIONS.md` but are not in the snapshot.
