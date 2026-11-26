@@ -132,20 +132,29 @@ def raw_epub(path: Path) -> Path:
     opf = (
         '<?xml version="1.0"?>\n<package xmlns="http://www.idpf.org/2007/opf" version="3.0" '
         'unique-identifier="uid"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/">'
+        f'<dc:identifier id="uid">{EpubIdentifier().of(make_book())[0]}</dc:identifier>'
+        "<dc:language>en</dc:language>"
         "<dc:title>Demo Book</dc:title><dc:date>2020-01-01</dc:date>"
         '<meta property="dcterms:modified">2020-05-05T05:05:05Z</meta></metadata><manifest>'
         '<item href="toc.xhtml" id="toc" media-type="application/xhtml+xml" properties="nav"></item>'
         '<item href="demo.ncx" id="ncx" media-type="application/x-dtbncx+xml"></item>'
         '<item href="demo.css" id="css" media-type="text/css"></item>'
+        '<item href="fine-ebook.css" id="fine-css" media-type="text/css"></item>'
         f'{items}</manifest><spine toc="ncx"><itemref idref="toc"/>{refs}</spine></package>'
     )
     members: dict[str, str] = {
         "mimetype": "application/epub+zip",
-        "META-INF/container.xml": "<container/>",
+        "META-INF/container.xml": (
+            '<?xml version="1.0"?>'
+            '<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">'
+            '<rootfiles><rootfile full-path="OEBPS/demo.opf" '
+            'media-type="application/oebps-package+xml"/></rootfiles></container>'
+        ),
         "OEBPS/demo.opf": opf,
         "OEBPS/toc.xhtml": toc,
         "OEBPS/demo.ncx": "<ncx/>",
         "OEBPS/demo.css": "body { margin: 0 }\nh2 br { display: none }\np { margin: 0 }\n",
+        "OEBPS/fine-ebook.css": "p { margin: 0 }\n",
     }
     for name, hid, title, text in RAW_PAGES:
         members[f"OEBPS/{name}"] = page(
