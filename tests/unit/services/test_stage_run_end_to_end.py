@@ -231,6 +231,8 @@ class World:
                     NarrationText(),
                     MetadataParser(DashRewriter()),
                     "Smoke Author",
+                    None,
+                    NarrationGate(),
                 ),
                 NarrationStageExecutor.STAGE: NarrationStageExecutor(
                     self.store, OutlineParser(), None, NarrationText(), NarrationGate()

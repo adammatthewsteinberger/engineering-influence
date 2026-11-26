@@ -372,6 +372,8 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                             NarrationText(),
                             MetadataParser(dashes),
                             profile.author if profile is not None else "",
+                            self._narrator(self._environment),
+                            NarrationGate(),
                         )
                     }
                 ),

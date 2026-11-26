@@ -2,10 +2,7 @@
 """The optional non-Audible narration stage: each assembled chapter is read aloud by a narrator, gated, levelled and kept as WAV."""
 
 import asyncio
-import io
 import json
-import wave
-from array import array
 from typing import Any, ClassVar
 
 from engineering_influence.errors.application_error import ApplicationError
@@ -13,7 +10,6 @@ from engineering_influence.interfaces.artifact_store_interface import ArtifactSt
 from engineering_influence.interfaces.narrator_interface import NarratorInterface
 from engineering_influence.interfaces.stage_executor_interface import StageExecutorInterface
 from engineering_influence.models.book_run import BookRun
-from engineering_influence.models.narration import Narration
 from engineering_influence.models.outline import Outline
 from engineering_influence.models.quality_issue import QualityIssue
 from engineering_influence.models.stage_report import StageReport
@@ -26,19 +22,20 @@ from engineering_influence.services.interfaces.narration_text_interface import (
 from engineering_influence.services.interfaces.outline_parser_interface import (
     OutlineParserInterface,
 )
+from engineering_influence.services.narration_renderer import NarrationRenderer
 
 
 class NarrationStageExecutor(StageExecutorInterface):
     """Narrates every chapter of the assembled manuscript, in order, and writes a manifest.
 
-    **It is optional, and it can only help.** With no narrator the stage writes ``audiobook.json`` saying the book is not
+    **It is optional, and it can only help.** With no narrator the stage writes ``narration.json`` saying the book is not
     narrated and changes nothing else. With one, each chapter is read in segments (see ``NarrationText``), the segments
-    joined with a short pause, and the result is gated (see ``NarrationGate``). A chapter the gate refuses is not kept:
-    it is recorded as ``AUDIO_REJECTED`` with the reasons, and a narrator that raises for a chapter records
-    ``AUDIO_FAILED``. Neither stops the run, and neither puts audio in the book that the gate did not pass.
+    joined with a short pause (see ``NarrationRenderer``), and the result is gated (see ``NarrationGate``). A chapter the
+    gate refuses is not kept: it is recorded as ``AUDIO_REJECTED`` with the reasons, and a narrator that raises for a
+    chapter records ``AUDIO_FAILED``. Neither stops the run, and neither puts audio in the book that the gate did not pass.
 
     A chapter is done when its record exists (``narrec_NN.json``), so a redelivered stage narrates only what is not
-    done. The audio is 16-bit mono PCM WAV, ``audiobook/chapter_NN.wav``, levelled by the gate. Chapters are read from
+    done. The audio is 16-bit mono PCM WAV, ``narration/chapter_NN.wav``, levelled by the gate. Chapters are read from
     ``manuscript/src``, which ``assemble`` wrote.
     """
 
@@ -47,8 +44,6 @@ class NarrationStageExecutor(StageExecutorInterface):
     DISCLOSURE: ClassVar[str] = (
         "This audiobook is narrated by a synthetic voice produced by a text-to-speech model, not by a human narrator."
     )
-    PAUSE_SECONDS: ClassVar[float] = 0.4
-    FULL_SCALE: ClassVar[int] = 32767
 
     def __init__(
         self,
@@ -61,8 +56,8 @@ class NarrationStageExecutor(StageExecutorInterface):
         self._artifacts = artifacts
         self._outlines = outlines
         self._narrator = narrator
-        self._text = text
         self._gate = gate
+        self._renderer = NarrationRenderer(text)
 
     async def execute(self, run: BookRun, attempt: int) -> StageReport:
         """Narrate the chapters that are not done, then write the manifest."""
@@ -109,7 +104,7 @@ class NarrationStageExecutor(StageExecutorInterface):
         source = await self._required(run, f"manuscript/src/chapter_{number:02d}.md")
         words = len(source.split())
         try:
-            narration = self._render(narrator, source)
+            narration = self._renderer.render(narrator, source)
         except ApplicationError as error:
             return self._record(number, "failed", detail=error.message)
         problems = self._gate.problems(narration, words)
@@ -118,48 +113,8 @@ class NarrationStageExecutor(StageExecutorInterface):
         levelled = self._gate.normalise(narration)
         name = self._wav_name(number)
         if name not in await asyncio.to_thread(self._artifacts.names, run.run_id):
-            await self._put(run, name, self._wav(levelled))
+            await self._put(run, name, self._renderer.wav(levelled))
         return self._record(number, "narrated", seconds=round(levelled.seconds(), 1), words=words)
-
-    def _render(self, narrator: NarratorInterface, source: str) -> Narration:
-        """The chapter's segments read in order, with a pause between them, as one narration."""
-        segments = self._text.segments(source)
-        samples: array = array("f")  # type: ignore[type-arg]
-        rate = 0
-        for index, segment in enumerate(segments):
-            narration = narrator.narrate(segment)
-            if index == 0:
-                rate = narration.sample_rate
-            elif narration.sample_rate != rate:
-                raise ApplicationError(
-                    code="AUDIO_RATE_CHANGED",
-                    message="the narrator changed its sample rate partway through a chapter",
-                    http_status=502,
-                )
-            if index:
-                samples.extend(array("f", [0.0]) * int(rate * self.PAUSE_SECONDS))
-            samples.extend(narration.samples)
-        if not segments:
-            raise ApplicationError(
-                code="AUDIO_NO_TEXT",
-                message="the chapter has no text to narrate",
-                http_status=422,
-            )
-        return Narration(rate, samples)
-
-    def _wav(self, narration: Narration) -> bytes:
-        """16-bit mono PCM, little-endian, which every host this runs on is."""
-        pcm = array(
-            "h",
-            (round(max(-1.0, min(1.0, sample)) * self.FULL_SCALE) for sample in narration.samples),
-        )
-        out = io.BytesIO()
-        with wave.open(out, "wb") as wav:
-            wav.setnchannels(1)
-            wav.setsampwidth(2)
-            wav.setframerate(narration.sample_rate)
-            wav.writeframes(pcm.tobytes())
-        return out.getvalue()
 
     @staticmethod
     def _record(number: int, status: str, **details: Any) -> dict[str, Any]:
