@@ -154,6 +154,9 @@ never prints a traceback, which could carry a connection string.
 | `EI_RATE_BURST`, `EI_RATE_PER_SECOND` | API | Token-bucket limits, default 30 and 10. |
 | `EI_MAX_RUN_BUDGET_MICRO_USD` | API, `ei run`, MCP, ACP | **The most any one run may be given, in micro-dollars, at its start and after every grant.** Not set by default (no ceiling). A bigger brief, or a grant that would take a cap over it, is refused with `BUDGET_ABOVE_LIMIT` (HTTP 422) before anything is saved or queued. |
 | `EI_MAX_OUTSTANDING_BUDGET_MICRO_USD` | API, `ei run`, MCP, ACP | **The most unspent budget all runs may hold together**: each unfinished run's cap less what it has spent (a parked or waiting run still counts; a completed, failed or cancelled one does not). Not set by default. A new run or a grant that would take the total over it is refused with `OUTSTANDING_BUDGET_EXCEEDED` (422). A client that starts many runs, or is granted more again and again, runs out of room instead of out of money. A check and the save that follows it are one locked step, so many requests at once to one API or MCP process cannot each pass against the same total; two *processes* (the API and a command line, say) each hold their own lock, so across processes it is a check with a window of a few milliseconds. `ei book create` runs on your own machine and is not held to it. |
+| `EI_SCREENPLAY_CANON_CHECK` | screenplay runs | **The author's own canon check command**, split into words the way a shell would split it and run with no shell. Not set by default, so the `check_canon` stage does nothing. Set `EI_SCREENPLAY_CANON_FOLDER` with it: naming a command without its folder is refused. This repository never holds the author's canon; the command reads the author's own files. |
+| `EI_SCREENPLAY_CANON_FOLDER` | screenplay runs | The folder the canon check runs in. Required with `EI_SCREENPLAY_CANON_CHECK`. |
+| `EI_SCREENPLAY_CANON_BLOCKING` | screenplay runs | `1`, `true` or `yes` stops a screenplay run at a canon `ERROR` finding. Unset, every finding is recorded as a quality issue and none stops the run. `WARN` findings never block. |
 | `EI_MCP_MAX_RUN_BUDGET_MICRO_USD` | MCP server | The most a run started over MCP may be given, in micro-dollars (default 5,000,000, five dollars). A bigger brief is refused with `BUDGET_ABOVE_LIMIT`. It bounds one run, not how many an agent starts. |
 | `EI_MCP_ALLOW_SPEND` | MCP server | `1`, `true` or `yes` lets `ei serve mcp` offer `grant_run` and `deny_run`, so an agent can answer a run's request for more budget. Off by default: an agent can then start, watch, resume, cancel and read runs, but cannot raise a run's cap. |
 
@@ -176,6 +179,9 @@ when this index names one nothing uses. The two `compose only` rows are read by 
 | `EI_LOCAL_MODEL`, `EI_LOCAL_URL` | the free local model's name and address | [LOCAL_MODEL.md](LOCAL_MODEL.md) |
 | `EI_LOG_LEVEL` | log verbosity | [Running the stack](#running-the-stack) |
 | `EI_MAX_OUTSTANDING_BUDGET_MICRO_USD` | the most unspent budget all runs may hold together | [Running the stack](#running-the-stack) |
+| `EI_SCREENPLAY_CANON_CHECK` | the author's canon check command, run in the author's folder | [Running the stack](#running-the-stack) |
+| `EI_SCREENPLAY_CANON_FOLDER` | the folder the canon check runs in | [Running the stack](#running-the-stack) |
+| `EI_SCREENPLAY_CANON_BLOCKING` | stops a screenplay run at a canon ERROR | [Running the stack](#running-the-stack) |
 | `EI_MAX_RUN_BUDGET_MICRO_USD` | the most any one run may be given | [Running the stack](#running-the-stack) |
 | `EI_MCP_ALLOW_SPEND` | lets `ei serve mcp` offer `grant_run` and `deny_run` | [Running the stack](#running-the-stack) |
 | `EI_MCP_MAX_RUN_BUDGET_MICRO_USD` | the most a run started over MCP may be given | [Running the stack](#running-the-stack) |

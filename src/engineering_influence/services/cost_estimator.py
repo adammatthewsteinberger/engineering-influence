@@ -66,6 +66,7 @@ class CostEstimator(CostEstimatorInterface):
             ScreenplayRecipes.ASSEMBLE_STAGE,
             ScreenplayRecipes.LOCK_STAGE,
             ScreenplayRecipes.REPORT_STAGE,
+            ScreenplayRecipes.CANON_STAGE,
             ScreenplayRecipes.RENDER_STAGE,
             ScreenplayRecipes.EPUB_STAGE,
         }

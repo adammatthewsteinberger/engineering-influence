@@ -29,6 +29,7 @@ class ScreenplayRecipes(StageRecipesInterface):
     ASSEMBLE_STAGE: ClassVar[str] = "assemble_script"
     LOCK_STAGE: ClassVar[str] = "lock_script"
     REPORT_STAGE: ClassVar[str] = "log_revisions"
+    CANON_STAGE: ClassVar[str] = "check_canon"
     RENDER_STAGE: ClassVar[str] = "render_script"
     EPUB_STAGE: ClassVar[str] = "build_epub"
 
@@ -42,6 +43,7 @@ class ScreenplayRecipes(StageRecipesInterface):
             self.ASSEMBLE_STAGE,
             self.LOCK_STAGE,
             self.REPORT_STAGE,
+            self.CANON_STAGE,
             self.RENDER_STAGE,
             self.EPUB_STAGE,
         )
