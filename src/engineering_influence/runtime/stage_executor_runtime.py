@@ -22,6 +22,11 @@ from engineering_influence.infrastructure.bundled_scripture import BundledScript
 from engineering_influence.infrastructure.deterministic_stage_executor import (
     DeterministicStageExecutor,
 )
+from engineering_influence.infrastructure.epub.epubcheck_runner import EpubcheckRunner
+from engineering_influence.infrastructure.epub.temporary_screenplay_epub_writer import (
+    TemporaryScreenplayEpubWriter,
+)
+from engineering_influence.infrastructure.epub.zip_epub_package import ZipEpubPackage
 from engineering_influence.infrastructure.models.anthropic_model import AnthropicModel
 from engineering_influence.infrastructure.models.openai_compatible_model import (
     OpenAICompatibleModel,
@@ -95,6 +100,9 @@ from engineering_influence.services.ask_model import AskModel
 from engineering_influence.services.assemble_stage_executor import AssembleStageExecutor
 from engineering_influence.services.audit_stage_executor import AuditStageExecutor
 from engineering_influence.services.book_config_writer import BookConfigWriter
+from engineering_influence.services.build_screenplay_epub_stage_executor import (
+    BuildScreenplayEpubStageExecutor,
+)
 from engineering_influence.services.build_stage_executor import BuildStageExecutor
 from engineering_influence.services.call_model import CallModel
 from engineering_influence.services.chapter_cleaner import ChapterCleaner
@@ -157,6 +165,7 @@ from engineering_influence.services.screenplay_assembler import ScreenplayAssemb
 from engineering_influence.services.screenplay_draft_stage_executor import (
     ScreenplayDraftStageExecutor,
 )
+from engineering_influence.services.screenplay_epub_package import ScreenplayEpubPackage
 from engineering_influence.services.screenplay_latex_source import ScreenplayLatexSource
 from engineering_influence.services.screenplay_length import ScreenplayLength
 from engineering_influence.services.screenplay_output_checks import ScreenplayOutputChecks
@@ -434,6 +443,15 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                             ScreenplayLatexSource(FountainParser()),
                             LatexScreenplayTypesetter(LatexCompiler(), PypdfPdfInspector()),
                             ScreenplayLength(),
+                        ),
+                    }
+                ),
+                BuildScreenplayEpubStageExecutor.STAGE: KindStageExecutor(
+                    {
+                        BookKind.SCREENPLAY: BuildScreenplayEpubStageExecutor(
+                            artifacts,
+                            ScreenplayEpubPackage(FountainParser()),
+                            TemporaryScreenplayEpubWriter(ZipEpubPackage(), EpubcheckRunner()),
                         ),
                     }
                 ),

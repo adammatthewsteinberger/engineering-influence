@@ -22,6 +22,7 @@ def test_the_plan_is_the_brief_and_the_architecture_in_order() -> None:
         "revise_scenes",
         "assemble_script",
         "render_script",
+        "build_epub",
     )
 
 
