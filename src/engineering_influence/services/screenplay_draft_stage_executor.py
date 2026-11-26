@@ -74,8 +74,8 @@ class ScreenplayDraftStageExecutor(StageExecutorInterface):
 
     async def _scene(self, run: BookRun, card: SceneCard, anchors: str, beats: str) -> str:
         problems: tuple[str, ...] = ()
-        for _ in range(self.DRAFT_ATTEMPTS):
-            scene = await asyncio.to_thread(self._drafter.draft, run, card, anchors, beats)
+        for number in range(1, self.DRAFT_ATTEMPTS + 1):
+            scene = await asyncio.to_thread(self._drafter.draft, run, card, anchors, beats, number)
             problems = self._checks.problems(scene)
             if not problems:
                 return scene
