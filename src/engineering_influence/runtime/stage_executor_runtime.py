@@ -127,6 +127,9 @@ from engineering_influence.services.interfaces.cost_estimator_interface import (
 )
 from engineering_influence.services.kind_stage_executor import KindStageExecutor
 from engineering_influence.services.local_default_model import LocalDefaultModel
+from engineering_influence.services.lock_shooting_script_stage_executor import (
+    LockShootingScriptStageExecutor,
+)
 from engineering_influence.services.lock_stage_guidance import LockStageGuidance
 from engineering_influence.services.lock_tool_grants import LockToolGrants
 from engineering_influence.services.manuscript_project import ManuscriptProject
@@ -176,6 +179,9 @@ from engineering_influence.services.screenplay_revise_stage_executor import (
 from engineering_influence.services.screenplay_section_check import ScreenplaySectionCheck
 from engineering_influence.services.scripture_checker import ScriptureChecker
 from engineering_influence.services.scripture_draft_checks import ScriptureDraftChecks
+from engineering_influence.services.shooting_lock_codec import ShootingLockCodec
+from engineering_influence.services.shooting_lock_planner import ShootingLockPlanner
+from engineering_influence.services.shooting_script_renderer import ShootingScriptRenderer
 from engineering_influence.services.skill_lock_verifier import SkillLockVerifier
 from engineering_influence.services.spend_guard import SpendGuard
 from engineering_influence.services.stage_executor_router import StageExecutorRouter
@@ -462,6 +468,18 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                             SceneCardList(),
                             ScreenplayAssembler(FountainParser()),
                             FountainParser(),
+                        ),
+                    }
+                ),
+                LockShootingScriptStageExecutor.STAGE: KindStageExecutor(
+                    {
+                        BookKind.SCREENPLAY: LockShootingScriptStageExecutor(
+                            artifacts,
+                            SceneCardList(),
+                            FountainParser(),
+                            ShootingLockPlanner(),
+                            ShootingLockCodec(),
+                            ShootingScriptRenderer(FountainParser()),
                         ),
                     }
                 ),

@@ -27,3 +27,8 @@ class FountainParserInterface(ABC):
     @abstractmethod
     def scenes(self, text: str) -> tuple[FountainScene, ...]:
         """Every scene, numbered from 1, in the order it appears."""
+
+    @abstractmethod
+    def scene_chunks(self, text: str) -> tuple[str, tuple[str, ...]]:
+        """The title page and any text before the first scene, then each scene's raw text from its heading up to the
+        next, in order. Boneyard comments are removed; every other line is kept."""
