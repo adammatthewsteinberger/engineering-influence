@@ -68,15 +68,29 @@ class CreateRun(CreateRunInterface):
         for entry in sources:
             self._artifacts.put(run_id, entry.artifact(), entry.text.encode("utf-8"))
 
+    @staticmethod
+    def _stop_at(plan: StagePlan, stage: str) -> StagePlan:
+        """The plan up to and including the named stage, so the run completes there and runs nothing after it."""
+        if stage not in plan.stages:
+            raise ApplicationError(
+                code="STOP_STAGE_UNKNOWN",
+                message=f"a {plan.kind.value} run has no stage {stage!r} to stop after",
+                http_status=422,
+            )
+        return StagePlan(plan.kind, tuple(plan.stages[: plan.stages.index(stage) + 1]))
+
     def create(
         self,
         brief: BookBrief,
         sources: tuple[SourceEntry, ...] = (),
         previous_lock: str | None = None,
+        stop_after: str | None = None,
     ) -> BookRun:
         """Save a new pending run for the brief and queue its first stage; return the run. A previous shooting script
         lock, when given, is kept as the run's previous lock, so the run's scene numbers carry over from it."""
         plan = self._plans.get(brief.kind)
+        if plan is not None and stop_after is not None:
+            plan = self._stop_at(plan, stop_after)
         if plan is None:
             raise ApplicationError(
                 code="RUN_KIND_UNSUPPORTED",

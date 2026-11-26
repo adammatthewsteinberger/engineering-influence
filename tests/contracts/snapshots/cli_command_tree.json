@@ -385,6 +385,21 @@
             },
             {
               "choices": null,
+              "default": null,
+              "dest": "stop_after",
+              "flags": [
+                "--stop-after"
+              ],
+              "name": "--stop-after",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
               "default": false,
               "dest": "strict_release",
               "flags": [

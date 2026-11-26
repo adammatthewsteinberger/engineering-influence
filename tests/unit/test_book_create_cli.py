@@ -47,6 +47,7 @@ class Creator(LocalBookCreatorInterface):
         self.started: list[BookBrief] = []
         self.sources: list[tuple[SourceEntry, ...]] = []
         self.previous_locks: list[str | None] = []
+        self.stops: list[str | None] = []
         self.resumed: list[bool] = []
         self.exported: list[Path] = []
         self.closed = 0
@@ -65,10 +66,12 @@ class Creator(LocalBookCreatorInterface):
         progress: Callable[[str], None],
         sources: tuple[object, ...] = (),
         previous_lock: str | None = None,
+        stop_after: str | None = None,
     ) -> BookRun:
         self.started.append(brief)
         self.sources.append(sources)
         self.previous_locks.append(previous_lock)
+        self.stops.append(stop_after)
         progress("brief: advanced")
         return self._result()
 
@@ -145,6 +148,12 @@ def test_a_previous_shooting_lock_file_is_passed_to_the_run_as_text(tmp_path: Pa
     lock.write_text('{"version": 1, "entries": []}', encoding="utf-8")
     assert harness.run("a film", *create(tmp_path, "--previous-lock", str(lock))) == 0
     assert harness.creator.previous_locks == ['{"version": 1, "entries": []}']
+
+
+def test_stop_after_names_the_stage_the_run_ends_at(tmp_path: Path) -> None:
+    harness = Harness(run_in(RunStatus.COMPLETED))
+    assert harness.run("a film", *create(tmp_path, "--stop-after", "scene_cards")) == 0
+    assert harness.creator.stops == ["scene_cards"]
 
 
 def test_a_finished_book_is_written_and_the_command_succeeds(

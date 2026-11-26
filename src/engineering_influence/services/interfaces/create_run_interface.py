@@ -23,5 +23,6 @@ class CreateRunInterface(ABC):
         brief: BookBrief,
         sources: tuple[SourceEntry, ...] = (),
         previous_lock: str | None = None,
+        stop_after: str | None = None,
     ) -> BookRun:
         """Save a new pending run for the brief and queue its first stage; return the run."""

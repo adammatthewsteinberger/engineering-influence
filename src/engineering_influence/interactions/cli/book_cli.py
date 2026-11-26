@@ -103,6 +103,10 @@ class BookCli(BookCliInterface):
             help="a folder of source files (.md, .txt) the run adapts; each file is kept in the run",
         )
         create.add_argument(
+            "--stop-after",
+            help="stop the run after this stage, for example scene_cards; the stages after it are not run",
+        )
+        create.add_argument(
             "--previous-lock",
             type=Path,
             help="the shooting_lock.json of an earlier run, so its scene numbers carry over (screenplay runs only)",
@@ -230,6 +234,7 @@ class BookCli(BookCliInterface):
                         progress,
                         self._sources(arguments.source),
                         self._previous_lock(arguments.previous_lock),
+                        arguments.stop_after,
                     )
                 )
             return self._finish(creator, run, arguments.out, state)
