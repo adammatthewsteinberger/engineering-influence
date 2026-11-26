@@ -1,0 +1,25 @@
+# Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
+"""One scene card of a screenplay: its number, its beat, and the card's text as the architecture stage wrote it."""
+
+from dataclasses import dataclass
+
+from engineering_influence.models.interfaces.scene_card_interface import SceneCardInterface
+
+
+@dataclass(frozen=True, slots=True)
+class SceneCard(SceneCardInterface):
+    """`number` runs from 1 in card order; `beat` names one of the fifteen beats; `body` is the card's text."""
+
+    number: int
+    beat: str
+    body: str
+
+    def __post_init__(self) -> None:
+        if type(self.number) is not int or self.number < 1:
+            raise ValueError("a scene card is numbered from 1")
+        if not self.beat.strip():
+            raise ValueError("a scene card names its beat")
+
+    def artifact(self) -> str:
+        """The drafted scene's artifact name, `scenes/NNN.md`."""
+        return f"scenes/{self.number:03d}.md"
