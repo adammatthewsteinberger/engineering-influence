@@ -33,6 +33,16 @@ class InMemoryRunRepository(RunRepositoryInterface):
         self._runs[replacement.run_id] = replacement
         return True
 
+    def swap_with_events(
+        self, expected: BookRun, replacement: BookRun, events: tuple[OutboxEvent, ...]
+    ) -> bool:
+        """With no transaction to share in memory, the swap is made first and the events follow only if it stored."""
+        if not self.swap(expected, replacement):
+            return False
+        for event in events:
+            self._events.setdefault(event.record_key(), event)
+        return True
+
     def get(self, run_id: str) -> BookRun | None:
         return self._runs.get(run_id)
 

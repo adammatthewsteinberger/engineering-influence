@@ -298,3 +298,27 @@ def test_an_event_that_cannot_be_written_leaves_the_run_unsaved(database_url: st
     assert repository.get("run-9") is None
     assert SqlModelOutbox(database_url).pending() == []
     repository.close()
+
+
+def test_a_swap_with_events_queues_them_only_when_the_swap_is_stored(
+    runs: RunRepositoryInterface, database_url: str
+) -> None:
+    before = make_run()
+    after = before.start()
+    event = OutboxEvent(
+        "evt-swap", "https://hook.example/in", "pipeline.started", {"run_id": "run-1"}
+    )
+    runs.save(before)
+    assert runs.swap_with_events(before, after, (event,)) is True
+    assert runs.get("run-1") == after
+    assert queued_ids(runs, database_url) == ["evt-swap"]
+
+
+def test_a_refused_swap_queues_nothing(runs: RunRepositoryInterface, database_url: str) -> None:
+    before = make_run()
+    other = before.start()
+    runs.save(before)
+    runs.save(other)
+    event = OutboxEvent("evt-refused", "https://hook.example/in", "pipeline.started", {})
+    assert runs.swap_with_events(before, before.start(), (event,)) is False
+    assert queued_ids(runs, database_url) == []

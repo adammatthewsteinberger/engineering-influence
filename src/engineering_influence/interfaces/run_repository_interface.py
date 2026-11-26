@@ -36,6 +36,15 @@ class RunRepositoryInterface(ABC):
         """
 
     @abstractmethod
+    def swap_with_events(
+        self, expected: BookRun, replacement: BookRun, events: tuple[OutboxEvent, ...]
+    ) -> bool:
+        """Like ``swap``, and the events are queued in the same commit, only if the swap stored the replacement.
+
+        When the swap is refused nothing is written, events included, so a delivery that lost the race queues nothing.
+        """
+
+    @abstractmethod
     def get(self, run_id: str) -> BookRun | None:
         """The last saved state of a run, or None if it was never saved."""
 

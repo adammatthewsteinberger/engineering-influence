@@ -40,22 +40,32 @@ class SqlModelRunRepository(RunRepositoryInterface):
             record.document_json = self._codec.encode(run)
             record.updated_at = datetime.now(UTC)
             session.add(record)
-            for event in events:
-                already = session.exec(
-                    select(OutboxRecord).where(OutboxRecord.event_id == event.record_key())
-                ).first()
-                if already is None:
-                    session.add(
-                        OutboxRecord(
-                            event_id=event.event_id,
-                            url=event.url,
-                            event_name=event.event_name,
-                            payload_json=json.dumps(event.payload, sort_keys=True),
-                        )
-                    )
+            self._queue(session, events)
             session.commit()
 
+    @staticmethod
+    def _queue(session: Session, events: tuple[OutboxEvent, ...]) -> None:
+        """Add each event not already queued to the session, so it commits with the caller's change."""
+        for event in events:
+            already = session.exec(
+                select(OutboxRecord).where(OutboxRecord.event_id == event.record_key())
+            ).first()
+            if already is None:
+                session.add(
+                    OutboxRecord(
+                        event_id=event.event_id,
+                        url=event.url,
+                        event_name=event.event_name,
+                        payload_json=json.dumps(event.payload, sort_keys=True),
+                    )
+                )
+
     def swap(self, expected: BookRun, replacement: BookRun) -> bool:
+        return self.swap_with_events(expected, replacement, ())
+
+    def swap_with_events(
+        self, expected: BookRun, replacement: BookRun, events: tuple[OutboxEvent, ...]
+    ) -> bool:
         if replacement.run_id != expected.run_id:
             raise ValueError("a swap cannot change the run id")
         with Session(self._engine) as session:
@@ -70,8 +80,12 @@ class SqlModelRunRepository(RunRepositoryInterface):
                     updated_at=datetime.now(UTC),
                 )
             )
+            if result.rowcount != 1:
+                session.rollback()
+                return False
+            self._queue(session, events)
             session.commit()
-            return bool(result.rowcount == 1)
+            return True
 
     def get(self, run_id: str) -> BookRun | None:
         with Session(self._engine) as session:
