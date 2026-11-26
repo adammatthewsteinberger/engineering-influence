@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from engineering_influence.models.book_run import BookRun
+    from engineering_influence.models.outbox_event import OutboxEvent
 
 
 class RunRepositoryInterface(ABC):
@@ -18,6 +19,13 @@ class RunRepositoryInterface(ABC):
     @abstractmethod
     def save(self, run: BookRun) -> None:
         """Store the run, replacing any earlier state saved under the same id."""
+
+    @abstractmethod
+    def save_with_events(self, run: BookRun, events: tuple[OutboxEvent, ...]) -> None:
+        """Store the run and queue the events in one commit: both happen or neither does.
+
+        An event whose id is already queued is skipped, so a retried stage queues each event once.
+        """
 
     @abstractmethod
     def swap(self, expected: BookRun, replacement: BookRun) -> bool:
