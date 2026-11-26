@@ -1,0 +1,1 @@
+A Fountain title page is read whatever key comes first. Before, a `Credit:` line above the `Title:` line hid the whole title page, so a screenplay could lose its title and credits. Now the title page is the first paragraph that has a Title key, in any order. Compatible: a script that already began with `Title:` reads exactly as before, and no code, issue or stage changed.
