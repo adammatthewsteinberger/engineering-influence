@@ -1,5 +1,5 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
-"""The drafting stage of a screenplay: each scene in prompt 09's order, checked, kept, and assembled into one script."""
+"""The drafting stage of a screenplay: each scene in prompt 09's order, checked and kept. Assembly is a later stage."""
 
 import asyncio
 from typing import ClassVar
@@ -14,9 +14,6 @@ from engineering_influence.models.stage_report import StageReport
 from engineering_influence.services.interfaces.scene_card_list_interface import (
     SceneCardListInterface,
 )
-from engineering_influence.services.interfaces.screenplay_assembler_interface import (
-    ScreenplayAssemblerInterface,
-)
 from engineering_influence.services.interfaces.screenplay_section_check_interface import (
     ScreenplaySectionCheckInterface,
 )
@@ -25,13 +22,10 @@ from engineering_influence.services.screenplay_drafting_order import ScreenplayD
 
 class ScreenplayDraftStageExecutor(StageExecutorInterface):
     """A scene that fails its check is drafted once more; if the second draft fails too, the stage stops and names the
-    problems. A scene already stored is kept, so a redelivered stage drafts only what is missing. Once every scene is
-    stored, the script is assembled in card order and stored as `screenplay.fountain`."""
+    problems. A scene already stored is kept, so a redelivered stage drafts only what is missing."""
 
-    SCRIPT: ClassVar[str] = "screenplay.fountain"
     DRAFT_ATTEMPTS: ClassVar[int] = 2
     MAX_PROBLEMS_SHOWN: ClassVar[int] = 5
-    UNTITLED: ClassVar[str] = "UNTITLED"
 
     def __init__(
         self,
@@ -39,18 +33,16 @@ class ScreenplayDraftStageExecutor(StageExecutorInterface):
         drafter: SceneDrafterInterface,
         cards: SceneCardListInterface,
         checks: ScreenplaySectionCheckInterface,
-        assembler: ScreenplayAssemblerInterface,
         shareable: frozenset[int] = frozenset(),
     ) -> None:
         self._artifacts = artifacts
         self._drafter = drafter
         self._cards = cards
         self._checks = checks
-        self._assembler = assembler
         self._shareable = shareable
 
     async def execute(self, run: BookRun, attempt: int) -> StageReport:
-        """Draft the missing scenes in drafting order, then assemble the script."""
+        """Draft the missing scenes in drafting order."""
         cards = self._cards.parse(await self._required(run, "scene_cards.md"))
         anchors = await self._required(run, "anchors.md")
         beats = await self._required(run, "beats.md")
@@ -65,16 +57,7 @@ class ScreenplayDraftStageExecutor(StageExecutorInterface):
                 continue
             scene = await self._scene(run, card, anchors, beats, await self._cited(run, card))
             await self._put(run, card.artifact(), scene)
-        if self.SCRIPT not in stored:
-            scenes = tuple([await self._required(run, card.artifact()) for card in cards])
-            script = self._assembler.assemble(self._title_page(run), scenes)
-            await self._put(run, self.SCRIPT, script)
         return StageReport()
-
-    @classmethod
-    def _title_page(cls, run: BookRun) -> tuple[tuple[str, str], ...]:
-        """The title page names the brief's title, or UNTITLED when the author gave none."""
-        return (("Title", run.brief.title_hint or cls.UNTITLED),)
 
     async def _cited(self, run: BookRun, card: SceneCard) -> str:
         """The source files the card names, each under its number, so the scene draws on nothing else."""

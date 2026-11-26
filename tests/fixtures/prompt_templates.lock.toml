@@ -69,6 +69,10 @@ fingerprint = "c7835a27b384260094883858cb207fe4c68eff8a7f0383152ffafcc5030f35b5"
 version = 2
 fingerprint = "84f372c9c8c6817087d8d824aaa57062e4b162b7b73c448a50b9c58383c14e8b"
 
+[screenplay_revise_scene]
+version = 1
+fingerprint = "599e98a76074527a81fa340c14dd61fc990ced53398f84cca8b732f81656cf13"
+
 [screenplay_scene_cards]
 version = 2
 fingerprint = "7502004ce04df5446a535a52eba13efccf3720421301b9dff83ace600a3b3820"

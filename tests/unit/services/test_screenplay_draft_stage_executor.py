@@ -1,6 +1,6 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 
-"""ScreenplayDraftStageExecutor: scenes drafted in order and checked, one retry, resume, and the assembled script."""
+"""ScreenplayDraftStageExecutor: scenes drafted in order and checked, one retry, resume, and cited sources only."""
 
 import asyncio
 
@@ -16,7 +16,6 @@ from engineering_influence.models.budget import Budget
 from engineering_influence.models.scene_card import SceneCard
 from engineering_influence.services.fountain_parser import FountainParser
 from engineering_influence.services.scene_card_list import SceneCardList
-from engineering_influence.services.screenplay_assembler import ScreenplayAssembler
 from engineering_influence.services.screenplay_draft_stage_executor import (
     ScreenplayDraftStageExecutor,
 )
@@ -66,7 +65,6 @@ def stage(
         drafter,
         SceneCardList(),
         ScreenplaySectionCheck(FountainParser()),
-        ScreenplayAssembler(FountainParser()),
         shareable,
     )
 
@@ -86,18 +84,18 @@ def text(store: InMemoryArtifactStore, name: str) -> str:
     return data.decode("utf-8")
 
 
-def test_each_scene_is_drafted_in_order_and_the_script_is_assembled() -> None:
+def test_each_scene_is_drafted_in_order_and_stored_as_its_own_artifact() -> None:
     store, drafter = seeded(), Drafter()
     asyncio.run(stage(store, drafter).execute(run(), 1))
     assert drafter.calls == [1, 4, 3, 2]
-    script = text(store, "screenplay.fountain")
-    assert script.startswith("Title: TEST FILM\n\nFADE IN:")
-    assert (
-        script.index("Scene 1 plays")
-        < script.index("Scene 2 plays")
-        < script.index("Scene 4 plays")
-    )
-    assert script.endswith("FADE OUT.\n\n>THE END<\n")
+    assert "Scene 1 plays out." in text(store, "scenes/001.md")
+    assert "Scene 4 plays out." in text(store, "scenes/004.md")
+
+
+def test_the_drafting_stage_writes_no_script() -> None:
+    store = seeded()
+    asyncio.run(stage(store, Drafter()).execute(run(), 1))
+    assert store.get("run-1", "screenplay.fountain") is None
 
 
 def test_a_scene_that_fails_its_check_is_drafted_once_more() -> None:
@@ -158,6 +156,7 @@ def test_the_scene_cards_are_read_with_their_beats() -> None:
     cards = SceneCardList().parse(CARDS)
     assert [(c.number, c.beat) for c in cards] == list(enumerate(BEATS, 1))
     assert cards[0].artifact() == "scenes/001.md"
+    assert cards[0].revised() == "revised/001.md"
 
 
 def test_a_scene_card_number_starts_at_one() -> None:
@@ -180,7 +179,7 @@ def test_text_with_no_card_is_unreadable() -> None:
     assert error.value.code == "SCENE_CARDS_UNREADABLE"
 
 
-def test_the_plan_drafts_scenes_after_the_architecture() -> None:
+def test_the_plan_drafts_revises_and_assembles_scenes_after_the_architecture() -> None:
     assert tuple(ScreenplayRecipes().plan().stages) == (
         "brief",
         "anchors",
@@ -189,20 +188,9 @@ def test_the_plan_drafts_scenes_after_the_architecture() -> None:
         "scene_cards",
         "visual_grammar",
         "draft",
+        "revise_scenes",
+        "assemble_script",
     )
-
-
-def test_the_title_is_the_brief_title_or_untitled() -> None:
-    titled = ScreenplayDraftStageExecutor._title_page(run())
-    assert titled == (("Title", "TEST FILM"),)
-    untitled_brief = BookBrief(BookKind.SCREENPLAY, "a film", 5_000_000)
-    untitled = BookRun(
-        run_id="run-2",
-        brief=untitled_brief,
-        plan=ScreenplayRecipes().plan(),
-        budget=Budget(cap=5_000_000),
-    )
-    assert ScreenplayDraftStageExecutor._title_page(untitled) == (("Title", "UNTITLED"),)
 
 
 def with_cards(cards: str, *sources: tuple[str, bytes]) -> InMemoryArtifactStore:

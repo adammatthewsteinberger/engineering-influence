@@ -122,6 +122,7 @@ from engineering_influence.services.mcp_server_launcher import McpServerLauncher
 from engineering_influence.services.mcp_tool_factory import McpToolFactory
 from engineering_influence.services.metadata_parser import MetadataParser
 from engineering_influence.services.model_scene_drafter import ModelSceneDrafter
+from engineering_influence.services.model_scene_reviser import ModelSceneReviser
 from engineering_influence.services.model_stage_executor import ModelStageExecutor
 from engineering_influence.services.narration_gate import NarrationGate
 from engineering_influence.services.narration_stage_executor import NarrationStageExecutor
@@ -141,12 +142,18 @@ from engineering_influence.services.reference_parser import ReferenceParser
 from engineering_influence.services.revision_stage_executor import RevisionStageExecutor
 from engineering_influence.services.run_tool_loop import RunToolLoop
 from engineering_influence.services.scene_card_list import SceneCardList
+from engineering_influence.services.screenplay_assemble_stage_executor import (
+    ScreenplayAssembleStageExecutor,
+)
 from engineering_influence.services.screenplay_assembler import ScreenplayAssembler
 from engineering_influence.services.screenplay_draft_stage_executor import (
     ScreenplayDraftStageExecutor,
 )
 from engineering_influence.services.screenplay_output_checks import ScreenplayOutputChecks
 from engineering_influence.services.screenplay_recipes import ScreenplayRecipes
+from engineering_influence.services.screenplay_revise_stage_executor import (
+    ScreenplayReviseStageExecutor,
+)
 from engineering_influence.services.screenplay_section_check import ScreenplaySectionCheck
 from engineering_influence.services.scripture_checker import ScriptureChecker
 from engineering_influence.services.scripture_draft_checks import ScriptureDraftChecks
@@ -397,7 +404,26 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                             ModelSceneDrafter(prompts, loop, SpendGuard),
                             SceneCardList(),
                             ScreenplaySectionCheck(FountainParser()),
+                        ),
+                    }
+                ),
+                ScreenplayReviseStageExecutor.STAGE: KindStageExecutor(
+                    {
+                        BookKind.SCREENPLAY: ScreenplayReviseStageExecutor(
+                            artifacts,
+                            ModelSceneReviser(prompts, loop, SpendGuard),
+                            SceneCardList(),
+                            ScreenplaySectionCheck(FountainParser()),
+                        ),
+                    }
+                ),
+                ScreenplayAssembleStageExecutor.STAGE: KindStageExecutor(
+                    {
+                        BookKind.SCREENPLAY: ScreenplayAssembleStageExecutor(
+                            artifacts,
+                            SceneCardList(),
                             ScreenplayAssembler(FountainParser()),
+                            FountainParser(),
                         ),
                     }
                 ),
