@@ -5,7 +5,8 @@ from enum import StrEnum
 
 
 class BookKind(StrEnum):
-    """Whether a book is argued from sources or told as a story."""
+    """Whether a book is argued from sources, told as a story, or written as a screenplay."""
 
     NONFICTION = "nonfiction"
     NOVEL = "novel"
+    SCREENPLAY = "screenplay"

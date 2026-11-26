@@ -35,7 +35,7 @@ class TextPolicy(TextPolicyInterface):
                 kind = BookKind(name)
             except ValueError:
                 raise ManuscriptError(
-                    f"the book kind must be 'nonfiction' or 'novel', not {name!r}"
+                    f"the book kind must be 'nonfiction', 'novel' or 'screenplay', not {name!r}"
                 ) from None
-        fiction = kind is BookKind.NOVEL
+        fiction = kind in (BookKind.NOVEL, BookKind.SCREENPLAY)
         return cls(kind, fiction, fiction, fiction)

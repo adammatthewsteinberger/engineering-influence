@@ -32,5 +32,5 @@ def test_a_novel_may_use_em_dashes_print_scene_breaks_and_quote_the_word_draft()
 
 @pytest.mark.parametrize("name", ["novell", "", "Novel", "fiction", " novel"])
 def test_an_unknown_kind_is_refused_with_the_valid_ones_named(name: str) -> None:
-    with pytest.raises(ManuscriptError, match="'nonfiction' or 'novel'"):
+    with pytest.raises(ManuscriptError, match="'nonfiction', 'novel' or 'screenplay'"):
         TextPolicy.for_name(name)

@@ -95,6 +95,9 @@ recorded cassettes) and need no action from you.
 | `WEBHOOK_TARGET_REJECTED` | `webhook destination refused: REASON` | The webhook's address was refused: it must be public `https` |
 | `SKILL_IMPORT_TOO_LARGE` | `the chosen text is N characters and a part holds at most M; choose sections with --section` | Pick fewer reference sections with `--section`. The message lists each section and its length |
 | `SOURCE_TOO_COMPLEX` | `the page nests elements more than N deep` | A fetched web page is too deeply nested to read safely. The research stage skips it; no action needed |
+| `SOURCE_EMPTY` | `the source folder ... has no readable source files` | A screenplay's source folder holds no `.md` or `.txt` files. Put the manuscript files in it (ADR 0017) |
+| `SOURCE_FOLDER_MISSING` | `the source folder ... does not exist` | The path given for the source folder is wrong. Check it |
+| `SOURCE_TOO_LARGE` | `source file ... is over 2000000 bytes; split it` | A source file is larger than the limit. Split it into several files in the folder |
 
 ## Collecting evidence for a bug report
 
