@@ -194,7 +194,8 @@ when this index names one nothing uses. The two `compose only` rows are read by 
 | `EI_WEBHOOK_URLS` | the receivers of a run's events: a comma-separated list of `https://` addresses. Empty by default, which sends nothing | [Webhooks](WEBHOOKS.md) |
 | `EI_WEBHOOK_SECRET` | the secret that signs each delivery. Required when `EI_WEBHOOK_URLS` is set; never printed or logged | [Webhooks](WEBHOOKS.md) |
 | `EI_WEBHOOK_INTERVAL_SECONDS` | how often the worker delivers queued events, in seconds (at least 0.01; default 5) | [Webhooks](WEBHOOKS.md) |
-| `EI_NARRATOR` | the narrator for the locally narrated (non-Audible) audiobook; none is built in yet, so a name is refused | [Audiobooks](AUDIOBOOKS.md) |
+| `EI_NARRATOR_VOICE` | the Kokoro voice, for example `af_heart` (the default) or `bf_emma` | [AUDIOBOOKS.md](AUDIOBOOKS.md) |
+| `EI_NARRATOR` | the narrator for the locally narrated (non-Audible) audiobook: `kokoro` is built in (Kokoro-82M through mlx-audio, on an Apple Silicon Mac with the `audio` extra); any other name is refused | [Audiobooks](AUDIOBOOKS.md) |
 | `EI_SEARXNG_URL` | the SearXNG address the research stage searches through | [A free local web search](#a-free-local-web-search-searxng) |
 | `EI_SKILL_LOCK` | the skill lock file | [The skill lock](#the-skill-lock-installed-prompt-text) |
 | `EI_STAGE_EXECUTOR` | what writes a run's stages: `local`, `model` or `deterministic` | [Limits to know](#limits-to-know) |

@@ -102,6 +102,7 @@ recorded cassettes) and need no action from you.
 | `SCREENPLAY_NO_TITLE` | `the title page must name the title` | A screenplay's title page has no `Title:` line. Add one to the screenplay settings |
 | `SCREENPLAY_NO_SCENES` | `a screenplay has at least one scene` | The screenplay has no scenes to join. Check the drafted scenes |
 | `SCREENPLAY_SCENE_INVALID` | `scene N must be exactly one scene heading and its elements` | A drafted scene holds more than one scene heading. Split it or redraft it |
+| `NARRATION_FAILED` | `the narrator could not read a segment: ...` | The local voice engine could not narrate a piece of text: it is missing (install the `audio` extra on an Apple Silicon Mac), it exited with an error, or it wrote no audio. The message names the engine's last output |
 | `STOP_STAGE_UNKNOWN` | `a screenplay run has no stage 'x' to stop after` | The `--stop-after` stage name is not a stage of that kind of run. Use a stage name from the plan, such as `scene_cards` |
 | `SHOOTING_LOCK_UNREADABLE` | `the shooting script lock is unreadable: ...` | The previous shooting script lock the run was given is not a version 1 lock file, or one of its scenes has a bad number. Re-export the lock from the run that made it |
 | `SCENE_CARDS_UNREADABLE` | `the scene cards have no '## S01 ·' card` | The scene cards from the architecture stage cannot be read: a card has no `**Beat:**` field, no `**Sources:**` field of source numbers, or there are no cards at all. Re-run the scene-cards stage |

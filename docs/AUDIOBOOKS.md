@@ -24,8 +24,7 @@ audio it writes is for your review. Read ACX's current terms on synthetic narrat
 upload any of it. The credit wording and the sample length are drafts: ACX's own credit and sample rules are not checked
 here.
 
-No narrator engine is built into this release, so the audio parts are not made yet. A name in `EI_NARRATOR` is refused
-with `NARRATOR_UNAVAILABLE` until an engine is added (ADR 0014 follows a listening test). With `EI_NARRATOR` unset,
+The built-in narrator is `kokoro`: Kokoro-82M through mlx-audio, installed with the `audio` extra on an Apple Silicon Mac. A name in `EI_NARRATOR` other than `kokoro` is refused with `NARRATOR_UNAVAILABLE`. The listening test ADR 0014 asked for has not been run; the maintainer chose to ship the engine first. With `EI_NARRATOR` unset,
 `acx-export.json` says the audio was not narrated, and the text is still written.
 
 A part whose audio the gate refuses is reported as `ACX_AUDIO_REJECTED`, and one whose narrator fails as
