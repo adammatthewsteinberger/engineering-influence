@@ -4,6 +4,7 @@
 from html import escape
 from typing import ClassVar
 
+from engineering_influence.models.fountain_block import FountainBlock
 from engineering_influence.services.interfaces.fountain_parser_interface import (
     FountainParserInterface,
 )
@@ -31,6 +32,7 @@ class ScreenplayEpubPackage(ScreenplayEpubPackageInterface):
         ".title { text-align: center; margin-top: 30%; }\n"
         "p { margin: 0 0 1em 0; }\n"
         ".heading { font-weight: bold; text-transform: uppercase; }\n"
+        ".scene-number { float: right; }\n"
         ".transition { text-align: right; }\n"
         ".centered { text-align: center; }\n"
         ".cue { margin-left: 35%; }\n"
@@ -107,15 +109,20 @@ class ScreenplayEpubPackage(ScreenplayEpubPackageInterface):
             "</body>\n</html>\n"
         )
 
+    def _block(self, block: FountainBlock) -> str:
+        """One element as a paragraph; a heading's locked scene number is floated to the right."""
+        if block.kind != "heading":
+            return f'<p class="{block.kind}">{"<br/>".join(escape(line) for line in block.lines)}</p>\n'
+        plain, number = self._parser.split_scene_number(" ".join(block.lines))
+        label = "" if number is None else f'<span class="scene-number">{escape(number)}</span>'
+        return f'<p class="heading">{escape(plain)}{label}</p>\n'
+
     def _page(self, script: str, title: str) -> str:
         pairs = "".join(
             f'<p class="title">{escape(key)}: {escape(value)}</p>\n'
             for key, value in self._parser.title_page(script)
         )
-        body = "".join(
-            f'<p class="{block.kind}">{"<br/>".join(escape(line) for line in block.lines)}</p>\n'
-            for block in self._parser.blocks(script)
-        )
+        body = "".join(self._block(block) for block in self._parser.blocks(script))
         return (
             '<?xml version="1.0" encoding="utf-8"?>\n'
             '<html xmlns="http://www.w3.org/1999/xhtml">\n'

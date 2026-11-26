@@ -23,6 +23,7 @@ class BuildScreenplayEpubStageExecutor(StageExecutorInterface):
 
     STAGE: ClassVar[str] = "build_epub"
     SCRIPT: ClassVar[str] = "screenplay.fountain"
+    SHOOTING_SCRIPT: ClassVar[str] = "shooting_script.fountain"
     EPUB: ClassVar[str] = "screenplay.epub"
     MAX_PROBLEMS_SHOWN: ClassVar[int] = 5
 
@@ -38,7 +39,7 @@ class BuildScreenplayEpubStageExecutor(StageExecutorInterface):
 
     async def execute(self, run: BookRun, attempt: int) -> StageReport:
         """Write the EPUB, check it, and store it."""
-        script = await self._required(run)
+        script = await self._printed_script(run)
         data, problems = await asyncio.to_thread(self._writer.write, self._package.entries(script))
         if problems:
             raise ApplicationError(
@@ -49,6 +50,13 @@ class BuildScreenplayEpubStageExecutor(StageExecutorInterface):
             )
         await asyncio.to_thread(self._artifacts.put, run.run_id, self.EPUB, data)
         return StageReport()
+
+    async def _printed_script(self, run: BookRun) -> str:
+        """The locked script with its scene numbers when the lock stage stored one, otherwise the plain script."""
+        numbered = await asyncio.to_thread(self._artifacts.get, run.run_id, self.SHOOTING_SCRIPT)
+        if numbered is not None:
+            return numbered.decode("utf-8")
+        return await self._required(run)
 
     async def _required(self, run: BookRun) -> str:
         data = await asyncio.to_thread(self._artifacts.get, run.run_id, self.SCRIPT)
