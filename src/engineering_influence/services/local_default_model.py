@@ -28,7 +28,7 @@ class LocalDefaultModel(LocalDefaultModelInterface):
 
     MODEL: ClassVar[str] = "gpt-oss:20b"
     URL: ClassVar[str] = "http://127.0.0.1:11434"
-    CONTEXT_WINDOW: ClassVar[int] = 32_768
+    CONTEXT_WINDOW: ClassVar[int] = 131_072
     MAX_OUTPUT_TOKENS: ClassVar[int] = 8_192
     LICENCE_URL: ClassVar[str] = "https://huggingface.co/openai/gpt-oss-20b"
     PRICES_EFFECTIVE: ClassVar[str] = "2026-01-01"

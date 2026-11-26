@@ -87,7 +87,7 @@ ok   install: extra runtime: installed
 ok   install: tool lualatex: /Library/TeX/texbin/lualatex
 FAIL install: author profile: none named: set EI_AUTHOR_PROFILE or pass --author-profile FILE (…)
 ok   local: model: gpt-oss:20b is pulled
-ok   local: context: 131072 tokens, at least the 32768 a prompt is assembled to fit
+ok   local: context: 131072 tokens, at least the 131072 a prompt is assembled to fit
 …
 1 of 14 checks failed
 ```
