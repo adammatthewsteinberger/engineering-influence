@@ -46,7 +46,6 @@ def test_a_brief_is_read_from_json_and_trimmed() -> None:
     [
         {"idea": "  "},
         {"idea": None},
-        {"kind": "screenplay"},
         {"budget_micro_usd": 0},
         {"budget_micro_usd": 2.5},
         {"target_words": 0},
@@ -59,6 +58,11 @@ def test_a_brief_is_read_from_json_and_trimmed() -> None:
 def test_a_brief_refuses_what_cannot_start_a_run(changes: dict[str, Any]) -> None:
     with pytest.raises(ValidationError):
         BookBriefV1.model_validate(brief(**changes))
+
+
+def test_a_screenplay_brief_is_accepted() -> None:
+    value = BookBriefV1.model_validate(brief(kind="screenplay"))
+    assert value.kind is BookKind.SCREENPLAY
 
 
 def test_a_brief_requires_a_budget() -> None:

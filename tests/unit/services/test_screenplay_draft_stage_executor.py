@@ -26,7 +26,7 @@ from engineering_influence.services.screenplay_section_check import ScreenplaySe
 
 BEATS = ["Opening Image", "Set-Up", "All Is Lost", "Closing Image"]
 CARDS = "\n".join(
-    f"## S{n:02d} · scene {n}\n**What changes:** it changes.\n**Therefore:** next.\n**Beat:** {beat}\n**Storyline:** A\n"
+    f"## S{n:02d} · scene {n}\n**What changes:** it changes.\n**Therefore:** next.\n**Beat:** {beat}\n**Storyline:** A\n**Sources:** 001\n"
     for n, beat in enumerate(BEATS, 1)
 )
 
@@ -37,12 +37,14 @@ class Drafter(SceneDrafterInterface):
     def __init__(self, bad: frozenset[int] = frozenset()) -> None:
         self.bad = bad
         self.calls: list[int] = []
+        self.sources: dict[int, str] = {}
         self._failed: set[int] = set()
 
     def draft(
-        self, run: BookRun, card: SceneCard, anchors: str, beats: str, try_number: int
+        self, run: BookRun, card: SceneCard, anchors: str, beats: str, sources: str, try_number: int
     ) -> str:
         self.calls.append(card.number)
+        self.sources[card.number] = sources
         if card.number in self.bad and card.number not in self._failed:
             self._failed.add(card.number)
             return f"INT. ROOM - MORNING\n\nScene {card.number}."
@@ -74,6 +76,7 @@ def seeded() -> InMemoryArtifactStore:
     store.put("run-1", "scene_cards.md", CARDS.encode("utf-8"))
     store.put("run-1", "anchors.md", b"anchors")
     store.put("run-1", "beats.md", b"beats")
+    store.put("run-1", "source/001.md", b"the first source")
     return store
 
 
@@ -107,7 +110,13 @@ def test_a_scene_that_fails_its_check_is_drafted_once_more() -> None:
 def test_a_scene_that_fails_twice_stops_the_stage_with_its_problems() -> None:
     class Always(Drafter):
         def draft(
-            self, run: BookRun, card: SceneCard, anchors: str, beats: str, try_number: int
+            self,
+            run: BookRun,
+            card: SceneCard,
+            anchors: str,
+            beats: str,
+            sources: str,
+            try_number: int,
         ) -> str:
             return "INT. ROOM - MORNING\n\nNever right."
 
@@ -153,7 +162,7 @@ def test_the_scene_cards_are_read_with_their_beats() -> None:
 
 def test_a_scene_card_number_starts_at_one() -> None:
     with pytest.raises(ValueError, match="numbered from 1"):
-        SceneCard(0, "Set-Up", "x")
+        SceneCard(0, "Set-Up", "x", (1,))
 
 
 def test_the_card_check_is_the_same_as_the_stage_reads() -> None:
@@ -162,7 +171,7 @@ def test_the_card_check_is_the_same_as_the_stage_reads() -> None:
 
 def test_a_scene_card_names_its_beat() -> None:
     with pytest.raises(ValueError, match="names its beat"):
-        SceneCard(1, "  ", "body")
+        SceneCard(1, "  ", "body", (1,))
 
 
 def test_text_with_no_card_is_unreadable() -> None:
@@ -192,3 +201,33 @@ def test_the_title_is_the_brief_title_or_untitled() -> None:
         budget=Budget(cap=5_000_000),
     )
     assert ScreenplayDraftStageExecutor._title_page(untitled) == (("Title", "UNTITLED"),)
+
+
+def with_cards(cards: str, *sources: tuple[str, bytes]) -> InMemoryArtifactStore:
+    """A run holding the given cards, the anchors and beats, and the given source files."""
+    store = InMemoryArtifactStore()
+    store.put("run-1", "scene_cards.md", cards.encode("utf-8"))
+    store.put("run-1", "anchors.md", b"anchors")
+    store.put("run-1", "beats.md", b"beats")
+    for name, data in sources:
+        store.put("run-1", name, data)
+    return store
+
+
+def test_each_scene_is_drafted_from_only_the_sources_its_card_cites() -> None:
+    cards = CARDS.replace("**Sources:** 001", "**Sources:** 002", 1)
+    store = with_cards(
+        cards, ("source/001.md", b"the first source"), ("source/002.md", b"the second source")
+    )
+    drafter = Drafter()
+    asyncio.run(stage(store, drafter).execute(run(), 1))
+    assert drafter.sources[1] == "Source 002:\nthe second source"
+    assert drafter.sources[2] == "Source 001:\nthe first source"
+
+
+def test_a_card_citing_a_source_the_run_does_not_hold_stops_the_stage() -> None:
+    cards = CARDS.replace("**Sources:** 001", "**Sources:** 009", 1)
+    store = with_cards(cards, ("source/001.md", b"the first source"))
+    with pytest.raises(ApplicationError) as error:
+        asyncio.run(stage(store, Drafter()).execute(run(), 1))
+    assert error.value.code == "STAGE_INPUT_MISSING"

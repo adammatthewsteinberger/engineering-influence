@@ -56,7 +56,10 @@ def run() -> BookRun:
 
 
 CARD = SceneCard(
-    2, "Set-Up", "## S02 · the hive\n**What changes:** the queen is found dead.\n**Beat:** Set-Up"
+    2,
+    "Set-Up",
+    "## S02 · the hive\n**What changes:** the queen is found dead.\n**Beat:** Set-Up\n**Sources:** 001",
+    (1,),
 )
 
 
@@ -67,25 +70,26 @@ def drafter(loop: Loop) -> ModelSceneDrafter:
 def test_the_scene_is_returned_stripped() -> None:
     loop = Loop("  INT. HIVE - DAY\n\nThe queen lies still.  \n")
     assert (
-        drafter(loop).draft(run(), CARD, "anchors", "beats", 1)
+        drafter(loop).draft(run(), CARD, "anchors", "beats", "the sources", 1)
         == "INT. HIVE - DAY\n\nThe queen lies still."
     )
 
 
 def test_the_card_is_sent_as_untrusted_text_and_the_system_part_names_no_blank() -> None:
     loop = Loop("INT. HIVE - DAY\n\nAction.")
-    drafter(loop).draft(run(), CARD, "the anchors text", "the beats text", 1)
+    drafter(loop).draft(run(), CARD, "the anchors text", "the beats text", "the source text", 1)
     request = loop.requests[0]
     assert "<untrusted" in request.prompt
     assert "the queen is found dead" in request.prompt
     assert "the anchors text" in request.prompt and "the beats text" in request.prompt
+    assert "the source text" in request.prompt
     assert "{{" not in request.system and "{{" not in request.prompt
 
 
 def test_a_retry_has_its_own_prompt_version_so_the_failed_answer_is_not_replayed() -> None:
     loop = Loop("INT. HIVE - DAY\n\nAction.")
-    drafter(loop).draft(run(), CARD, "a", "b", 1)
-    drafter(loop).draft(run(), CARD, "a", "b", 2)
+    drafter(loop).draft(run(), CARD, "a", "b", "s", 1)
+    drafter(loop).draft(run(), CARD, "a", "b", "s", 2)
     first, second = loop.requests
     assert first.prompt_version.endswith("#try1")
     assert second.prompt_version.endswith("#try2")
@@ -93,16 +97,16 @@ def test_a_retry_has_its_own_prompt_version_so_the_failed_answer_is_not_replayed
 
 def test_an_incomplete_answer_stops_the_stage() -> None:
     with pytest.raises(ApplicationError) as error:
-        drafter(Loop("INT. HIVE", complete=False)).draft(run(), CARD, "a", "b", 1)
+        drafter(Loop("INT. HIVE", complete=False)).draft(run(), CARD, "a", "b", "s", 1)
     assert error.value.code == "STAGE_ANSWER_UNUSABLE"
 
 
 def test_an_empty_answer_stops_the_stage() -> None:
     with pytest.raises(ApplicationError) as error:
-        drafter(Loop("   ")).draft(run(), CARD, "a", "b", 1)
+        drafter(Loop("   ")).draft(run(), CARD, "a", "b", "s", 1)
     assert error.value.code == "STAGE_ANSWER_UNUSABLE"
 
 
 def test_the_template_loads_from_the_shipped_library() -> None:
     template = TomlPromptLibrary().get("screenplay_draft_scene")
-    assert template.identifier() == "screenplay_draft_scene@1"
+    assert template.identifier() == "screenplay_draft_scene@2"

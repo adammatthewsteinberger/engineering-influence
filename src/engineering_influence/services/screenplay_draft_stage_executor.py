@@ -63,7 +63,7 @@ class ScreenplayDraftStageExecutor(StageExecutorInterface):
             card = by_number[number]
             if card.artifact() in stored:
                 continue
-            scene = await self._scene(run, card, anchors, beats)
+            scene = await self._scene(run, card, anchors, beats, await self._cited(run, card))
             await self._put(run, card.artifact(), scene)
         if self.SCRIPT not in stored:
             scenes = tuple([await self._required(run, card.artifact()) for card in cards])
@@ -76,10 +76,22 @@ class ScreenplayDraftStageExecutor(StageExecutorInterface):
         """The title page names the brief's title, or UNTITLED when the author gave none."""
         return (("Title", run.brief.title_hint or cls.UNTITLED),)
 
-    async def _scene(self, run: BookRun, card: SceneCard, anchors: str, beats: str) -> str:
+    async def _cited(self, run: BookRun, card: SceneCard) -> str:
+        """The source files the card names, each under its number, so the scene draws on nothing else."""
+        blocks = [
+            f"Source {number:03d}:\n{await self._required(run, f'source/{number:03d}.md')}"
+            for number in card.sources
+        ]
+        return "\n\n".join(blocks)
+
+    async def _scene(
+        self, run: BookRun, card: SceneCard, anchors: str, beats: str, sources: str
+    ) -> str:
         problems: tuple[str, ...] = ()
         for number in range(1, self.DRAFT_ATTEMPTS + 1):
-            scene = await asyncio.to_thread(self._drafter.draft, run, card, anchors, beats, number)
+            scene = await asyncio.to_thread(
+                self._drafter.draft, run, card, anchors, beats, sources, number
+            )
             problems = self._checks.problems(scene)
             if not problems:
                 return scene
