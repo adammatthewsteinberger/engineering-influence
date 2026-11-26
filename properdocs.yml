@@ -45,6 +45,7 @@ nav:
       - Getting started: getting-started.md
       - Driving it from another AI: agents-driving.md
       - Books and KDP: books-and-kdp.md
+      - Audiobooks: audiobooks.md
       - Novels: novels.md
   - Writing books:
       - The local model: local-model.md
@@ -88,6 +89,8 @@ nav:
           - "ADR 0011: Run inputs are untrusted text carried inside the brief": adr/0011-run-inputs.md
           - "ADR 0012: Scripture quotations are checked against bundled translations": adr/0012-scripture-quotations-are-checked-against-bundled-translations.md
           - "ADR 0013: A factual claim is supported only by a quotation the code found in a page it read": adr/0013-fact-claims-need-a-quotation-the-code-found-in-a-page.md
+          - "ADR 0014: Audiobook narration uses Kokoro-82M through mlx-audio (proposed)": adr/0014-audiobook-narration-uses-kokoro-via-mlx-audio.md
+          - "ADR 0016: Audible audio is voiced inside ACX; other stores get a locally narrated audiobook": adr/0016-audiobooks-for-audible-are-voiced-in-acx-and-everything-else-is-narrated-locally.md
       - Changelog: changelog.md
       - Security: security.md
       - Support: support.md

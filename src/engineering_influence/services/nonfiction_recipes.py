@@ -26,6 +26,8 @@ class NonfictionRecipes(StageRecipesInterface):
     ASSEMBLE_STAGE = "assemble"
     AUDIT_STAGE = "audit"
     BUILD_STAGE = "build"
+    AUDIOBOOK_STAGE = "audiobook"
+    NARRATION_STAGE = "narration"
 
     RECIPES: ClassVar[tuple[StageRecipe, ...]] = (
         StageRecipe("brief", "stage_brief", (), 1_500),
@@ -51,6 +53,8 @@ class NonfictionRecipes(StageRecipesInterface):
             self.ASSEMBLE_STAGE,
             self.AUDIT_STAGE,
             self.BUILD_STAGE,
+            self.AUDIOBOOK_STAGE,
+            self.NARRATION_STAGE,
         )
         return StagePlan(BookKind.NONFICTION, stages)
 

@@ -60,7 +60,13 @@ class CostEstimator(CostEstimatorInterface):
             NonfictionRecipes.ASSEMBLE_STAGE,
             NonfictionRecipes.AUDIT_STAGE,
             NonfictionRecipes.BUILD_STAGE,
+            NonfictionRecipes.AUDIOBOOK_STAGE,
+            NonfictionRecipes.NARRATION_STAGE,
         }
+    )
+    # Optional stages: a run that runs out of money leaves them out. The ACX export is one of them.
+    OPTIONAL_STAGES: ClassVar[frozenset[str]] = frozenset(
+        {NonfictionRecipes.AUDIOBOOK_STAGE, NonfictionRecipes.NARRATION_STAGE}
     )
 
     def __init__(
@@ -84,7 +90,13 @@ class CostEstimator(CostEstimatorInterface):
         stages = []
         for stage in plan.stages:
             cost = self._stage(brief.kind, stage, chapters, chapter_tokens)
-            stages.append((stage, cost, stage not in self.EDITING_STAGES))
+            stages.append(
+                (
+                    stage,
+                    cost,
+                    stage not in self.EDITING_STAGES and stage not in self.OPTIONAL_STAGES,
+                )
+            )
         return CostEstimate(tuple(stages))
 
     def _stage(self, kind: BookKind, stage: str, chapters: int, chapter_tokens: int) -> int:

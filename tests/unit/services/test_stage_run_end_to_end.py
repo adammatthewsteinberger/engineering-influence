@@ -41,6 +41,7 @@ from engineering_influence.models.search_hit import SearchHit
 from engineering_influence.models.tool_call import ToolCall
 from engineering_influence.models.tool_lock import ToolLock
 from engineering_influence.models.tool_loop_limits import ToolLoopLimits
+from engineering_influence.services.acx_export_stage_executor import AcxExportStageExecutor
 from engineering_influence.services.advance_run import AdvanceRun
 from engineering_influence.services.ask_model import AskModel
 from engineering_influence.services.assemble_stage_executor import AssembleStageExecutor
@@ -60,6 +61,9 @@ from engineering_influence.services.lock_tool_grants import LockToolGrants
 from engineering_influence.services.manuscript_project import ManuscriptProject
 from engineering_influence.services.metadata_parser import MetadataParser
 from engineering_influence.services.model_stage_executor import ModelStageExecutor
+from engineering_influence.services.narration_gate import NarrationGate
+from engineering_influence.services.narration_stage_executor import NarrationStageExecutor
+from engineering_influence.services.narration_text import NarrationText
 from engineering_influence.services.no_output_checks import NoOutputChecks
 from engineering_influence.services.no_stage_guidance import NoStageGuidance
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
@@ -221,6 +225,16 @@ class World:
                     FactClaimParser(),
                     DESCRIPTOR.max_output_tokens,
                 ),
+                AcxExportStageExecutor.STAGE: AcxExportStageExecutor(
+                    self.store,
+                    OutlineParser(),
+                    NarrationText(),
+                    MetadataParser(DashRewriter()),
+                    "Smoke Author",
+                ),
+                NarrationStageExecutor.STAGE: NarrationStageExecutor(
+                    self.store, OutlineParser(), None, NarrationText(), NarrationGate()
+                ),
                 DraftStageExecutor.STAGE: DraftStageExecutor(
                     self.store,
                     prompts,
@@ -337,9 +351,15 @@ GOOD = (
 def test_a_run_goes_from_brief_to_draft_and_completes_with_each_answer_stored() -> None:
     world = World(Model(*GOOD))
     outcomes = [world.advance(stage) for stage in RECIPES.plan().stages]
-    assert outcomes == [AdvanceOutcome.ADVANCED] * 12 + [AdvanceOutcome.COMPLETED]
+    assert outcomes == [AdvanceOutcome.ADVANCED] * 14 + [AdvanceOutcome.COMPLETED]
     assert world.run().status is RunStatus.COMPLETED
     assert world.store.names(RUN_ID) == [
+        "acx-export.json",
+        "acx/chapter_01.txt",
+        "acx/chapter_02.txt",
+        "acx/closing-credits.txt",
+        "acx/opening-credits.txt",
+        "acx/retail-sample.txt",
         "assemble.md",
         "audit.md",
         "audit/release-readiness.json",
@@ -367,6 +387,7 @@ def test_a_run_goes_from_brief_to_draft_and_completes_with_each_answer_stored() 
         "manuscript/src/chapter_01.md",
         "manuscript/src/chapter_02.md",
         "metadata.md",
+        "narration.json",
         "outline.md",
         "positioning.md",
         "quality-report.json",

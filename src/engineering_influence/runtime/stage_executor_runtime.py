@@ -65,6 +65,7 @@ from engineering_influence.interfaces.book_publisher_interface import BookPublis
 from engineering_influence.interfaces.journal_interface import JournalInterface
 from engineering_influence.interfaces.manuscript_builder_interface import ManuscriptBuilderInterface
 from engineering_influence.interfaces.model_interface import ModelInterface
+from engineering_influence.interfaces.narrator_interface import NarratorInterface
 from engineering_influence.interfaces.publish_pipeline_interface import PublishPipelineInterface
 from engineering_influence.interfaces.search_provider_interface import SearchProviderInterface
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
@@ -84,6 +85,7 @@ from engineering_influence.runtime.controller_publish_pipeline import Controller
 from engineering_influence.runtime.interfaces.stage_executor_runtime_interface import (
     StageExecutorRuntimeInterface,
 )
+from engineering_influence.services.acx_export_stage_executor import AcxExportStageExecutor
 from engineering_influence.services.ask_model import AskModel
 from engineering_influence.services.assemble_stage_executor import AssembleStageExecutor
 from engineering_influence.services.audit_stage_executor import AuditStageExecutor
@@ -119,6 +121,9 @@ from engineering_influence.services.mcp_server_launcher import McpServerLauncher
 from engineering_influence.services.mcp_tool_factory import McpToolFactory
 from engineering_influence.services.metadata_parser import MetadataParser
 from engineering_influence.services.model_stage_executor import ModelStageExecutor
+from engineering_influence.services.narration_gate import NarrationGate
+from engineering_influence.services.narration_stage_executor import NarrationStageExecutor
+from engineering_influence.services.narration_text import NarrationText
 from engineering_influence.services.no_stage_guidance import NoStageGuidance
 from engineering_influence.services.nonfiction_output_checks import NonfictionOutputChecks
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
@@ -359,6 +364,28 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                 FactCheckStageExecutor.STAGE: KindStageExecutor(
                     {BookKind.NONFICTION: fact_checker}
                 ),
+                AcxExportStageExecutor.STAGE: KindStageExecutor(
+                    {
+                        BookKind.NONFICTION: AcxExportStageExecutor(
+                            artifacts,
+                            outlines,
+                            NarrationText(),
+                            MetadataParser(dashes),
+                            profile.author if profile is not None else "",
+                        )
+                    }
+                ),
+                NarrationStageExecutor.STAGE: KindStageExecutor(
+                    {
+                        BookKind.NONFICTION: NarrationStageExecutor(
+                            artifacts,
+                            outlines,
+                            self._narrator(self._environment),
+                            NarrationText(),
+                            NarrationGate(),
+                        )
+                    }
+                ),
                 AssembleStageExecutor.STAGE: KindStageExecutor(
                     {
                         BookKind.NONFICTION: AssembleStageExecutor(
@@ -567,6 +594,25 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         """A client for one remote tool server: it owns its connection pool and is closed with the session."""
         return httpx.Client(
             timeout=httpx.Timeout(self.SERVER_REQUEST_SECONDS, connect=self.CONNECT_TIMEOUT_SECONDS)
+        )
+
+    @staticmethod
+    def _narrator(environment: Mapping[str, str]) -> NarratorInterface | None:
+        """The narrator for the non-Audible audiobook: none unless ``EI_NARRATOR`` names one.
+
+        No engine is built into this release yet (ADR 0014 follows a listening test on the Mac). Naming one is refused
+        now, rather than producing a book without the audio that was asked for.
+        """
+        name = environment.get("EI_NARRATOR", "").strip()
+        if not name:
+            return None
+        raise ApplicationError(
+            code="NARRATOR_UNAVAILABLE",
+            message=(
+                f"the narrator {name!r} is not in this build: its engine follows the listening test in "
+                "docs/adr/0014-audiobook-narration-uses-kokoro-via-mlx-audio.md"
+            ),
+            http_status=503,
         )
 
     def _research(self) -> tuple[SearchProviderInterface, SourceFetcherInterface]:
