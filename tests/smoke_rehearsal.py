@@ -12,6 +12,7 @@ from pathlib import Path
 
 from local_server import LocalServer, Reply, Seen
 from smoke_run import SmokeRun
+from smoke_screenplay import answer as screenplay_answer
 
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interfaces.manuscript_builder_interface import ManuscriptBuilderInterface
@@ -128,6 +129,9 @@ class NoSecrets(SecretProviderInterface):
 
 
 def answer(user: str) -> str:
+    scripted = screenplay_answer(user)
+    if scripted is not None:
+        return scripted
     if user.startswith("Write the brief"):
         return "BRIEF: a practical guide to growing herbs indoors."
     if user.startswith("Write the positioning"):
