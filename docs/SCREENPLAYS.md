@@ -119,3 +119,10 @@ interior: text must sit at least the KDP gutter for the film's page count from t
 pages, 0.5 inch up to 300, and so on), at least a quarter inch from the outside, top and bottom edges, and no more than
 two blank pages in a row. A PDF that breaks these stops the render stage with `STAGE_OUTPUT_INVALID`, and the message
 names each page that breaks a rule. The check runs on the typeset PDF, so it measures what will be printed.
+
+## Printed revision marks
+
+When a run has revision pages (see Revision colours above), the printed PDF is typeset from them rather than from the
+shooting script. Each changed scene's heading has a bar and a star in the left margin, in its revision colour (Blue for
+revision 1, Pink for 2, and so on through Tan for 9). The colours are approximations of the studio colours, not a
+published standard. The date on each revision's header is not printed yet: a run has no date of its own to print.
