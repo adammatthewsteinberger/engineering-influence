@@ -32,11 +32,18 @@ kubectl create secret generic ei-secrets --namespace "$ns" --from-env-file="$sec
 
 helm upgrade --install "$rel" "$chart" --namespace "$ns" \
   --set existingSecret=ei-secrets \
-  --set image.repository="${image%%:*}" --set image.tag="${image#*:}" --set image.pullPolicy=Never \
+  --set image.repository="${image%%:*}" --set image.pullPolicy=Never \
   --set postgres.enabled=true --set rabbitmq.enabled=true \
   --set seaweedfs.enabled=true --set artifactStore.kind=s3 --set artifactStore.bucket=ei-artifacts \
   --set api.replicas=1 --set worker.replicas=1 \
-  --wait --timeout 10m
+  --set image.tag="${image#*:}"
+
+# No --wait: the migration is a post-install hook, and the apps cannot become ready until it has run, so waiting for
+# the release would wait on itself. Wait for the migration, then for the apps, explicitly.
+kubectl -n "$ns" wait --for=condition=complete job -l app.kubernetes.io/component=migration --timeout=600s
+for deploy in api worker; do
+  kubectl -n "$ns" rollout status "deploy/$rel-engineering-influence-$deploy" --timeout=600s
+done
 
 echo "installed. The API key is in the secret: kubectl -n $ns get secret ei-secrets -o jsonpath='{.data.EI_API_KEYS}' | base64 -d"
 echo "forward the API with: kubectl -n $ns port-forward svc/$host-api 8000:8000"
