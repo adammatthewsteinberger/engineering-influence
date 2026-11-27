@@ -121,10 +121,21 @@ class LocalBookRuntime(LocalBookCreatorInterface):
         mode: str = "book",
         bible: tuple[BibleCard, ...] = (),
         title: str | None = None,
+        previous_script: str | None = None,
+        revision: int = 1,
     ) -> BookRun:
         """Run the brief's plan, with its source files, until the run finishes or stops."""
         return self._book.start(
-            brief, progress, sources, previous_lock, stop_after, mode, bible=bible, title=title
+            brief,
+            progress,
+            sources,
+            previous_lock,
+            stop_after,
+            mode,
+            bible=bible,
+            title=title,
+            previous_script=previous_script,
+            revision=revision,
         )
 
     def resume(self, approve_spend: bool, progress: Callable[[str], None]) -> BookRun:

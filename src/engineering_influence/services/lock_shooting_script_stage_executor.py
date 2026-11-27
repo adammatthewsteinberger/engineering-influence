@@ -22,9 +22,13 @@ from engineering_influence.services.interfaces.shooting_lock_codec_interface imp
 from engineering_influence.services.interfaces.shooting_lock_planner_interface import (
     ShootingLockPlannerInterface,
 )
+from engineering_influence.services.interfaces.shooting_revision_marks_interface import (
+    ShootingRevisionMarksInterface,
+)
 from engineering_influence.services.interfaces.shooting_script_renderer_interface import (
     ShootingScriptRendererInterface,
 )
+from engineering_influence.services.shooting_revision_marks import ShootingRevisionMarks
 
 
 class LockShootingScriptStageExecutor(StageExecutorInterface):
@@ -52,6 +56,7 @@ class LockShootingScriptStageExecutor(StageExecutorInterface):
         planner: ShootingLockPlannerInterface,
         codec: ShootingLockCodecInterface,
         renderer: ShootingScriptRendererInterface,
+        marks: ShootingRevisionMarksInterface,
     ) -> None:
         self._artifacts = artifacts
         self._cards = cards
@@ -59,6 +64,7 @@ class LockShootingScriptStageExecutor(StageExecutorInterface):
         self._planner = planner
         self._codec = codec
         self._renderer = renderer
+        self._marks = marks
 
     async def execute(self, run: BookRun, attempt: int) -> StageReport:
         """Plan the lock for the cards, then store the lock and the numbered script."""
@@ -76,8 +82,28 @@ class LockShootingScriptStageExecutor(StageExecutorInterface):
             )
         lock = self._plan(await self._previous(run), numbers)
         await self._put(run, self.LOCK, self._codec.encode(lock))
-        await self._put(run, self.SHOOTING_SCRIPT, self._renderer.render(script, numbers, lock))
+        rendered = self._renderer.render(script, numbers, lock)
+        await self._put(run, self.SHOOTING_SCRIPT, rendered)
+        baseline = await asyncio.to_thread(
+            self._artifacts.get, run.run_id, ShootingRevisionMarks.BASELINE
+        )
+        if baseline is not None:
+            pages = self._revision_pages(
+                await self._required(run, ShootingRevisionMarks.REVISION),
+                baseline.decode("utf-8"),
+                rendered,
+            )
+            await self._put(run, ShootingRevisionMarks.PAGES, pages)
         return StageReport()
+
+    def _revision_pages(self, revision: str, baseline: str, rendered: str) -> str:
+        """The rendered script with its changed scenes marked as this revision's colour."""
+        try:
+            return self._marks.mark(baseline, rendered, int(revision))
+        except ValueError as error:
+            raise ApplicationError(
+                code="STAGE_OUTPUT_INVALID", message=str(error), http_status=422
+            ) from error
 
     def _plan(self, previous: ShootingLock, numbers: tuple[int, ...]) -> ShootingLock:
         try:

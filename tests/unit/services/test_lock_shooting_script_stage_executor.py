@@ -21,6 +21,7 @@ from engineering_influence.services.scene_card_list import SceneCardList
 from engineering_influence.services.screenplay_recipes import ScreenplayRecipes
 from engineering_influence.services.shooting_lock_codec import ShootingLockCodec
 from engineering_influence.services.shooting_lock_planner import ShootingLockPlanner
+from engineering_influence.services.shooting_revision_marks import ShootingRevisionMarks
 from engineering_influence.services.shooting_script_renderer import ShootingScriptRenderer
 
 SCRIPT = (
@@ -58,6 +59,7 @@ def stage(store: InMemoryArtifactStore) -> LockShootingScriptStageExecutor:
         ShootingLockPlanner(),
         ShootingLockCodec(),
         ShootingScriptRenderer(FountainParser()),
+        ShootingRevisionMarks(FountainParser()),
     )
 
 
@@ -137,3 +139,27 @@ def test_a_run_without_its_script_is_refused() -> None:
     store = InMemoryArtifactStore()
     store.put("run-1", "scene_cards.md", cards(1).encode("utf-8"))
     refused(store, "STAGE_INPUT_MISSING")
+
+
+def test_a_baseline_gives_the_revision_pages_marked_as_its_colour() -> None:
+    baseline = (
+        "FADE IN:\n\nINT. ROOM - DAY #1#\n\nScene one.\n\nEXT. YARD - NIGHT #2#\n\nScene two.\n"
+    )
+    store = seeded(cards(1, 2), TWO_SCENES)
+    store.put("run-1", ShootingRevisionMarks.BASELINE, baseline.encode("utf-8"))
+    store.put("run-1", ShootingRevisionMarks.REVISION, b"2")
+    asyncio.run(stage(store).execute(run(), 1))
+    pages = text(store, ShootingRevisionMarks.PAGES)
+    assert "[[revised: Pink *]]\nINT. HALL - DAY #2#" in pages
+    assert pages.count("[[revised") == 1
+    assert "[[revised" not in text(store, "shooting_script.fountain")
+
+
+def test_a_revision_number_the_colours_do_not_reach_is_refused() -> None:
+    store = seeded(cards(1, 2), TWO_SCENES)
+    store.put(
+        "run-1", ShootingRevisionMarks.BASELINE, b"FADE IN:\n\nINT. ROOM - DAY #1#\n\nScene one.\n"
+    )
+    store.put("run-1", ShootingRevisionMarks.REVISION, b"11")
+    error = refused(store, "STAGE_OUTPUT_INVALID")
+    assert "a revision is numbered 1 to 9, not 11" in error.message

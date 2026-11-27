@@ -207,6 +207,7 @@ from engineering_influence.services.scripture_checker import ScriptureChecker
 from engineering_influence.services.scripture_draft_checks import ScriptureDraftChecks
 from engineering_influence.services.shooting_lock_codec import ShootingLockCodec
 from engineering_influence.services.shooting_lock_planner import ShootingLockPlanner
+from engineering_influence.services.shooting_revision_marks import ShootingRevisionMarks
 from engineering_influence.services.shooting_script_renderer import ShootingScriptRenderer
 from engineering_influence.services.shot_list_builder import ShotListBuilder
 from engineering_influence.services.skill_lock_verifier import SkillLockVerifier
@@ -574,6 +575,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                             ShootingLockPlanner(),
                             ShootingLockCodec(),
                             ShootingScriptRenderer(FountainParser()),
+                            ShootingRevisionMarks(FountainParser()),
                         ),
                     }
                 ),

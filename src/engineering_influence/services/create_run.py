@@ -32,6 +32,7 @@ from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 from engineering_influence.services.novel_recipes import NovelRecipes
 from engineering_influence.services.screenplay_recipes import ScreenplayRecipes
 from engineering_influence.services.screenplay_title_parser import ScreenplayTitleParser
+from engineering_influence.services.shooting_revision_marks import ShootingRevisionMarks
 
 
 class CreateRun(CreateRunInterface):
@@ -105,6 +106,8 @@ class CreateRun(CreateRunInterface):
         mode: str = "book",
         bible: tuple[BibleCard, ...] = (),
         title: str | None = None,
+        previous_script: str | None = None,
+        revision: int = 1,
     ) -> BookRun:
         """Save a new pending run for the brief and queue its first stage; return the run. A previous shooting script
         lock, when given, is kept as the run's previous lock, so the run's scene numbers carry over from it."""
@@ -153,8 +156,24 @@ class CreateRun(CreateRunInterface):
                 message="a title file is for screenplay runs only",
                 http_status=422,
             )
+        if previous_script is not None and brief.kind is not BookKind.SCREENPLAY:
+            raise ApplicationError(
+                code="RUN_KIND_UNSUPPORTED",
+                message="a previous shooting script is for screenplay runs only",
+                http_status=422,
+            )
+        if not 1 <= revision < len(ShootingRevisionMarks.COLOURS):
+            raise ApplicationError(
+                code="RUN_REVISION_INVALID",
+                message=f"a revision is numbered 1 to {len(ShootingRevisionMarks.COLOURS) - 1}, not {revision}",
+                http_status=422,
+            )
         if (
-            sources or bible or title is not None or previous_lock is not None
+            sources
+            or bible
+            or title is not None
+            or previous_lock is not None
+            or previous_script is not None
         ) and self._artifacts is None:
             raise ApplicationError(
                 code="SOURCES_NOT_STORED",
@@ -168,6 +187,13 @@ class CreateRun(CreateRunInterface):
             self._store_sources(run.run_id, sources)
             if self._artifacts is not None:
                 self._store_bible(self._artifacts, run.run_id, bible)
+            if previous_script is not None and self._artifacts is not None:
+                self._artifacts.put(
+                    run.run_id, ShootingRevisionMarks.BASELINE, previous_script.encode("utf-8")
+                )
+                self._artifacts.put(
+                    run.run_id, ShootingRevisionMarks.REVISION, str(revision).encode("utf-8")
+                )
             if title is not None and self._artifacts is not None:
                 self._artifacts.put(
                     run.run_id, ScreenplayTitleParser.ARTIFACT, title.encode("utf-8")
