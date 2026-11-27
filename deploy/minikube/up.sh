@@ -17,6 +17,14 @@ if ! kubectl get crd externalsecrets.external-secrets.io >/dev/null 2>&1; then
 fi
 
 minikube image load "$image"
+
+# Kyverno's policies apply to namespaces labelled policy.ei/restricted=true. They are optional: without Kyverno the label
+# is harmless, and the policies are applied only when Kyverno's CRDs are present.
+kubectl get namespace "$ns" >/dev/null 2>&1 || kubectl create namespace "$ns" >/dev/null
+kubectl label namespace "$ns" policy.ei/restricted=true --overwrite >/dev/null
+if kubectl get crd validatingpolicies.policies.kyverno.io >/dev/null 2>&1; then
+  kubectl apply -f "$here/../kyverno/policies.yaml" >/dev/null
+fi
 kubectl get namespace "$ns" >/dev/null 2>&1 || kubectl create namespace "$ns" >/dev/null
 
 # The values are generated here and written to a private file: not on the command line, not in shell history.

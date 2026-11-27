@@ -21,6 +21,19 @@ helm install external-secrets external-secrets/external-secrets --version 2.15.0
   -n external-secrets --create-namespace --set installCRDs=true
 ```
 
+## Admission policies (optional, Kyverno)
+
+Kyverno, installed cluster-wide, refuses pods in the labelled namespaces that run as root or are privileged, and reports
+containers without a memory limit. `deploy/kyverno/policies.yaml` holds them; `up.sh` applies them when Kyverno is present.
+
+```bash
+helm repo add kyverno https://kyverno.github.io/kyverno/
+helm install kyverno kyverno/kyverno --version 3.10.0 -n kyverno --create-namespace
+```
+
+Check it refuses a root pod: `kubectl -n ei run roottest --image=busybox:1.37 --restart=Never --command -- sleep 5` is
+denied with "pods in this namespace must run as non-root". Only new and updated pods are checked.
+
 ## Install
 
 From the repository root, build the image and install the chart:
