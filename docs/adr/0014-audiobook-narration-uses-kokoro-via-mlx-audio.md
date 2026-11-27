@@ -1,6 +1,6 @@
 # ADR 0014: Audiobook narration uses Kokoro-82M through mlx-audio
 
-Status: proposed
+Status: accepted for the default narrator (Kokoro-82M through mlx-audio, built in `KokoroMlxNarrator`). The Kyutai fallback in the decision below is not built yet.
 
 ## Context
 

@@ -41,4 +41,4 @@ experimental and outside the stable contract.
   commits with `BREAKING CHANGE:` footers are still required, but they do not choose the version.
 - Paid model runs, publishing and the KDP upload need the maintainer's explicit go-ahead.
 
-Amended by ADR 0017: a `screenplay` book kind is added as an automated kind. Runs of that kind are refused until its plan lands; the 1.0 scope statement above is otherwise unchanged.
+Amended by ADR 0017: a `screenplay` book kind is added as an automated kind, and its plan has now landed. Screenplay runs are outside the 1.0 criteria A1 to A8, which cover non-fiction and novels only; the scope statement above is otherwise unchanged. Adding screenplays to 1.0 would need its own criteria and evidence.

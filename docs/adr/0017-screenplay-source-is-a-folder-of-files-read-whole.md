@@ -1,6 +1,6 @@
 # ADR 0017: A screenplay's source is a folder of files, read whole and pinned by digest
 
-Status: proposed
+Status: accepted
 
 ## Context
 
