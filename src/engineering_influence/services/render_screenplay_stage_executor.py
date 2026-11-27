@@ -21,6 +21,7 @@ from engineering_influence.services.interfaces.screenplay_length_interface impor
 )
 from engineering_influence.services.publishing.pdf_layout_check import PdfLayoutCheck
 from engineering_influence.services.screenplay_length import ScreenplayLength
+from engineering_influence.services.shooting_revision_marks import ShootingRevisionMarks
 
 
 class RenderScreenplayStageExecutor(StageExecutorInterface):
@@ -85,10 +86,11 @@ class RenderScreenplayStageExecutor(StageExecutorInterface):
         return StageReport(issues)
 
     async def _printed_script(self, run: BookRun) -> str:
-        """The locked script with its scene numbers when the lock stage stored one, otherwise the plain script."""
-        numbered = await asyncio.to_thread(self._artifacts.get, run.run_id, self.SHOOTING_SCRIPT)
-        if numbered is not None:
-            return numbered.decode("utf-8")
+        """The revision pages when the run has them, else the locked script with its scene numbers, else the plain script."""
+        for name in (ShootingRevisionMarks.PAGES, self.SHOOTING_SCRIPT):
+            stored = await asyncio.to_thread(self._artifacts.get, run.run_id, name)
+            if stored is not None:
+                return stored.decode("utf-8")
         return await self._required(run, self.SCRIPT)
 
     async def _required(self, run: BookRun, name: str) -> str:
