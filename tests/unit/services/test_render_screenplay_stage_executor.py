@@ -15,6 +15,7 @@ from engineering_influence.models.book_brief import BookBrief
 from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget import Budget
+from engineering_influence.models.publishing.pdf_page import PdfPage
 from engineering_influence.models.screenplay_typeset import ScreenplayTypeset
 from engineering_influence.services.fountain_parser import FountainParser
 from engineering_influence.services.render_screenplay_stage_executor import (
@@ -32,17 +33,26 @@ SCRIPT = (
 class Typesetter(ScreenplayTypesetterInterface):
     """Answers with the given pages and status, and keeps every LaTeX source it was given."""
 
-    def __init__(self, pages: int = 120, status: int = 0, log: str = "") -> None:
+    def __init__(
+        self,
+        pages: int = 120,
+        status: int = 0,
+        log: str = "",
+        facts: tuple[PdfPage, ...] = (),
+    ) -> None:
         self.pages = pages
         self.status = status
         self.log = log
+        self.facts = facts
         self.sources: list[str] = []
 
     def typeset(self, tex: str) -> ScreenplayTypeset:
         self.sources.append(tex)
         if self.status != 0:
             return ScreenplayTypeset(status=self.status, pdf=b"", pages=0, log=self.log)
-        return ScreenplayTypeset(status=0, pdf=b"%PDF-fake", pages=self.pages, log=self.log)
+        return ScreenplayTypeset(
+            status=0, pdf=b"%PDF-fake", pages=self.pages, log=self.log, facts=self.facts
+        )
 
 
 def run() -> BookRun:
@@ -113,3 +123,41 @@ def test_a_missing_script_is_refused() -> None:
     with pytest.raises(ApplicationError) as error:
         asyncio.run(stage(InMemoryArtifactStore(), Typesetter()).execute(run(), 1))
     assert error.value.code == "STAGE_INPUT_MISSING"
+
+
+def page(text_left: float) -> PdfPage:
+    """A letter page whose text starts text_left points from the page's left edge and ends 72 points from its right."""
+    return PdfPage(
+        width=612.0,
+        height=792.0,
+        media_width=612.0,
+        media_height=792.0,
+        text="scene",
+        words=(),
+        text_box=(text_left, 612.0 - 72.0, 72.0, 720.0),
+        has_annotations=False,
+        has_group=False,
+        unembedded_fonts=frozenset(),
+    )
+
+
+def test_a_pdf_whose_text_is_too_near_the_gutter_stops_the_stage() -> None:
+    # 20 points is about 0.28 inch: under the 0.375 inch KDP minimum for a book of two pages.
+    store = InMemoryArtifactStore()
+    store.put("run-1", "screenplay.fountain", SCRIPT.encode("utf-8"))
+    typesetter = Typesetter(pages=2, facts=(page(20.0), page(20.0)))
+    with pytest.raises(ApplicationError) as error:
+        asyncio.run(stage(store, typesetter).execute(run(), 1))
+    assert error.value.code == "STAGE_OUTPUT_INVALID"
+    assert "breaks the KDP print layout" in error.value.message
+    assert "from the gutter" in error.value.message
+    assert store.get("run-1", "screenplay.pdf") is None
+
+
+def test_a_pdf_within_the_print_layout_is_kept() -> None:
+    store = InMemoryArtifactStore()
+    store.put("run-1", "screenplay.fountain", SCRIPT.encode("utf-8"))
+    asyncio.run(
+        stage(store, Typesetter(pages=2, facts=(page(108.0), page(108.0)))).execute(run(), 1)
+    )
+    assert store.get("run-1", "screenplay.pdf") is not None
