@@ -19,6 +19,7 @@ from engineering_influence.services.interfaces.screenplay_latex_source_interface
 from engineering_influence.services.interfaces.screenplay_length_interface import (
     ScreenplayLengthInterface,
 )
+from engineering_influence.services.publishing.pdf_layout_check import PdfLayoutCheck
 from engineering_influence.services.screenplay_length import ScreenplayLength
 
 
@@ -26,7 +27,7 @@ class RenderScreenplayStageExecutor(StageExecutorInterface):
     """Stores `screenplay.pdf` and `render.md` (the page count and the length notes).
 
     **A script that does not typeset stops the stage**, with the last lines of LaTeX's log in the message, because a
-    screenplay without its PDF is not a finished screenplay. **A script over the page ceiling stops it too** (the
+    screenplay without its PDF is not a finished screenplay. **A PDF that breaks the KDP print layout stops it too**: a text block nearer the gutter than the minimum for its page count, nearer than a quarter inch to an outside, top or bottom edge, or more than two blank pages in a row. **A script over the page ceiling stops it too** (the
     length gate's error); a script past three hours is a tolerated note, so the author sees it and the run still
     finishes. The page count is the rendered PDF's, which is what the length is measured in.
     """
@@ -36,6 +37,7 @@ class RenderScreenplayStageExecutor(StageExecutorInterface):
     SHOOTING_SCRIPT: ClassVar[str] = "shooting_script.fountain"
     PDF: ClassVar[str] = "screenplay.pdf"
     REPORT: ClassVar[str] = "render.md"
+    MAX_PROBLEMS_SHOWN: ClassVar[int] = 5
 
     def __init__(
         self,
@@ -57,6 +59,14 @@ class RenderScreenplayStageExecutor(StageExecutorInterface):
             raise ApplicationError(
                 code="STAGE_OUTPUT_INVALID",
                 message=f"LaTeX could not typeset the screenplay:\n{result.log}",
+                http_status=422,
+            )
+        layout, _, _ = PdfLayoutCheck().run(result.facts)
+        if layout:
+            raise ApplicationError(
+                code="STAGE_OUTPUT_INVALID",
+                message="the screenplay PDF breaks the KDP print layout: "
+                + "; ".join(layout[: self.MAX_PROBLEMS_SHOWN]),
                 http_status=422,
             )
         problems = self._length.problems(result.pages)

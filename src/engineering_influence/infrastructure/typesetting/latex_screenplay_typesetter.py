@@ -46,4 +46,7 @@ class LatexScreenplayTypesetter(ScreenplayTypesetterInterface):
             tail = "\n".join(log.splitlines()[-self.LOG_LINES :])
             if status != 0 or pages is None or pages < 1:
                 return ScreenplayTypeset(status=status or 1, pdf=b"", pages=0, log=tail)
-            return ScreenplayTypeset(status=0, pdf=pdf.read_bytes(), pages=pages, log=tail)
+            facts = self._inspector.inspect(pdf).pages
+            return ScreenplayTypeset(
+                status=0, pdf=pdf.read_bytes(), pages=pages, log=tail, facts=facts
+            )

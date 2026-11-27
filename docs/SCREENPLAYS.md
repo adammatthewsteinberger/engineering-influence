@@ -111,3 +111,11 @@ A revised scene is kept only if it passes the same checks as the draft (one scen
 within 10% of the draft, and does not copy its sources into dialogue: the same twelve-word rule as the draft stage, applied
 to the source files the card names. A revision that fails any of these keeps its draft; the revision stage does not stop.
 Bible cards are not checked at this stage, so a revision that speaks a card's own text is not refused here.
+
+## Print layout
+
+The rendered screenplay PDF is checked against the KDP print layout before it is kept, with the same rules as a book's
+interior: text must sit at least the KDP gutter for the film's page count from the binding edge (0.375 inch up to 150
+pages, 0.5 inch up to 300, and so on), at least a quarter inch from the outside, top and bottom edges, and no more than
+two blank pages in a row. A PDF that breaks these stops the render stage with `STAGE_OUTPUT_INVALID`, and the message
+names each page that breaks a rule. The check runs on the typeset PDF, so it measures what will be printed.

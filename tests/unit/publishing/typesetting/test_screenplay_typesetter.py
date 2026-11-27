@@ -38,7 +38,7 @@ class Inspector(PdfInspectorInterface):
         self.pages = pages
 
     def inspect(self, path: Path) -> PdfDocument:
-        raise NotImplementedError
+        return PdfDocument(pages=(), has_outline=False)
 
     def page_count(self, path: Path) -> int | None:
         return self.pages if path.exists() else None
