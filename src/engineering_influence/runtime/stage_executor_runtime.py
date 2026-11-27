@@ -72,6 +72,9 @@ from engineering_influence.infrastructure.typesetting.latex_compiler import Late
 from engineering_influence.infrastructure.typesetting.latex_screenplay_typesetter import (
     LatexScreenplayTypesetter,
 )
+from engineering_influence.infrastructure.video.openrouter_video_generator import (
+    OpenRouterVideoGenerator,
+)
 from engineering_influence.interfaces.artifact_store_interface import ArtifactStoreInterface
 from engineering_influence.interfaces.book_publisher_interface import BookPublisherInterface
 from engineering_influence.interfaces.journal_interface import JournalInterface
@@ -85,6 +88,7 @@ from engineering_influence.interfaces.source_fetcher_interface import SourceFetc
 from engineering_influence.interfaces.stage_executor_interface import StageExecutorInterface
 from engineering_influence.interfaces.stage_guidance_interface import StageGuidanceInterface
 from engineering_influence.interfaces.tool_interface import ToolInterface
+from engineering_influence.interfaces.video_generator_interface import VideoGeneratorInterface
 from engineering_influence.models.author_profile import AuthorProfile
 from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.model_profile import ModelProfile
@@ -195,6 +199,7 @@ from engineering_influence.services.scripture_draft_checks import ScriptureDraft
 from engineering_influence.services.shooting_lock_codec import ShootingLockCodec
 from engineering_influence.services.shooting_lock_planner import ShootingLockPlanner
 from engineering_influence.services.shooting_script_renderer import ShootingScriptRenderer
+from engineering_influence.services.shot_list_builder import ShotListBuilder
 from engineering_influence.services.skill_lock_verifier import SkillLockVerifier
 from engineering_influence.services.source_digest_stage_executor import SourceDigestStageExecutor
 from engineering_influence.services.spend_guard import SpendGuard
@@ -205,6 +210,8 @@ from engineering_influence.services.tool_registry import ToolRegistry
 from engineering_influence.services.tool_runner import ToolRunner
 from engineering_influence.services.tool_server_fleet import ToolServerFleet
 from engineering_influence.services.verbatim_dashes import VerbatimDashes
+from engineering_influence.services.video_cost import VideoCost
+from engineering_influence.services.video_stage_executor import VideoStageExecutor
 from engineering_influence.services.web_search_tool import WebSearchTool
 
 
@@ -522,6 +529,16 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                         ),
                     }
                 ),
+                VideoStageExecutor.STAGE: KindStageExecutor(
+                    {
+                        BookKind.SCREENPLAY: VideoStageExecutor(
+                            artifacts,
+                            ShotListBuilder(FountainParser()),
+                            VideoCost(),
+                            self._video_generator(self._environment),
+                        ),
+                    }
+                ),
                 ScreenplayAssembleStageExecutor.STAGE: KindStageExecutor(
                     {
                         BookKind.SCREENPLAY: ScreenplayAssembleStageExecutor(
@@ -824,6 +841,29 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             message=(
                 f"the narrator {name!r} is not in this build: its engine follows the listening test in "
                 "docs/adr/0014-audiobook-narration-uses-kokoro-via-mlx-audio.md"
+            ),
+            http_status=503,
+        )
+
+    @staticmethod
+    def _video_generator(environment: Mapping[str, str]) -> VideoGeneratorInterface | None:
+        """The hosted video model for a screenplay: none unless ``EI_VIDEO_PROVIDER`` names one.
+
+        ``openrouter`` submits each shot to OpenRouter's video API with ``EI_OPENROUTER_API_KEY``. A provider named
+        without its key is refused, rather than a film that quietly skips the video it was asked for.
+        """
+        name = environment.get("EI_VIDEO_PROVIDER", "").strip()
+        if not name:
+            return None
+        key = environment.get("EI_OPENROUTER_API_KEY", "").strip()
+        if name == "openrouter" and key:
+            return OpenRouterVideoGenerator(
+                httpx.Client(timeout=httpx.Timeout(120.0, connect=10.0)), key
+            )
+        raise ApplicationError(
+            code="VIDEO_PROVIDER_UNAVAILABLE",
+            message=(
+                f"the video provider {name!r} needs EI_OPENROUTER_API_KEY and is one of: openrouter"
             ),
             http_status=503,
         )

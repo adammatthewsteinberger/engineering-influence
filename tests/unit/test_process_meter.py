@@ -16,8 +16,8 @@ MIB = 2**20
 def holder(megabytes: int) -> subprocess.Popen[str]:
     """A child in its own group that holds the memory and then sleeps."""
     code = (
-        f"import time; data = b'x' * ({megabytes} * 1024 * 1024); print('up', flush=True); "
-        "time.sleep(60)"
+        f"import time; data = bytearray({megabytes} * 1024 * 1024); print('up', flush=True)\n"
+        "while True: data[::4096] = bytes([1]) * len(range(0, len(data), 4096)); time.sleep(0.1)"
     )
     process = subprocess.Popen(
         [sys.executable, "-c", code], stdout=subprocess.PIPE, text=True, start_new_session=True
@@ -27,7 +27,7 @@ def holder(megabytes: int) -> subprocess.Popen[str]:
 
 
 def test_memory_is_the_resident_size_of_the_whole_group() -> None:
-    process = holder(200)
+    process = holder(300)
     try:
         measured = ProcessMeter().memory_bytes(process.pid)
         assert 200 * MIB < measured < 600 * MIB
@@ -96,13 +96,12 @@ TWO_HOLDERS = """
 import subprocess, sys, time
 from pathlib import Path
 ready = Path(sys.argv[1])
-child = "import sys, time; from pathlib import Path; d = b'x' * (200 * 1024 * 1024); Path(sys.argv[1]).write_text('x'); time.sleep(60)"
+child = "import sys, time; from pathlib import Path; d = bytearray(300 * 1024 * 1024); Path(sys.argv[1]).write_text('x'); exec('while True: d[::4096] = bytes([1]) * len(range(0, len(d), 4096)); time.sleep(0.1)')"
 subprocess.Popen([sys.executable, "-c", child, str(ready)])
-data = b"x" * (200 * 1024 * 1024)
-while not ready.exists():
-    time.sleep(0.05)
+data = bytearray(300 * 1024 * 1024)
+while not ready.exists(): data[::4096] = bytes([1]) * len(range(0, len(data), 4096)); time.sleep(0.05)
 print("up", flush=True)
-time.sleep(60)
+while True: data[::4096] = bytes([1]) * len(range(0, len(data), 4096)); time.sleep(0.1)
 """
 
 

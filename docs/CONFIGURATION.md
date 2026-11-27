@@ -196,6 +196,8 @@ when this index names one nothing uses. The two `compose only` rows are read by 
 | `EI_WEBHOOK_INTERVAL_SECONDS` | how often the worker delivers queued events, in seconds (at least 0.01; default 5) | [Webhooks](WEBHOOKS.md) |
 | `EI_NARRATOR_VOICE` | the Kokoro voice, for example `af_heart` (the default) or `bf_emma` | [AUDIOBOOKS.md](AUDIOBOOKS.md) |
 | `EI_NARRATOR` | the narrator for the locally narrated (non-Audible) audiobook: `kokoro` is built in (Kokoro-82M through mlx-audio, on an Apple Silicon Mac with the `audio` extra); any other name is refused | [Audiobooks](AUDIOBOOKS.md) |
+| `EI_VIDEO_PROVIDER` | the hosted video model for a screenplay's video stage: `openrouter` is the built-in provider (OpenRouter's video API); unset, the stage makes no video and records that it did not. Any other name is refused | Screenplays (video stage) |
+| `EI_OPENROUTER_API_KEY` | the OpenRouter key the video stage uses with `EI_VIDEO_PROVIDER=openrouter`. Each shot is a paid job: the stage prices every shot before the first and stops for consent if the run's budget does not cover them | Screenplays (video stage) |
 | `EI_SEARXNG_URL` | the SearXNG address the research stage searches through | [A free local web search](#a-free-local-web-search-searxng) |
 | `EI_SKILL_LOCK` | the skill lock file | [The skill lock](#the-skill-lock-installed-prompt-text) |
 | `EI_STAGE_EXECUTOR` | what writes a run's stages: `local`, `model` or `deterministic` | [Limits to know](#limits-to-know) |

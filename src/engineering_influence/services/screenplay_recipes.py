@@ -35,6 +35,7 @@ class ScreenplayRecipes(StageRecipesInterface):
     CANON_STAGE: ClassVar[str] = "check_canon"
     RENDER_STAGE: ClassVar[str] = "render_script"
     EPUB_STAGE: ClassVar[str] = "build_epub"
+    VIDEO_STAGE: ClassVar[str] = "video"
 
     def plan(self) -> StagePlan:
         """The stages of a screenplay run, in order: the architecture, the scenes drafted, revised and assembled, the
@@ -52,6 +53,7 @@ class ScreenplayRecipes(StageRecipesInterface):
             self.CANON_STAGE,
             self.RENDER_STAGE,
             self.EPUB_STAGE,
+            self.VIDEO_STAGE,
         )
         return StagePlan(BookKind.SCREENPLAY, stages)
 
