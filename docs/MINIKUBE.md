@@ -11,6 +11,16 @@ Docker, minikube, kubectl and Helm. Start a cluster with enough memory for the f
 minikube start --driver=docker --cpus=4 --memory=6144
 ```
 
+## The External Secrets Operator (once per cluster)
+
+The secrets live in OpenBao and reach the app through the External Secrets Operator, which is installed cluster-wide:
+
+```bash
+helm repo add external-secrets https://charts.external-secrets.io
+helm install external-secrets external-secrets/external-secrets --version 2.15.0 \
+  -n external-secrets --create-namespace --set installCRDs=true
+```
+
 ## Install
 
 From the repository root, build the image and install the chart:
@@ -30,7 +40,9 @@ kubectl -n ei port-forward svc/ei-engineering-influence-api 8000:8000
 curl localhost:8000/health/ready
 ```
 
-The API key is in the Secret: `kubectl -n ei get secret ei-secrets -o jsonpath='{.data.EI_API_KEYS}' | base64 -d`.
+The API key is in the synced Secret: `kubectl -n ei get secret ei-secrets -o jsonpath='{.data.EI_API_KEYS}' | base64 -d`.
+The values themselves are in OpenBao's `secret/ei` path; OpenBao runs in dev mode here (in memory, with a known root token in `ei-openbao-token`), so
+its contents do not survive a restart. Production runs its own OpenBao with storage and unsealing.
 
 Remove the whole stack, its data included, with `sh deploy/minikube/down.sh`.
 
@@ -58,6 +70,7 @@ Loki accepts connections only from Alloy and Grafana. Tracing is not collected y
   started with. Run `down.sh` first, or set the password in the database to match the Secret.
 - **`helm install --wait` waits on the migration** (a post-install hook that needs the apps ready first), so `up.sh` does not
   use `--wait`.
+- **The operator resolves names in its own namespace only:** the SecretStore uses the service's full `<name>.<namespace>.svc` address.
 - **A failed migration Job stays listed** after it is fixed; delete the old Jobs before judging the new run.
 - **An interrupted `up.sh` leaves a new password in the Secret** while Postgres and RabbitMQ keep the old ones. Either set the password inside the service to match the Secret (`ALTER USER` for Postgres, `rabbitmqctl change_password` for RabbitMQ), or run `down.sh`.
 - **`helm upgrade --reuse-values` keeps only the release's old values;** a new block such as `observability` needs its image settings passed again.

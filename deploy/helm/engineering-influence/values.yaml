@@ -68,6 +68,35 @@ logs:
     image:
       repository: grafana/alloy
       tag: "v1.4.0"
+# Secrets from OpenBao (an open-source Vault fork), synced into the existingSecret by the External Secrets Operator. The
+# operator's CRDs must exist (install external-secrets first). openbao.devMode runs one in-memory server with the root
+# token from bootstrapTokenSecret, for a local cluster only; production points secretStore at an OpenBao it runs.
+openbao:
+  enabled: false
+  # devMode runs the in-memory server in this chart; it is for a local cluster only. Otherwise set server to an OpenBao
+  # you run, and the chart deploys nothing for it.
+  devMode: true
+  server: ""
+  image:
+    repository: openbao/openbao
+    tag: "2.1.0"
+  # A Secret, created before install, holding EI_OPENBAO_ROOT_TOKEN. It is separate from existingSecret, which the
+  # operator overwrites.
+  bootstrapTokenSecret: ei-openbao-token
+  # The KV v2 path (under secret/) that holds the app's values, and the keys the operator copies into existingSecret.
+  path: ei
+  keys:
+    - EI_DATABASE_URL
+    - EI_RABBITMQ_URL
+    - EI_API_KEYS
+    - EI_POSTGRES_PASSWORD
+    - EI_RABBITMQ_PASSWORD
+    - EI_S3_ACCESS_KEY_ID
+    - EI_S3_SECRET_ACCESS_KEY
+    - EI_METRICS_API_KEY
+    - EI_GRAFANA_ADMIN_PASSWORD
+  refreshInterval: 1h
+
 observability:
   enabled: false
   metricsApiKeyName: EI_METRICS_API_KEY

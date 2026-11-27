@@ -80,6 +80,15 @@ SeaweedFS's master, volume and filer ports have no authentication, so the chart 
 
 The command-line book commands and the MCP server still read the database, as the configuration page says.
 
+## Secrets from OpenBao
+
+`openbao.enabled=true` syncs the app's values from OpenBao into `existingSecret`, through the External Secrets Operator
+(which must be installed, with its CRDs). `openbao.devMode=true` (the default) deploys one in-memory OpenBao with a root
+token from `openbao.bootstrapTokenSecret`: a local cluster only, and its data does not survive a restart. In production,
+set `openbao.devMode=false` and `openbao.server` to an OpenBao you run; the chart then deploys no OpenBao and refuses to
+render without a server. The SecretStore still authenticates with a token from `bootstrapTokenSecret`, so a scoped
+auth method (Kubernetes or AppRole) is the next step before production use.
+
 ## Autoscaling
 
 - **The API** scales on CPU with a `HorizontalPodAutoscaler` when `autoscaling.api.enabled=true` (2 to 10 replicas at 70% CPU by default).
