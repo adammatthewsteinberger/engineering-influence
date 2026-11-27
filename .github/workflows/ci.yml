@@ -35,7 +35,7 @@ jobs:
       - run: uv run bandit -q -r src packages
       - run: uv run pip-audit
       - run: uv run mypy --strict src packages
-      - run: uv run pytest --cov --cov-branch --cov-fail-under=100
+      - run: uv run pytest --cov --cov-branch --cov-fail-under=100 -n auto
 
   # Builds a synthetic book with the real toolchain (LuaLaTeX, tex4ebook, epubcheck) and compares
   # the result with a checked-in structural snapshot. The runner image is pinned because the

@@ -39,6 +39,7 @@ test = [
   "hypothesis>=6.120,<7",
   "pytest>=9.0.3,<10",
   "pytest-cov>=6,<8",
+  "pytest-xdist>=3.6,<4",
   "engineering-influence-sdk",
   "sqlmodel>=0.0.22,<1",
   "alembic>=1.14,<2",

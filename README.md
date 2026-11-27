@@ -129,6 +129,7 @@ installs `ei` alone. It is not on PyPI yet. The extras are `api`, `webhooks`, `r
 | [Worker image](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/WORKER_IMAGE.md) | The container and the TeX toolchain |
 | [Kubernetes deployment](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/DEPLOYMENT.md) | The Helm chart, its Secret and the install steps |
 | [Running on minikube](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/MINIKUBE.md) | The whole stack on a local cluster, and the traps it has hit |
+| [Test and CI performance](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/TEST_PERFORMANCE.md) | The baseline, what parallel runs changed, and what is still to do |
 | [Troubleshooting](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/TROUBLESHOOTING.md) | Symptoms, causes and fixes |
 | [Testing](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/TESTING.md), [compatibility](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/COMPATIBILITY.md), [releasing](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/RELEASING.md) | The gates, what is promised to callers, and cutting a release |
 | [The documentation site](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/DOCUMENTATION_SITE.md) | How these pages become a website, and how to publish it |
