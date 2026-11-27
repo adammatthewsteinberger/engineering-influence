@@ -39,6 +39,20 @@ seaweedfs:
     repository: curlimages/curl
     tag: "8.10.1"
 
+# Optional in-cluster Postgres and RabbitMQ, for a local cluster such as minikube. Production uses a managed or operator-run
+# service and leaves these off. Postgres reads EI_POSTGRES_PASSWORD and RabbitMQ reads EI_RABBITMQ_PASSWORD from the Secret.
+postgres:
+  enabled: false
+  image:
+    repository: postgres
+    tag: "17"
+  storage: 5Gi
+rabbitmq:
+  enabled: false
+  image:
+    repository: rabbitmq
+    tag: "3.13-alpine"
+
 api:
   replicas: 2
   port: 8000
