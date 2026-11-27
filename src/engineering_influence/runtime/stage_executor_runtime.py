@@ -1,3 +1,7 @@
+from engineering_influence.services.audiobook_outline_stage_executor import (
+    AudiobookOutlineStageExecutor,
+)
+
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Chooses what does a run's stages: the offline placeholder, or a model, only when told to."""
 
@@ -422,14 +426,20 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             FactClaimParser(),
             descriptor.max_output_tokens,
         )
+        manuscript_audit = AuditStageExecutor(
+            artifacts,
+            TempProjectManuscriptAuditor(self._pipeline),
+            ManuscriptProject(artifacts),
+        )
+        default = KindStageExecutor(
+            {
+                BookKind.NONFICTION: nonfiction,
+                BookKind.NOVEL: novel,
+                BookKind.SCREENPLAY: screenplay,
+            }
+        )
         return StageExecutorRouter(
-            KindStageExecutor(
-                {
-                    BookKind.NONFICTION: nonfiction,
-                    BookKind.NOVEL: novel,
-                    BookKind.SCREENPLAY: screenplay,
-                }
-            ),
+            default,
             {
                 DraftStageExecutor.STAGE: KindStageExecutor(
                     {
@@ -490,6 +500,9 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                             lambda card: card.dialogued(),
                         ),
                     }
+                ),
+                AudiobookOutlineStageExecutor.STAGE: KindStageExecutor(
+                    {BookKind.NONFICTION: AudiobookOutlineStageExecutor(artifacts)}
                 ),
                 RenderScreenplayStageExecutor.STAGE: KindStageExecutor(
                     {
@@ -606,10 +619,12 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                         ),
                     }
                 ),
-                AuditStageExecutor.STAGE: AuditStageExecutor(
-                    artifacts,
-                    TempProjectManuscriptAuditor(self._pipeline),
-                    ManuscriptProject(artifacts),
+                AuditStageExecutor.STAGE: KindStageExecutor(
+                    {
+                        BookKind.NONFICTION: manuscript_audit,
+                        BookKind.NOVEL: manuscript_audit,
+                    },
+                    fallback=default,
                 ),
                 BuildStageExecutor.STAGE: BuildStageExecutor(
                     artifacts,
