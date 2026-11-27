@@ -47,6 +47,7 @@ nav:
       - Books and KDP: books-and-kdp.md
       - Audiobooks: audiobooks.md
       - Webhooks: webhooks.md
+      - Screenplays: screenplays.md
       - Novels: novels.md
   - Writing books:
       - The local model: local-model.md
@@ -93,6 +94,7 @@ nav:
           - "ADR 0014: Audiobook narration uses Kokoro-82M through mlx-audio (proposed)": adr/0014-audiobook-narration-uses-kokoro-via-mlx-audio.md
           - "ADR 0016: Audible audio is voiced inside ACX; other stores get a locally narrated audiobook": adr/0016-audiobooks-for-audible-are-voiced-in-acx-and-everything-else-is-narrated-locally.md
           - "ADR 0017: A screenplay's source is a folder of files, read whole and pinned by digest": adr/0017-screenplay-source-is-a-folder-of-files-read-whole.md
+          - "ADR 0018: A screenplay's bible is a folder of TOML cards, checked as a whole": adr/0018-a-screenplay-bible-is-a-folder-of-toml-cards.md
       - Changelog: changelog.md
       - Security: security.md
       - Support: support.md

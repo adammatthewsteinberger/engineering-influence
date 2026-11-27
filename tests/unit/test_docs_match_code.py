@@ -126,6 +126,7 @@ PLAIN = (
     "llms-full.txt",
     "docs/STYLE.md",
     "docs/AUDIOBOOKS.md",
+    "docs/SCREENPLAYS.md",
     "docs/WEBHOOKS.md",
     "docs/THREAT_MODEL.md",
     "packages/engineering-influence-sdk/README.md",
