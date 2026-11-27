@@ -1,7 +1,6 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Builds the run's artifact store from the settings: the database, or an S3-compatible bucket."""
 
-from engineering_influence.infrastructure.object_storage.boto3_s3_client import Boto3S3Client
 from engineering_influence.infrastructure.object_storage.s3_artifact_store import S3ArtifactStore
 from engineering_influence.infrastructure.object_storage.s3_object_store import S3ObjectStore
 from engineering_influence.repositories.sqlmodel_artifact_store import SqlModelArtifactStore
@@ -19,6 +18,10 @@ class ArtifactStoreFactory(ArtifactStoreFactoryInterface):
 
     def build(self, settings: AppSettings) -> SqlModelArtifactStore | S3ArtifactStore:
         if settings.artifact_store == "s3":
+            from engineering_influence.infrastructure.object_storage.boto3_s3_client import (
+                Boto3S3Client,
+            )
+
             return S3ArtifactStore(
                 S3ObjectStore(Boto3S3Client(self._client(settings))), settings.s3_bucket
             )
