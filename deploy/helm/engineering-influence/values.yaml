@@ -18,6 +18,27 @@ config:
   EI_PORT: "8000"
   EI_QUEUE_NAME: "engineering-influence.jobs"
 
+# Where a run's files are kept. `database` (default) keeps them in Postgres. `s3` keeps each file as an object in
+# `bucket`: at `endpointUrl`, or at the in-cluster SeaweedFS when seaweedfs.enabled is true. The S3 credentials
+# (EI_S3_ACCESS_KEY_ID and EI_S3_SECRET_ACCESS_KEY) must be keys of existingSecret.
+artifactStore:
+  kind: database
+  bucket: ei-artifacts
+  endpointUrl: ""
+  region: us-east-1
+
+# An optional single-replica SeaweedFS (S3 API) in the namespace, for clusters without an object store. It is not
+# highly available and keeps its data on one volume; use an external S3 service for production.
+seaweedfs:
+  enabled: false
+  image:
+    repository: chrislusf/seaweedfs
+    tag: "3.68"
+  storage: 20Gi
+  curlImage:
+    repository: curlimages/curl
+    tag: "8.10.1"
+
 api:
   replicas: 2
   port: 8000
