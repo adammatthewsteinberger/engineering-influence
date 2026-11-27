@@ -29,14 +29,16 @@ class ModelSceneReviser(SceneReviserInterface):
         prompts: PromptLibraryInterface,
         loop: RunToolLoopInterface,
         guards: Callable[[Budget], SpendGuardInterface],
+        template: str = TEMPLATE,
     ) -> None:
         self._prompts = prompts
         self._loop = loop
         self._guards = guards
+        self._template = template
 
     def revise(self, run: BookRun, card: SceneCard, scene: str) -> str:
         """The revised scene, stripped, or ApplicationError when the model's answer is incomplete or empty."""
-        template = self._prompts.get(self.TEMPLATE)
+        template = self._prompts.get(self._template)
         values = {"card": card.body, "scene": scene}
         request = ModelRequest(
             system=self._render(template, "system", values),

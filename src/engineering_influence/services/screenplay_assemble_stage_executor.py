@@ -50,7 +50,7 @@ class ScreenplayAssembleStageExecutor(StageExecutorInterface):
     async def execute(self, run: BookRun, attempt: int) -> StageReport:
         """Assemble the script from the revised scenes in card order, check it, and store it."""
         cards = self._cards.parse(await self._required(run, "scene_cards.md"))
-        scenes = tuple([await self._required(run, card.revised()) for card in cards])
+        scenes = tuple([await self._required(run, card.dialogued()) for card in cards])
         script = self._assembler.assemble(self._title_page(run), scenes)
         problems = self._format.problems(script)
         if problems:

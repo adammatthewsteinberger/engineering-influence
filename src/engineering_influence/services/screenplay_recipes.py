@@ -27,6 +27,8 @@ class ScreenplayRecipes(StageRecipesInterface):
     DIGEST_STAGE: ClassVar[str] = "digest_sources"
     DRAFT_STAGE: ClassVar[str] = "draft"
     REVISE_STAGE: ClassVar[str] = "revise_scenes"
+    STRUCTURE_STAGE: ClassVar[str] = "structure_scenes"
+    DIALOGUE_STAGE: ClassVar[str] = "dialogue_scenes"
     ASSEMBLE_STAGE: ClassVar[str] = "assemble_script"
     LOCK_STAGE: ClassVar[str] = "lock_script"
     REPORT_STAGE: ClassVar[str] = "log_revisions"
@@ -42,6 +44,8 @@ class ScreenplayRecipes(StageRecipesInterface):
             *(recipe.stage for recipe in self.RECIPES),
             self.DRAFT_STAGE,
             self.REVISE_STAGE,
+            self.STRUCTURE_STAGE,
+            self.DIALOGUE_STAGE,
             self.ASSEMBLE_STAGE,
             self.LOCK_STAGE,
             self.REPORT_STAGE,

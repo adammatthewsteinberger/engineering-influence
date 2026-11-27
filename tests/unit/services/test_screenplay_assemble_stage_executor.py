@@ -45,7 +45,7 @@ def with_revised(*scenes: str, cards: str = CARDS) -> InMemoryArtifactStore:
     store = InMemoryArtifactStore()
     store.put("run-1", "scene_cards.md", cards.encode("utf-8"))
     for number, scene in enumerate(scenes, 1):
-        store.put("run-1", f"revised/{number:03d}.md", scene.encode("utf-8"))
+        store.put("run-1", f"dialogued/{number:03d}.md", scene.encode("utf-8"))
     return store
 
 

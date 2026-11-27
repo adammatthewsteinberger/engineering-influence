@@ -16,5 +16,13 @@ class SceneCardInterface(ABC):
         """The artifact name the drafted scene is stored under."""
 
     @abstractmethod
+    def structured(self) -> str:
+        """The artifact name the scene is stored under after the structure pass."""
+
+    @abstractmethod
+    def dialogued(self) -> str:
+        """The artifact name the scene is stored under after the dialogue pass."""
+
+    @abstractmethod
     def revised(self) -> str:
         """The artifact name the revised scene is stored under."""

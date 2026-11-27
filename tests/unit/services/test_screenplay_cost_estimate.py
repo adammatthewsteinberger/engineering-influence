@@ -53,6 +53,8 @@ def test_the_screenplay_estimate_covers_every_planned_stage() -> None:
         "visual_grammar",
         "draft",
         "revise_scenes",
+        "structure_scenes",
+        "dialogue_scenes",
         "assemble_script",
         "lock_script",
         "log_revisions",

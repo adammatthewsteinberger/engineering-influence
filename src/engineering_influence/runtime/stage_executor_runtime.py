@@ -170,6 +170,7 @@ from engineering_influence.services.revision_report_writer import RevisionReport
 from engineering_influence.services.revision_stage_executor import RevisionStageExecutor
 from engineering_influence.services.run_tool_loop import RunToolLoop
 from engineering_influence.services.scene_card_list import SceneCardList
+from engineering_influence.services.scene_pass_stage_executor import ScenePassStageExecutor
 from engineering_influence.services.screenplay_assemble_stage_executor import (
     ScreenplayAssembleStageExecutor,
 )
@@ -457,6 +458,36 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                         BookKind.SCREENPLAY: SourceDigestStageExecutor(
                             artifacts,
                             ModelSourceDigester(prompts, loop, SpendGuard),
+                        ),
+                    }
+                ),
+                ScreenplayRecipes.STRUCTURE_STAGE: KindStageExecutor(
+                    {
+                        BookKind.SCREENPLAY: ScenePassStageExecutor(
+                            artifacts,
+                            ScreenplayRecipes.STRUCTURE_STAGE,
+                            ModelSceneReviser(
+                                prompts, loop, SpendGuard, "screenplay_pass_structure"
+                            ),
+                            SceneCardList(),
+                            ScreenplaySectionCheck(FountainParser()),
+                            lambda card: card.revised(),
+                            lambda card: card.structured(),
+                        ),
+                    }
+                ),
+                ScreenplayRecipes.DIALOGUE_STAGE: KindStageExecutor(
+                    {
+                        BookKind.SCREENPLAY: ScenePassStageExecutor(
+                            artifacts,
+                            ScreenplayRecipes.DIALOGUE_STAGE,
+                            ModelSceneReviser(
+                                prompts, loop, SpendGuard, "screenplay_pass_dialogue"
+                            ),
+                            SceneCardList(),
+                            ScreenplaySectionCheck(FountainParser()),
+                            lambda card: card.structured(),
+                            lambda card: card.dialogued(),
                         ),
                     }
                 ),

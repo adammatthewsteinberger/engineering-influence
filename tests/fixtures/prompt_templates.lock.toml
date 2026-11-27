@@ -50,8 +50,8 @@ version = 1
 fingerprint = "6f4e44f3c43f42730bba78da0ba2277a2b266f2e3313fdf20c6132f68da78015"
 
 [screenplay_anchors]
-version = 4
-fingerprint = "c70d42c61ce7182f094e03ec498ee0a6d86b652cf6e56fd9c7d67bd8a47102f3"
+version = 5
+fingerprint = "e13f368ed12e866f1c1fe8f10ffa52c487c482a4a081239fa87ffa571d66c76e"
 
 [screenplay_audit]
 version = 1
@@ -72,6 +72,14 @@ fingerprint = "d50e6131175a0b730b61291e0cdefb5bc7cad02481f5c5f8a62f244de7ea2c59"
 [screenplay_draft_scene]
 version = 2
 fingerprint = "84f372c9c8c6817087d8d824aaa57062e4b162b7b73c448a50b9c58383c14e8b"
+
+[screenplay_pass_dialogue]
+version = 1
+fingerprint = "aac8cc7f28a5e14b5cb8eff4e6efd78af011b484f346b47362c627711d39194b"
+
+[screenplay_pass_structure]
+version = 1
+fingerprint = "84848a632a50b69b22ab08923157b7d20f943636bb5d8145542e3c22055385ed"
 
 [screenplay_revise_scene]
 version = 1
