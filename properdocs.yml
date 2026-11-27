@@ -69,6 +69,7 @@ nav:
       - Worker image: worker-image.md
       - Kubernetes deployment: deployment.md
       - Running on minikube: minikube.md
+      - Test and CI performance: test-performance.md
       - Troubleshooting: troubleshooting.md
       - Releasing: releasing.md
       - Documentation site: documentation-site.md

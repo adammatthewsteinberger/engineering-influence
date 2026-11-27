@@ -118,6 +118,7 @@ PLAIN = (
     "AGENTS.md",
     "docs/DEPLOYMENT.md",
     "docs/MINIKUBE.md",
+    "docs/TEST_PERFORMANCE.md",
     "CLAUDE.md",
     "GEMINI.md",
     "CHANGELOG.md",

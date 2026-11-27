@@ -40,6 +40,7 @@ Interfaces: CLI (`ei`), REST API, Python SDK, MCP server (stdio, `ei serve mcp`:
 - [Worker image](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/WORKER_IMAGE.md): the container images and the TeX toolchain
 - [Kubernetes deployment](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/DEPLOYMENT.md): the Helm chart, its Secret and the install steps
 - [Running on minikube](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/MINIKUBE.md): the whole stack on a local cluster, and the traps it has hit
+- [Test and CI performance](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/TEST_PERFORMANCE.md): the baseline, what parallel runs changed, and what is still to do
 - [Troubleshooting](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/TROUBLESHOOTING.md): symptom, cause, fix
 - [Evaluation](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/EVALUATION.md): `ei evaluate`, the rubric, the judge, and the bar a release must meet (spends real money)
 - [Live smoke test](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/LIVE_SMOKE_TEST.md): the capped test against a real model
