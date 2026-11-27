@@ -181,6 +181,7 @@ def test_text_with_no_card_is_unreadable() -> None:
 
 def test_the_plan_drafts_revises_and_assembles_scenes_after_the_architecture() -> None:
     assert tuple(ScreenplayRecipes().plan().stages) == (
+        "digest_sources",
         "brief",
         "anchors",
         "audit",

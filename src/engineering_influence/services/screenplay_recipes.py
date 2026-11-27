@@ -24,6 +24,7 @@ class ScreenplayRecipes(StageRecipesInterface):
         StageRecipe("visual_grammar", "screenplay_visual_grammar", ("anchors", "beats"), 4_000),
     )
 
+    DIGEST_STAGE: ClassVar[str] = "digest_sources"
     DRAFT_STAGE: ClassVar[str] = "draft"
     REVISE_STAGE: ClassVar[str] = "revise_scenes"
     ASSEMBLE_STAGE: ClassVar[str] = "assemble_script"
@@ -37,6 +38,7 @@ class ScreenplayRecipes(StageRecipesInterface):
         """The stages of a screenplay run, in order: the architecture, the scenes drafted, revised and assembled, the
         script's scene numbers locked, then rendered as a PDF and as an EPUB."""
         stages = (
+            self.DIGEST_STAGE,
             *(recipe.stage for recipe in self.RECIPES),
             self.DRAFT_STAGE,
             self.REVISE_STAGE,

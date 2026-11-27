@@ -12,6 +12,7 @@ def test_the_plan_is_the_brief_and_the_architecture_in_order() -> None:
     plan = ScreenplayRecipes().plan()
     assert plan.kind is BookKind.SCREENPLAY
     assert tuple(plan.stages) == (
+        "digest_sources",
         "brief",
         "anchors",
         "audit",

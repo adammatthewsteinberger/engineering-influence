@@ -1,6 +1,6 @@
 # Prompts
 
-**BLUF:** The prompts are code: thirty-three versioned TOML templates, generic, with no author's voice in them. Change
+**BLUF:** The prompts are code: thirty-four versioned TOML templates, generic, with no author's voice in them. Change
 one word and its version must go up, which a locked test enforces. Every blank that takes free text from outside
 (your idea, a web page, an earlier stage's output) is declared untrusted and reaches the model fenced off as data,
 never as instructions. The exceptions are checked numbers and levels, and the skills a person installed, which are
@@ -87,6 +87,7 @@ its shape (`BookMetadata`). Em and en dashes in it are rewritten before it is re
 | `novel_beats` | 1 | Plans the beats of a whole novel, in story order, from its brief and story bible |
 | `screenplay_brief` | 1 | Turns the author's idea into a short screenplay brief: logline, length and the source to adapt |
 | `screenplay_draft_scene` | 2 | Drafts one scene of a screenplay, in Fountain, from its scene card, the source files the card cites, and the anchors and beat sheet |
+| `screenplay_digest_source` | 1 | Condenses one source file for a screenplay: its events, named people and places, plot-carrying dialogue and the numbers used later, in about 250 words |
 | `screenplay_revise_scene` | 1 | Revises one drafted scene of a screenplay: sharper dialogue and a clean format, the same events, about the same length |
 | `screenplay_anchors` | 4 | Writes the anchors of a screenplay: spine, opening and closing images, All Is Lost, what can and cannot be lost, and the structural mode |
 | `screenplay_audit` | 1 | Audits a novel for its screenplay: a verdict on each source file, how each character is internalized, the source each beat comes from, and what the film adds |

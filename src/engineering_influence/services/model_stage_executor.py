@@ -134,10 +134,11 @@ class ModelStageExecutor(StageExecutorInterface):
     async def _source_blocks(self, run: BookRun) -> str:
         """Every source file the run keeps, each under its number, for a stage that reads them all."""
         names = await asyncio.to_thread(self._artifacts.names, run.run_id)
+        prefix = "digest/" if any(n.startswith("digest/") for n in names) else "source/"
         blocks = []
-        for name in sorted(n for n in names if n.startswith("source/")):
+        for name in sorted(n for n in names if n.startswith(prefix)):
             data = await asyncio.to_thread(self._artifacts.get, run.run_id, name)
-            number = name.removeprefix("source/").removesuffix(".md")
+            number = name.removeprefix(prefix).removesuffix(".md")
             blocks.append(f"Source {number}:\n{(data or b'').decode('utf-8')}")
         return "\n\n".join(blocks) or self.UNSET
 

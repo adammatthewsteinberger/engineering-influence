@@ -44,6 +44,7 @@ def test_the_screenplay_estimate_covers_every_planned_stage() -> None:
     brief = BookBrief(BookKind.SCREENPLAY, "a bee colony", 5_000_000)
     names = [name for name, _, _ in estimator.estimate(brief).stages]
     assert names == [
+        "digest_sources",
         "brief",
         "anchors",
         "audit",

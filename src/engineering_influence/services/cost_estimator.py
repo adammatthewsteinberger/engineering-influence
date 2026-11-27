@@ -116,6 +116,11 @@ class CostEstimator(CostEstimatorInterface):
     SCREENPLAY_SCENES: ClassVar[int] = 180
     SCENE_INPUT_TOKENS: ClassVar[int] = 4_000
     SCENE_OUTPUT_TOKENS: ClassVar[int] = 1_500
+    # Digesting is one call per source file. The file count is not known from the brief, so the estimate assumes one
+    # file per sol of a film (about 90), each about a page of logs.
+    SOURCE_DIGESTS: ClassVar[int] = 90
+    DIGEST_INPUT_TOKENS: ClassVar[int] = 2_000
+    DIGEST_OUTPUT_TOKENS: ClassVar[int] = 1_500
 
     def _stage(self, kind: BookKind, stage: str, chapters: int, chapter_tokens: int) -> int:
         if stage in self.NO_MODEL:
@@ -127,6 +132,10 @@ class CostEstimator(CostEstimatorInterface):
             # Drafting and revision are each one call per scene.
             return self.SCREENPLAY_SCENES * self._call(
                 self.SCENE_INPUT_TOKENS, self.SCENE_OUTPUT_TOKENS
+            )
+        if kind is BookKind.SCREENPLAY and stage == ScreenplayRecipes.DIGEST_STAGE:
+            return self.SOURCE_DIGESTS * self._call(
+                self.DIGEST_INPUT_TOKENS, self.DIGEST_OUTPUT_TOKENS
             )
         if stage == NonfictionRecipes.DRAFT_STAGE:
             return sum(
