@@ -58,6 +58,7 @@ class Creator(LocalBookCreatorInterface):
         self.modes: list[str] = []
         self.resumed: list[bool] = []
         self.exported: list[Path] = []
+        self.titles: list[str | None] = []
         self.closed = 0
 
     def _result(self) -> BookRun:
@@ -77,8 +78,10 @@ class Creator(LocalBookCreatorInterface):
         stop_after: str | None = None,
         mode: str = "book",
         bible: tuple[object, ...] = (),
+        title: str | None = None,
     ) -> BookRun:
         self.started.append(brief)
+        self.titles.append(title)
         self.modes.append(mode)
         self.sources.append(sources)
         self.bibles.append(bible)
@@ -136,6 +139,7 @@ class Harness:
             self.awake,
             lambda folder: SourceIntake(FilesystemSourceLibrary()).intake(folder),
             lambda folder: BibleIntake(FilesystemBibleLibrary(), BibleCardParser()).intake(folder),
+            lambda folder: None,
         )
         parser = argparse.ArgumentParser()
         cli.register(parser.add_subparsers(dest="command", required=True))

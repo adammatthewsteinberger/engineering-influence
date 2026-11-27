@@ -27,5 +27,6 @@ class CreateRunInterface(ABC):
         stop_after: str | None = None,
         mode: str = "book",
         bible: tuple[BibleCard, ...] = (),
+        title: str | None = None,
     ) -> BookRun:
         """Save a new pending run for the brief and queue its first stage; return the run."""

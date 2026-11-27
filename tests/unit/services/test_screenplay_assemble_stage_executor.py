@@ -28,6 +28,7 @@ from engineering_influence.services.screenplay_beat_position_check import (
 )
 from engineering_influence.services.screenplay_beat_sheet_check import ScreenplayBeatSheetCheck
 from engineering_influence.services.screenplay_recipes import ScreenplayRecipes
+from engineering_influence.services.screenplay_title_parser import ScreenplayTitleParser
 
 CARDS = "\n".join(
     f"## S{n:02d} · scene {n}\n**What changes:** it changes.\n**Therefore:** next.\n**Beat:** Set-Up\n**Storyline:** A\n**Sources:** 001\n"
@@ -54,7 +55,12 @@ def run(title: str | None = "TEST FILM") -> BookRun:
 
 def stage(store: InMemoryArtifactStore) -> ScreenplayAssembleStageExecutor:
     return ScreenplayAssembleStageExecutor(
-        store, SceneCardList(), ScreenplayAssembler(FountainParser()), FountainParser(), Placed()
+        store,
+        SceneCardList(),
+        ScreenplayAssembler(FountainParser()),
+        FountainParser(),
+        Placed(),
+        ScreenplayTitleParser(),
     )
 
 
@@ -121,6 +127,7 @@ def assemble_with_beats(store: InMemoryArtifactStore) -> None:
         ScreenplayAssembler(parser),
         parser,
         ScreenplayBeatPositionCheck(FountainPageEstimate(parser), 15),
+        ScreenplayTitleParser(),
     )
     asyncio.run(stage_with_beats.execute(run(), 1))
 
@@ -189,3 +196,30 @@ def test_beats_placed_where_the_sheet_puts_them_are_stored() -> None:
     store = placed_store(fifteen_cards(), beat_sheet(), 15)
     assemble_with_beats(store)
     assert script(store).startswith("Title: TEST FILM\n\nFADE IN:")
+
+
+def with_title(store: InMemoryArtifactStore, text: str) -> InMemoryArtifactStore:
+    store.put("run-1", ScreenplayTitleParser.ARTIFACT, text.encode("utf-8"))
+    return store
+
+
+def test_the_credit_and_source_print_under_the_title_in_order() -> None:
+    store = with_title(
+        with_revised(GOOD_ONE, GOOD_TWO),
+        'credit = "Based on the book by"\nsource = "Living Waters, Book One"\n',
+    )
+    assemble(store)
+    text = script(store)
+    assert text.index("Title: TEST FILM") < text.index("Credit: Based on the book by")
+    assert text.index("Credit: Based on the book by") < text.index(
+        "Source: Living Waters, Book One"
+    )
+    assert text.index("Source: Living Waters, Book One") < text.index("FADE IN:")
+
+
+def test_a_title_file_that_breaks_the_rules_stops_the_stage() -> None:
+    store = with_title(with_revised(GOOD_ONE, GOOD_TWO), 'colour = "red"\n')
+    with pytest.raises(ApplicationError) as error:
+        assemble(store)
+    assert error.value.code == "SCREENPLAY_TITLE_INVALID"
+    assert "does not take" in error.value.message

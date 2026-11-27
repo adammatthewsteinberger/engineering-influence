@@ -22,6 +22,10 @@ from engineering_influence.services.interfaces.screenplay_assembler_interface im
 from engineering_influence.services.interfaces.screenplay_beat_position_check_interface import (
     ScreenplayBeatPositionCheckInterface,
 )
+from engineering_influence.services.interfaces.screenplay_title_parser_interface import (
+    ScreenplayTitleParserInterface,
+)
+from engineering_influence.services.screenplay_title_parser import ScreenplayTitleParser
 
 
 class ScreenplayAssembleStageExecutor(StageExecutorInterface):
@@ -46,18 +50,20 @@ class ScreenplayAssembleStageExecutor(StageExecutorInterface):
         assembler: ScreenplayAssemblerInterface,
         parser: FountainParserInterface,
         positions: ScreenplayBeatPositionCheckInterface,
+        titles: ScreenplayTitleParserInterface,
     ) -> None:
         self._artifacts = artifacts
         self._cards = cards
         self._assembler = assembler
         self._format = FountainFormatCheck(parser)
         self._positions = positions
+        self._titles = titles
 
     async def execute(self, run: BookRun, attempt: int) -> StageReport:
         """Assemble the script from the revised scenes in card order, check it, and store it."""
         cards = self._cards.parse(await self._required(run, "scene_cards.md"))
         scenes = tuple([await self._required(run, card.dialogued()) for card in cards])
-        script = self._assembler.assemble(self._title_page(run), scenes)
+        script = self._assembler.assemble(await self._title_page(run), scenes)
         problems = self._format.problems(script)
         if problems:
             shown = "; ".join(problems[: self.MAX_PROBLEMS_SHOWN])
@@ -80,9 +86,15 @@ class ScreenplayAssembleStageExecutor(StageExecutorInterface):
         await self._put(run, self.SCRIPT, script)
         return StageReport()
 
-    @classmethod
-    def _title_page(cls, run: BookRun) -> tuple[tuple[str, str], ...]:
-        return (("Title", run.brief.title_hint or cls.UNTITLED),)
+    async def _title_page(self, run: BookRun) -> tuple[tuple[str, str], ...]:
+        """The title, then the credit and source the author's title.toml gives, when the run kept one."""
+        entries = [("Title", run.brief.title_hint or self.UNTITLED)]
+        stored = await asyncio.to_thread(
+            self._artifacts.get, run.run_id, ScreenplayTitleParser.ARTIFACT
+        )
+        if stored is not None:
+            entries.extend(self._titles.parse(stored.decode("utf-8")).entries())
+        return tuple(entries)
 
     async def _required(self, run: BookRun, name: str) -> str:
         data = await asyncio.to_thread(self._artifacts.get, run.run_id, name)

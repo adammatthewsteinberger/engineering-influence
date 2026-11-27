@@ -29,6 +29,7 @@ class LocalBookRunInterface(ABC):
         stop_after: str | None = None,
         mode: str = "book",
         bible: tuple[BibleCard, ...] = (),
+        title: str | None = None,
     ) -> BookRun:
         """Create the run with its source files and drive it until it finishes or stops; ``progress`` hears one line per stage."""
 

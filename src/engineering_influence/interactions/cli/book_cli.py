@@ -50,12 +50,14 @@ class BookCli(BookCliInterface):
         keep_awake: KeepAwakeInterface,
         read_sources: Callable[[Path], tuple[SourceEntry, ...]],
         read_bible: Callable[[Path], tuple[BibleCard, ...]],
+        read_title: Callable[[Path], str | None],
     ) -> None:
         self._controller_for = controller_for
         self._creator_for = creator_for
         self._keep_awake = keep_awake
         self._read_sources = read_sources
         self._read_bible = read_bible
+        self._read_title = read_title
 
     def register(self, subparsers: Any) -> None:
         """Add the `book` command and its subcommands."""
@@ -251,6 +253,7 @@ class BookCli(BookCliInterface):
                         arguments.stop_after,
                         arguments.mode,
                         bible=self._bible(arguments.bible),
+                        title=self._title(arguments.source),
                     )
                 )
             return self._finish(creator, run, arguments.out, state)
@@ -270,6 +273,12 @@ class BookCli(BookCliInterface):
         if folder is None:
             return ()
         return self._read_bible(folder)
+
+    def _title(self, folder: Path | None) -> str | None:
+        """The source folder's title.toml, checked, or none when there is no folder or no file."""
+        if folder is None:
+            return None
+        return self._read_title(folder)
 
     def _sources(self, folder: Path | None) -> tuple[SourceEntry, ...]:
         """The folder's source files, numbered and pinned, or none when no folder was given."""

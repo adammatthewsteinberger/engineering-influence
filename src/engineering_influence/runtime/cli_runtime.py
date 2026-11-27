@@ -135,6 +135,7 @@ from engineering_influence.services.readiness_doctor import ReadinessDoctor
 from engineering_influence.services.resolve_spend_consent import ResolveSpendConsent
 from engineering_influence.services.resume_run import ResumeRun
 from engineering_influence.services.run_progress import RunProgress
+from engineering_influence.services.screenplay_title_parser import ScreenplayTitleParser
 from engineering_influence.services.search_doctor import SearchDoctor
 from engineering_influence.services.skill_converter import SkillConverter
 from engineering_influence.services.skill_importer import SkillImporter
@@ -197,6 +198,7 @@ class CliRuntime(CliRuntimeInterface):
                 self._keep_awake(),
                 self._read_sources,
                 self._read_bible,
+                self._read_title,
             ),
             ServeCli(ServeStarter()),
             DbCli(self._schema_migrator, self._secret_provider),
@@ -530,6 +532,16 @@ class CliRuntime(CliRuntimeInterface):
     def _read_bible(folder: Path) -> tuple[BibleCard, ...]:
         """The bible folder's cards, checked as a whole before a run keeps them (ADR 0018)."""
         return BibleIntake(FilesystemBibleLibrary(), BibleCardParser()).intake(folder)
+
+    @staticmethod
+    def _read_title(folder: Path) -> str | None:
+        """The folder's title.toml as text, checked against the title rules, or none when the folder has no such file."""
+        path = folder / ScreenplayTitleParser.ARTIFACT
+        if not path.is_file():
+            return None
+        text = path.read_text(encoding="utf-8")
+        ScreenplayTitleParser().parse(text)
+        return text
 
     @staticmethod
     def _read_sources(folder: Path) -> tuple[SourceEntry, ...]:
