@@ -54,3 +54,11 @@ The cards are checked before the run starts and kept in it. Each scene is handed
 
 A bible that breaks any of these rules is refused as a whole before a run uses it. The error names the card and the rule.
 The error codes are listed in [Troubleshooting](TROUBLESHOOTING.md).
+
+## Drafting checks
+
+Each drafted scene is checked before it is kept. A scene must be exactly one scene and follow the format rules. Its dialogue
+must not repeat its sources: a speech that holds twelve words of a source in a row, ignoring case and punctuation, fails the
+check, so research is spoken as dialogue rather than read out of a file. Action is not checked, since a description may name
+what the sources say. A scene that fails is drafted once more; if the second draft fails too, the stage stops with
+`STAGE_OUTPUT_INVALID` and names the first problems.

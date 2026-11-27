@@ -183,6 +183,9 @@ from engineering_influence.services.screenplay_assemble_stage_executor import (
 )
 from engineering_influence.services.screenplay_assembler import ScreenplayAssembler
 from engineering_influence.services.screenplay_bible_context import ScreenplayBibleContext
+from engineering_influence.services.screenplay_dialogue_source_check import (
+    ScreenplayDialogueSourceCheck,
+)
 from engineering_influence.services.screenplay_draft_stage_executor import (
     ScreenplayDraftStageExecutor,
 )
@@ -457,6 +460,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                             ModelSceneDrafter(prompts, loop, SpendGuard),
                             SceneCardList(),
                             ScreenplaySectionCheck(FountainParser()),
+                            ScreenplayDialogueSourceCheck(FountainParser()),
                             bible=ScreenplayBibleContext(artifacts),
                         ),
                     }
