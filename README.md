@@ -142,13 +142,15 @@ Read these before you depend on it.
 
 - **The writing is unproven.** It has run only against scripted servers, never a live model. No real model has
   been measured against the quality bar.
-- **A person must read the book.** Checks catch a broken file, not a dull chapter or a wrong fact. There is no
-  claim checking.
+- **A person must read the book.** Checks catch a broken file, not a dull chapter. A fact-check stage accepts a claim
+  only when it finds a quotation in a page it read; a claim no page supports is softened or removed, and reported in the
+  quality report. It does not judge whether a page is right, so a wrong fact can still pass.
 - **Nothing uploads to KDP.** KDP has no publishing API. You upload the files and paste the listing.
 - **The first run needs a big download**: about 13 GB for the model and several GB for TeX.
-- **Novels get no editing passes** yet; a novel is built from its draft.
-- **On the stack**, delivery is at least once (a crash can re-run a stage), no service emits webhooks yet
-  although signing and a verifier exist, and the example compose file runs the worker on placeholder text
+- **A novel gets three editing passes** (story, lines and copy) before its audit and build. It has no continuity repair
+  pass yet.
+- **On the stack**, delivery is at least once (a crash can re-run a stage), run events go to any receivers you
+  configure (see [WEBHOOKS.md](docs/WEBHOOKS.md)), but a failed run sends no event, and the example compose file runs the worker on placeholder text
   (`EI_STAGE_EXECUTOR=deterministic`) until you point it at a model. A worker started any other way uses the free
   local model by default. `ei pipeline start` and the example MCP server only plan work; `ei serve mcp` reaches the stack.
 - **The schema is managed by `ei db upgrade`**; run it before starting a new release on the stack.

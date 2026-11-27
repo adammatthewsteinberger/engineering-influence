@@ -1,6 +1,6 @@
 # ADR 0008: The model gets tools, each stage gets only the ones it names
 
-Status: proposed
+Status: accepted. The open question on the sandbox for stdio MCP servers is still open (`THREAT_MODEL.md`, gap 6).
 
 ## Context
 

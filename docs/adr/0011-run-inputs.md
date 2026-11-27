@@ -1,6 +1,6 @@
 # ADR 0011: Run inputs are untrusted text carried inside the brief
 
-Status: proposed
+Status: accepted. The context window is not yet checked for the brief, research and outline stages (see the amendments).
 
 ## Context
 

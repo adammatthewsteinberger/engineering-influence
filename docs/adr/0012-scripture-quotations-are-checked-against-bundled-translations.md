@@ -1,8 +1,6 @@
 # 0012: Scripture quotations are checked against bundled public-domain translations
 
-## Status
-
-Accepted, 2026-11-25.
+Status: accepted, 2026-11-25.
 
 ## Context
 
