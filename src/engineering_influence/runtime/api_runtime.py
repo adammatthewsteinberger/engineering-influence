@@ -6,6 +6,7 @@ from typing import Any
 
 from engineering_influence.controllers.project_controller import ProjectController
 from engineering_influence.controllers.run_controller import RunController
+from engineering_influence.infrastructure.object_storage.s3_artifact_store import S3ArtifactStore
 from engineering_influence.infrastructure.observability.bootstrap_metrics import BootstrapMetrics
 from engineering_influence.infrastructure.observability.context_var_correlation import (
     ContextVarCorrelation,
@@ -35,6 +36,7 @@ from engineering_influence.repositories.sqlmodel_artifact_store import SqlModelA
 from engineering_influence.repositories.sqlmodel_ledger import SqlModelLedger
 from engineering_influence.repositories.sqlmodel_run_repository import SqlModelRunRepository
 from engineering_influence.runtime.app_settings import AppSettings
+from engineering_influence.runtime.artifact_store_factory import ArtifactStoreFactory
 from engineering_influence.runtime.endpoint_checks import EndpointChecks
 from engineering_influence.runtime.interfaces.api_runtime_interface import ApiRuntimeInterface
 from engineering_influence.services.cancel_run import CancelRun
@@ -70,7 +72,7 @@ class ApiRuntime(ApiRuntimeInterface):
         self._queue = queue
         self._migrator = migrator or SchemaMigrator()
         self._ledger: SqlModelLedger | None = None
-        self._stores: list[SqlModelRunRepository | SqlModelArtifactStore] = []
+        self._stores: list[SqlModelRunRepository | SqlModelArtifactStore | S3ArtifactStore] = []
 
     def build_app(self) -> Any:
         """Wire the ledger, the correlating queue, the guard and observability."""
@@ -94,7 +96,7 @@ class ApiRuntime(ApiRuntimeInterface):
         self._ledger = SqlModelLedger(self._settings.database_url)
         controller = ProjectController(StartPipeline(self._ledger, queue))
         url = self._settings.database_url
-        runs, artifacts = SqlModelRunRepository(url), SqlModelArtifactStore(url)
+        runs, artifacts = SqlModelRunRepository(url), ArtifactStoreFactory().build(self._settings)
         self._stores = [runs, artifacts]
         run_controller = RunController(ReadRun(runs, artifacts))
         ceiling = SpendCeiling(runs, self._settings.spend_limits)

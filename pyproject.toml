@@ -30,6 +30,7 @@ dependencies = [
 audio = ["mlx-audio>=0.6.8,<0.7; sys_platform == 'darwin' and platform_machine == 'arm64'", "misaki[en]>=0.9,<1; sys_platform == 'darwin' and platform_machine == 'arm64'"]
 api = ["fastapi>=0.115,<1", "uvicorn>=0.34,<1"]
 webhooks = ["httpx>=0.27,<1"]
+s3 = ["boto3>=1.35,<2"]
 runtime = [
   "vibey-engine>=0.4,<0.5", "aio-pika>=9.5,<11", "sqlmodel>=0.0.22,<1",
   "alembic>=1.14,<2", "psycopg[binary]>=3.2,<4", "httpx>=0.27,<1",
@@ -46,6 +47,7 @@ test = [
   "fastapi>=0.115,<1",
   "mcp>=2,<3",
   "httpx>=0.27,<1",
+  "boto3>=1.35,<2",
   "requests>=2.32,<3",
   "uvicorn>=0.34,<1",
   "pdfplumber>=0.11,<1",
@@ -170,5 +172,5 @@ forbidden_modules = [
 ]
 
 [[tool.mypy.overrides]]
-module = ["pdfplumber", "pdfplumber.*", "reportlab.*", "defusedxml", "defusedxml.*"]
+module = ["pdfplumber", "pdfplumber.*", "reportlab.*", "defusedxml", "defusedxml.*", "boto3", "boto3.*", "botocore", "botocore.*"]
 ignore_missing_imports = true

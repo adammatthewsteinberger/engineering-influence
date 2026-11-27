@@ -13,6 +13,7 @@ import httpx
 from engineering_influence.infrastructure.deterministic_runner import DeterministicRunner
 from engineering_influence.infrastructure.job_message_handler import JobMessageHandler
 from engineering_influence.infrastructure.non_empty_artifact_gate import NonEmptyArtifactGate
+from engineering_influence.infrastructure.object_storage.s3_artifact_store import S3ArtifactStore
 from engineering_influence.infrastructure.observability.bootstrap_alert_dispatcher import (
     BootstrapAlertDispatcher,
 )
@@ -48,6 +49,7 @@ from engineering_influence.repositories.sqlmodel_ledger import SqlModelLedger
 from engineering_influence.repositories.sqlmodel_outbox import SqlModelOutbox
 from engineering_influence.repositories.sqlmodel_run_repository import SqlModelRunRepository
 from engineering_influence.runtime.app_settings import AppSettings
+from engineering_influence.runtime.artifact_store_factory import ArtifactStoreFactory
 from engineering_influence.runtime.interfaces.stage_executor_runtime_interface import (
     StageExecutorRuntimeInterface,
 )
@@ -85,7 +87,9 @@ class WorkerRuntime(WorkerRuntimeInterface):
             os.environ, EnvSecretProvider(), date.today()
         )
         self._ledger: SqlModelLedger | None = None
-        self._stores: list[SqlModelRunRepository | SqlModelJournal | SqlModelArtifactStore] = []
+        self._stores: list[
+            SqlModelRunRepository | SqlModelJournal | SqlModelArtifactStore | S3ArtifactStore
+        ] = []
         self._dispatch: OutboxDispatchLoop | None = None
         self._http: httpx.AsyncClient | None = None
 
@@ -105,7 +109,7 @@ class WorkerRuntime(WorkerRuntimeInterface):
         runs, journal, artifacts = (
             SqlModelRunRepository(url),
             SqlModelJournal(url),
-            SqlModelArtifactStore(url),
+            ArtifactStoreFactory().build(self._settings),
         )
         self._stores = [runs, journal, artifacts]
         advance = AdvanceRun(
