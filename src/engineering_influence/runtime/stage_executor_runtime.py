@@ -143,6 +143,7 @@ from engineering_influence.services.mcp_tool_factory import McpToolFactory
 from engineering_influence.services.metadata_parser import MetadataParser
 from engineering_influence.services.model_scene_drafter import ModelSceneDrafter
 from engineering_influence.services.model_scene_reviser import ModelSceneReviser
+from engineering_influence.services.model_source_digester import ModelSourceDigester
 from engineering_influence.services.model_stage_executor import ModelStageExecutor
 from engineering_influence.services.narration_gate import NarrationGate
 from engineering_influence.services.narration_stage_executor import NarrationStageExecutor
@@ -191,6 +192,7 @@ from engineering_influence.services.shooting_lock_codec import ShootingLockCodec
 from engineering_influence.services.shooting_lock_planner import ShootingLockPlanner
 from engineering_influence.services.shooting_script_renderer import ShootingScriptRenderer
 from engineering_influence.services.skill_lock_verifier import SkillLockVerifier
+from engineering_influence.services.source_digest_stage_executor import SourceDigestStageExecutor
 from engineering_influence.services.spend_guard import SpendGuard
 from engineering_influence.services.stage_executor_router import StageExecutorRouter
 from engineering_influence.services.story_bible_parser import StoryBibleParser
@@ -447,6 +449,14 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                             ModelSceneReviser(prompts, loop, SpendGuard),
                             SceneCardList(),
                             ScreenplaySectionCheck(FountainParser()),
+                        ),
+                    }
+                ),
+                SourceDigestStageExecutor.STAGE: KindStageExecutor(
+                    {
+                        BookKind.SCREENPLAY: SourceDigestStageExecutor(
+                            artifacts,
+                            ModelSourceDigester(prompts, loop, SpendGuard),
                         ),
                     }
                 ),

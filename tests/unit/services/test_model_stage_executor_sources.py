@@ -94,3 +94,11 @@ def test_every_source_the_run_keeps_reaches_the_prompt_under_its_number() -> Non
 
 def test_with_no_source_files_the_block_says_so() -> None:
     assert '<untrusted name="sources">\nnot given\n</untrusted>' in prompt_for(stored())
+
+
+def test_when_a_run_has_digests_the_digests_reach_the_prompt_instead_of_the_sources() -> None:
+    prompt = prompt_for(
+        stored(("source/001.md", b"the whole first source"), ("digest/001.md", b"a short digest"))
+    )
+    assert "Source 001:\na short digest" in prompt
+    assert "the whole first source" not in prompt
