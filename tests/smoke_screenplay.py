@@ -54,23 +54,31 @@ AUDIT: Final = (
     "## Inventions\n- a night watchman, FILM\n"
 )
 
-BEAT_RANGES: Final = (
-    ("Opening Image", "1 to 1"),
-    ("Theme Stated", "5 to 5"),
-    ("Set-Up", "6 to 10"),
-    ("Catalyst", "12 to 12"),
-    ("Debate", "12 to 25"),
-    ("Break into Two", "25 to 25"),
-    ("B Story", "30 to 30"),
-    ("Fun and Games", "30 to 55"),
-    ("Midpoint", "55 to 55"),
-    ("Bad Guys Close In", "55 to 75"),
-    ("All Is Lost", "135 to 145"),
-    ("Dark Night of the Soul", "146 to 155"),
-    ("Break into Three", "156 to 165"),
-    ("Finale", "166 to 175"),
-    ("Closing Image", "180 to 180"),
+BEATS_IN_ORDER: Final = (
+    "Opening Image",
+    "Theme Stated",
+    "Set-Up",
+    "Catalyst",
+    "Debate",
+    "Break into Two",
+    "B Story",
+    "Fun and Games",
+    "Midpoint",
+    "Bad Guys Close In",
+    "All Is Lost",
+    "Dark Night of the Soul",
+    "Break into Three",
+    "Finale",
+    "Closing Image",
 )
+# Every scene below is the same length, so beat k of fifteen sits at k/15 of the script. Each beat is planned on the page
+# that place falls on (twelve pages a beat, a film of 180), except All Is Lost, which the beat sheet puts at 127 (70%) so
+# that it is three-quarters through in the card count as well (eleven of fifteen cards, 73%).
+PAGE_OF: Final = {
+    beat: 127 if beat == "All Is Lost" else 12 * index + 1
+    for index, beat in enumerate(BEATS_IN_ORDER)
+}
+BEAT_RANGES: Final = tuple((beat, f"{PAGE_OF[beat]} to {PAGE_OF[beat]}") for beat in BEATS_IN_ORDER)
 BEATS: Final = (
     "| Beat | Pages | Scenes | Scene | Central character | Function |\n|---|---|---|---|---|---|\n"
     + "".join(
@@ -80,18 +88,7 @@ BEATS: Final = (
     )
 )
 
-CARD_BEATS: Final = (
-    "Opening Image",
-    "Theme Stated",
-    "Set-Up",
-    "Catalyst",
-    "Debate",
-    "Break into Two",
-    "All Is Lost",
-    "Dark Night of the Soul",
-    "Break into Three",
-    "Finale",
-)
+CARD_BEATS: Final = BEATS_IN_ORDER
 SCENE_CARDS: Final = "".join(
     f"## S{number:02d} · a scene\n"
     f"**What changes:** the crew learns something.\n"
@@ -100,6 +97,11 @@ SCENE_CARDS: Final = "".join(
     f"**Storyline:** A\n"
     f"**Sources:** 001\n\n"
     for number, beat in enumerate(CARD_BEATS, 1)
+)
+# One scene of the same shape for every card: a heading, one action line, and one speech. No digits in the speech,
+# and no run of source words, so the scene passes the format and dialogue checks.
+SCENE: Final = (
+    "INT. ROOM - DAY\n\nAdam watches the gauge fall.\n\nADAM\nThe crew stays in the room.\n"
 )
 
 VISUAL_GRAMMAR: Final = (
@@ -125,4 +127,12 @@ def answer(user: str) -> str | None:
         return SCENE_CARDS
     if user.startswith("Write the visual grammar"):
         return VISUAL_GRAMMAR
+    if user.startswith("Write the scene for this card"):
+        return SCENE
+    if user.startswith("Revise this scene so it serves its card"):
+        return SCENE
+    if user.startswith("Revise this scene's structure."):
+        return SCENE
+    if user.startswith("Sharpen the dialogue in this scene."):
+        return SCENE
     return None
