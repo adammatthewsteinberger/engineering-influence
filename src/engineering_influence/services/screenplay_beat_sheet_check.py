@@ -87,6 +87,17 @@ class ScreenplayBeatSheetCheck(ScreenplayBeatSheetCheckInterface):
         return tuple(found)
 
     @classmethod
+    def planned_starts(cls, text: str) -> dict[str, int]:
+        """Each beat's planned first page, for the rows whose pages are a range; a row whose pages do not parse is left
+        out, since its own check already names it."""
+        starts: dict[str, int] = {}
+        for name, cells in cls._rows(text):
+            start, _ = cls._range(cells[1])
+            if start is not None:
+                starts[name] = start
+        return starts
+
+    @classmethod
     def _rows(cls, text: str) -> tuple[tuple[str, tuple[str, ...]], ...]:
         """The table rows whose first cell is a beat name, with all six cells."""
         rows: list[tuple[str, tuple[str, ...]]] = []

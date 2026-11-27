@@ -132,6 +132,7 @@ from engineering_influence.services.fact_claim_parser import FactClaimParser
 from engineering_influence.services.fallback_search_provider import FallbackSearchProvider
 from engineering_influence.services.fetch_url_tool import FetchUrlTool
 from engineering_influence.services.fitting_model import FittingModel
+from engineering_influence.services.fountain_page_estimate import FountainPageEstimate
 from engineering_influence.services.fountain_parser import FountainParser
 from engineering_influence.services.interfaces.cost_estimator_interface import (
     CostEstimatorInterface,
@@ -182,6 +183,9 @@ from engineering_influence.services.screenplay_assemble_stage_executor import (
     ScreenplayAssembleStageExecutor,
 )
 from engineering_influence.services.screenplay_assembler import ScreenplayAssembler
+from engineering_influence.services.screenplay_beat_position_check import (
+    ScreenplayBeatPositionCheck,
+)
 from engineering_influence.services.screenplay_bible_context import ScreenplayBibleContext
 from engineering_influence.services.screenplay_dialogue_source_check import (
     ScreenplayDialogueSourceCheck,
@@ -552,6 +556,10 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                             SceneCardList(),
                             ScreenplayAssembler(FountainParser()),
                             FountainParser(),
+                            ScreenplayBeatPositionCheck(
+                                FountainPageEstimate(FountainParser()),
+                                ScreenplayOutputChecks.DEFAULT_TARGET_PAGES,
+                            ),
                         ),
                     }
                 ),

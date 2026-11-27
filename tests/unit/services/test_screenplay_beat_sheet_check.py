@@ -25,6 +25,20 @@ RANGES = [
 ]
 
 
+def test_planned_starts_gives_each_beats_first_page() -> None:
+    starts = ScreenplayBeatSheetCheck.planned_starts(sheet())
+    assert len(starts) == 15
+    assert starts["All Is Lost"] == 135
+    assert starts["Closing Image"] == 180
+
+
+def test_a_row_whose_pages_do_not_parse_is_left_out_of_the_planned_starts() -> None:
+    ranges = [(beat, "x to y" if beat == "Finale" else pages) for beat, pages in RANGES]
+    starts = ScreenplayBeatSheetCheck.planned_starts(sheet(ranges))
+    assert "Finale" not in starts
+    assert len(starts) == 14
+
+
 def sheet(ranges: list[tuple[str, str]] = RANGES, function: str = "none") -> str:
     rows = [
         "| Beat | Pages | Scenes | Scene | Central character | Function |",

@@ -22,8 +22,8 @@ class FountainPageEstimate(FountainPageEstimateInterface):
     def __init__(self, parser: FountainParserInterface) -> None:
         self._parser = parser
 
-    def pages(self, text: str) -> float:
-        """About how many pages the script runs to, to one decimal place."""
+    def lines(self, text: str) -> int:
+        """The script's lines, exact, so that a part of a script can be placed by summing its parts."""
         lines = 0
         for block in self._parser.blocks(text):
             if block.kind == "cue":
@@ -32,7 +32,11 @@ class FountainPageEstimate(FountainPageEstimateInterface):
                 width = self.WIDTH.get(block.kind, self.ACTION_WIDTH)
                 lines += sum(self._wrapped(line, width) for line in block.lines)
             lines += 1
-        return round(lines / self.LINES_PER_PAGE, 1)
+        return lines
+
+    def pages(self, text: str) -> float:
+        """About how many pages the script runs to, to one decimal place."""
+        return round(self.lines(text) / self.LINES_PER_PAGE, 1)
 
     @staticmethod
     def _wrapped(text: str, width: int) -> int:
