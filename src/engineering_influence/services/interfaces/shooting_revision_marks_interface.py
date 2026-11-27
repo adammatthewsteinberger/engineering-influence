@@ -12,5 +12,7 @@ class ShootingRevisionMarksInterface(ABC):
     __slots__ = ()
 
     @abstractmethod
-    def mark(self, baseline: str, script: str, revision: int) -> str:
-        """The numbered script with each new or changed scene marked as revision `revision`."""
+    def mark(
+        self, baseline: str, script: str, revision: int, revision_date: str | None = None
+    ) -> str:
+        """The numbered script with each new or changed scene marked as revision `revision`, dated when a date is given."""

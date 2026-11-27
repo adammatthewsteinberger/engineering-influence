@@ -103,7 +103,7 @@ ei book create --kind screenplay --source DIR --previous-script earlier/shooting
 Revision 1 is Blue, 2 is Pink, and so on through the standard order to 9. A scene is matched to its baseline scene by its
 number, so a scene keeps its identity when others are added or cut. A new scene, or one whose text changed, gets a
 `[[revised: Colour *]]` note above its heading. The marked script is stored as `revision_pages.fountain`; the shooting script
-itself is unchanged. The page layout that prints the colours, and the date on each revision's header, are not built yet.
+itself is unchanged. The page layout that prints the colours is covered in Printed revision marks below.
 
 ## Revision checks
 
@@ -126,3 +126,7 @@ When a run has revision pages (see Revision colours above), the printed PDF is t
 shooting script. Each changed scene's heading has a bar and a star in the left margin, in its revision colour (Blue for
 revision 1, Pink for 2, and so on through Tan for 9). The colours are approximations of the studio colours, not a
 published standard. The date on each revision's header is not printed yet: a run has no date of its own to print.
+
+The revision pages' title page names the revision and its date, for example `Revision: Pink (2026-11-27)`. The date is
+`--revision-date`, or today when a baseline is given without one. It is kept with the run, so a resumed run prints the
+same date.

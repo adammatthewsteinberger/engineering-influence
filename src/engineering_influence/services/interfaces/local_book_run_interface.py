@@ -32,6 +32,7 @@ class LocalBookRunInterface(ABC):
         title: str | None = None,
         previous_script: str | None = None,
         revision: int = 1,
+        revision_date: str | None = None,
     ) -> BookRun:
         """Create the run with its source files and drive it until it finishes or stops; ``progress`` hears one line per stage."""
 

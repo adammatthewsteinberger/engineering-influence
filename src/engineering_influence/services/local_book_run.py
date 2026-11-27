@@ -75,6 +75,7 @@ class LocalBookRun(LocalBookRunInterface):
         title: str | None = None,
         previous_script: str | None = None,
         revision: int = 1,
+        revision_date: str | None = None,
     ) -> BookRun:
         """Create the run for the brief, with its source files, and drive it."""
         if self._runs.run_ids():
@@ -93,6 +94,7 @@ class LocalBookRun(LocalBookRunInterface):
             title=title,
             previous_script=previous_script,
             revision=revision,
+            revision_date=revision_date,
         )
         return self._drive(run.run_id, progress)
 

@@ -123,6 +123,7 @@ class LocalBookRuntime(LocalBookCreatorInterface):
         title: str | None = None,
         previous_script: str | None = None,
         revision: int = 1,
+        revision_date: str | None = None,
     ) -> BookRun:
         """Run the brief's plan, with its source files, until the run finishes or stops."""
         return self._book.start(
@@ -136,6 +137,7 @@ class LocalBookRuntime(LocalBookCreatorInterface):
             title=title,
             previous_script=previous_script,
             revision=revision,
+            revision_date=revision_date,
         )
 
     def resume(self, approve_spend: bool, progress: Callable[[str], None]) -> BookRun:
