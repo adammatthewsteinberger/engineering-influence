@@ -36,6 +36,13 @@ def test_broken_scene_cards_are_refused() -> None:
         ScreenplayOutputChecks().check("scene_cards", "no cards here", None)
 
 
+def test_a_scene_card_with_a_tone_that_is_not_a_tone_stops_the_stage() -> None:
+    text = "## S01 · a scene\n**What changes:** x\n**Beat:** Set-Up\n**Storyline:** A\n**Sources:** 001\n**Tone:** angry\n"
+    with pytest.raises(ApplicationError) as error:
+        ScreenplayOutputChecks().check("scene_cards", text, None)
+    assert "tone 'angry' is not warm, conflict or neutral" in error.value.message
+
+
 def test_the_message_shows_at_most_five_problems() -> None:
     with pytest.raises(ApplicationError) as error:
         ScreenplayOutputChecks().check("anchors", "", None)
