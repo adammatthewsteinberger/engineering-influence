@@ -73,6 +73,8 @@ class LocalBookRun(LocalBookRunInterface):
         mode: str = "book",
         bible: tuple[BibleCard, ...] = (),
         title: str | None = None,
+        previous_script: str | None = None,
+        revision: int = 1,
     ) -> BookRun:
         """Create the run for the brief, with its source files, and drive it."""
         if self._runs.run_ids():
@@ -82,7 +84,15 @@ class LocalBookRun(LocalBookRunInterface):
                 http_status=409,
             )
         run = self._creator.create(
-            brief, sources, previous_lock, stop_after, mode, bible=bible, title=title
+            brief,
+            sources,
+            previous_lock,
+            stop_after,
+            mode,
+            bible=bible,
+            title=title,
+            previous_script=previous_script,
+            revision=revision,
         )
         return self._drive(run.run_id, progress)
 

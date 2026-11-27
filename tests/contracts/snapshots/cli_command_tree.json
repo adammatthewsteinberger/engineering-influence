@@ -359,6 +359,21 @@
             {
               "choices": null,
               "default": null,
+              "dest": "previous_script",
+              "flags": [
+                "--previous-script"
+              ],
+              "name": "--previous-script",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": null,
               "dest": "profile",
               "flags": [
                 "--profile"
@@ -385,6 +400,21 @@
               "required": false,
               "takes_value": false,
               "type": null
+            },
+            {
+              "choices": null,
+              "default": 1,
+              "dest": "revision",
+              "flags": [
+                "--revision"
+              ],
+              "name": "--revision",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "int"
             },
             {
               "choices": null,

@@ -128,6 +128,17 @@ class BookCli(BookCliInterface):
             help="the shooting_lock.json of an earlier run, so its scene numbers carry over (screenplay runs only)",
         )
         create.add_argument(
+            "--previous-script",
+            type=Path,
+            help="the shooting_script.fountain of an earlier run: the baseline a revision's changed scenes are marked against (screenplay runs only)",
+        )
+        create.add_argument(
+            "--revision",
+            type=int,
+            default=1,
+            help="the revision number of this run, 1 for Blue, 2 for Pink, and so on (with --previous-script)",
+        )
+        create.add_argument(
             "--budget-usd", help="the most the run may spend, in dollars (no default)"
         )
         create.add_argument("--profile", type=Path, help="the author's details and pricing (TOML)")
@@ -254,6 +265,8 @@ class BookCli(BookCliInterface):
                         arguments.mode,
                         bible=self._bible(arguments.bible),
                         title=self._title(arguments.source),
+                        previous_script=self._previous_script(arguments.previous_script),
+                        revision=arguments.revision,
                     )
                 )
             return self._finish(creator, run, arguments.out, state)
@@ -262,6 +275,11 @@ class BookCli(BookCliInterface):
             return 2
         finally:
             creator.close()
+
+    @staticmethod
+    def _previous_script(path: Path | None) -> str | None:
+        """The previous run's shooting script as text, the baseline its revision is marked against, or none."""
+        return None if path is None else path.read_text(encoding="utf-8")
 
     @staticmethod
     def _previous_lock(path: Path | None) -> str | None:

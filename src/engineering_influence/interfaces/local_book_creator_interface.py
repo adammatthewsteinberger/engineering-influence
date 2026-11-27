@@ -38,6 +38,8 @@ class LocalBookCreatorInterface(ABC):
         mode: str = "book",
         bible: tuple[BibleCard, ...] = (),
         title: str | None = None,
+        previous_script: str | None = None,
+        revision: int = 1,
     ) -> BookRun:
         """Run the brief's plan, with its source files, until the run finishes or stops."""
 

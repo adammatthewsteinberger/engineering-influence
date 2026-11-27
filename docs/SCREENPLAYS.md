@@ -90,3 +90,17 @@ source = "The Example Novel"
 Each key is optional and is one line of text, at most 200 characters. Any other key, or a value that is not text, refuses
 the run with `SCREENPLAY_TITLE_INVALID` and names the problem. The source intake reads only `.md` and `.txt` files, so
 `title.toml` is never read as a source.
+
+## Revision colours
+
+A revision is marked against the shooting script it was revised from. Give the earlier run's `shooting_script.fountain` and
+the revision's number:
+
+```bash
+ei book create --kind screenplay --source DIR --previous-script earlier/shooting_script.fountain --revision 2
+```
+
+Revision 1 is Blue, 2 is Pink, and so on through the standard order to 9. A scene is matched to its baseline scene by its
+number, so a scene keeps its identity when others are added or cut. A new scene, or one whose text changed, gets a
+`[[revised: Colour *]]` note above its heading. The marked script is stored as `revision_pages.fountain`; the shooting script
+itself is unchanged. The page layout that prints the colours, and the date on each revision's header, are not built yet.

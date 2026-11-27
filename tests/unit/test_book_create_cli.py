@@ -79,6 +79,8 @@ class Creator(LocalBookCreatorInterface):
         mode: str = "book",
         bible: tuple[object, ...] = (),
         title: str | None = None,
+        previous_script: str | None = None,
+        revision: int = 1,
     ) -> BookRun:
         self.started.append(brief)
         self.titles.append(title)
