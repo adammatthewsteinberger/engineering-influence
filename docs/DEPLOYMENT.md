@@ -78,8 +78,26 @@ helm install ei deploy/helm/engineering-influence \
 
 The command-line book commands and the MCP server still read the database, as the configuration page says.
 
+## Autoscaling
+
+- **The API** scales on CPU with a `HorizontalPodAutoscaler` when `autoscaling.api.enabled=true` (2 to 10 replicas at 70% CPU by default).
+- **The worker** scales on its queue depth with KEDA when `autoscaling.keda.enabled=true`. KEDA must already be installed
+  in the cluster; the chart creates a `ScaledObject` and a `TriggerAuthentication` that reads `EI_RABBITMQ_URL` from the Secret.
+  The worker adds a replica for each `queueLengthPerReplica` (default 10) waiting messages. With KEDA on, the worker's
+  `replicas` field is left to KEDA. Use `minReplicaCount: 0` in dev to let the worker scale to nothing, and `1` in production.
+
+```bash
+helm install ei deploy/helm/engineering-influence \
+  --set existingSecret=ei-secrets \
+  --set autoscaling.api.enabled=true \
+  --set autoscaling.keda.enabled=true
+```
+
+The chart's KEDA objects are checked against the rendered YAML, not against a cluster's CRD schema; run `kubectl apply
+--dry-run=server` against your cluster before relying on them.
+
 ## Not in this chart yet
 
-Autoscaling (KEDA for the worker, HPA for the API), Kustomize overlays, logs, metrics, secrets from OpenBao, and the
-policy and GitOps objects are later steps in the Kubernetes plan. The Loki, Prometheus and OpenBao pieces are not built
+Kustomize overlays, logs, metrics, secrets from OpenBao, and the policy and GitOps objects are later steps in the
+Kubernetes plan. The Loki, Prometheus and OpenBao pieces are not built
 as subcharts: the plan's subchart approach needs remote chart downloads, which this chart does not yet pin.

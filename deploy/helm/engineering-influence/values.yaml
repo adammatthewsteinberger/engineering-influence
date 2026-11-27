@@ -46,6 +46,25 @@ api:
     requests: { cpu: 100m, memory: 256Mi }
     limits: { memory: 512Mi }
 
+# Autoscaling. The API scales on CPU with a HorizontalPodAutoscaler; the worker scales on its queue depth with KEDA,
+# which must be installed in the cluster (its ScaledObject and TriggerAuthentication CRDs). When KEDA manages the worker,
+# the worker's replicas field is left to KEDA.
+autoscaling:
+  api:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+  keda:
+    enabled: false
+    # 0 lets the worker scale to nothing when the queue is empty (dev); 1 keeps one worker warm (production).
+    minReplicaCount: 1
+    maxReplicaCount: 10
+    # Messages waiting per worker before KEDA adds another.
+    queueLengthPerReplica: 10
+    pollingInterval: 30
+    cooldownPeriod: 300
+
 worker:
   replicas: 1
   image:

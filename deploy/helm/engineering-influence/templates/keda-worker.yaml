@@ -1,0 +1,37 @@
+{{- if .Values.autoscaling.keda.enabled }}
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: {{ include "ei.fullname" . }}-rabbitmq
+  labels:
+    {{- include "ei.labels" . | nindent 4 }}
+spec:
+  secretTargetRef:
+    - parameter: host
+      name: {{ required "existingSecret is required with autoscaling.keda.enabled" .Values.existingSecret }}
+      key: EI_RABBITMQ_URL
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ include "ei.fullname" . }}-worker
+  labels:
+    {{- include "ei.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+spec:
+  scaleTargetRef:
+    name: {{ include "ei.fullname" . }}-worker
+  minReplicaCount: {{ .Values.autoscaling.keda.minReplicaCount }}
+  maxReplicaCount: {{ .Values.autoscaling.keda.maxReplicaCount }}
+  pollingInterval: {{ .Values.autoscaling.keda.pollingInterval }}
+  cooldownPeriod: {{ .Values.autoscaling.keda.cooldownPeriod }}
+  triggers:
+    - type: rabbitmq
+      authenticationRef:
+        name: {{ include "ei.fullname" . }}-rabbitmq
+      metadata:
+        protocol: amqp
+        queueName: {{ .Values.config.EI_QUEUE_NAME | quote }}
+        mode: QueueLength
+        value: {{ .Values.autoscaling.keda.queueLengthPerReplica | quote }}
+{{- end }}
