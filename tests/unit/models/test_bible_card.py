@@ -2,6 +2,8 @@
 
 """BibleCard: its links are the `[[kind: id]]` pairs in its body, and only well-formed ones count."""
 
+import datetime
+
 import pytest
 
 from engineering_influence.models.bible_card import BibleCard
@@ -25,3 +27,13 @@ def test_a_card_with_no_links_has_none() -> None:
 def test_a_card_must_have_a_lowercase_kind_and_id(kind: str, card_id: str) -> None:
     with pytest.raises(ValueError, match="bible"):
         BibleCard(kind, card_id, {}, "")
+
+
+def test_a_card_is_stored_under_its_kind_and_id() -> None:
+    assert BibleCard("place", "harbour", {}, "").artifact() == "bible/place/harbour.json"
+
+
+def test_a_card_survives_encoding_and_decoding_with_a_date_as_text() -> None:
+    card = BibleCard("event", "storm", {"date": datetime.date(2026, 11, 27), "count": 2}, "Body.")
+    decoded = BibleCard.decode(card.encode())
+    assert decoded == BibleCard("event", "storm", {"date": "2026-11-27", "count": 2}, "Body.")

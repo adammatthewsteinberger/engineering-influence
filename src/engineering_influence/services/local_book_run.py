@@ -9,6 +9,7 @@ from typing import ClassVar
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interfaces.run_repository_interface import RunRepositoryInterface
 from engineering_influence.models.advance_outcome import AdvanceOutcome
+from engineering_influence.models.bible_card import BibleCard
 from engineering_influence.models.book_brief import BookBrief
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.run_status import RunStatus
@@ -70,6 +71,7 @@ class LocalBookRun(LocalBookRunInterface):
         previous_lock: str | None = None,
         stop_after: str | None = None,
         mode: str = "book",
+        bible: tuple[BibleCard, ...] = (),
     ) -> BookRun:
         """Create the run for the brief, with its source files, and drive it."""
         if self._runs.run_ids():
@@ -78,7 +80,7 @@ class LocalBookRun(LocalBookRunInterface):
                 message="this folder already holds a run; resume it, or start in a new folder",
                 http_status=409,
             )
-        run = self._creator.create(brief, sources, previous_lock, stop_after, mode)
+        run = self._creator.create(brief, sources, previous_lock, stop_after, mode, bible=bible)
         return self._drive(run.run_id, progress)
 
     def resume(self, approve_spend: bool, progress: Callable[[str], None]) -> BookRun:

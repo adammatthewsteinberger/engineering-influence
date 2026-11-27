@@ -15,6 +15,9 @@ from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget import Budget
 from engineering_influence.models.scene_card import SceneCard
 from engineering_influence.services.fountain_parser import FountainParser
+from engineering_influence.services.interfaces.screenplay_bible_context_interface import (
+    ScreenplayBibleContextInterface,
+)
 from engineering_influence.services.scene_card_list import SceneCardList
 from engineering_influence.services.screenplay_draft_stage_executor import (
     ScreenplayDraftStageExecutor,
@@ -230,3 +233,42 @@ def test_a_card_citing_a_source_the_run_does_not_hold_stops_the_stage() -> None:
     with pytest.raises(ApplicationError) as error:
         asyncio.run(stage(store, Drafter()).execute(run(), 1))
     assert error.value.code == "STAGE_INPUT_MISSING"
+
+
+class NamedBible(ScreenplayBibleContextInterface):
+    """Answers every scene with the same block, and records the text each scene was matched against."""
+
+    def __init__(self, block: str) -> None:
+        self.block = block
+        self.asked: list[str] = []
+
+    def for_scene(self, run_id: str, text: str) -> str:
+        self.asked.append(text)
+        return self.block
+
+
+def drafted_with(bible: ScreenplayBibleContextInterface) -> Drafter:
+    drafter = Drafter()
+    executor = ScreenplayDraftStageExecutor(
+        seeded(),
+        drafter,
+        SceneCardList(),
+        ScreenplaySectionCheck(FountainParser()),
+        bible=bible,
+    )
+    asyncio.run(executor.execute(run(), 1))
+    return drafter
+
+
+def test_each_scene_is_handed_the_bible_cards_it_names() -> None:
+    bible = NamedBible("Bible character/ada:\nKeeps the log.")
+    drafter = drafted_with(bible)
+    assert drafter.sources[1].endswith("\n\nBible character/ada:\nKeeps the log.")
+    assert len(bible.asked) == len(BEATS)
+    assert "Source 001:" in drafter.sources[1]
+
+
+def test_a_scene_that_names_no_card_is_handed_its_sources_alone() -> None:
+    drafter = drafted_with(NamedBible(""))
+    assert "Bible" not in drafter.sources[1]
+    assert drafter.sources[1].startswith("Source 001:")

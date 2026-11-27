@@ -10,6 +10,7 @@ from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interfaces.artifact_store_interface import ArtifactStoreInterface
 from engineering_influence.interfaces.queue_interface import QueueInterface
 from engineering_influence.interfaces.run_repository_interface import RunRepositoryInterface
+from engineering_influence.models.bible_card import BibleCard
 from engineering_influence.models.book_brief import BookBrief
 from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.book_run import BookRun
@@ -76,6 +77,14 @@ class CreateRun(CreateRunInterface):
             self._artifacts.put(run_id, entry.artifact(), entry.text.encode("utf-8"))
 
     @staticmethod
+    def _store_bible(
+        artifacts: ArtifactStoreInterface, run_id: str, cards: tuple[BibleCard, ...]
+    ) -> None:
+        """Write each bible card as its artifact, so the run's scenes can draw on the cards they name."""
+        for card in cards:
+            artifacts.put(run_id, card.artifact(), card.encode().encode("utf-8"))
+
+    @staticmethod
     def _stop_at(plan: StagePlan, stage: str) -> StagePlan:
         """The plan up to and including the named stage, so the run completes there and runs nothing after it."""
         if stage not in plan.stages:
@@ -93,6 +102,7 @@ class CreateRun(CreateRunInterface):
         previous_lock: str | None = None,
         stop_after: str | None = None,
         mode: str = "book",
+        bible: tuple[BibleCard, ...] = (),
     ) -> BookRun:
         """Save a new pending run for the brief and queue its first stage; return the run. A previous shooting script
         lock, when given, is kept as the run's previous lock, so the run's scene numbers carry over from it."""
@@ -123,13 +133,19 @@ class CreateRun(CreateRunInterface):
                 message="a screenplay run needs a source folder, given with --source",
                 http_status=422,
             )
+        if bible and brief.kind is not BookKind.SCREENPLAY:
+            raise ApplicationError(
+                code="BIBLE_KIND_UNSUPPORTED",
+                message="a bible is for screenplay runs only",
+                http_status=422,
+            )
         if previous_lock is not None and brief.kind is not BookKind.SCREENPLAY:
             raise ApplicationError(
                 code="RUN_KIND_UNSUPPORTED",
                 message="a shooting script lock is for screenplay runs only",
                 http_status=422,
             )
-        if (sources or previous_lock is not None) and self._artifacts is None:
+        if (sources or bible or previous_lock is not None) and self._artifacts is None:
             raise ApplicationError(
                 code="SOURCES_NOT_STORED",
                 message="this build cannot keep source files for a run",
@@ -140,6 +156,8 @@ class CreateRun(CreateRunInterface):
                 self._ceiling.admit_new(brief.budget_micro_usd)
             run = BookRun(self._new_id(), brief, plan, Budget(cap=brief.budget_micro_usd))
             self._store_sources(run.run_id, sources)
+            if self._artifacts is not None:
+                self._store_bible(self._artifacts, run.run_id, bible)
             if previous_lock is not None and self._artifacts is not None:
                 self._artifacts.put(
                     run.run_id,

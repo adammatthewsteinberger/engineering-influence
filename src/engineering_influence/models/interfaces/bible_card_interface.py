@@ -14,3 +14,11 @@ class BibleCardInterface(ABC):
     @abstractmethod
     def links(self) -> tuple[tuple[str, str], ...]:
         """Each `[[kind: id]]` in the body, as a (kind, id) pair, in the order written."""
+
+    @abstractmethod
+    def artifact(self) -> str:
+        """The artifact name a run stores the card under."""
+
+    @abstractmethod
+    def encode(self) -> str:
+        """The card as text a run can store and read back."""

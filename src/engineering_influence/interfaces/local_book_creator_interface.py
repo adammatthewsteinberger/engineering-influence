@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from pathlib import Path
 
+    from engineering_influence.models.bible_card import BibleCard
     from engineering_influence.models.book_brief import BookBrief
     from engineering_influence.models.book_run import BookRun
     from engineering_influence.models.budget_plan import BudgetPlan
@@ -35,6 +36,7 @@ class LocalBookCreatorInterface(ABC):
         previous_lock: str | None = None,
         stop_after: str | None = None,
         mode: str = "book",
+        bible: tuple[BibleCard, ...] = (),
     ) -> BookRun:
         """Run the brief's plan, with its source files, until the run finishes or stops."""
 

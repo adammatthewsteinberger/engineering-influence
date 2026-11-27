@@ -21,6 +21,7 @@ from engineering_influence.interfaces.keep_awake_interface import KeepAwakeInter
 from engineering_influence.interfaces.local_book_creator_interface import (
     LocalBookCreatorInterface,
 )
+from engineering_influence.models.bible_card import BibleCard
 from engineering_influence.models.book_brief import BookBrief
 from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.book_run import BookRun
@@ -48,11 +49,13 @@ class BookCli(BookCliInterface):
         creator_for: Callable[[Path, Mapping[str, str]], LocalBookCreatorInterface],
         keep_awake: KeepAwakeInterface,
         read_sources: Callable[[Path], tuple[SourceEntry, ...]],
+        read_bible: Callable[[Path], tuple[BibleCard, ...]],
     ) -> None:
         self._controller_for = controller_for
         self._creator_for = creator_for
         self._keep_awake = keep_awake
         self._read_sources = read_sources
+        self._read_bible = read_bible
 
     def register(self, subparsers: Any) -> None:
         """Add the `book` command and its subcommands."""
@@ -101,6 +104,11 @@ class BookCli(BookCliInterface):
             "--source",
             type=Path,
             help="a folder of source files (.md, .txt) the run adapts; each file is kept in the run",
+        )
+        create.add_argument(
+            "--bible",
+            type=Path,
+            help="a bible folder of TOML cards (ADR 0018) the screenplay's scenes draw on by name (screenplay runs only)",
         )
         create.add_argument(
             "--mode",
@@ -242,6 +250,7 @@ class BookCli(BookCliInterface):
                         self._previous_lock(arguments.previous_lock),
                         arguments.stop_after,
                         arguments.mode,
+                        bible=self._bible(arguments.bible),
                     )
                 )
             return self._finish(creator, run, arguments.out, state)
@@ -255,6 +264,12 @@ class BookCli(BookCliInterface):
     def _previous_lock(path: Path | None) -> str | None:
         """The previous run's shooting script lock, as text, or none when no lock file was given."""
         return None if path is None else path.read_text(encoding="utf-8")
+
+    def _bible(self, folder: Path | None) -> tuple[BibleCard, ...]:
+        """The bible folder's cards, checked, or none when no folder was given."""
+        if folder is None:
+            return ()
+        return self._read_bible(folder)
 
     def _sources(self, folder: Path | None) -> tuple[SourceEntry, ...]:
         """The folder's source files, numbered and pinned, or none when no folder was given."""

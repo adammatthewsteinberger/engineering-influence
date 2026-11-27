@@ -48,5 +48,9 @@ bible/
 - A card with `real = true` is a real person. It must name its `clearance` (who agreed, or where the fact is public
   record), and it must not carry a `likeness` or `voice` key: the pipeline never prompts a real person's likeness or voice.
 
+A run takes the bible with `--bible DIR`, beside `--source`: `ei book create --kind screenplay --source DIR --bible DIR`.
+The cards are checked before the run starts and kept in it. Each scene is handed the cards it names, by their `name` or id
+(the `Ada Lovelace` card is named by `Ada Lovelace` or `ada-lovelace`; matching ignores case and needs whole words).
+
 A bible that breaks any of these rules is refused as a whole before a run uses it. The error names the card and the rule.
 The error codes are listed in [Troubleshooting](TROUBLESHOOTING.md).

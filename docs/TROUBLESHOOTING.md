@@ -117,6 +117,7 @@ recorded cassettes) and need no action from you.
 | `BIBLE_FIELD_MISSING` | `kind/id must set name` | A card lacks a key that `bible.toml` requires for its kind. Add the key to the card |
 | `BIBLE_DUPLICATE_ID` | `two cards are kind/id` | Two files in one kind folder share a name, or two cards carry one id. An id is unique within its kind |
 | `BIBLE_LINK_UNKNOWN` | `kind/id links to kind: id, which is not a card` | A `[[kind: id]]` link in a card names no card. Fix the id or add the card |
+| `BIBLE_KIND_UNSUPPORTED` | `a bible is for screenplay runs only` | `--bible` was given for a book that is not a screenplay. Only `--kind screenplay` takes a bible |
 | `BIBLE_REAL_PERSON` | `kind/id is a real person ...` | A card with `real = true` must name its `clearance`, and must not carry a `likeness` or `voice` key (ADR 0018) |
 
 ## Collecting evidence for a bug report
