@@ -9,6 +9,7 @@ import sys
 import tomllib
 from collections.abc import Callable, Mapping
 from contextlib import AbstractContextManager, nullcontext
+from datetime import date
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -131,6 +132,10 @@ class BookCli(BookCliInterface):
             "--previous-script",
             type=Path,
             help="the shooting_script.fountain of an earlier run: the baseline a revision's changed scenes are marked against (screenplay runs only)",
+        )
+        create.add_argument(
+            "--revision-date",
+            help="the date printed on the revision pages, YYYY-MM-DD (with --previous-script; default today)",
         )
         create.add_argument(
             "--revision",
@@ -267,6 +272,7 @@ class BookCli(BookCliInterface):
                         title=self._title(arguments.source),
                         previous_script=self._previous_script(arguments.previous_script),
                         revision=arguments.revision,
+                        revision_date=self._revision_date(arguments),
                     )
                 )
             return self._finish(creator, run, arguments.out, state)
@@ -275,6 +281,14 @@ class BookCli(BookCliInterface):
             return 2
         finally:
             creator.close()
+
+    @staticmethod
+    def _revision_date(arguments: argparse.Namespace) -> str | None:
+        """The revision's date: the one given, else today's when a previous script is given, else none."""
+        given: str | None = arguments.revision_date
+        if given is not None:
+            return given
+        return date.today().isoformat() if arguments.previous_script is not None else None
 
     @staticmethod
     def _previous_script(path: Path | None) -> str | None:

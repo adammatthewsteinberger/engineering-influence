@@ -92,14 +92,17 @@ class LockShootingScriptStageExecutor(StageExecutorInterface):
                 await self._required(run, ShootingRevisionMarks.REVISION),
                 baseline.decode("utf-8"),
                 rendered,
+                await self._optional(run, ShootingRevisionMarks.REVISION_DATE),
             )
             await self._put(run, ShootingRevisionMarks.PAGES, pages)
         return StageReport()
 
-    def _revision_pages(self, revision: str, baseline: str, rendered: str) -> str:
+    def _revision_pages(
+        self, revision: str, baseline: str, rendered: str, revision_date: str | None
+    ) -> str:
         """The rendered script with its changed scenes marked as this revision's colour."""
         try:
-            return self._marks.mark(baseline, rendered, int(revision))
+            return self._marks.mark(baseline, rendered, int(revision), revision_date)
         except ValueError as error:
             raise ApplicationError(
                 code="STAGE_OUTPUT_INVALID", message=str(error), http_status=422
@@ -116,6 +119,10 @@ class LockShootingScriptStageExecutor(StageExecutorInterface):
     async def _previous(self, run: BookRun) -> ShootingLock:
         data = await asyncio.to_thread(self._artifacts.get, run.run_id, self.PREVIOUS)
         return ShootingLock() if data is None else self._codec.decode(data.decode("utf-8"))
+
+    async def _optional(self, run: BookRun, name: str) -> str | None:
+        data = await asyncio.to_thread(self._artifacts.get, run.run_id, name)
+        return None if data is None else data.decode("utf-8")
 
     async def _required(self, run: BookRun, name: str) -> str:
         data = await asyncio.to_thread(self._artifacts.get, run.run_id, name)

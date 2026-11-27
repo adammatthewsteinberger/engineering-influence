@@ -40,6 +40,7 @@ class LocalBookCreatorInterface(ABC):
         title: str | None = None,
         previous_script: str | None = None,
         revision: int = 1,
+        revision_date: str | None = None,
     ) -> BookRun:
         """Run the brief's plan, with its source files, until the run finishes or stops."""
 

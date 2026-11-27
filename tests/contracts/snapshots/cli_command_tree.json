@@ -419,6 +419,21 @@
             {
               "choices": null,
               "default": null,
+              "dest": "revision_date",
+              "flags": [
+                "--revision-date"
+              ],
+              "name": "--revision-date",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
               "dest": "source",
               "flags": [
                 "--source"

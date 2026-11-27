@@ -81,6 +81,7 @@ class Creator(LocalBookCreatorInterface):
         title: str | None = None,
         previous_script: str | None = None,
         revision: int = 1,
+        revision_date: str | None = None,
     ) -> BookRun:
         self.started.append(brief)
         self.titles.append(title)
@@ -532,3 +533,22 @@ def test_a_bible_folder_is_checked_and_its_cards_reach_the_run(tmp_path: Path) -
     harness = Harness(run_in(RunStatus.COMPLETED))
     assert harness.run("bees", *create(tmp_path), "--bible", str(bible)) == 0
     assert [card.id for card in harness.creator.bibles[0]] == ["ada"]
+
+
+def test_a_revision_without_a_date_is_dated_today() -> None:
+    from datetime import date
+
+    arguments = argparse.Namespace(revision_date=None, previous_script=Path("earlier.fountain"))
+    assert BookCli._revision_date(arguments) == date.today().isoformat()
+
+
+def test_a_revision_date_is_only_set_for_a_revision() -> None:
+    arguments = argparse.Namespace(revision_date=None, previous_script=None)
+    assert BookCli._revision_date(arguments) is None
+
+
+def test_a_revision_date_the_author_gives_is_kept_as_given() -> None:
+    arguments = argparse.Namespace(
+        revision_date="2026-01-02", previous_script=Path("earlier.fountain")
+    )
+    assert BookCli._revision_date(arguments) == "2026-01-02"

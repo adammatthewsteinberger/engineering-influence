@@ -50,3 +50,13 @@ def test_a_revision_outside_the_colours_is_refused() -> None:
 def test_a_scene_without_a_number_is_refused() -> None:
     with pytest.raises(ValueError, match="a scene has no number"):
         marks("INT. ROOM - DAY\n\nNo number here.\n")
+
+
+def test_the_title_page_names_the_revision_and_its_date() -> None:
+    titled = "Title: TEST\n\nFADE IN:\n\nINT. ROOM - DAY #1#\n\nAda waits.\n"
+    result = ShootingRevisionMarks(FountainParser()).mark(titled, titled, 2, "2026-11-27")
+    assert result.startswith("Title: TEST\nRevision: Pink (2026-11-27)\n\nFADE IN:")
+
+
+def test_a_revision_without_a_date_names_only_its_colour() -> None:
+    assert marks(BASELINE).startswith("Revision: Blue\n\nFADE IN:")

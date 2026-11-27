@@ -4,6 +4,7 @@
 import uuid
 from collections.abc import Callable, Mapping
 from contextlib import nullcontext
+from datetime import date
 from typing import ClassVar
 
 from engineering_influence.errors.application_error import ApplicationError
@@ -108,6 +109,7 @@ class CreateRun(CreateRunInterface):
         title: str | None = None,
         previous_script: str | None = None,
         revision: int = 1,
+        revision_date: str | None = None,
     ) -> BookRun:
         """Save a new pending run for the brief and queue its first stage; return the run. A previous shooting script
         lock, when given, is kept as the run's previous lock, so the run's scene numbers carry over from it."""
@@ -162,6 +164,15 @@ class CreateRun(CreateRunInterface):
                 message="a previous shooting script is for screenplay runs only",
                 http_status=422,
             )
+        if revision_date is not None:
+            try:
+                date.fromisoformat(revision_date)
+            except ValueError as error:
+                raise ApplicationError(
+                    code="RUN_REVISION_DATE_INVALID",
+                    message=f"a revision date is YYYY-MM-DD, not {revision_date!r}",
+                    http_status=422,
+                ) from error
         if not 1 <= revision < len(ShootingRevisionMarks.COLOURS):
             raise ApplicationError(
                 code="RUN_REVISION_INVALID",
@@ -194,6 +205,12 @@ class CreateRun(CreateRunInterface):
                 self._artifacts.put(
                     run.run_id, ShootingRevisionMarks.REVISION, str(revision).encode("utf-8")
                 )
+                if revision_date is not None:
+                    self._artifacts.put(
+                        run.run_id,
+                        ShootingRevisionMarks.REVISION_DATE,
+                        revision_date.encode("utf-8"),
+                    )
             if title is not None and self._artifacts is not None:
                 self._artifacts.put(
                     run.run_id, ScreenplayTitleParser.ARTIFACT, title.encode("utf-8")

@@ -163,3 +163,15 @@ def test_a_revision_number_the_colours_do_not_reach_is_refused() -> None:
     store.put("run-1", ShootingRevisionMarks.REVISION, b"11")
     error = refused(store, "STAGE_OUTPUT_INVALID")
     assert "a revision is numbered 1 to 9, not 11" in error.message
+
+
+def test_the_revision_date_is_printed_on_the_revision_pages() -> None:
+    baseline = (
+        "FADE IN:\n\nINT. ROOM - DAY #1#\n\nScene one.\n\nEXT. YARD - NIGHT #2#\n\nScene two.\n"
+    )
+    store = seeded(cards(1, 2), TWO_SCENES)
+    store.put("run-1", ShootingRevisionMarks.BASELINE, baseline.encode("utf-8"))
+    store.put("run-1", ShootingRevisionMarks.REVISION, b"2")
+    store.put("run-1", ShootingRevisionMarks.REVISION_DATE, b"2026-11-27")
+    asyncio.run(stage(store).execute(run(), 1))
+    assert "Revision: Pink (2026-11-27)" in text(store, ShootingRevisionMarks.PAGES)

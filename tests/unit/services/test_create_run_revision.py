@@ -53,3 +53,21 @@ def test_a_baseline_is_refused_by_a_build_that_cannot_keep_it() -> None:
     with pytest.raises(ApplicationError) as refused:
         creator.create(SCREENPLAY, (SOURCE,), previous_script=BASELINE)
     assert refused.value.code == "SOURCES_NOT_STORED"
+
+
+def test_a_revision_date_is_kept_under_its_artifact_name() -> None:
+    store = InMemoryArtifactStore()
+    creator = CreateRun(InMemoryRunRepository(), InMemoryQueue(), artifacts=store)
+    run = creator.create(
+        SCREENPLAY, (SOURCE,), previous_script=BASELINE, revision_date="2026-11-27"
+    )
+    assert store.get(run.run_id, ShootingRevisionMarks.REVISION_DATE) == b"2026-11-27"
+
+
+def test_a_revision_date_that_is_not_a_date_is_refused_and_no_run_is_saved() -> None:
+    runs = InMemoryRunRepository()
+    creator = CreateRun(runs, InMemoryQueue(), artifacts=InMemoryArtifactStore())
+    with pytest.raises(ApplicationError) as refused:
+        creator.create(SCREENPLAY, (SOURCE,), previous_script=BASELINE, revision_date="27/11/2026")
+    assert refused.value.code == "RUN_REVISION_DATE_INVALID"
+    assert list(runs.run_ids()) == []
