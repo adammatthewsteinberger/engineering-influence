@@ -16,6 +16,9 @@ from engineering_influence.models.stage_report import StageReport
 from engineering_influence.services.interfaces.scene_card_list_interface import (
     SceneCardListInterface,
 )
+from engineering_influence.services.interfaces.screenplay_dialogue_source_check_interface import (
+    ScreenplayDialogueSourceCheckInterface,
+)
 from engineering_influence.services.interfaces.screenplay_section_check_interface import (
     ScreenplaySectionCheckInterface,
 )
@@ -45,11 +48,13 @@ class ScreenplayReviseStageExecutor(StageExecutorInterface):
         reviser: SceneReviserInterface,
         cards: SceneCardListInterface,
         checks: ScreenplaySectionCheckInterface,
+        dialogue: ScreenplayDialogueSourceCheckInterface,
     ) -> None:
         self._artifacts = artifacts
         self._reviser = reviser
         self._cards = cards
         self._checks = checks
+        self._dialogue = dialogue
 
     async def execute(self, run: BookRun, attempt: int) -> StageReport:
         """Revise the scenes that are not yet revised, then report how many kept their draft."""
@@ -59,6 +64,7 @@ class ScreenplayReviseStageExecutor(StageExecutorInterface):
             if await self._read(run, card.revised()) is not None:
                 continue
             scene = await self._required(run, card.artifact())
+            sources = await self._cited(run, card)
             if out_of_money:
                 await self._put(run, card.revised(), scene)
                 continue
@@ -68,11 +74,20 @@ class ScreenplayReviseStageExecutor(StageExecutorInterface):
                 out_of_money = True
                 await self._put(run, card.revised(), scene)
                 continue
-            await self._put(run, card.revised(), answer if self._usable(scene, answer) else scene)
+            usable = self._usable(scene, answer, sources)
+            await self._put(run, card.revised(), answer if usable else scene)
         return await self._report(run, cards)
 
-    def _usable(self, draft: str, answer: str) -> bool:
-        if self._checks.problems(answer):
+    async def _cited(self, run: BookRun, card: SceneCard) -> str:
+        """The source files the card names, as the draft stage gives them to the scene's dialogue check."""
+        blocks = [
+            f"Source {number:03d}:\n{await self._required(run, f'source/{number:03d}.md')}"
+            for number in card.sources
+        ]
+        return "\n\n".join(blocks)
+
+    def _usable(self, draft: str, answer: str, sources: str) -> bool:
+        if self._checks.problems(answer) or self._dialogue.problems(answer, sources):
             return False
         before, after = len(draft.split()), len(answer.split())
         return self.MIN_RATIO * before <= after <= self.MAX_RATIO * before
