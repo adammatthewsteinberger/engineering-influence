@@ -1,6 +1,6 @@
 # ADR 0016: Audible audio is voiced inside ACX; other stores get a locally narrated audiobook
 
-Status: accepted for the routing; the local engine is proposed (see ADR 0014).
+Status: accepted. The routing is in force; the local engine is ADR 0014's (Kokoro is built, its Kyutai fallback is not).
 
 ## Context
 
