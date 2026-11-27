@@ -1,6 +1,3 @@
-from engineering_influence.services.audiobook_outline_stage_executor import (
-    AudiobookOutlineStageExecutor,
-)
 
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Chooses what does a run's stages: the offline placeholder, or a model, only when told to."""
@@ -500,9 +497,6 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                             lambda card: card.dialogued(),
                         ),
                     }
-                ),
-                AudiobookOutlineStageExecutor.STAGE: KindStageExecutor(
-                    {BookKind.NONFICTION: AudiobookOutlineStageExecutor(artifacts)}
                 ),
                 RenderScreenplayStageExecutor.STAGE: KindStageExecutor(
                     {
