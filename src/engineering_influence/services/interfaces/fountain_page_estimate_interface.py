@@ -12,5 +12,9 @@ class FountainPageEstimateInterface(ABC):
     __slots__ = ()
 
     @abstractmethod
+    def lines(self, text: str) -> int:
+        """How many Courier lines the script takes, with the blank line after each element."""
+
+    @abstractmethod
     def pages(self, text: str) -> float:
         """About how many Courier pages the script runs to."""

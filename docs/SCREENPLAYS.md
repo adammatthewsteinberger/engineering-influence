@@ -68,3 +68,11 @@ must not repeat its sources: a speech that holds twelve words of a source in a r
 check, so research is spoken as dialogue rather than read out of a file. Action is not checked, since a description may name
 what the sources say. A scene that fails is drafted once more; if the second draft fails too, the stage stops with
 `STAGE_OUTPUT_INVALID` and names the first problems.
+
+## Beat positions
+
+After the scenes are revised, the assembled script must place each beat where the beat sheet puts it. Each beat's first
+scene card must begin within 5% of the film, by the script's estimated Courier length, of the place the beat sheet gives
+for it, and every one of the fifteen beats must have a scene card. The length is measured, not the card count, so a long
+opening scene moves the beats after it. A script that fails is refused at assembly with `STAGE_OUTPUT_INVALID`, and the
+message names each beat that is missing or out of place.

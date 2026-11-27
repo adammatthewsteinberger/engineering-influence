@@ -21,6 +21,11 @@ def test_long_action_wraps_at_sixty_one_characters() -> None:
     assert estimate(f"FADE IN:\n\nINT. ROOM - DAY\n\n{body}") == 0.2
 
 
+def test_lines_counts_the_lines_exactly_before_they_are_rounded_to_pages() -> None:
+    script = "FADE IN:\n\nINT. ROOM - DAY\n\nMara waits."
+    assert FountainPageEstimate(FountainParser()).lines(script) == 6
+
+
 def test_the_title_page_is_not_counted() -> None:
     body = "FADE IN:\n\nINT. ROOM - DAY\n\nMara waits."
     assert estimate(f"Title: LIVING WATERS\nAuthor: Adam\n\n{body}") == estimate(body)

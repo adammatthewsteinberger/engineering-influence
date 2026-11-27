@@ -19,12 +19,16 @@ from engineering_influence.services.interfaces.scene_card_list_interface import 
 from engineering_influence.services.interfaces.screenplay_assembler_interface import (
     ScreenplayAssemblerInterface,
 )
+from engineering_influence.services.interfaces.screenplay_beat_position_check_interface import (
+    ScreenplayBeatPositionCheckInterface,
+)
 
 
 class ScreenplayAssembleStageExecutor(StageExecutorInterface):
     """No model call. Each card's revised scene is one scene (the assembler refuses a scene with two headings), and the
     whole script must pass the Fountain format rules, which the scenes alone cannot break: the title page, the opening
-    and the close are added here.
+    and the close are added here. Then the beats must fall where the beat sheet puts them, measured in the script's
+    length, which only the assembled script can show.
 
     The title page names the brief's title, or UNTITLED when the author gave none. The script is stored as
     ``screenplay.fountain``, and the stage writes no other artifact.
@@ -41,11 +45,13 @@ class ScreenplayAssembleStageExecutor(StageExecutorInterface):
         cards: SceneCardListInterface,
         assembler: ScreenplayAssemblerInterface,
         parser: FountainParserInterface,
+        positions: ScreenplayBeatPositionCheckInterface,
     ) -> None:
         self._artifacts = artifacts
         self._cards = cards
         self._assembler = assembler
         self._format = FountainFormatCheck(parser)
+        self._positions = positions
 
     async def execute(self, run: BookRun, attempt: int) -> StageReport:
         """Assemble the script from the revised scenes in card order, check it, and store it."""
@@ -58,6 +64,17 @@ class ScreenplayAssembleStageExecutor(StageExecutorInterface):
             raise ApplicationError(
                 code="STAGE_OUTPUT_INVALID",
                 message=f"the assembled script breaks the format rules: {shown}",
+                http_status=422,
+            )
+        placed = self._positions.problems(
+            await self._required(run, "beats.md"),
+            tuple((card.beat, scene) for card, scene in zip(cards, scenes, strict=True)),
+        )
+        if placed:
+            shown = "; ".join(placed[: self.MAX_PROBLEMS_SHOWN])
+            raise ApplicationError(
+                code="STAGE_OUTPUT_INVALID",
+                message=f"the beats do not fall where the beat sheet puts them: {shown}",
                 http_status=422,
             )
         await self._put(run, self.SCRIPT, script)
