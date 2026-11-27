@@ -9,6 +9,9 @@ from pathlib import Path
 import pytest
 
 from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.infrastructure.bible_library.filesystem_bible_library import (
+    FilesystemBibleLibrary,
+)
 from engineering_influence.infrastructure.source_library.filesystem_source_library import (
     FilesystemSourceLibrary,
 )
@@ -17,6 +20,7 @@ from engineering_influence.interfaces.keep_awake_interface import KeepAwakeInter
 from engineering_influence.interfaces.local_book_creator_interface import (
     LocalBookCreatorInterface,
 )
+from engineering_influence.models.bible_card import BibleCard
 from engineering_influence.models.book_brief import BookBrief
 from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.book_run import BookRun
@@ -29,6 +33,8 @@ from engineering_influence.models.run_status import RunStatus
 from engineering_influence.models.source_entry import SourceEntry
 from engineering_influence.models.spend_request import SpendRequest
 from engineering_influence.models.stage_plan import StagePlan
+from engineering_influence.services.bible_card_parser import BibleCardParser
+from engineering_influence.services.bible_intake import BibleIntake
 from engineering_influence.services.source_intake import SourceIntake
 
 PLAN = StagePlan(BookKind.NONFICTION, ("brief", "build"))
@@ -46,6 +52,7 @@ class Creator(LocalBookCreatorInterface):
         self.planned = plan
         self.started: list[BookBrief] = []
         self.sources: list[tuple[SourceEntry, ...]] = []
+        self.bibles: list[tuple[BibleCard, ...]] = []
         self.previous_locks: list[str | None] = []
         self.stops: list[str | None] = []
         self.modes: list[str] = []
@@ -69,10 +76,12 @@ class Creator(LocalBookCreatorInterface):
         previous_lock: str | None = None,
         stop_after: str | None = None,
         mode: str = "book",
+        bible: tuple[object, ...] = (),
     ) -> BookRun:
         self.started.append(brief)
         self.modes.append(mode)
         self.sources.append(sources)
+        self.bibles.append(bible)
         self.previous_locks.append(previous_lock)
         self.stops.append(stop_after)
         progress("brief: advanced")
@@ -126,6 +135,7 @@ class Harness:
             self.creator_for,
             self.awake,
             lambda folder: SourceIntake(FilesystemSourceLibrary()).intake(folder),
+            lambda folder: BibleIntake(FilesystemBibleLibrary(), BibleCardParser()).intake(folder),
         )
         parser = argparse.ArgumentParser()
         cli.register(parser.add_subparsers(dest="command", required=True))
@@ -505,3 +515,14 @@ def test_a_source_folder_that_is_missing_is_refused_before_the_run_starts(
     assert harness.run("bees", *create(tmp_path), "--source", str(tmp_path / "nowhere")) == 2
     assert harness.creator.started == []
     assert capsys.readouterr().err.startswith("error: ")
+
+
+def test_a_bible_folder_is_checked_and_its_cards_reach_the_run(tmp_path: Path) -> None:
+    bible = tmp_path / "bible"
+    (bible / "character").mkdir(parents=True)
+    (bible / "character" / "ada.md").write_text(
+        '+++\nname = "Ada"\n+++\nKeeps the log.', encoding="utf-8"
+    )
+    harness = Harness(run_in(RunStatus.COMPLETED))
+    assert harness.run("bees", *create(tmp_path), "--bible", str(bible)) == 0
+    assert [card.id for card in harness.creator.bibles[0]] == ["ada"]

@@ -29,4 +29,9 @@ drafting inconsistent (two cards with one id, a link to a card that does not exi
 - The loader checks the whole bible before a run uses it, so drafting never meets a dangling link.
 - The card format is the author's to extend: a new key in a card needs no code change, and a new required key is one line
   in `bible.toml`.
-- Wiring the bible into a run (a `--bible` flag beside `--source`) and handing it to drafting is the next pull request.
+- The bible is wired into a screenplay run by `--bible DIR`, beside `--source`. The checked cards are stored in the run as
+  `bible/kind/id.json`, so a run never reads the author's folder again. A bible given to any other kind of book is refused
+  (`BIBLE_KIND_UNSUPPORTED`).
+- Drafting hands each scene the cards it names: a card is named when its `name` field, or its id with hyphens read as
+  spaces, appears as whole words in the scene's beat, card or cited sources. Nothing else from the bible is sent, so a
+  scene's prompt grows by the cards it names, not by the bible's size.

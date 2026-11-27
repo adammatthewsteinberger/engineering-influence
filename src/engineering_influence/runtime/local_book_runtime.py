@@ -18,6 +18,7 @@ from engineering_influence.interfaces.manuscript_builder_interface import (
     ManuscriptBuilderInterface,
 )
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
+from engineering_influence.models.bible_card import BibleCard
 from engineering_influence.models.book_brief import BookBrief
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget_plan import BudgetPlan
@@ -118,9 +119,12 @@ class LocalBookRuntime(LocalBookCreatorInterface):
         previous_lock: str | None = None,
         stop_after: str | None = None,
         mode: str = "book",
+        bible: tuple[BibleCard, ...] = (),
     ) -> BookRun:
         """Run the brief's plan, with its source files, until the run finishes or stops."""
-        return self._book.start(brief, progress, sources, previous_lock, stop_after, mode)
+        return self._book.start(
+            brief, progress, sources, previous_lock, stop_after, mode, bible=bible
+        )
 
     def resume(self, approve_spend: bool, progress: Callable[[str], None]) -> BookRun:
         """Continue the run this folder holds."""

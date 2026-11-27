@@ -14,6 +14,9 @@ from engineering_influence.models.stage_report import StageReport
 from engineering_influence.services.interfaces.scene_card_list_interface import (
     SceneCardListInterface,
 )
+from engineering_influence.services.interfaces.screenplay_bible_context_interface import (
+    ScreenplayBibleContextInterface,
+)
 from engineering_influence.services.interfaces.screenplay_section_check_interface import (
     ScreenplaySectionCheckInterface,
 )
@@ -34,12 +37,14 @@ class ScreenplayDraftStageExecutor(StageExecutorInterface):
         cards: SceneCardListInterface,
         checks: ScreenplaySectionCheckInterface,
         shareable: frozenset[int] = frozenset(),
+        bible: ScreenplayBibleContextInterface | None = None,
     ) -> None:
         self._artifacts = artifacts
         self._drafter = drafter
         self._cards = cards
         self._checks = checks
         self._shareable = shareable
+        self._bible = bible
 
     async def execute(self, run: BookRun, attempt: int) -> StageReport:
         """Draft the missing scenes in drafting order."""
@@ -60,12 +65,18 @@ class ScreenplayDraftStageExecutor(StageExecutorInterface):
         return StageReport()
 
     async def _cited(self, run: BookRun, card: SceneCard) -> str:
-        """The source files the card names, each under its number, so the scene draws on nothing else."""
+        """The source files the card names, each under its number, and the bible cards the scene names."""
         blocks = [
             f"Source {number:03d}:\n{await self._required(run, f'source/{number:03d}.md')}"
             for number in card.sources
         ]
-        return "\n\n".join(blocks)
+        cited = "\n\n".join(blocks)
+        if self._bible is None:
+            return cited
+        named = await asyncio.to_thread(
+            self._bible.for_scene, run.run_id, f"{card.beat}\n{card.body}\n{cited}"
+        )
+        return cited if not named else f"{cited}\n\n{named}"
 
     async def _scene(
         self, run: BookRun, card: SceneCard, anchors: str, beats: str, sources: str

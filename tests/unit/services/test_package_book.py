@@ -296,7 +296,11 @@ def test_the_cli_prints_the_package_summary_it_is_given(
     argv = argparse.Namespace(book_command="package", root=tmp_path, slugs=["herbs"])
     assert (
         BookCli(
-            lambda root: Stub(), lambda state, settings: None, NoAwake(), lambda folder: ()
+            lambda root: Stub(),
+            lambda state, settings: None,
+            NoAwake(),
+            lambda folder: (),
+            lambda folder: (),
         ).run(argv)
         == 0
     )

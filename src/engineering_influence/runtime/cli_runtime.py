@@ -14,6 +14,9 @@ from engineering_influence.controllers.interfaces.run_controller_interface impor
 )
 from engineering_influence.controllers.project_controller import ProjectController
 from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.infrastructure.bible_library.filesystem_bible_library import (
+    FilesystemBibleLibrary,
+)
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
 from engineering_influence.infrastructure.plugins.directory_plugin_folder_reader import (
@@ -83,6 +86,7 @@ from engineering_influence.interfaces.run_repository_interface import RunReposit
 from engineering_influence.interfaces.schema_migrator_interface import SchemaMigratorInterface
 from engineering_influence.interfaces.search_provider_interface import SearchProviderInterface
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
+from engineering_influence.models.bible_card import BibleCard
 from engineering_influence.models.source_entry import SourceEntry
 from engineering_influence.models.tool_limits import ToolLimits
 from engineering_influence.runtime.interfaces.cli_runtime_interface import CliRuntimeInterface
@@ -90,6 +94,8 @@ from engineering_influence.runtime.interfaces.publishing_controller_factory_inte
     PublishingControllerFactoryInterface,
 )
 from engineering_influence.runtime.serve_starter import ServeStarter
+from engineering_influence.services.bible_card_parser import BibleCardParser
+from engineering_influence.services.bible_intake import BibleIntake
 from engineering_influence.services.brief_reader import BriefReader
 from engineering_influence.services.cancel_run import CancelRun
 from engineering_influence.services.interfaces.cancel_run_interface import CancelRunInterface
@@ -190,6 +196,7 @@ class CliRuntime(CliRuntimeInterface):
                 self._local_book_creator,
                 self._keep_awake(),
                 self._read_sources,
+                self._read_bible,
             ),
             ServeCli(ServeStarter()),
             DbCli(self._schema_migrator, self._secret_provider),
@@ -518,6 +525,11 @@ class CliRuntime(CliRuntimeInterface):
             baseline,
             date.today(),
         )
+
+    @staticmethod
+    def _read_bible(folder: Path) -> tuple[BibleCard, ...]:
+        """The bible folder's cards, checked as a whole before a run keeps them (ADR 0018)."""
+        return BibleIntake(FilesystemBibleLibrary(), BibleCardParser()).intake(folder)
 
     @staticmethod
     def _read_sources(folder: Path) -> tuple[SourceEntry, ...]:
