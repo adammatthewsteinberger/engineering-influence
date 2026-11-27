@@ -111,6 +111,13 @@ recorded cassettes) and need no action from you.
 | `SHOOTING_LOCK_UNREADABLE` | `the shooting script lock is unreadable: ...` | The previous shooting script lock the run was given is not a version 1 lock file, or one of its scenes has a bad number. Re-export the lock from the run that made it |
 | `SCENE_CARDS_UNREADABLE` | `the scene cards have no '## S01 ·' card` | The scene cards from the architecture stage cannot be read: a card has no `**Beat:**` field, no `**Sources:**` field of source numbers, or there are no cards at all. Re-run the scene-cards stage |
 | `SCREENPLAY_NO_SOURCES` | `a screenplay run needs a source folder, given with --source` | A screenplay is written from the author's source files, so the run needs `--source DIR`. Give the folder and start again |
+| `BIBLE_FOLDER_MISSING` | `the bible folder ... does not exist` | The screenplay's bible folder is not where it was pointed. Check the path (ADR 0018) |
+| `BIBLE_CARD_INVALID` | `kind/id.md: its front matter ...` | A bible card must open with a `+++` line, hold TOML, close with a second `+++` line, and use a lowercase kind folder and id file name (ADR 0018) |
+| `BIBLE_SCHEMA_INVALID` | `bible.toml holds only a [required] table ...` | `bible.toml` may hold only a `[required]` table that maps each kind to a list of key names |
+| `BIBLE_FIELD_MISSING` | `kind/id must set name` | A card lacks a key that `bible.toml` requires for its kind. Add the key to the card |
+| `BIBLE_DUPLICATE_ID` | `two cards are kind/id` | Two files in one kind folder share a name, or two cards carry one id. An id is unique within its kind |
+| `BIBLE_LINK_UNKNOWN` | `kind/id links to kind: id, which is not a card` | A `[[kind: id]]` link in a card names no card. Fix the id or add the card |
+| `BIBLE_REAL_PERSON` | `kind/id is a real person ...` | A card with `real = true` must name its `clearance`, and must not carry a `likeness` or `voice` key (ADR 0018) |
 
 ## Collecting evidence for a bug report
 
