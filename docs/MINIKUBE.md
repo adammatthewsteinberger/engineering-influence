@@ -34,6 +34,19 @@ The API key is in the Secret: `kubectl -n ei get secret ei-secrets -o jsonpath='
 
 Remove the whole stack, its data included, with `sh deploy/minikube/down.sh`.
 
+## Metrics and dashboards
+
+`up.sh` also installs Prometheus and Grafana. Prometheus scrapes the API's `/metrics` with the dedicated metrics key in
+the Secret (`EI_METRICS_API_KEY`, also listed in `EI_API_KEYS`); the target is `up` in Prometheus's UI. Open them with:
+
+```bash
+kubectl -n ei port-forward svc/ei-engineering-influence-prometheus 9090:9090
+kubectl -n ei port-forward svc/ei-engineering-influence-grafana 3000:3000
+```
+
+Grafana's user is `admin`, and its password is in the Secret: `kubectl -n ei get secret ei-secrets -o jsonpath='{.data.EI_GRAFANA_ADMIN_PASSWORD}' | base64 -d`.
+Its Prometheus datasource is provisioned; logs are not collected yet (that is a later step).
+
 ## Traps this setup has hit
 
 - **Reusing an image tag does not update running pods.** After rebuilding, give the image a new tag, for example
@@ -43,6 +56,8 @@ Remove the whole stack, its data included, with `sh deploy/minikube/down.sh`.
 - **`helm install --wait` waits on the migration** (a post-install hook that needs the apps ready first), so `up.sh` does not
   use `--wait`.
 - **A failed migration Job stays listed** after it is fixed; delete the old Jobs before judging the new run.
+- **An interrupted `up.sh` leaves a new password in the Secret** while Postgres and RabbitMQ keep the old ones. Either set the password inside the service to match the Secret (`ALTER USER` for Postgres, `rabbitmqctl change_password` for RabbitMQ), or run `down.sh`.
+- **`helm upgrade --reuse-values` keeps only the release's old values;** a new block such as `observability` needs its image settings passed again.
 
 ## What is not covered here
 

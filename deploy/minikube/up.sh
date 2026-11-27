@@ -16,12 +16,15 @@ secrets="$(mktemp)"
 trap 'rm -f "$secrets"' EXIT
 chmod 600 "$secrets"
 secret() { python3 -c 'import secrets, sys; print(secrets.token_urlsafe(int(sys.argv[1])))' "$1"; }
-pg="$(secret 24)"; mq="$(secret 24)"; key="$(secret 32)"; s3id="ei$(secret 8)"; s3key="$(secret 32)"
+pg="$(secret 24)"; mq="$(secret 24)"; key="$(secret 32)"; metrics="$(secret 32)"; grafana="$(secret 24)"
+s3id="ei$(secret 8)"; s3key="$(secret 32)"
 host="$rel-engineering-influence"
 cat > "$secrets" <<ENV
 EI_DATABASE_URL=postgresql+psycopg://ei:$pg@$host-postgres:5432/ei
 EI_RABBITMQ_URL=amqp://ei:$mq@$host-rabbitmq:5672/
-EI_API_KEYS=$key
+EI_API_KEYS=$key,$metrics
+EI_METRICS_API_KEY=$metrics
+EI_GRAFANA_ADMIN_PASSWORD=$grafana
 EI_POSTGRES_PASSWORD=$pg
 EI_RABBITMQ_PASSWORD=$mq
 EI_S3_ACCESS_KEY_ID=$s3id
@@ -33,7 +36,7 @@ kubectl create secret generic ei-secrets --namespace "$ns" --from-env-file="$sec
 helm upgrade --install "$rel" "$chart" --namespace "$ns" \
   --set existingSecret=ei-secrets \
   --set image.repository="${image%%:*}" --set image.pullPolicy=Never \
-  --set postgres.enabled=true --set rabbitmq.enabled=true \
+  --set postgres.enabled=true --set rabbitmq.enabled=true --set observability.enabled=true \
   --set seaweedfs.enabled=true --set artifactStore.kind=s3 --set artifactStore.bucket=ei-artifacts \
   --set api.replicas=1 --set worker.replicas=1 \
   --set image.tag="${image#*:}"
