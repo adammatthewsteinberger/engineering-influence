@@ -10,7 +10,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: default
+  project: engineering-influence
   source:
     repoURL: https://github.com/adammatthewsteinberger/engineering-influence.git
     targetRevision: develop

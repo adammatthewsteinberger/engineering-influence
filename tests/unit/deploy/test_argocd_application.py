@@ -42,6 +42,45 @@ def test_it_prunes_and_heals_so_git_is_the_source_of_truth() -> None:
     assert application()["spec"]["syncPolicy"]["automated"] == {"prune": True, "selfHeal": True}
 
 
+def project() -> dict[str, Any]:
+    loaded: dict[str, Any] = yaml.safe_load(
+        (ROOT / "deploy" / "argocd" / "project.yaml").read_text(encoding="utf-8")
+    )
+    return loaded
+
+
+def test_it_runs_in_a_project_that_bounds_it_to_this_repository_and_namespace() -> None:
+    app = application()
+    scoped = project()
+    assert scoped["kind"] == "AppProject"
+    assert app["spec"]["project"] == scoped["metadata"]["name"]
+    assert scoped["spec"]["sourceRepos"] == [app["spec"]["source"]["repoURL"]]
+    assert scoped["spec"]["destinations"] == [
+        {
+            "server": app["spec"]["destination"]["server"],
+            "namespace": app["spec"]["destination"]["namespace"],
+        }
+    ]
+
+
+def test_the_project_creates_no_cluster_scoped_objects_and_only_the_kinds_the_base_renders() -> (
+    None
+):
+    scoped = project()
+    assert scoped["spec"]["clusterResourceWhitelist"] == []
+    allowed = {
+        (entry["group"], entry["kind"]) for entry in scoped["spec"]["namespaceResourceWhitelist"]
+    }
+    rendered = {
+        ("" if doc["apiVersion"] == "v1" else doc["apiVersion"].split("/")[0], doc["kind"])
+        for doc in yaml.safe_load_all(
+            (ROOT / "deploy/kustomize/base/resources.yaml").read_text(encoding="utf-8")
+        )
+        if doc
+    }
+    assert allowed == rendered
+
+
 def test_the_namespace_it_creates_carries_the_label_the_kyverno_policies_match() -> None:
     labels = application()["spec"]["syncPolicy"]["managedNamespaceMetadata"]["labels"]
     assert labels == {"policy.ei/restricted": "true"}

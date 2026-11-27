@@ -149,8 +149,15 @@ policies match. Install Argo CD (chart `argo-cd` 10.19.1, Argo CD v3.6.3) and th
 ```bash
 helm repo add argo https://argoproj.github.io/argo-helm
 helm upgrade --install argocd argo/argo-cd --version 10.19.1 -n argocd --create-namespace --wait
+kubectl apply -f deploy/argocd/project.yaml
 kubectl apply -f deploy/argocd/application.yaml
 ```
+
+The Application runs in the `engineering-influence` AppProject (`deploy/argocd/project.yaml`), which bounds it: it may
+sync only this repository, deploy only into `ei-dev`, create no cluster-scoped objects, and create only the five kinds
+the dev overlay renders (ConfigMap, Service, ServiceAccount, Deployment, Job). If the overlay gains a kind, add it to the
+project's `namespaceResourceWhitelist` first, or the sync fails. Because the sync is automated, `develop` should require
+reviewed pull requests, since a merge there reaches the cluster.
 
 Argo CD does not create the `ei-secrets` Secret, because the values never live in git. Create it in `ei-dev` (for
 example through the External Secrets Operator, as in [MINIKUBE.md](MINIKUBE.md)) before the pods can start. The overlay's
