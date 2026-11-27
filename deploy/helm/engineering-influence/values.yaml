@@ -53,6 +53,20 @@ rabbitmq:
     repository: rabbitmq
     tag: "3.13-alpine"
 
+# Metrics and dashboards: Prometheus scrapes the API's /metrics, and Grafana reads Prometheus. The API guards /metrics with
+# an API key, so the Secret must hold a dedicated key (metricsApiKeyName) that is also listed in EI_API_KEYS.
+observability:
+  enabled: false
+  metricsApiKeyName: EI_METRICS_API_KEY
+  prometheus:
+    image:
+      repository: prom/prometheus
+      tag: "v2.55.1"
+  grafana:
+    image:
+      repository: grafana/grafana
+      tag: "11.3.0"
+
 api:
   replicas: 2
   port: 8000

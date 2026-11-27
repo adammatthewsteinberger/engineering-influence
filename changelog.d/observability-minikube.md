@@ -1,0 +1,1 @@
+The Helm chart can run Prometheus, scraping the API's `/metrics` with a dedicated metrics key, and Grafana with its Prometheus datasource provisioned (`observability.enabled`). Off by default. The minikube install turns it on, and `docs/MINIKUBE.md` gives the steps to open both. Compatible: nothing changes for an install without it. Logs and tracing are not collected yet.
