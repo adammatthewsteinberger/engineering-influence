@@ -13299,6 +13299,30 @@ interface_style = "abc"
 decision = "curated"
 
 [[class]]
+old = "engineering_influence.services.interfaces.screenplay_tone_ratio_check_interface"
+name = "ScreenplayToneRatioCheckInterface"
+new = "engineering_influence.services.interfaces.screenplay_tone_ratio_check_interface"
+new_name = "ScreenplayToneRatioCheckInterface"
+layer = "services"
+kind = "interface"
+interface = ""
+interface_module = ""
+interface_style = "self"
+decision = "curated"
+
+[[class]]
+old = "engineering_influence.services.screenplay_tone_ratio_check"
+name = "ScreenplayToneRatioCheck"
+new = "engineering_influence.services.screenplay_tone_ratio_check"
+new_name = "ScreenplayToneRatioCheck"
+layer = "services"
+kind = "plain"
+interface = "ScreenplayToneRatioCheckInterface"
+interface_module = "engineering_influence.services.interfaces.screenplay_tone_ratio_check_interface"
+interface_style = "abc"
+decision = "curated"
+
+[[class]]
 old = "engineering_influence.models.interfaces.outbox_event_interface"
 name = "OutboxEventInterface"
 new = "engineering_influence.models.interfaces.outbox_event_interface"

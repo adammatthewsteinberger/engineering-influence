@@ -9,6 +9,7 @@ from engineering_influence.services.screenplay_anchors_check import ScreenplayAn
 from engineering_influence.services.screenplay_audit_check import ScreenplayAuditCheck
 from engineering_influence.services.screenplay_beat_sheet_check import ScreenplayBeatSheetCheck
 from engineering_influence.services.screenplay_scene_cards_check import ScreenplaySceneCardsCheck
+from engineering_influence.services.screenplay_tone_ratio_check import ScreenplayToneRatioCheck
 from engineering_influence.services.screenplay_visual_grammar_check import (
     ScreenplayVisualGrammarCheck,
 )
@@ -42,7 +43,9 @@ class ScreenplayOutputChecks(StageOutputCheckInterface):
         if stage == "beats":
             return ScreenplayBeatSheetCheck(self._target_pages).problems(text)
         if stage == "scene_cards":
-            return ScreenplaySceneCardsCheck().problems(text)
+            return ScreenplaySceneCardsCheck().problems(text) + ScreenplayToneRatioCheck().problems(
+                text
+            )
         if stage == "audit":
             return ScreenplayAuditCheck().problems(text)
         if stage == "visual_grammar":

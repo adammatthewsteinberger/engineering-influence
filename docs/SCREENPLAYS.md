@@ -55,6 +55,12 @@ The cards are checked before the run starts and kept in it. Each scene is handed
 A bible that breaks any of these rules is refused as a whole before a run uses it. The error names the card and the rule.
 The error codes are listed in [Troubleshooting](TROUBLESHOOTING.md).
 
+## Scene tone ratio
+
+A scene card may carry `**Tone:**` with `warm`, `conflict` or `neutral`. When any card carries a tone, the scene-card stage
+refuses the cards unless the warm scenes are at least five times the conflict scenes, and it names any tone that is not one
+of the three. Cards with no tone are not counted, so a screenplay whose cards carry no tone is not checked.
+
 ## Drafting checks
 
 Each drafted scene is checked before it is kept. A scene must be exactly one scene and follow the format rules. Its dialogue
