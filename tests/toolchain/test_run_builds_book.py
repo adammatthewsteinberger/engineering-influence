@@ -53,7 +53,7 @@ def run_with(
 def test_the_whole_plan_ends_in_a_built_book(tmp_path: Path) -> None:
     report = run_with(tmp_path)
     assert report.completed and report.status == "completed", report.issues
-    assert [row.stage for row in report.rows][-2:] == ["audit", "build"]
+    assert [row.stage for row in report.rows][-4:] == ["audit", "build", "audiobook", "narration"]
     files = report.artifacts
     assert BOOK <= set(files)
     assert files[f"book/{SLUG}.pdf"].startswith(b"%PDF")
