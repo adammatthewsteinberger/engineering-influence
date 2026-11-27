@@ -6,7 +6,9 @@ metadata:
     {{- include "ei.labels" . | nindent 4 }}
     app.kubernetes.io/component: worker
 spec:
+  {{- if not .Values.autoscaling.keda.enabled }}
   replicas: {{ .Values.worker.replicas }}
+  {{- end }}
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "ei.name" . }}
