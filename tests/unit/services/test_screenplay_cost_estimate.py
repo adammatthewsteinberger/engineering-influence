@@ -61,4 +61,12 @@ def test_the_screenplay_estimate_covers_every_planned_stage() -> None:
         "check_canon",
         "render_script",
         "build_epub",
+        "video",
     ]
+
+
+def test_the_video_stage_is_priced_by_its_shot_list_and_is_optional() -> None:
+    estimator = CostEstimator(PRICED, {BookKind.SCREENPLAY: ScreenplayRecipes()}, CreateRun.PLANS)
+    brief = BookBrief(BookKind.SCREENPLAY, "a bee colony", 5_000_000)
+    stages = {name: (cost, required) for name, cost, required in estimator.estimate(brief).stages}
+    assert stages["video"] == (CostEstimator.SCREENPLAY_VIDEO_MICRO_USD, False)

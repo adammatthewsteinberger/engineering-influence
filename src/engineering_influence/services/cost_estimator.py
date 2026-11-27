@@ -80,6 +80,7 @@ class CostEstimator(CostEstimatorInterface):
             ScreenplayRecipes.REVISE_STAGE,
             ScreenplayRecipes.STRUCTURE_STAGE,
             ScreenplayRecipes.DIALOGUE_STAGE,
+            ScreenplayRecipes.VIDEO_STAGE,
         }
     )
 
@@ -123,8 +124,13 @@ class CostEstimator(CostEstimatorInterface):
     SOURCE_DIGESTS: ClassVar[int] = 90
     DIGEST_INPUT_TOKENS: ClassVar[int] = 2_000
     DIGEST_OUTPUT_TOKENS: ClassVar[int] = 1_500
+    # The video stage is priced by its shot list, not by a model's tokens: about 1,604 USD for a 90-minute film with a
+    # 80/15/5 model mix and three takes per kept second (docs/research/screenplay-to-video.md, ADR 0015).
+    SCREENPLAY_VIDEO_MICRO_USD: ClassVar[int] = 1_604_000_000
 
     def _stage(self, kind: BookKind, stage: str, chapters: int, chapter_tokens: int) -> int:
+        if kind is BookKind.SCREENPLAY and stage == ScreenplayRecipes.VIDEO_STAGE:
+            return self.SCREENPLAY_VIDEO_MICRO_USD
         if stage in self.NO_MODEL:
             return 0
         if kind is BookKind.SCREENPLAY and stage in (
