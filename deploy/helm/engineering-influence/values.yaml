@@ -1,0 +1,61 @@
+# Image. The slim runtime image runs the API and the migration; the worker needs the TeX image (`worker-tex`) to build
+# a book's PDF and EPUB, so set worker.image.tag to a build of that target if the worker must build books.
+image:
+  repository: ghcr.io/adammatthewsteinberger/engineering-influence
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+
+# The one Secret the pods read. It must exist before install and hold these keys:
+#   EI_DATABASE_URL   SQLAlchemy URL for Postgres, e.g. postgresql+psycopg://user:pw@host:5432/db
+#   EI_RABBITMQ_URL   amqp://user:pw@host:5672/
+#   EI_API_KEYS       comma-separated API keys, each at least 24 characters
+#   plus any model or search keys the run settings name (see docs/CONFIGURATION.md)
+existingSecret: ""
+
+# Non-secret settings, written to a ConfigMap and read by every pod.
+config:
+  EI_HOST: "0.0.0.0"
+  EI_PORT: "8000"
+  EI_QUEUE_NAME: "engineering-influence.jobs"
+
+api:
+  replicas: 2
+  port: 8000
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 512Mi }
+
+worker:
+  replicas: 1
+  image:
+    # Leave the tag empty to use the slim image; set a `worker-tex` build to build books.
+    tag: ""
+  resources:
+    requests: { cpu: 500m, memory: 1Gi }
+    limits: { memory: 4Gi }
+
+migration:
+  # Runs `ei db upgrade` before each install and upgrade. Set false to run the migration yourself.
+  enabled: true
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+serviceAccount:
+  create: true
+  name: ""
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

@@ -38,6 +38,7 @@ Interfaces: CLI (`ei`), REST API, Python SDK, MCP server (stdio, `ei serve mcp`:
 - [Configuration](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/CONFIGURATION.md): every EI_* variable, the author profile, security settings, observability, limits
 - [Threat model](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/THREAT_MODEL.md): what is protected, where untrusted text enters, known gaps
 - [Worker image](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/WORKER_IMAGE.md): the container images and the TeX toolchain
+- [Kubernetes deployment](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/DEPLOYMENT.md): the Helm chart, its Secret and the install steps
 - [Troubleshooting](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/TROUBLESHOOTING.md): symptom, cause, fix
 - [Evaluation](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/EVALUATION.md): `ei evaluate`, the rubric, the judge, and the bar a release must meet (spends real money)
 - [Live smoke test](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/LIVE_SMOKE_TEST.md): the capped test against a real model
