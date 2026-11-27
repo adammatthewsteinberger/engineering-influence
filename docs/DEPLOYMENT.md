@@ -139,8 +139,30 @@ kubectl apply -k deploy/kustomize/overlays/prod
 The base expects the `ei-secrets` Secret in the overlay's namespace. The image is a placeholder repository; change the
 overlay's `images` entry to yours.
 
+## GitOps with Argo CD
+
+`deploy/argocd/application.yaml` is an Argo CD `Application` that syncs `deploy/kustomize/overlays/dev` from the `develop`
+branch of this repository into `ei-dev`. It prunes objects removed from git and reverts changes made in the cluster
+(`selfHeal`), so git is the source of truth. Its namespace gets the `policy.ei/restricted=true` label, which the Kyverno
+policies match. Install Argo CD (chart `argo-cd` 10.19.1, Argo CD v3.6.3) and the Application:
+
+```bash
+helm repo add argo https://argoproj.github.io/argo-helm
+helm upgrade --install argocd argo/argo-cd --version 10.19.1 -n argocd --create-namespace --wait
+kubectl apply -f deploy/argocd/application.yaml
+```
+
+Argo CD does not create the `ei-secrets` Secret, because the values never live in git. Create it in `ei-dev` (for
+example through the External Secrets Operator, as in [MINIKUBE.md](MINIKUBE.md)) before the pods can start. The overlay's
+image is a placeholder registry path that must be pullable from the cluster, and the Application's sync status is
+`Synced` only when git and the cluster agree.
+
+To try a local image without changing git, override it on the live Application only, for example
+`kubectl -n argocd patch application engineering-influence-dev --type merge -p '{"spec":{"source":{"kustomize":{"images":["ghcr.io/adammatthewsteinberger/engineering-influence=ei-local:tracing1"]}}}}'`.
+Because `selfHeal` is on, Argo CD then reports the Deployments `OutOfSync` and restores the git image. A local override
+therefore needs the image pushed to the registry the overlay names, or the change belongs in git.
+
 ## Not in this chart yet
 
-Logs, metrics, secrets from OpenBao, and the policy and GitOps objects are later steps in the Kubernetes plan. The Loki,
-Prometheus and OpenBao pieces are not built as subcharts: the plan's subchart approach needs remote chart downloads, which
-this chart does not yet pin.
+The Loki, Prometheus and OpenBao pieces are not built as subcharts: the plan's subchart approach needs remote chart
+downloads, which this chart does not yet pin.

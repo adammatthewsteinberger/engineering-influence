@@ -1,0 +1,29 @@
+# Argo CD syncs the dev overlay from git into the ei-dev namespace. Git is the source of truth: a change made in the cluster
+# is reverted (selfHeal), and an object removed from the overlay is deleted (prune). The namespace gets the label that the
+# Kyverno policies in deploy/kyverno/policies.yaml apply to. The overlay expects the ei-secrets Secret to exist in ei-dev;
+# Argo CD does not create it, because the secret values never live in git.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: engineering-influence-dev
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/adammatthewsteinberger/engineering-influence.git
+    targetRevision: develop
+    path: deploy/kustomize/overlays/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ei-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    managedNamespaceMetadata:
+      labels:
+        policy.ei/restricted: "true"
