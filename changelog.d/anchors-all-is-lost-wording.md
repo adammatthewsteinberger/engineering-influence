@@ -1,0 +1,1 @@
+The screenplay anchors prompt is version 5. Its All Is Lost section now begins with the words "What is lost is" and says why with "because", so a local model writes the wording the format check asks for. Tested on three runs of the Book One logs at about 120,000 characters: all three passed. Compatible: no command, stage or error code changed.

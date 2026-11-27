@@ -29,5 +29,13 @@ class SceneCard(SceneCardInterface):
         return f"scenes/{self.number:03d}.md"
 
     def revised(self) -> str:
-        """The revised scene's artifact name, `revised/NNN.md`: the scene the assembly reads."""
+        """The revised scene's artifact name, `revised/NNN.md`."""
         return f"revised/{self.number:03d}.md"
+
+    def structured(self) -> str:
+        """The scene after the structure pass, `structured/NNN.md`."""
+        return f"structured/{self.number:03d}.md"
+
+    def dialogued(self) -> str:
+        """The scene after the dialogue pass, `dialogued/NNN.md`: the scene the assembly reads."""
+        return f"dialogued/{self.number:03d}.md"

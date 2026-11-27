@@ -78,6 +78,8 @@ class CostEstimator(CostEstimatorInterface):
             NonfictionRecipes.AUDIOBOOK_STAGE,
             NonfictionRecipes.NARRATION_STAGE,
             ScreenplayRecipes.REVISE_STAGE,
+            ScreenplayRecipes.STRUCTURE_STAGE,
+            ScreenplayRecipes.DIALOGUE_STAGE,
         }
     )
 
@@ -128,8 +130,10 @@ class CostEstimator(CostEstimatorInterface):
         if kind is BookKind.SCREENPLAY and stage in (
             ScreenplayRecipes.DRAFT_STAGE,
             ScreenplayRecipes.REVISE_STAGE,
+            ScreenplayRecipes.STRUCTURE_STAGE,
+            ScreenplayRecipes.DIALOGUE_STAGE,
         ):
-            # Drafting and revision are each one call per scene.
+            # Drafting, revision and each pass are one call per scene.
             return self.SCREENPLAY_SCENES * self._call(
                 self.SCENE_INPUT_TOKENS, self.SCENE_OUTPUT_TOKENS
             )

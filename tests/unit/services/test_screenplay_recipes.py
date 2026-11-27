@@ -21,6 +21,8 @@ def test_the_plan_is_the_brief_and_the_architecture_in_order() -> None:
         "visual_grammar",
         "draft",
         "revise_scenes",
+        "structure_scenes",
+        "dialogue_scenes",
         "assemble_script",
         "lock_script",
         "log_revisions",

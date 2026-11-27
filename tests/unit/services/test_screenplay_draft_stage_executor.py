@@ -190,6 +190,8 @@ def test_the_plan_drafts_revises_and_assembles_scenes_after_the_architecture() -
         "visual_grammar",
         "draft",
         "revise_scenes",
+        "structure_scenes",
+        "dialogue_scenes",
         "assemble_script",
         "lock_script",
         "log_revisions",
