@@ -148,6 +148,11 @@ never prints a traceback, which could carry a connection string.
 | `EI_DATABASE_URL` | both | SQLAlchemy URL, for example `postgresql+psycopg://user:pw@host:5432/db`. Required. |
 | `EI_RABBITMQ_URL` | both | `amqp://user:pw@host:5672/`. Required. |
 | `EI_API_KEYS` | API | Comma-separated keys, each at least 24 characters. Required: with none, the API will not start. |
+| `EI_ARTIFACT_STORE` | API and worker | Where a run's files are kept: `database` (default, in Postgres) or `s3` (a bucket, AWS S3 or an S3-compatible service such as SeaweedFS). See [Object storage](#object-storage) |
+| `EI_S3_BUCKET` | API and worker | The bucket for run files. Required when `EI_ARTIFACT_STORE` is `s3` |
+| `EI_S3_ENDPOINT_URL` | API and worker | The address of an S3-compatible service; empty for AWS S3 |
+| `EI_S3_REGION` | API and worker | The region name; default `us-east-1` |
+| `EI_S3_ACCESS_KEY_ID`, `EI_S3_SECRET_ACCESS_KEY` | API and worker | The credentials for the bucket, read from the secret provider when `EI_ARTIFACT_STORE` is `s3`; never printed or logged |
 | `EI_QUEUE_NAME` | both | Job queue name. Default `engineering-influence.jobs`; the dead-letter queue is that name plus `.dead`. |
 | `EI_HOST`, `EI_PORT` | API | Default `127.0.0.1` and `8000`. A bare run is never reachable from the network. |
 | `EI_LOG_LEVEL` | both | `DEBUG` to `CRITICAL`. Default `INFO`. |
@@ -194,6 +199,8 @@ when this index names one nothing uses. The two `compose only` rows are read by 
 | `EI_WEBHOOK_URLS` | the receivers of a run's events: a comma-separated list of `https://` addresses. Empty by default, which sends nothing | [Webhooks](WEBHOOKS.md) |
 | `EI_WEBHOOK_SECRET` | the secret that signs each delivery. Required when `EI_WEBHOOK_URLS` is set; never printed or logged | [Webhooks](WEBHOOKS.md) |
 | `EI_WEBHOOK_INTERVAL_SECONDS` | how often the worker delivers queued events, in seconds (at least 0.01; default 5) | [Webhooks](WEBHOOKS.md) |
+| `EI_ARTIFACT_STORE` | where a run's files are kept: the database or an S3-compatible bucket | [Object storage](#object-storage) |
+| `EI_S3_BUCKET`, `EI_S3_ENDPOINT_URL`, `EI_S3_REGION`, `EI_S3_ACCESS_KEY_ID`, `EI_S3_SECRET_ACCESS_KEY` | the bucket and its credentials, for `EI_ARTIFACT_STORE=s3` | [Object storage](#object-storage) |
 | `EI_NARRATOR_VOICE` | the Kokoro voice, for example `af_heart` (the default) or `bf_emma` | [AUDIOBOOKS.md](AUDIOBOOKS.md) |
 | `EI_NARRATOR` | the narrator for the locally narrated (non-Audible) audiobook: `kokoro` is built in (Kokoro-82M through mlx-audio, on an Apple Silicon Mac with the `audio` extra); any other name is refused | [Audiobooks](AUDIOBOOKS.md) |
 | `EI_VIDEO_PROVIDER` | the hosted video model for a screenplay's video stage: `openrouter` is the built-in provider (OpenRouter's video API); unset, the stage makes no video and records that it did not. Any other name is refused | Screenplays (video stage) |
@@ -413,3 +420,13 @@ invisible character. `[pricing]` needs `verified_on` (an ISO date), `source_url`
 profile the assembled book loads but does not build, and the build says which of these is missing. Em and en dashes are
 refused in non-fiction when the book is built, and the profile is not rewritten, so leave them out of your own text.
 
+## Object storage
+
+A run's files (the stages' answers, the sources, the book's parts) are kept in one of two places, chosen by `EI_ARTIFACT_STORE`:
+
+- `database` (the default): in Postgres, as before.
+- `s3`: one object per file, at `runs/<run id>/<name>` in `EI_S3_BUCKET`. Any S3-compatible service works: AWS S3, or SeaweedFS run in the cluster (set `EI_S3_ENDPOINT_URL` to its address). The bucket must exist; the store does not create it.
+
+The files are write-once, as in the database: a file written again with the same bytes is accepted, and different bytes are refused. The `s3` extra (`pip install 'engineering-influence[s3]'`) provides boto3; it is needed only for the `s3` store.
+
+**Limit:** the API and the worker use the chosen store. The command-line book commands, the MCP server and the local single-process runs still read the database, so a run kept in S3 is not visible to them yet.

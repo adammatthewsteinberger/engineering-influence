@@ -29,6 +29,12 @@ class AppSettings(AppSettingsInterface):
     webhook_urls: tuple[str, ...] = ()
     webhook_secret: str = ""
     webhook_interval_seconds: float = 5.0
+    artifact_store: str = "database"
+    s3_bucket: str = ""
+    s3_endpoint_url: str = ""
+    s3_region: str = "us-east-1"
+    s3_access_key_id: str = ""
+    s3_secret_access_key: str = ""
 
     def __repr__(self) -> str:
         return (
