@@ -1,0 +1,123 @@
+{{- if .Values.tracing.enabled }}
+{{- /*
+Tempo stores traces. The API and the worker send spans to its OTLP/HTTP receiver (port 4318); Grafana queries its API
+(port 3200). Tempo has no authentication, so tempo-networkpolicy.yaml limits who can reach each port.
+*/}}
+{{- $tempo := printf "%s-tempo" (include "ei.fullname" .) }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $tempo }}
+  labels:
+    {{- include "ei.labels" . | nindent 4 }}
+    app.kubernetes.io/component: tempo
+data:
+  tempo.yaml: |
+    server:
+      http_listen_port: 3200
+    distributor:
+      receivers:
+        otlp:
+          protocols:
+            http:
+              endpoint: 0.0.0.0:4318
+    storage:
+      trace:
+        backend: local
+        wal:
+          path: /var/tempo/wal
+        local:
+          path: /var/tempo/blocks
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $tempo }}
+  labels:
+    {{- include "ei.labels" . | nindent 4 }}
+    app.kubernetes.io/component: tempo
+spec:
+  serviceName: {{ $tempo }}
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "ei.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: tempo
+  template:
+    metadata:
+      labels:
+        {{- include "ei.labels" . | nindent 8 }}
+        app.kubernetes.io/component: tempo
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: tempo
+          image: {{ printf "%s:%s" .Values.tracing.tempo.image.repository .Values.tracing.tempo.image.tag | quote }}
+          args: ["-config.file=/etc/tempo/tempo.yaml"]
+          ports:
+            - name: otlp-http
+              containerPort: 4318
+            - name: http
+              containerPort: 3200
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/tempo
+              readOnly: true
+            - name: data
+              mountPath: /var/tempo
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          configMap:
+            name: {{ $tempo }}
+        - name: tmp
+          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.tracing.tempo.storage | default "5Gi" }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $tempo }}
+  labels:
+    {{- include "ei.labels" . | nindent 4 }}
+    app.kubernetes.io/component: tempo
+spec:
+  selector:
+    app.kubernetes.io/name: {{ include "ei.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: tempo
+  ports:
+    - name: otlp-http
+      port: 4318
+      targetPort: otlp-http
+    - name: http
+      port: 3200
+      targetPort: http
+{{- end }}

@@ -1,0 +1,41 @@
+{{- if .Values.tracing.enabled }}
+# Tempo has no authentication of its own. Only the API and the worker may send spans, and only Grafana may query.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "ei.fullname" . }}-tempo
+  labels:
+    {{- include "ei.labels" . | nindent 4 }}
+    app.kubernetes.io/component: tempo
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "ei.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: tempo
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ include "ei.name" . }}
+              app.kubernetes.io/instance: {{ .Release.Name }}
+              app.kubernetes.io/component: api
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ include "ei.name" . }}
+              app.kubernetes.io/instance: {{ .Release.Name }}
+              app.kubernetes.io/component: worker
+      ports:
+        - protocol: TCP
+          port: 4318
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ include "ei.name" . }}
+              app.kubernetes.io/instance: {{ .Release.Name }}
+              app.kubernetes.io/component: grafana
+      ports:
+        - protocol: TCP
+          port: 3200
+{{- end }}

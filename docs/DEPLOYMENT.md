@@ -107,6 +107,25 @@ helm install ei deploy/helm/engineering-influence \
 The chart's KEDA objects are checked against the rendered YAML, not against a cluster's CRD schema; run `kubectl apply
 --dry-run=server` against your cluster before relying on them.
 
+## Tracing
+
+`tracing.enabled=true` runs Tempo in the namespace and points the API and the worker at it. Each API request becomes a
+span, from the FastAPI instrumentation, and each run phase becomes a `run_phase` span carrying its artifact type, so a slow
+request or a slow phase can be found in Grafana's Tempo data source. The apps read one setting, `EI_OTLP_ENDPOINT`: the chart
+sets it to Tempo's OTLP/HTTP receiver, `http://<release>-engineering-influence-tempo:4318`. With the setting empty, nothing
+is exported.
+
+Tempo keeps traces on its volume (`tracing.tempo.storage`, default `5Gi`) and runs as one replica, so it suits a local
+cluster or a trial, not a production store. It has no authentication: its NetworkPolicy admits spans only from the API and
+the worker, and queries only from Grafana. Grafana's Tempo data source appears only with `observability.enabled=true`.
+
+```bash
+helm upgrade --install ei deploy/helm/engineering-influence \
+  --set existingSecret=ei-secrets \
+  --set observability.enabled=true \
+  --set tracing.enabled=true
+```
+
 ## Kustomize
 
 Clusters that do not use Helm can apply `deploy/kustomize/overlays/dev` or `overlays/prod`. The base is the chart's

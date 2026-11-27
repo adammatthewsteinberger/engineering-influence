@@ -1,6 +1,7 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Tracing decorator for the phase-execution service."""
 
+from opentelemetry import trace
 from vibey_bootstrap.tracing.decorators import traced_async
 
 from engineering_influence.models.artifact import Artifact
@@ -26,5 +27,7 @@ class TracedRunPhase(RunPhaseInterface):
         gate: Gate,
         context: dict[str, object],
     ) -> tuple[PhaseRun, Artifact]:
-        """Delegate to the wrapped service."""
-        return await self._inner.run(phase_run, artifact_type, gate, context)
+        """Delegate to the wrapped service, inside a span named for the phase's artifact type."""
+        with trace.get_tracer(__name__).start_as_current_span("run_phase") as span:
+            span.set_attribute("artifact.type", artifact_type)
+            return await self._inner.run(phase_run, artifact_type, gate, context)

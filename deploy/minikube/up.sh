@@ -57,7 +57,7 @@ kubectl -n "$ns" get secret ei-openbao-token >/dev/null 2>&1 || \
 set_flags="--set existingSecret=ei-secrets \
   --set openbao.enabled=true --set openbao.bootstrapTokenSecret=ei-openbao-token \
   --set image.repository=${image%%:*} --set image.pullPolicy=Never --set image.tag=${image#*:} \
-  --set postgres.enabled=true --set rabbitmq.enabled=true --set observability.enabled=true --set logs.enabled=true \
+  --set postgres.enabled=true --set rabbitmq.enabled=true --set observability.enabled=true --set logs.enabled=true --set tracing.enabled=true \
   --set seaweedfs.enabled=true --set artifactStore.kind=s3 --set artifactStore.bucket=ei-artifacts \
   --set api.replicas=1 --set worker.replicas=1"
 # shellcheck disable=SC2086

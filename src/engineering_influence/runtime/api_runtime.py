@@ -16,6 +16,7 @@ from engineering_influence.infrastructure.observability.correlating_queue import
 from engineering_influence.infrastructure.observability.json_logging_configurator import (
     JsonLoggingConfigurator,
 )
+from engineering_influence.infrastructure.observability.otel_tracing import OtelTracing
 from engineering_influence.infrastructure.observability.process_crash_hooks import (
     ProcessCrashHooks,
 )
@@ -109,7 +110,7 @@ class ApiRuntime(ApiRuntimeInterface):
             CancelRun(runs),
             ResolveSpendConsent(runs, queue, ceiling),
         )
-        return ApiApplication(
+        app = ApiApplication(
             controller,
             guard,
             observability,
@@ -118,6 +119,8 @@ class ApiRuntime(ApiRuntimeInterface):
             manager,
             metrics_guard=metrics_guard,
         ).build()
+        OtelTracing().attach(app, self._settings.otlp_endpoint, "engineering-influence-api")
+        return app
 
     def _metrics_guard(self, guard: ApiGuard) -> ApiGuard:
         """The guard for /metrics: the dedicated EI_METRICS_API_KEYS when they are set, else the main guard.

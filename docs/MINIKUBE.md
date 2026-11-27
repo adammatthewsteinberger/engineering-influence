@@ -73,7 +73,21 @@ kubectl -n ei port-forward svc/ei-engineering-influence-grafana 3000:3000
 Grafana's user is `admin`, and its password is in the Secret: `kubectl -n ei get secret ei-secrets -o jsonpath='{.data.EI_GRAFANA_ADMIN_PASSWORD}' | base64 -d`.
 Its Prometheus and Loki datasources are provisioned. Logs: Alloy reads this namespace's pods through the Kubernetes API and
 ships them to Loki, so in Grafana's Explore, pick Loki and query `{namespace="ei"}` (or `{pod=~"ei-engineering-influence-api.*"}`).
-Loki accepts connections only from Alloy and Grafana. Tracing is not collected yet.
+Loki accepts connections only from Alloy and Grafana.
+
+## Tracing
+
+`up.sh` sets `tracing.enabled=true`, so Tempo runs too, and the API and the worker send their spans to it. To check that
+traces arrive, forward Tempo's query port and search for the API's service:
+
+```bash
+kubectl -n ei port-forward svc/ei-engineering-influence-tempo 3200:3200
+curl -s "http://127.0.0.1:3200/api/search?tags=service.name%3Dengineering-influence-api&limit=20"
+```
+
+Each request appears as a trace named for its route (for example `GET /v1/runs`), with its duration. Health probes and
+metric scrapes appear too, since they are requests. Grafana's Tempo data source shows the same traces. A run's phases record
+their own spans while the run executes. The settings are in [DEPLOYMENT.md](DEPLOYMENT.md#tracing).
 
 ## Traps this setup has hit
 

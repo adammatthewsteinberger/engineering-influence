@@ -464,6 +464,30 @@ interface_style = "port"
 decision = "signal"
 
 [[class]]
+old = "engineering_influence.infrastructure.observability.interfaces.otel_tracing_interface"
+name = "OtelTracingInterface"
+new = "engineering_influence.infrastructure.observability.interfaces.otel_tracing_interface"
+new_name = "OtelTracingInterface"
+layer = "infrastructure"
+kind = "interface"
+interface = ""
+interface_module = ""
+interface_style = "self"
+decision = "curated"
+
+[[class]]
+old = "engineering_influence.infrastructure.observability.otel_tracing"
+name = "OtelTracing"
+new = "engineering_influence.infrastructure.observability.otel_tracing"
+new_name = "OtelTracing"
+layer = "infrastructure"
+kind = "plain"
+interface = "OtelTracingInterface"
+interface_module = "engineering_influence.infrastructure.observability.interfaces.otel_tracing_interface"
+interface_style = "abc"
+decision = "curated"
+
+[[class]]
 old = "engineering_influence.infrastructure.observability.traced_start_pipeline"
 name = "TracedStartPipeline"
 new = "engineering_influence.infrastructure.observability.traced_start_pipeline"
