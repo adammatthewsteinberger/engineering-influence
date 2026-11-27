@@ -1,8 +1,6 @@
 # 0013: A factual claim is supported only by a quotation the code found in a page it read
 
-## Status
-
-Accepted, 2026-11-25.
+Status: accepted, 2026-11-25.
 
 ## Context
 

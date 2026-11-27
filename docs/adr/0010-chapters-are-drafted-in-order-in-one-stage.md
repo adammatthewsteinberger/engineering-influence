@@ -1,6 +1,6 @@
 # ADR 0010: Chapters are drafted in order, inside one stage
 
-Status: proposed
+Status: accepted. A large outline is not yet split into batches (see the amendments).
 
 ## Context
 

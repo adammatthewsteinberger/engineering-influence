@@ -3,8 +3,9 @@
 """The free rehearsal of a screenplay run from its sources to its locked shooting script, through the real runtime and the HTTP adapters.
 
 The run is given two made-up sources and a scripted local model. Each stage's answer is shaped to pass its mechanical
-check, so a stage that stops advancing means the chain is broken, not the fixture. The run stops after the lock: the
-scene passes (structure and dialogue) and the render, canon and video stages are not in this rehearsal.
+check, so a stage that stops advancing means the chain is broken, not the fixture. The run includes the drafting and the
+revision passes (structure and dialogue), and stops at the locked script. The revision log, canon, render, EPUB and video
+stages are not in this rehearsal.
 """
 
 from datetime import date

@@ -1,7 +1,9 @@
 # Deploying on Kubernetes
 
-The Helm chart in `deploy/helm/engineering-influence/` runs the API, the worker and the schema migration. It does not
-deploy Postgres or RabbitMQ: the cluster or an operator provides them, and the chart reads their URLs from one Secret.
+The Helm chart in `deploy/helm/engineering-influence/` runs the API, the worker and the schema migration. Postgres and
+RabbitMQ come from the cluster or an operator, or the chart can run them in-cluster (`postgres.enabled`,
+`rabbitmq.enabled`). Either way the chart reads their URLs from one Secret. The objects below are the core ones; the
+optional ones are listed after the table.
 
 ## What the chart creates
 
@@ -15,6 +17,14 @@ deploy Postgres or RabbitMQ: the cluster or an operator provides them, and the c
 | `Job` (migration) | `ei db upgrade`, run as a Helm hook before each install and upgrade. |
 
 Every pod runs as a non-root user with a read-only root filesystem, all capabilities dropped and `/tmp` on an `emptyDir`.
+
+Optional objects, each behind its own value: the in-cluster Postgres and RabbitMQ (`postgres.enabled`, `rabbitmq.enabled`);
+SeaweedFS for run files (`seaweedfs.enabled`, with its NetworkPolicy and bucket Job); OpenBao and the External Secrets
+objects that copy its values into `existingSecret` (`openbao.enabled`); Prometheus, Grafana and the Loki and Alloy log
+stack (`observability.enabled`, `logs.enabled`), with NetworkPolicies on Prometheus and Loki; Tempo for traces
+(`tracing.enabled`, with its NetworkPolicy); a HorizontalPodAutoscaler for the API (`autoscaling.api.enabled`); and a
+KEDA `ScaledObject` for the worker (`autoscaling.keda.enabled`). The chart has no Ingress, PodDisruptionBudget or
+CronJob yet.
 
 ## The Secret
 
