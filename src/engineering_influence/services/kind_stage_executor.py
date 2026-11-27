@@ -13,12 +13,19 @@ from engineering_influence.models.stage_report import StageReport
 class KindStageExecutor(StageExecutorInterface):
     """A non-fiction run and a novel run share stage names (brief, outline) but not recipes, so the kind picks first."""
 
-    def __init__(self, by_kind: Mapping[BookKind, StageExecutorInterface]) -> None:
+    def __init__(
+        self,
+        by_kind: Mapping[BookKind, StageExecutorInterface],
+        fallback: StageExecutorInterface | None = None,
+    ) -> None:
         self._by_kind = dict(by_kind)
+        self._fallback = fallback
 
     async def execute(self, run: BookRun, attempt: int) -> StageReport:
         """Run the stage with the executor for the brief's kind, or refuse a kind that has none."""
         executor = self._by_kind.get(run.brief.kind)
+        if executor is None and self._fallback is not None:
+            return await self._fallback.execute(run, attempt)
         if executor is None:
             raise ApplicationError(
                 code="STAGE_KIND_UNSUPPORTED",
