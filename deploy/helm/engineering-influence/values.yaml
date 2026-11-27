@@ -73,7 +73,10 @@ logs:
 # token from bootstrapTokenSecret, for a local cluster only; production points secretStore at an OpenBao it runs.
 openbao:
   enabled: false
+  # devMode runs the in-memory server in this chart; it is for a local cluster only. Otherwise set server to an OpenBao
+  # you run, and the chart deploys nothing for it.
   devMode: true
+  server: ""
   image:
     repository: openbao/openbao
     tag: "2.1.0"

@@ -1,4 +1,7 @@
-{{- if .Values.openbao.enabled }}
+{{- if and .Values.openbao.enabled (not .Values.openbao.devMode) (not .Values.openbao.server) }}
+{{- fail "openbao.devMode is false: set openbao.server to the address of an OpenBao you run" }}
+{{- end }}
+{{- if and .Values.openbao.enabled .Values.openbao.devMode }}
 {{- $name := printf "%s-openbao" (include "ei.fullname" .) }}
 apiVersion: apps/v1
 kind: Deployment
