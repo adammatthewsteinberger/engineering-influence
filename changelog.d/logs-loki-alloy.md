@@ -1,0 +1,1 @@
+The Helm chart can collect this namespace's pod logs: Alloy reads them through the Kubernetes API and sends them to Loki (`logs.enabled`), and Grafana gets a Loki datasource. Loki accepts connections only from Alloy and Grafana. Off by default; the minikube install turns it on, and `docs/MINIKUBE.md` shows how to query the logs. Tracing is not included.

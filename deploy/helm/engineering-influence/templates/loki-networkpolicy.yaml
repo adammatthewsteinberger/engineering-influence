@@ -1,0 +1,32 @@
+{{- if .Values.logs.enabled }}
+# Loki has no authentication of its own. Only Alloy (which writes) and Grafana (which reads) may reach it.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "ei.fullname" . }}-loki
+  labels:
+    {{- include "ei.labels" . | nindent 4 }}
+    app.kubernetes.io/component: loki
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "ei.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: loki
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ include "ei.name" . }}
+              app.kubernetes.io/instance: {{ .Release.Name }}
+              app.kubernetes.io/component: alloy
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ include "ei.name" . }}
+              app.kubernetes.io/instance: {{ .Release.Name }}
+              app.kubernetes.io/component: grafana
+      ports:
+        - protocol: TCP
+          port: 3100
+{{- end }}
