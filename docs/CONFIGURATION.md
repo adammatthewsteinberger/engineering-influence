@@ -148,6 +148,7 @@ never prints a traceback, which could carry a connection string.
 | `EI_DATABASE_URL` | both | SQLAlchemy URL, for example `postgresql+psycopg://user:pw@host:5432/db`. Required. |
 | `EI_RABBITMQ_URL` | both | `amqp://user:pw@host:5672/`. Required. |
 | `EI_API_KEYS` | API | Comma-separated keys, each at least 24 characters. Required: with none, the API will not start. |
+| `EI_METRICS_API_KEYS` | API | Comma-separated keys, each at least 24 characters, accepted on `/metrics` only (never on another route). Optional: without it, `/metrics` takes the main keys |
 | `EI_ARTIFACT_STORE` | API and worker | Where a run's files are kept: `database` (default, in Postgres) or `s3` (a bucket, AWS S3 or an S3-compatible service such as SeaweedFS). See [Object storage](#object-storage) |
 | `EI_S3_BUCKET` | API and worker | The bucket for run files. Required when `EI_ARTIFACT_STORE` is `s3` |
 | `EI_S3_ENDPOINT_URL` | API and worker | The address of an S3-compatible service; empty for AWS S3 |
@@ -199,6 +200,7 @@ when this index names one nothing uses. The two `compose only` rows are read by 
 | `EI_WEBHOOK_URLS` | the receivers of a run's events: a comma-separated list of `https://` addresses. Empty by default, which sends nothing | [Webhooks](WEBHOOKS.md) |
 | `EI_WEBHOOK_SECRET` | the secret that signs each delivery. Required when `EI_WEBHOOK_URLS` is set; never printed or logged | [Webhooks](WEBHOOKS.md) |
 | `EI_WEBHOOK_INTERVAL_SECONDS` | how often the worker delivers queued events, in seconds (at least 0.01; default 5) | [Webhooks](WEBHOOKS.md) |
+| `EI_METRICS_API_KEYS` | the keys that may read `/metrics`, and no other route | [Running on minikube](MINIKUBE.md#metrics-and-dashboards) |
 | `EI_ARTIFACT_STORE` | where a run's files are kept: the database or an S3-compatible bucket | [Object storage](#object-storage) |
 | `EI_S3_BUCKET`, `EI_S3_ENDPOINT_URL`, `EI_S3_REGION`, `EI_S3_ACCESS_KEY_ID`, `EI_S3_SECRET_ACCESS_KEY` | the bucket and its credentials, for `EI_ARTIFACT_STORE=s3` | [Object storage](#object-storage) |
 | `EI_NARRATOR_VOICE` | the Kokoro voice, for example `af_heart` (the default) or `bf_emma` | [AUDIOBOOKS.md](AUDIOBOOKS.md) |

@@ -45,12 +45,14 @@ class ApiApplication(ApiApplicationInterface):
         runs: RunControllerInterface | None = None,
         creator: CreateRunInterface | None = None,
         manager: RunManagementInterface | None = None,
+        metrics_guard: "ApiGuard | None" = None,
     ) -> None:
         self._controller = controller
         self._runs = runs
         self._creator = creator
         self._manager = manager
         self._guard = guard
+        self._metrics_guard = metrics_guard or guard
         self._observability = observability
         self._renderer = PrometheusRenderer()
 
@@ -152,7 +154,7 @@ class ApiApplication(ApiApplicationInterface):
             self._metrics,
             methods=["GET"],
             response_model=None,
-            dependencies=[Depends(self._guard)],
+            dependencies=[Depends(self._metrics_guard)],
         )
         # Added last, so it is outermost and the id is active for the timing log too.
         install_middleware(app, alert_subject_prefix="engineering-influence: ")

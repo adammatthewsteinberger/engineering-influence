@@ -1,0 +1,1 @@
+The metrics key is scoped to `/metrics`: the API reads it as `EI_METRICS_API_KEYS`, accepts it on `/metrics` only, and refuses it on every other route. Without `EI_METRICS_API_KEYS`, `/metrics` keeps the main key as before. The Helm chart keeps Prometheus reachable only from Grafana. Found by an automated security review of the observability PR.

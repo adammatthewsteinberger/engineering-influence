@@ -22,7 +22,7 @@ host="$rel-engineering-influence"
 cat > "$secrets" <<ENV
 EI_DATABASE_URL=postgresql+psycopg://ei:$pg@$host-postgres:5432/ei
 EI_RABBITMQ_URL=amqp://ei:$mq@$host-rabbitmq:5672/
-EI_API_KEYS=$key,$metrics
+EI_API_KEYS=$key
 EI_METRICS_API_KEY=$metrics
 EI_GRAFANA_ADMIN_PASSWORD=$grafana
 EI_POSTGRES_PASSWORD=$pg
