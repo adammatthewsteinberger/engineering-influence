@@ -1,0 +1,51 @@
+# Admission policies for the namespaces labelled policy.ei/restricted=true (the minikube install labels its namespace).
+# The denying policy refuses a pod that does not run as non-root, or that has a privileged container. The audit policy
+# reports containers without a memory limit without refusing them: several stateful pods of the stack do not set one
+# yet. Only new and updated pods are checked, so a rollout of a workload is the moment its pods are checked.
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: ei-restricted-pods
+spec:
+  validationActions: ["Deny"]
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["pods"]
+    namespaceSelector:
+      matchLabels:
+        policy.ei/restricted: "true"
+  validations:
+    - expression: >-
+        has(object.spec.securityContext) && has(object.spec.securityContext.runAsNonRoot)
+        && object.spec.securityContext.runAsNonRoot == true
+      message: "pods in this namespace must run as non-root"
+    - expression: >-
+        (has(object.spec.initContainers) ? object.spec.initContainers : []).all(c,
+          !has(c.securityContext) || !has(c.securityContext.privileged) || c.securityContext.privileged == false)
+        && object.spec.containers.all(c,
+          !has(c.securityContext) || !has(c.securityContext.privileged) || c.securityContext.privileged == false)
+      message: "privileged containers are not allowed"
+---
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: ei-audit-resources
+spec:
+  validationActions: ["Audit"]
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["pods"]
+    namespaceSelector:
+      matchLabels:
+        policy.ei/restricted: "true"
+  validations:
+    - expression: >-
+        object.spec.containers.all(c,
+          has(c.resources) && has(c.resources.limits) && has(c.resources.limits.memory))
+      message: "containers should set a memory limit"
