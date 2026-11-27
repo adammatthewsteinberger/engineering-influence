@@ -104,3 +104,10 @@ Revision 1 is Blue, 2 is Pink, and so on through the standard order to 9. A scen
 number, so a scene keeps its identity when others are added or cut. A new scene, or one whose text changed, gets a
 `[[revised: Colour *]]` note above its heading. The marked script is stored as `revision_pages.fountain`; the shooting script
 itself is unchanged. The page layout that prints the colours, and the date on each revision's header, are not built yet.
+
+## Revision checks
+
+A revised scene is kept only if it passes the same checks as the draft (one scene, the format rules), keeps its length
+within 10% of the draft, and does not copy its sources into dialogue: the same twelve-word rule as the draft stage, applied
+to the source files the card names. A revision that fails any of these keeps its draft; the revision stage does not stop.
+Bible cards are not checked at this stage, so a revision that speaks a card's own text is not refused here.

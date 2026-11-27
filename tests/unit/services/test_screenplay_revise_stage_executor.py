@@ -17,6 +17,9 @@ from engineering_influence.models.budget import Budget
 from engineering_influence.models.scene_card import SceneCard
 from engineering_influence.services.fountain_parser import FountainParser
 from engineering_influence.services.scene_card_list import SceneCardList
+from engineering_influence.services.screenplay_dialogue_source_check import (
+    ScreenplayDialogueSourceCheck,
+)
 from engineering_influence.services.screenplay_recipes import ScreenplayRecipes
 from engineering_influence.services.screenplay_revise_stage_executor import (
     ScreenplayReviseStageExecutor,
@@ -28,6 +31,7 @@ CARDS = "\n".join(
     for n in (1, 2, 3)
 )
 DRAFT = "INT. ROOM - DAY\n\nScene {} plays out."
+SOURCE = "The reserve held forty days of grain while the river rose over the lower fields."
 
 
 class Reviser(SceneReviserInterface):
@@ -55,6 +59,7 @@ def run() -> BookRun:
 def seeded(*drafts: int) -> InMemoryArtifactStore:
     store = InMemoryArtifactStore()
     store.put("run-1", "scene_cards.md", CARDS.encode("utf-8"))
+    store.put("run-1", "source/001.md", SOURCE.encode("utf-8"))
     for number in drafts:
         store.put("run-1", f"scenes/{number:03d}.md", DRAFT.format(number).encode("utf-8"))
     return store
@@ -62,7 +67,11 @@ def seeded(*drafts: int) -> InMemoryArtifactStore:
 
 def stage(store: InMemoryArtifactStore, reviser: Reviser) -> ScreenplayReviseStageExecutor:
     return ScreenplayReviseStageExecutor(
-        store, reviser, SceneCardList(), ScreenplaySectionCheck(FountainParser())
+        store,
+        reviser,
+        SceneCardList(),
+        ScreenplaySectionCheck(FountainParser()),
+        ScreenplayDialogueSourceCheck(FountainParser()),
     )
 
 
@@ -150,3 +159,10 @@ def test_a_scene_that_was_never_drafted_is_refused() -> None:
     with pytest.raises(ApplicationError) as error:
         asyncio.run(stage(seeded(1, 2), Reviser(lambda n: "")).execute(run(), 1))
     assert error.value.code == "STAGE_INPUT_MISSING"
+
+
+def test_a_revision_that_speaks_the_source_word_for_word_keeps_the_draft() -> None:
+    store = seeded(1, 2, 3)
+    copied = "INT. ROOM - DAY\n\nADA\nThe reserve held forty days of grain while the river rose over the lower fields."
+    asyncio.run(stage(store, Reviser(lambda n: copied)).execute(run(), 1))
+    assert revised(store, 1) == DRAFT.format(1)

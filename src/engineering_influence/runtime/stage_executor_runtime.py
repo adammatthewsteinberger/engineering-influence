@@ -478,6 +478,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                             ModelSceneReviser(prompts, loop, SpendGuard),
                             SceneCardList(),
                             ScreenplaySectionCheck(FountainParser()),
+                            ScreenplayDialogueSourceCheck(FountainParser()),
                         ),
                     }
                 ),
