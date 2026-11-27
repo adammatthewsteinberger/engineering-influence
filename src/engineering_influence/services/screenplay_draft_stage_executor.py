@@ -17,6 +17,9 @@ from engineering_influence.services.interfaces.scene_card_list_interface import 
 from engineering_influence.services.interfaces.screenplay_bible_context_interface import (
     ScreenplayBibleContextInterface,
 )
+from engineering_influence.services.interfaces.screenplay_dialogue_source_check_interface import (
+    ScreenplayDialogueSourceCheckInterface,
+)
 from engineering_influence.services.interfaces.screenplay_section_check_interface import (
     ScreenplaySectionCheckInterface,
 )
@@ -36,6 +39,7 @@ class ScreenplayDraftStageExecutor(StageExecutorInterface):
         drafter: SceneDrafterInterface,
         cards: SceneCardListInterface,
         checks: ScreenplaySectionCheckInterface,
+        dialogue: ScreenplayDialogueSourceCheckInterface,
         shareable: frozenset[int] = frozenset(),
         bible: ScreenplayBibleContextInterface | None = None,
     ) -> None:
@@ -43,6 +47,7 @@ class ScreenplayDraftStageExecutor(StageExecutorInterface):
         self._drafter = drafter
         self._cards = cards
         self._checks = checks
+        self._dialogue = dialogue
         self._shareable = shareable
         self._bible = bible
 
@@ -86,7 +91,7 @@ class ScreenplayDraftStageExecutor(StageExecutorInterface):
             scene = await asyncio.to_thread(
                 self._drafter.draft, run, card, anchors, beats, sources, number
             )
-            problems = self._checks.problems(scene)
+            problems = self._checks.problems(scene) + self._dialogue.problems(scene, sources)
             if not problems:
                 return scene
         shown = "; ".join(problems[: self.MAX_PROBLEMS_SHOWN])

@@ -60,3 +60,11 @@ The error codes are listed in [Troubleshooting](TROUBLESHOOTING.md).
 A scene card may carry `**Tone:**` with `warm`, `conflict` or `neutral`. When any card carries a tone, the scene-card stage
 refuses the cards unless the warm scenes are at least five times the conflict scenes, and it names any tone that is not one
 of the three. Cards with no tone are not counted, so a screenplay whose cards carry no tone is not checked.
+
+## Drafting checks
+
+Each drafted scene is checked before it is kept. A scene must be exactly one scene and follow the format rules. Its dialogue
+must not repeat its sources: a speech that holds twelve words of a source in a row, ignoring case and punctuation, fails the
+check, so research is spoken as dialogue rather than read out of a file. Action is not checked, since a description may name
+what the sources say. A scene that fails is drafted once more; if the second draft fails too, the stage stops with
+`STAGE_OUTPUT_INVALID` and names the first problems.

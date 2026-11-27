@@ -19,6 +19,9 @@ from engineering_influence.services.interfaces.screenplay_bible_context_interfac
     ScreenplayBibleContextInterface,
 )
 from engineering_influence.services.scene_card_list import SceneCardList
+from engineering_influence.services.screenplay_dialogue_source_check import (
+    ScreenplayDialogueSourceCheck,
+)
 from engineering_influence.services.screenplay_draft_stage_executor import (
     ScreenplayDraftStageExecutor,
 )
@@ -68,6 +71,7 @@ def stage(
         drafter,
         SceneCardList(),
         ScreenplaySectionCheck(FountainParser()),
+        ScreenplayDialogueSourceCheck(FountainParser()),
         shareable,
     )
 
@@ -254,6 +258,7 @@ def drafted_with(bible: ScreenplayBibleContextInterface) -> Drafter:
         drafter,
         SceneCardList(),
         ScreenplaySectionCheck(FountainParser()),
+        ScreenplayDialogueSourceCheck(FountainParser()),
         bible=bible,
     )
     asyncio.run(executor.execute(run(), 1))
@@ -272,3 +277,38 @@ def test_a_scene_that_names_no_card_is_handed_its_sources_alone() -> None:
     drafter = drafted_with(NamedBible(""))
     assert "Bible" not in drafter.sources[1]
     assert drafter.sources[1].startswith("Source 001:")
+
+
+LONG_SOURCE = "The reserve held forty days of air before the stack would crack under load."
+
+
+class Copier(SceneDrafterInterface):
+    """Writes every scene as a speech that repeats the source word for word."""
+
+    def draft(
+        self, run: BookRun, card: SceneCard, anchors: str, beats: str, sources: str, try_number: int
+    ) -> str:
+        return f"INT. ROOM - DAY\n\nMARA\n{LONG_SOURCE}"
+
+
+def with_long_source() -> InMemoryArtifactStore:
+    store = InMemoryArtifactStore()
+    store.put("run-1", "scene_cards.md", CARDS.encode("utf-8"))
+    store.put("run-1", "anchors.md", b"anchors")
+    store.put("run-1", "beats.md", b"beats")
+    store.put("run-1", "source/001.md", LONG_SOURCE.encode("utf-8"))
+    return store
+
+
+def test_a_speech_that_copies_its_source_is_drafted_again_and_then_refused() -> None:
+    executor = ScreenplayDraftStageExecutor(
+        with_long_source(),
+        Copier(),
+        SceneCardList(),
+        ScreenplaySectionCheck(FountainParser()),
+        ScreenplayDialogueSourceCheck(FountainParser()),
+    )
+    with pytest.raises(ApplicationError) as error:
+        asyncio.run(executor.execute(run(), 1))
+    assert error.value.code == "STAGE_OUTPUT_INVALID"
+    assert "dialogue repeats source text" in error.value.message
