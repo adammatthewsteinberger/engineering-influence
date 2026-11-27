@@ -48,6 +48,7 @@ class Creator(LocalBookCreatorInterface):
         self.sources: list[tuple[SourceEntry, ...]] = []
         self.previous_locks: list[str | None] = []
         self.stops: list[str | None] = []
+        self.modes: list[str] = []
         self.resumed: list[bool] = []
         self.exported: list[Path] = []
         self.closed = 0
@@ -67,8 +68,10 @@ class Creator(LocalBookCreatorInterface):
         sources: tuple[object, ...] = (),
         previous_lock: str | None = None,
         stop_after: str | None = None,
+        mode: str = "book",
     ) -> BookRun:
         self.started.append(brief)
+        self.modes.append(mode)
         self.sources.append(sources)
         self.previous_locks.append(previous_lock)
         self.stops.append(stop_after)
@@ -148,6 +151,12 @@ def test_a_previous_shooting_lock_file_is_passed_to_the_run_as_text(tmp_path: Pa
     lock.write_text('{"version": 1, "entries": []}', encoding="utf-8")
     assert harness.run("a film", *create(tmp_path, "--previous-lock", str(lock))) == 0
     assert harness.creator.previous_locks == ['{"version": 1, "entries": []}']
+
+
+def test_the_mode_reaches_the_run(tmp_path: Path) -> None:
+    harness = Harness(run_in(RunStatus.COMPLETED))
+    assert harness.run("a book", *create(tmp_path, "--mode", "audiobook")) == 0
+    assert harness.creator.modes == ["audiobook"]
 
 
 def test_stop_after_names_the_stage_the_run_ends_at(tmp_path: Path) -> None:

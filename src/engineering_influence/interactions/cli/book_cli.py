@@ -103,6 +103,12 @@ class BookCli(BookCliInterface):
             help="a folder of source files (.md, .txt) the run adapts; each file is kept in the run",
         )
         create.add_argument(
+            "--mode",
+            choices=["book", "audiobook"],
+            default="book",
+            help="book (the default) writes a book from an idea; audiobook narrates a finished nonfiction manuscript given with --source, one chapter per file",
+        )
+        create.add_argument(
             "--stop-after",
             help="stop the run after this stage, for example scene_cards; the stages after it are not run",
         )
@@ -235,6 +241,7 @@ class BookCli(BookCliInterface):
                         self._sources(arguments.source),
                         self._previous_lock(arguments.previous_lock),
                         arguments.stop_after,
+                        arguments.mode,
                     )
                 )
             return self._finish(creator, run, arguments.out, state)

@@ -279,6 +279,24 @@
               "type": null
             },
             {
+              "choices": [
+                "audiobook",
+                "book"
+              ],
+              "default": "book",
+              "dest": "mode",
+              "flags": [
+                "--mode"
+              ],
+              "name": "--mode",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            },
+            {
               "choices": null,
               "default": false,
               "dest": "no_keep_awake",
