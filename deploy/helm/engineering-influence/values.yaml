@@ -68,6 +68,15 @@ logs:
     image:
       repository: grafana/alloy
       tag: "v1.4.0"
+# Traces: the API and the worker export OpenTelemetry spans over OTLP/HTTP to Tempo, which Grafana reads. Off by default.
+# With tracing enabled, the ConfigMap sets EI_OTLP_ENDPOINT to Tempo's receiver. observability.enabled is needed for Grafana.
+tracing:
+  enabled: false
+  tempo:
+    image:
+      repository: grafana/tempo
+      tag: "2.6.1"
+    storage: 5Gi
 # Secrets from OpenBao (an open-source Vault fork), synced into the existingSecret by the External Secrets Operator. The
 # operator's CRDs must exist (install external-secrets first). openbao.devMode runs one in-memory server with the root
 # token from bootstrapTokenSecret, for a local cluster only; production points secretStore at an OpenBao it runs.

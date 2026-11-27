@@ -57,6 +57,7 @@ class EnvironmentSettingsLoader(EnvironmentSettingsLoaderInterface):
             webhook_secret=self._secrets.require("EI_WEBHOOK_SECRET") if webhook_urls else "",
             webhook_interval_seconds=self._positive("EI_WEBHOOK_INTERVAL_SECONDS", 5.0),
             artifact_store=store,
+            otlp_endpoint=self._text("EI_OTLP_ENDPOINT", ""),
             s3_bucket=self._required_text("EI_S3_BUCKET") if s3 else "",
             s3_endpoint_url=self._text("EI_S3_ENDPOINT_URL", "") if s3 else "",
             s3_region=self._text("EI_S3_REGION", "us-east-1"),

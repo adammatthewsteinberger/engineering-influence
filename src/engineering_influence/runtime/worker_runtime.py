@@ -25,6 +25,7 @@ from engineering_influence.infrastructure.observability.correlating_queue import
 from engineering_influence.infrastructure.observability.json_logging_configurator import (
     JsonLoggingConfigurator,
 )
+from engineering_influence.infrastructure.observability.otel_tracing import OtelTracing
 from engineering_influence.infrastructure.observability.process_crash_hooks import (
     ProcessCrashHooks,
 )
@@ -201,6 +202,7 @@ class WorkerRuntime(WorkerRuntimeInterface):
         """Configure the process and serve until SIGINT or SIGTERM."""
         JsonLoggingConfigurator(self._settings.log_level).configure()
         ProcessCrashHooks().install()
+        OtelTracing().start(self._settings.otlp_endpoint, "engineering-influence-worker")
         asyncio.run(self._main())
 
     async def _main(self) -> None:

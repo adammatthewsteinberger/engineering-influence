@@ -6,7 +6,7 @@ import pytest
 from alembic import command
 from alembic.autogenerate import compare_metadata
 from alembic.runtime.migration import MigrationContext
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import create_engine, inspect, text
 from sqlmodel import Session, SQLModel, select
 
 from engineering_influence.errors.application_error import ApplicationError
@@ -127,6 +127,18 @@ def test_the_baseline_can_be_undone(tmp_path: Path) -> None:
     command.downgrade(migrator._config(url), "base")
     assert tables_in(url) == set()
     assert migrator.current(url) is None
+
+
+def test_undoing_the_session_table_tolerates_it_already_being_gone(tmp_path: Path) -> None:
+    url = fresh_url(tmp_path)
+    migrator = SchemaMigrator()
+    migrator.upgrade(url)
+    engine = create_engine(url)
+    with engine.begin() as connection:
+        connection.execute(text("DROP TABLE acpsessionrecord"))
+    engine.dispose()
+    command.downgrade(migrator._config(url), "base")
+    assert tables_in(url) == set()
 
 
 def test_checking_a_database_that_was_never_migrated_says_to_upgrade(tmp_path: Path) -> None:

@@ -129,6 +129,12 @@ data:
         access: proxy
         url: http://{{ include "ei.fullname" . }}-loki:3100
       {{- end }}
+      {{- if .Values.tracing.enabled }}
+      - name: Tempo
+        type: tempo
+        access: proxy
+        url: http://{{ include "ei.fullname" . }}-tempo:3200
+      {{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment

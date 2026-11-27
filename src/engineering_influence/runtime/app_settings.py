@@ -30,6 +30,7 @@ class AppSettings(AppSettingsInterface):
     webhook_secret: str = ""
     webhook_interval_seconds: float = 5.0
     artifact_store: str = "database"
+    otlp_endpoint: str = ""
     s3_bucket: str = ""
     s3_endpoint_url: str = ""
     s3_region: str = "us-east-1"
