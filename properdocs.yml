@@ -67,6 +67,7 @@ nav:
       - Threat model: threat-model.md
   - Operating:
       - Worker image: worker-image.md
+      - Kubernetes deployment: deployment.md
       - Troubleshooting: troubleshooting.md
       - Releasing: releasing.md
       - Documentation site: documentation-site.md

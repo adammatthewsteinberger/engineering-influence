@@ -127,6 +127,7 @@ installs `ei` alone. It is not on PyPI yet. The extras are `api`, `webhooks`, `r
 | [Threat model](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/THREAT_MODEL.md) | What is protected, from whom, and what is not |
 | [Evaluation](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/EVALUATION.md), [live smoke test](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/LIVE_SMOKE_TEST.md) | The paid runs that measure quality and cost |
 | [Worker image](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/WORKER_IMAGE.md) | The container and the TeX toolchain |
+| [Kubernetes deployment](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/DEPLOYMENT.md) | The Helm chart, its Secret and the install steps |
 | [Troubleshooting](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/TROUBLESHOOTING.md) | Symptoms, causes and fixes |
 | [Testing](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/TESTING.md), [compatibility](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/COMPATIBILITY.md), [releasing](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/RELEASING.md) | The gates, what is promised to callers, and cutting a release |
 | [The documentation site](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/DOCUMENTATION_SITE.md) | How these pages become a website, and how to publish it |

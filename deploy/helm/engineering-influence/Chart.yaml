@@ -1,0 +1,6 @@
+apiVersion: v2
+name: engineering-influence
+description: The engineering-influence API, its worker and the schema migration, against Postgres and RabbitMQ that the cluster or an operator provides.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
