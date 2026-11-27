@@ -123,6 +123,12 @@ data:
         access: proxy
         url: http://{{ $prom }}:9090
         isDefault: true
+      {{- if .Values.logs.enabled }}
+      - name: Loki
+        type: loki
+        access: proxy
+        url: http://{{ include "ei.fullname" . }}-loki:3100
+      {{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment

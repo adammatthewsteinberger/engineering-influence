@@ -46,7 +46,9 @@ kubectl -n ei port-forward svc/ei-engineering-influence-grafana 3000:3000
 ```
 
 Grafana's user is `admin`, and its password is in the Secret: `kubectl -n ei get secret ei-secrets -o jsonpath='{.data.EI_GRAFANA_ADMIN_PASSWORD}' | base64 -d`.
-Its Prometheus datasource is provisioned; logs are not collected yet (that is a later step).
+Its Prometheus and Loki datasources are provisioned. Logs: Alloy reads this namespace's pods through the Kubernetes API and
+ships them to Loki, so in Grafana's Explore, pick Loki and query `{namespace="ei"}` (or `{pod=~"ei-engineering-influence-api.*"}`).
+Loki accepts connections only from Alloy and Grafana. Tracing is not collected yet.
 
 ## Traps this setup has hit
 

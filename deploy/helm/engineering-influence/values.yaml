@@ -55,6 +55,19 @@ rabbitmq:
 
 # Metrics and dashboards: Prometheus scrapes the API's /metrics, and Grafana reads Prometheus. The API guards /metrics with
 # an API key, so the Secret must hold a dedicated key (metricsApiKeyName) that is also listed in EI_API_KEYS.
+# Logs: Alloy reads the pods' logs in this namespace through the Kubernetes API and sends them to Loki, which Grafana reads.
+# Both are off by default; observability.enabled is also needed for Grafana.
+logs:
+  enabled: false
+  loki:
+    image:
+      repository: grafana/loki
+      tag: "3.2.0"
+    storage: 5Gi
+  alloy:
+    image:
+      repository: grafana/alloy
+      tag: "v1.4.0"
 observability:
   enabled: false
   metricsApiKeyName: EI_METRICS_API_KEY

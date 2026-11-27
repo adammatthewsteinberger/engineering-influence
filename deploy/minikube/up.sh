@@ -36,7 +36,7 @@ kubectl create secret generic ei-secrets --namespace "$ns" --from-env-file="$sec
 helm upgrade --install "$rel" "$chart" --namespace "$ns" \
   --set existingSecret=ei-secrets \
   --set image.repository="${image%%:*}" --set image.pullPolicy=Never \
-  --set postgres.enabled=true --set rabbitmq.enabled=true --set observability.enabled=true \
+  --set postgres.enabled=true --set rabbitmq.enabled=true --set observability.enabled=true --set logs.enabled=true \
   --set seaweedfs.enabled=true --set artifactStore.kind=s3 --set artifactStore.bucket=ei-artifacts \
   --set api.replicas=1 --set worker.replicas=1 \
   --set image.tag="${image#*:}"
