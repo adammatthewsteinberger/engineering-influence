@@ -76,6 +76,8 @@ helm install ei deploy/helm/engineering-influence \
   --set seaweedfs.enabled=true
 ```
 
+SeaweedFS's master, volume and filer ports have no authentication, so the chart adds a NetworkPolicy that lets only the API, the worker and the bucket Job reach its S3 port. It takes effect only on a cluster whose network plugin enforces NetworkPolicy; check your plugin before relying on it.
+
 The command-line book commands and the MCP server still read the database, as the configuration page says.
 
 ## Not in this chart yet
