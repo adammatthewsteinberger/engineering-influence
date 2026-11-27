@@ -8,3 +8,9 @@ data:
   {{- range $key, $value := .Values.config }}
   {{ $key }}: {{ $value | quote }}
   {{- end }}
+  {{- if eq .Values.artifactStore.kind "s3" }}
+  EI_ARTIFACT_STORE: "s3"
+  EI_S3_BUCKET: {{ .Values.artifactStore.bucket | quote }}
+  EI_S3_REGION: {{ .Values.artifactStore.region | quote }}
+  EI_S3_ENDPOINT_URL: {{ include "ei.s3EndpointUrl" . | quote }}
+  {{- end }}

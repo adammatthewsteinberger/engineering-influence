@@ -25,6 +25,14 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- printf "%s:%s" .Values.image.repository .Values.image.tag -}}
 {{- end -}}
 
+{{- define "ei.s3EndpointUrl" -}}
+{{- if .Values.artifactStore.endpointUrl -}}
+{{- .Values.artifactStore.endpointUrl -}}
+{{- else if .Values.seaweedfs.enabled -}}
+{{- printf "http://%s-seaweedfs:8333" (include "ei.fullname" .) -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "ei.env" -}}
 - name: EI_DATABASE_URL
   valueFrom:
@@ -41,4 +49,17 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
     secretKeyRef:
       name: {{ .Values.existingSecret }}
       key: EI_API_KEYS
+{{- if eq .Values.artifactStore.kind "s3" }}
+- name: EI_S3_ACCESS_KEY_ID
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.existingSecret }}
+      key: EI_S3_ACCESS_KEY_ID
+- name: EI_S3_SECRET_ACCESS_KEY
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.existingSecret }}
+      key: EI_S3_SECRET_ACCESS_KEY
+{{- end }}
 {{- end -}}
+
