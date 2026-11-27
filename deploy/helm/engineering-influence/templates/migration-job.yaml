@@ -7,7 +7,7 @@ metadata:
     {{- include "ei.labels" . | nindent 4 }}
     app.kubernetes.io/component: migration
   annotations:
-    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook": {{ if .Values.postgres.enabled }}post-install,post-upgrade{{ else }}pre-install,pre-upgrade{{ end }}
     "helm.sh/hook-weight": "-5"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
@@ -19,6 +19,15 @@ spec:
         app.kubernetes.io/component: migration
     spec:
       restartPolicy: Never
+      {{- if .Values.postgres.enabled }}
+      initContainers:
+        # The in-cluster database is created by the same install, so the migration waits for its port first.
+        - name: wait-for-postgres
+          image: busybox:1.37
+          command: ["sh", "-c", "until nc -z {{ include "ei.fullname" . }}-postgres 5432; do sleep 2; done"]
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+      {{- end }}
       serviceAccountName: {{ include "ei.serviceAccountName" . }}
       automountServiceAccountToken: false
       securityContext:

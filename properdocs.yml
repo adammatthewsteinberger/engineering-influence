@@ -68,6 +68,7 @@ nav:
   - Operating:
       - Worker image: worker-image.md
       - Kubernetes deployment: deployment.md
+      - Running on minikube: minikube.md
       - Troubleshooting: troubleshooting.md
       - Releasing: releasing.md
       - Documentation site: documentation-site.md

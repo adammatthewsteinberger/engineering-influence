@@ -117,6 +117,7 @@ LAYERED = (
 PLAIN = (
     "AGENTS.md",
     "docs/DEPLOYMENT.md",
+    "docs/MINIKUBE.md",
     "CLAUDE.md",
     "GEMINI.md",
     "CHANGELOG.md",

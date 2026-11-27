@@ -16,7 +16,7 @@ COPY packages ./packages
 COPY src ./src
 # Locked and non-editable: the runtime image gets exactly the versions in uv.lock. The publishing extra is
 # here so the TeX worker can run book commands; it is a few tens of megabytes beside the TeX packages.
-RUN uv sync --frozen --no-dev --no-editable --extra api --extra runtime --extra publishing
+RUN uv sync --frozen --no-dev --no-editable --extra api --extra runtime --extra publishing --extra s3
 
 # The TeX worker. The packages are the ones the CI toolchain job installs, plus zip and tidy: the CI runners
 # already have zip, and tex4ebook needs it to pack an EPUB. Recommended packages are not installed.

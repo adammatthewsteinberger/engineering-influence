@@ -88,11 +88,16 @@ spec:
             - name: config
               mountPath: /config
               readOnly: true
+            # SeaweedFS writes its socket files to /tmp, which the read-only root filesystem would refuse.
+            - name: tmp
+              mountPath: /tmp
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: {{ $name }}-data
         - name: config
+          emptyDir: {}
+        - name: tmp
           emptyDir: {}
 ---
 apiVersion: v1
