@@ -202,6 +202,7 @@ from engineering_influence.services.screenplay_revise_stage_executor import (
     ScreenplayReviseStageExecutor,
 )
 from engineering_influence.services.screenplay_section_check import ScreenplaySectionCheck
+from engineering_influence.services.screenplay_title_parser import ScreenplayTitleParser
 from engineering_influence.services.scripture_checker import ScriptureChecker
 from engineering_influence.services.scripture_draft_checks import ScriptureDraftChecks
 from engineering_influence.services.shooting_lock_codec import ShootingLockCodec
@@ -560,6 +561,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                                 FountainPageEstimate(FountainParser()),
                                 ScreenplayOutputChecks.DEFAULT_TARGET_PAGES,
                             ),
+                            ScreenplayTitleParser(),
                         ),
                     }
                 ),

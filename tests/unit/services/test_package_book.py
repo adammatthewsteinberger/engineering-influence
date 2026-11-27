@@ -301,6 +301,7 @@ def test_the_cli_prints_the_package_summary_it_is_given(
             NoAwake(),
             lambda folder: (),
             lambda folder: (),
+            lambda folder: None,
         ).run(argv)
         == 0
     )

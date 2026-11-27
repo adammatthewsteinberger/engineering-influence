@@ -76,3 +76,17 @@ scene card must begin within 5% of the film, by the script's estimated Courier l
 for it, and every one of the fifteen beats must have a scene card. The length is measured, not the card count, so a long
 opening scene moves the beats after it. A script that fails is refused at assembly with `STAGE_OUTPUT_INVALID`, and the
 message names each beat that is missing or out of place.
+
+## The title page
+
+A film's title page prints its title, then the credit and source book the author gives in an optional `title.toml`, kept
+beside the source files in the `--source` folder:
+
+```toml
+credit = "Based on the novel by A. Writer"
+source = "The Example Novel"
+```
+
+Each key is optional and is one line of text, at most 200 characters. Any other key, or a value that is not text, refuses
+the run with `SCREENPLAY_TITLE_INVALID` and names the problem. The source intake reads only `.md` and `.txt` files, so
+`title.toml` is never read as a source.
