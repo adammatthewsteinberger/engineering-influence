@@ -1,4 +1,3 @@
-
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Chooses what does a run's stages: the offline placeholder, or a model, only when told to."""
 
