@@ -29,7 +29,7 @@ Create the Secret before installing. It must hold:
 kubectl create secret generic ei-secrets \
   --from-literal=EI_DATABASE_URL='postgresql+psycopg://user:pw@postgres:5432/ei' \
   --from-literal=EI_RABBITMQ_URL='amqp://user:pw@rabbitmq:5672/' \
-  --from-literal=EI_API_KEYS='replace-with-a-key-of-at-least-24-characters'
+  --from-literal=EI_API_KEYS='<your-api-key-of-at-least-24-characters>'
 ```
 
 ## Install
