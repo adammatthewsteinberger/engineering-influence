@@ -17,6 +17,9 @@ from engineering_influence.models.budget import Budget
 from engineering_influence.models.source_entry import SourceEntry
 from engineering_influence.models.stage_plan import StagePlan
 from engineering_influence.services.advance_run import AdvanceRun
+from engineering_influence.services.audiobook_outline_stage_executor import (
+    AudiobookOutlineStageExecutor,
+)
 from engineering_influence.services.interfaces.create_run_interface import CreateRunInterface
 from engineering_influence.services.interfaces.spend_ceiling_interface import (
     SpendCeilingInterface,
@@ -39,6 +42,10 @@ class CreateRun(CreateRunInterface):
     before anything is saved or queued.
     """
 
+    AUDIOBOOK_PLAN: ClassVar[StagePlan] = StagePlan(
+        BookKind.NONFICTION,
+        (AudiobookOutlineStageExecutor.STAGE, NonfictionRecipes.NARRATION_STAGE),
+    )
     PLANS: ClassVar[Mapping[BookKind, StagePlan]] = {
         BookKind.NONFICTION: NonfictionRecipes().plan(),
         BookKind.NOVEL: NovelRecipes().plan(),
@@ -85,10 +92,23 @@ class CreateRun(CreateRunInterface):
         sources: tuple[SourceEntry, ...] = (),
         previous_lock: str | None = None,
         stop_after: str | None = None,
+        mode: str = "book",
     ) -> BookRun:
         """Save a new pending run for the brief and queue its first stage; return the run. A previous shooting script
         lock, when given, is kept as the run's previous lock, so the run's scene numbers carry over from it."""
-        plan = self._plans.get(brief.kind)
+        if mode not in ("book", "audiobook"):
+            raise ApplicationError(
+                code="RUN_MODE_UNKNOWN",
+                message=f"a book run is a book or an audiobook, not {mode!r}",
+                http_status=422,
+            )
+        if mode == "audiobook" and brief.kind is not BookKind.NONFICTION:
+            raise ApplicationError(
+                code="RUN_KIND_UNSUPPORTED",
+                message="an audiobook run narrates a finished nonfiction manuscript",
+                http_status=422,
+            )
+        plan = self.AUDIOBOOK_PLAN if mode == "audiobook" else self._plans.get(brief.kind)
         if plan is not None and stop_after is not None:
             plan = self._stop_at(plan, stop_after)
         if plan is None:

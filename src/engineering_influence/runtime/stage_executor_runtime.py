@@ -100,6 +100,9 @@ from engineering_influence.runtime.interfaces.stage_executor_runtime_interface i
 from engineering_influence.services.acx_export_stage_executor import AcxExportStageExecutor
 from engineering_influence.services.ask_model import AskModel
 from engineering_influence.services.assemble_stage_executor import AssembleStageExecutor
+from engineering_influence.services.audiobook_outline_stage_executor import (
+    AudiobookOutlineStageExecutor,
+)
 from engineering_influence.services.audit_stage_executor import AuditStageExecutor
 from engineering_influence.services.book_config_writer import BookConfigWriter
 from engineering_influence.services.build_screenplay_epub_stage_executor import (
@@ -496,6 +499,9 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                             lambda card: card.dialogued(),
                         ),
                     }
+                ),
+                AudiobookOutlineStageExecutor.STAGE: KindStageExecutor(
+                    {BookKind.NONFICTION: AudiobookOutlineStageExecutor(artifacts)}
                 ),
                 RenderScreenplayStageExecutor.STAGE: KindStageExecutor(
                     {
