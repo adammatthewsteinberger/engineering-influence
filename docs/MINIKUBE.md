@@ -37,7 +37,8 @@ Remove the whole stack, its data included, with `sh deploy/minikube/down.sh`.
 ## Metrics and dashboards
 
 `up.sh` also installs Prometheus and Grafana. Prometheus scrapes the API's `/metrics` with the dedicated metrics key in
-the Secret (`EI_METRICS_API_KEY`, also listed in `EI_API_KEYS`); the target is `up` in Prometheus's UI. Open them with:
+the Secret (`EI_METRICS_API_KEY`). That key opens `/metrics` only: the API reads it as `EI_METRICS_API_KEYS`, and refuses it
+on every other route; the main key is refused on `/metrics`. Prometheus accepts connections only from Grafana. Open them with:
 
 ```bash
 kubectl -n ei port-forward svc/ei-engineering-influence-prometheus 9090:9090

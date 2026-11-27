@@ -6,6 +6,7 @@ from typing import Any
 
 from engineering_influence.controllers.project_controller import ProjectController
 from engineering_influence.controllers.run_controller import RunController
+from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.infrastructure.object_storage.s3_artifact_store import S3ArtifactStore
 from engineering_influence.infrastructure.observability.bootstrap_metrics import BootstrapMetrics
 from engineering_influence.infrastructure.observability.context_var_correlation import (
@@ -86,6 +87,7 @@ class ApiRuntime(ApiRuntimeInterface):
             ConstantTimeApiKeyVerifier.from_secrets(self._secrets),
             TokenBucketRateLimiter(self._settings.rate_burst, self._settings.rate_per_second),
         )
+        metrics_guard = self._metrics_guard(guard)
         checks = (
             EndpointChecks.tcp("database", self._settings.database_url, 5432),
             EndpointChecks.tcp("rabbitmq", self._settings.rabbitmq_url, 5672),
@@ -108,8 +110,30 @@ class ApiRuntime(ApiRuntimeInterface):
             ResolveSpendConsent(runs, queue, ceiling),
         )
         return ApiApplication(
-            controller, guard, observability, run_controller, creator, manager
+            controller,
+            guard,
+            observability,
+            run_controller,
+            creator,
+            manager,
+            metrics_guard=metrics_guard,
         ).build()
+
+    def _metrics_guard(self, guard: ApiGuard) -> ApiGuard:
+        """The guard for /metrics: the dedicated EI_METRICS_API_KEYS when they are set, else the main guard.
+
+        A metrics key opens /metrics only; it is refused on every other route, so a scraper's key cannot run the API.
+        """
+        try:
+            metrics = ConstantTimeApiKeyVerifier.from_secrets(self._secrets, "EI_METRICS_API_KEYS")
+        except ApplicationError as error:
+            if error.code != "SECRET_MISSING":
+                raise
+            return guard
+        return ApiGuard(
+            metrics,
+            TokenBucketRateLimiter(self._settings.rate_burst, self._settings.rate_per_second),
+        )
 
     def run(self) -> None:
         """Configure logging, build the app, and serve until stopped."""
