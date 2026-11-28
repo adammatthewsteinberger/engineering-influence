@@ -11,6 +11,7 @@ from engineering_influence.interfaces.stage_executor_interface import StageExecu
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.scene_card import SceneCard
 from engineering_influence.models.stage_report import StageReport
+from engineering_influence.services.interfaces.answer_screen_interface import AnswerScreenInterface
 from engineering_influence.services.interfaces.scene_card_list_interface import (
     SceneCardListInterface,
 )
@@ -40,6 +41,7 @@ class ScreenplayDraftStageExecutor(StageExecutorInterface):
         cards: SceneCardListInterface,
         checks: ScreenplaySectionCheckInterface,
         dialogue: ScreenplayDialogueSourceCheckInterface,
+        screen: AnswerScreenInterface,
         shareable: frozenset[int] = frozenset(),
         bible: ScreenplayBibleContextInterface | None = None,
     ) -> None:
@@ -48,6 +50,7 @@ class ScreenplayDraftStageExecutor(StageExecutorInterface):
         self._cards = cards
         self._checks = checks
         self._dialogue = dialogue
+        self._screen = screen
         self._shareable = shareable
         self._bible = bible
 
@@ -86,20 +89,30 @@ class ScreenplayDraftStageExecutor(StageExecutorInterface):
     async def _scene(
         self, run: BookRun, card: SceneCard, anchors: str, beats: str, sources: str
     ) -> str:
+        findings = ""
         problems: tuple[str, ...] = ()
         for number in range(1, self.DRAFT_ATTEMPTS + 1):
             scene = await asyncio.to_thread(
-                self._drafter.draft, run, card, anchors, beats, sources, number
+                self._drafter.draft, run, card, anchors, beats, sources, number, findings
             )
-            problems = self._checks.problems(scene) + self._dialogue.problems(scene, sources)
+            problems = self._problems(scene, sources)
             if not problems:
                 return scene
+            # The second draft is told why the first one failed, so it corrects those problems rather than guessing.
+            findings = "; ".join(problems[: self.MAX_PROBLEMS_SHOWN])
         shown = "; ".join(problems[: self.MAX_PROBLEMS_SHOWN])
         raise ApplicationError(
             code="STAGE_OUTPUT_INVALID",
             message=f"S{card.number:02d}: {shown}",
             http_status=422,
         )
+
+    def _problems(self, scene: str, sources: str) -> tuple[str, ...]:
+        """Everything wrong with a draft: a refusal in its action, a broken format, or dialogue that copies a source."""
+        refusal = (
+            ("the draft opens with a refusal, not a scene",) if self._screen.refused(scene) else ()
+        )
+        return refusal + self._checks.problems(scene) + self._dialogue.problems(scene, sources)
 
     async def _required(self, run: BookRun, name: str) -> str:
         data = await asyncio.to_thread(self._artifacts.get, run.run_id, name)

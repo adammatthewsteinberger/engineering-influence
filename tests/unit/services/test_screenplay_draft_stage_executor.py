@@ -14,6 +14,7 @@ from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget import Budget
 from engineering_influence.models.scene_card import SceneCard
+from engineering_influence.services.fountain_answer_screen import FountainAnswerScreen
 from engineering_influence.services.fountain_parser import FountainParser
 from engineering_influence.services.interfaces.screenplay_bible_context_interface import (
     ScreenplayBibleContextInterface,
@@ -44,11 +45,20 @@ class Drafter(SceneDrafterInterface):
         self.calls: list[int] = []
         self.sources: dict[int, str] = {}
         self._failed: set[int] = set()
+        self.findings: list[str] = []
 
     def draft(
-        self, run: BookRun, card: SceneCard, anchors: str, beats: str, sources: str, try_number: int
+        self,
+        run: BookRun,
+        card: SceneCard,
+        anchors: str,
+        beats: str,
+        sources: str,
+        try_number: int,
+        findings: str = "",
     ) -> str:
         self.calls.append(card.number)
+        self.findings.append(findings)
         self.sources[card.number] = sources
         if card.number in self.bad and card.number not in self._failed:
             self._failed.add(card.number)
@@ -72,6 +82,7 @@ def stage(
         SceneCardList(),
         ScreenplaySectionCheck(FountainParser()),
         ScreenplayDialogueSourceCheck(FountainParser()),
+        FountainAnswerScreen(FountainParser()),
         shareable,
     )
 
@@ -122,6 +133,7 @@ def test_a_scene_that_fails_twice_stops_the_stage_with_its_problems() -> None:
             beats: str,
             sources: str,
             try_number: int,
+            findings: str = "",
         ) -> str:
             return "INT. ROOM - MORNING\n\nNever right."
 
@@ -259,6 +271,7 @@ def drafted_with(bible: ScreenplayBibleContextInterface) -> Drafter:
         SceneCardList(),
         ScreenplaySectionCheck(FountainParser()),
         ScreenplayDialogueSourceCheck(FountainParser()),
+        FountainAnswerScreen(FountainParser()),
         bible=bible,
     )
     asyncio.run(executor.execute(run(), 1))
@@ -286,7 +299,14 @@ class Copier(SceneDrafterInterface):
     """Writes every scene as a speech that repeats the source word for word."""
 
     def draft(
-        self, run: BookRun, card: SceneCard, anchors: str, beats: str, sources: str, try_number: int
+        self,
+        run: BookRun,
+        card: SceneCard,
+        anchors: str,
+        beats: str,
+        sources: str,
+        try_number: int,
+        findings: str = "",
     ) -> str:
         return f"INT. ROOM - DAY\n\nMARA\n{LONG_SOURCE}"
 
@@ -307,8 +327,39 @@ def test_a_speech_that_copies_its_source_is_drafted_again_and_then_refused() -> 
         SceneCardList(),
         ScreenplaySectionCheck(FountainParser()),
         ScreenplayDialogueSourceCheck(FountainParser()),
+        FountainAnswerScreen(FountainParser()),
     )
     with pytest.raises(ApplicationError) as error:
         asyncio.run(executor.execute(run(), 1))
     assert error.value.code == "STAGE_OUTPUT_INVALID"
     assert "dialogue repeats source text" in error.value.message
+
+
+def test_a_refused_draft_is_drafted_again_and_the_second_draft_is_told_the_refusal() -> None:
+    class Refuses(Drafter):
+        def draft(
+            self,
+            run: BookRun,
+            card: SceneCard,
+            anchors: str,
+            beats: str,
+            sources: str,
+            try_number: int,
+            findings: str = "",
+        ) -> str:
+            self.findings.append(findings)
+            if len(self.findings) == 1:
+                return "INT. ROOM - DAY\n\nI can't write this scene."
+            return f"INT. ROOM - DAY\n\nScene {card.number} plays out."
+
+    drafter, store = Refuses(), seeded()
+    asyncio.run(stage(store, drafter).execute(run(), 1))
+    assert "refusal" in drafter.findings[1]
+    assert "Scene 1 plays out." in text(store, "scenes/001.md")
+
+
+def test_the_second_draft_is_told_the_problems_the_first_one_failed() -> None:
+    drafter = Drafter(bad=frozenset({2}))
+    asyncio.run(stage(seeded(), drafter).execute(run(), 1))
+    assert drafter.findings[0] == ""
+    assert "time 'MORNING' is not one of" in drafter.findings[-1]
