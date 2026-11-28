@@ -51,7 +51,7 @@ def test_a_new_schema_is_brought_to_the_latest_revision(postgres_url: str) -> No
     migrator = SchemaMigrator()
     assert migrator.current(postgres_url) is None
     migrator.upgrade(postgres_url)
-    assert migrator.current(postgres_url) == "0002"
+    assert migrator.current(postgres_url) == "0003"
     assert tables_in(postgres_url) == TABLES
     assert {model.__tablename__ for model in MODELS} == TABLES
 
@@ -75,7 +75,7 @@ def test_upgrading_twice_changes_nothing(postgres_url: str) -> None:
     migrator = SchemaMigrator()
     migrator.upgrade(postgres_url)
     migrator.upgrade(postgres_url)
-    assert migrator.current(postgres_url) == "0002"
+    assert migrator.current(postgres_url) == "0003"
     assert tables_in(postgres_url) == TABLES
 
 
@@ -90,7 +90,7 @@ def test_a_database_made_by_create_all_is_adopted_with_its_rows_intact(postgres_
     assert migrator.current(postgres_url) is None
     migrator.upgrade(postgres_url)
 
-    assert migrator.current(postgres_url) == "0002"
+    assert migrator.current(postgres_url) == "0003"
     with Session(engine) as session:
         rows = session.exec(select(LedgerEventRecord)).all()
     engine.dispose()

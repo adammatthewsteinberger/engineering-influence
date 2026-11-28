@@ -1,6 +1,8 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """SQLModel-backed store for Agent Client Protocol sessions."""
 
+import json
+
 from sqlalchemy.pool import NullPool
 from sqlmodel import Session, create_engine
 
@@ -23,7 +25,8 @@ class SqlModelAcpSessionStore(AcpSessionStoreInterface):
             record = session.get(AcpSessionRecord, session_id)
             if record is None:
                 return None
-            return AcpSession(record.session_id, record.cwd, record.run_id)
+            servers = tuple(json.loads(record.servers))
+            return AcpSession(record.session_id, record.cwd, record.run_id, servers)
 
     def save(self, acp_session: AcpSession) -> None:
         with Session(self._engine) as session:
@@ -32,5 +35,6 @@ class SqlModelAcpSessionStore(AcpSessionStoreInterface):
                 record = AcpSessionRecord(session_id=acp_session.session_id, cwd=acp_session.cwd)
             record.cwd = acp_session.cwd
             record.run_id = acp_session.run_id
+            record.servers = json.dumps(list(acp_session.servers))
             session.add(record)
             session.commit()
