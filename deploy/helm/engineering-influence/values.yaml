@@ -5,6 +5,31 @@ image:
   tag: "0.1.0"
   pullPolicy: IfNotPresent
 
+# true: the SecretStore and ExternalSecret are pre-install and pre-upgrade hooks, so Argo CD runs them as PreSync
+# before the migration. Dev uses it with an OpenBao it does not deploy. false keeps them ordinary resources.
+secretsAsPreSync: false
+
+# The API's public Ingress. Off by default. Without TLS it serves plain HTTP, which sends the API keys unencrypted, so
+# leave it off until ingress.tls is true with a certificate you supply in ingress.tlsSecretName.
+ingress:
+  enabled: false
+  className: nginx
+  host: ""
+  tls: false
+  tlsSecretName: ""
+
+# NetworkPolicy and PodDisruptionBudget for the API and worker. Both are off by default: a policy that is too narrow stops
+# the app, so each environment turns the policy on with the egress it needs (Postgres, RabbitMQ, OpenBao, the object store).
+networkPolicy:
+  enabled: false
+  # Namespaces whose pods may reach the API port, such as the ingress controller or the metrics scraper. Empty: no ingress.
+  apiIngressFrom: []
+  # Extra egress entries, added to DNS, in Kubernetes NetworkPolicy form (to, ports).
+  egress: []
+
+podDisruptionBudget:
+  enabled: false
+
 # The one Secret the pods read. It must exist before install and hold these keys:
 #   EI_DATABASE_URL   SQLAlchemy URL for Postgres, e.g. postgresql+psycopg://user:pw@host:5432/db
 #   EI_RABBITMQ_URL   amqp://user:pw@host:5672/
@@ -70,6 +95,19 @@ logs:
       tag: "v1.4.0"
 # Traces: the API and the worker export OpenTelemetry spans over OTLP/HTTP to Tempo, which Grafana reads. Off by default.
 # With tracing enabled, the ConfigMap sets EI_OTLP_ENDPOINT to Tempo's receiver. observability.enabled is needed for Grafana.
+# An OpenTelemetry collector between the API and its trace backend. Off by default. When on, the app sends OTLP to the
+# collector, which forwards to exporter.endpoint, or to Tempo when tracing.enabled is set and no endpoint is given.
+otelCollector:
+  enabled: false
+  image:
+    repository: otel/opentelemetry-collector
+    tag: "0.166.0"
+  exporter:
+    endpoint: ""
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { memory: 256Mi }
+
 tracing:
   enabled: false
   tempo:
@@ -82,6 +120,12 @@ tracing:
 # token from bootstrapTokenSecret, for a local cluster only; production points secretStore at an OpenBao it runs.
 openbao:
   enabled: false
+  # How the operator logs in to OpenBao. "token" uses the bootstrap root token in bootstrapTokenSecret (dev only).
+  # "kubernetes" logs in as the chart's ServiceAccount, through an OpenBao kubernetes auth mount and role; use it outside dev.
+  auth: token
+  kubernetes:
+    mountPath: kubernetes
+    role: engineering-influence
   # devMode runs the in-memory server in this chart; it is for a local cluster only. Otherwise set server to an OpenBao
   # you run, and the chart deploys nothing for it.
   devMode: true

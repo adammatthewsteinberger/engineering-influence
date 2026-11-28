@@ -983,7 +983,7 @@
         },
         {
           "choices": null,
-          "default": "0.1.0rc2",
+          "default": "0.1.0rc3",
           "dest": "release",
           "flags": [
             "--release"

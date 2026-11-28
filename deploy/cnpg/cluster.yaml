@@ -1,0 +1,18 @@
+# A PostgreSQL cluster for the app, run by CloudNativePG (its operator must be installed first). It is provisioned outside the
+# chart, like OpenBao: the migration is a PreSync hook, so the database has to exist before the sync starts.
+#
+# Apply it in the app's namespace, then copy the app's connection string into the secret the chart reads, under the key
+# EI_DATABASE_URL. CloudNativePG writes that string to the secret "ei-postgres-app", under the key "uri". Store it in OpenBao
+# at secret/ei (the key EI_DATABASE_URL), so the External Secrets Operator copies it into ei-secrets.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: ei-postgres
+spec:
+  instances: 2
+  storage:
+    size: 10Gi
+  bootstrap:
+    initdb:
+      database: ei
+      owner: ei

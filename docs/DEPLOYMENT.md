@@ -23,8 +23,22 @@ SeaweedFS for run files (`seaweedfs.enabled`, with its NetworkPolicy and bucket 
 objects that copy its values into `existingSecret` (`openbao.enabled`); Prometheus, Grafana and the Loki and Alloy log
 stack (`observability.enabled`, `logs.enabled`), with NetworkPolicies on Prometheus and Loki; Tempo for traces
 (`tracing.enabled`, with its NetworkPolicy); a HorizontalPodAutoscaler for the API (`autoscaling.api.enabled`); and a
-KEDA `ScaledObject` for the worker (`autoscaling.keda.enabled`). The chart has no Ingress, PodDisruptionBudget or
-CronJob yet.
+KEDA `ScaledObject` for the worker (`autoscaling.keda.enabled`); a NetworkPolicy for the API and the worker
+(`networkPolicy.enabled`), which lets the API accept traffic only from the namespaces in `networkPolicy.apiIngressFrom` and
+the worker accept none, with DNS and the egress in `networkPolicy.egress` added; and a PodDisruptionBudget for each of them
+(`podDisruptionBudget.enabled`), allowing one pod down at a time. Both policy objects are off by default, because a policy
+that is too narrow stops the app. An Ingress for the API (`ingress.enabled`, off by default, with `ingress.host` required). Without TLS it serves plain HTTP, which sends the API keys unencrypted, so turn it on with `ingress.tls` only once you have a certificate, supplied in a Secret named by `ingress.tlsSecretName`. The chart has no CronJob yet.
+
+## OpenTelemetry collector and CloudNativePG
+
+`otelCollector.enabled` deploys an OpenTelemetry collector between the API and its trace backend, and points the app's
+`EI_OTLP_ENDPOINT` at it. It forwards traces to `otelCollector.exporter.endpoint`, or to Tempo when `tracing.enabled` is on
+and no endpoint is given. The chart refuses to render with the collector on and nowhere to send traces.
+
+CloudNativePG runs PostgreSQL outside the chart. `deploy/cnpg/cluster.yaml` is the sample Cluster. Its operator and the
+Cluster must exist before the first sync, because the migration is a PreSync hook and cannot wait for a database that
+the same sync creates. Copy the connection string CloudNativePG writes to the secret `ei-postgres-app` (key `uri`) into
+OpenBao as `EI_DATABASE_URL`, and the External Secrets Operator copies it into `ei-secrets`.
 
 ## The Secret
 
@@ -102,8 +116,10 @@ The command-line book commands and the MCP server still read the database, as th
 (which must be installed, with its CRDs). `openbao.devMode=true` (the default) deploys one in-memory OpenBao with a root
 token from `openbao.bootstrapTokenSecret`: a local cluster only, and its data does not survive a restart. In production,
 set `openbao.devMode=false` and `openbao.server` to an OpenBao you run; the chart then deploys no OpenBao and refuses to
-render without a server. The SecretStore still authenticates with a token from `bootstrapTokenSecret`, so a scoped
-auth method (Kubernetes or AppRole) is the next step before production use.
+render without a server. The SecretStore authenticates with the token from `bootstrapTokenSecret` unless `openbao.auth` is `kubernetes`. Outside dev,
+set `openbao.auth: kubernetes`: the operator then logs in as the chart's ServiceAccount through the OpenBao kubernetes auth
+mount `openbao.kubernetes.mountPath` and role `openbao.kubernetes.role`. The platform configures that mount and role in OpenBao,
+binding the role to the `ei-engineering-influence` ServiceAccount in the app's namespace. No root token is stored in the cluster.
 
 ## Autoscaling
 
@@ -157,10 +173,11 @@ overlay's `images` entry to yours.
 
 ## GitOps with Argo CD
 
-`deploy/argocd/application.yaml` is an Argo CD `Application` that syncs `deploy/kustomize/overlays/dev` from the `develop`
-branch of this repository into `ei-dev`. It prunes objects removed from git and reverts changes made in the cluster
-(`selfHeal`), so git is the source of truth. Its namespace gets the `policy.ei/restricted=true` label, which the Kyverno
-policies match. Install Argo CD (chart `argo-cd` 10.19.1, Argo CD v3.6.3) and the Application:
+`deploy/argocd/application.yaml` is an Argo CD `Application` that syncs the Helm chart in `deploy/helm/engineering-influence`,
+with `values-dev.yaml`, from the `develop` branch of this repository into `ei-dev`. It prunes objects removed from git and
+reverts changes made in the cluster (`selfHeal`), so git is the source of truth. Its namespace gets the
+`policy.ei/restricted=true` label, which the Kyverno policies match. Install Argo CD (chart `argo-cd` 10.19.1, Argo CD v3.6.3)
+and the Application:
 
 ```bash
 helm repo add argo https://argoproj.github.io/argo-helm
@@ -169,22 +186,29 @@ kubectl apply -f deploy/argocd/project.yaml
 kubectl apply -f deploy/argocd/application.yaml
 ```
 
+The dev values put Postgres, OpenBao and the object store outside the chart, so they must exist before the first sync:
+
+1. A Postgres and an S3-compatible store for dev, reachable from `ei-dev`. Their addresses go in the `EI_DATABASE_URL`,
+   `EI_S3_*` and related keys below.
+2. An OpenBao you run, and its address in `openbao.server` in `values-dev.yaml`. The chart refuses to render without it.
+   The Application shows a render error until that address is set.
+3. The app's values stored once in that OpenBao's KV path `secret/ei`, under the keys in `openbao.keys` (the chart's
+   `values.yaml` lists them). The External Secrets Operator copies them into `ei-secrets` in `ei-dev`.
+
+The sync then runs the chart's hooks in Argo CD's `PreSync` phase, in this order: the SecretStore and the ExternalSecret
+(weight -10, so `ei-secrets` exists), then the migration Job (weight -5), and only then the Deployments. The migration
+runs before the new pods start. `secretsAsPreSync` in `values-dev.yaml` turns the ExternalSecret into a hook; without
+it, the chart creates the ExternalSecret as an ordinary resource, as the minikube install expects.
+
 The Application runs in the `engineering-influence` AppProject (`deploy/argocd/project.yaml`), which bounds it: it may
-sync only this repository, deploy only into `ei-dev`, create no cluster-scoped objects, and create only the five kinds
-the dev overlay renders (ConfigMap, Service, ServiceAccount, Deployment, Job). If the overlay gains a kind, add it to the
-project's `namespaceResourceWhitelist` first, or the sync fails. Because the sync is automated, `develop` should require
-reviewed pull requests, since a merge there reaches the cluster.
+sync only this repository, deploy only into `ei-dev`, create no cluster-scoped objects, and create only the seven kinds the
+dev render makes (ConfigMap, Service, ServiceAccount, Deployment, Job, and the External Secrets SecretStore and
+ExternalSecret). If the chart gains a kind, add it to the project's `namespaceResourceWhitelist` first, or the sync fails.
+Because the sync is automated, `develop` should require reviewed pull requests, since a merge there reaches the cluster.
 
-Argo CD does not create the `ei-secrets` Secret, because the values never live in git. Create it in `ei-dev` (for
-example through the External Secrets Operator, as in [MINIKUBE.md](MINIKUBE.md)) before the pods can start. The overlay's
-image is a placeholder registry path that must be pullable from the cluster, and the Application's sync status is
-`Synced` only when git and the cluster agree.
-
-To try a local image without changing git, override it on the live Application only, for example
-`kubectl -n argocd patch application engineering-influence-dev --type merge -p '{"spec":{"source":{"kustomize":{"images":["ghcr.io/adammatthewsteinberger/engineering-influence=ei-local:tracing1"]}}}}'`.
-Because `selfHeal` is on, Argo CD then reports the Deployments `OutOfSync` and restores the git image. A local override
-therefore needs the image pushed to the registry the overlay names, or the change belongs in git.
-
+The `ei-secrets` Secret is created by the External Secrets Operator from OpenBao, never from git. The image is the release
+tag `0.1.0rc1` in `values-dev.yaml`, which the registry must allow the cluster to pull. The Kustomize overlays under
+`deploy/kustomize/overlays` remain for clusters that do not use Helm; the dev Application no longer syncs them.
 ## Not in this chart yet
 
 The Loki, Prometheus and OpenBao pieces are not built as subcharts: the plan's subchart approach needs remote chart
