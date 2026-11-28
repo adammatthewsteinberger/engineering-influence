@@ -107,6 +107,12 @@ tracing:
 # token from bootstrapTokenSecret, for a local cluster only; production points secretStore at an OpenBao it runs.
 openbao:
   enabled: false
+  # How the operator logs in to OpenBao. "token" uses the bootstrap root token in bootstrapTokenSecret (dev only).
+  # "kubernetes" logs in as the chart's ServiceAccount, through an OpenBao kubernetes auth mount and role; use it outside dev.
+  auth: token
+  kubernetes:
+    mountPath: kubernetes
+    role: engineering-influence
   # devMode runs the in-memory server in this chart; it is for a local cluster only. Otherwise set server to an OpenBao
   # you run, and the chart deploys nothing for it.
   devMode: true
