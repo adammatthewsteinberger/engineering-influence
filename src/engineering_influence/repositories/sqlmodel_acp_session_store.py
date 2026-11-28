@@ -26,7 +26,8 @@ class SqlModelAcpSessionStore(AcpSessionStoreInterface):
             if record is None:
                 return None
             servers = tuple(json.loads(record.servers))
-            return AcpSession(record.session_id, record.cwd, record.run_id, servers)
+            approved = tuple(json.loads(record.approved))
+            return AcpSession(record.session_id, record.cwd, record.run_id, servers, approved)
 
     def save(self, acp_session: AcpSession) -> None:
         with Session(self._engine) as session:
@@ -36,5 +37,6 @@ class SqlModelAcpSessionStore(AcpSessionStoreInterface):
             record.cwd = acp_session.cwd
             record.run_id = acp_session.run_id
             record.servers = json.dumps(list(acp_session.servers))
+            record.approved = json.dumps(list(acp_session.approved))
             session.add(record)
             session.commit()

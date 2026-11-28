@@ -19,6 +19,13 @@ class McpServerLauncherInterface(ABC):
     __slots__ = ()
 
     @abstractmethod
+    def verify_files(self, entry: McpServerLock) -> None:
+        """Check the files the server would run against the lock, without starting anything.
+
+        Raise ``ApplicationError`` if any file differs from the lock.
+        """
+
+    @abstractmethod
     def start(self, entry: McpServerLock) -> McpConnectionInterface:
         """Check the files, start the server, check what it says, and return the connection.
 

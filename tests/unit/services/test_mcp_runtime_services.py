@@ -398,6 +398,12 @@ class Launcher(McpServerLauncherInterface):
         self.closed: list[str] = []
         self.fail_on = fail_on
 
+    def verify_files(self, entry: McpServerLock) -> None:
+        if entry.name == self.fail_on:
+            raise ApplicationError(
+                code="TOOL_LOCK_MISMATCH", message=f"{entry.name} changed", http_status=503
+            )
+
     def start(self, entry: McpServerLock) -> McpConnectionInterface:
         if entry.name == self.fail_on:
             raise ApplicationError(
@@ -417,44 +423,52 @@ def fleet(launch: Launcher) -> ToolServerFleet:
     return ToolServerFleet(launch, McpToolFactory())
 
 
-def test_the_fleet_starts_every_server_in_name_order_and_collects_their_tools() -> None:
+def test_verifying_starts_nothing_and_each_server_starts_once_on_first_use() -> None:
     launch = Launcher()
     group = fleet(launch)
-    group.start(ToolLock((lock_entry("zed"), lock_entry("alpha"))))
+    lock = ToolLock((lock_entry("zed"), lock_entry("alpha")))
+    group.verify(lock)
     assert isinstance(group, ToolServerFleetInterface)
-    assert launch.started == ["alpha", "zed"]
-    assert [tool.definition().name for tool in group.tools()] == [
-        "alpha__read",
-        "alpha__write",
-        "zed__read",
-        "zed__write",
-    ]
+    assert launch.started == [] and group.running() == ()
+    tools = group.activate(lock_entry("alpha"))
+    assert [tool.definition().name for tool in tools] == ["alpha__read", "alpha__write"]
+    assert group.activate(lock_entry("alpha")) == ()
+    assert launch.started == ["alpha"] and group.running() == ("alpha",)
 
 
-def test_a_server_that_cannot_start_stops_those_already_started_and_raises() -> None:
+def test_a_file_that_changed_is_refused_at_verification_before_anything_starts() -> None:
     launch = Launcher(fail_on="mid")
     group = fleet(launch)
     with pytest.raises(ApplicationError, match="mid changed"):
-        group.start(ToolLock((lock_entry("alpha"), lock_entry("mid"), lock_entry("zed"))))
-    assert launch.started == ["alpha"] and launch.closed == ["alpha"]
-    assert group.tools() == ()
+        group.verify(ToolLock((lock_entry("alpha"), lock_entry("mid"))))
+    assert launch.started == [] and group.running() == ()
+
+
+def test_a_server_that_cannot_start_raises_and_leaves_the_others_running() -> None:
+    launch = Launcher(fail_on="mid")
+    group = fleet(launch)
+    group.activate(lock_entry("alpha"))
+    with pytest.raises(ApplicationError, match="mid changed"):
+        group.activate(lock_entry("mid"))
+    assert group.running() == ("alpha",) and launch.closed == []
 
 
 def test_closing_stops_the_servers_in_reverse_order_and_a_second_close_does_nothing() -> None:
     launch = Launcher()
     group = fleet(launch)
-    group.start(ToolLock((lock_entry("a"), lock_entry("b"), lock_entry("c"))))
+    for name in ("a", "b", "c"):
+        group.activate(lock_entry(name))
     group.close()
-    assert launch.closed == ["c", "b", "a"] and group.tools() == ()
+    assert launch.closed == ["c", "b", "a"] and group.running() == ()
     group.close()
     assert launch.closed == ["c", "b", "a"]
 
 
-def test_an_empty_lock_starts_nothing() -> None:
+def test_an_empty_lock_verifies_and_starts_nothing() -> None:
     launch = Launcher()
     group = fleet(launch)
-    group.start(ToolLock())
-    assert launch.started == [] and group.tools() == ()
+    group.verify(ToolLock())
+    assert launch.started == [] and group.running() == ()
 
 
 # ------------------------------------------------------------------------------- the grants
@@ -520,3 +534,17 @@ def test_a_remote_address_the_policy_refuses_is_unavailable_with_its_own_code() 
     assert error.value.message == (
         "locked server 'docs' could not be started: mcp.example.com refused: non_public_address"
     )
+
+
+class Unbuildable(McpToolFactoryInterface):
+    def create(self, connection: McpConnectionInterface) -> tuple[ToolInterface, ...]:
+        raise ApplicationError(code="TOOL_LOCK_MISMATCH", message="no tools", http_status=503)
+
+
+def test_a_server_whose_tools_cannot_be_made_is_stopped_again_and_not_kept() -> None:
+    launch = Launcher()
+    group = ToolServerFleet(launch, Unbuildable())
+    with pytest.raises(ApplicationError, match="no tools"):
+        group.activate(lock_entry("alpha"))
+    assert launch.started == ["alpha"] and launch.closed == ["alpha"]
+    assert group.running() == ()

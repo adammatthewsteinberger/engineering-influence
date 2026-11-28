@@ -28,6 +28,9 @@ from engineering_influence.models.tool_loop_result import ToolLoopResult
 from engineering_influence.services.interfaces.run_tool_loop_interface import (
     RunToolLoopInterface,
 )
+from engineering_influence.services.interfaces.server_activator_interface import (
+    ServerActivatorInterface,
+)
 from engineering_influence.services.interfaces.spend_guard_interface import SpendGuardInterface
 
 
@@ -77,7 +80,9 @@ class ModelStageExecutor(StageExecutorInterface):
         guidance: StageGuidanceInterface,
         checks: StageOutputCheckInterface,
         guards: Callable[[Budget], SpendGuardInterface],
+        activator: ServerActivatorInterface | None = None,
     ) -> None:
+        self._activator = activator
         self._recipes = recipes
         self._prompts = prompts
         self._artifacts = artifacts
@@ -108,6 +113,8 @@ class ModelStageExecutor(StageExecutorInterface):
             values[blank] = (data or b"").decode("utf-8")
         prompt = self._render(template, "user", values)
         version = template.identifier()
+        if self._activator is not None:
+            await asyncio.to_thread(self._activator.activate, run.stage, run.servers)
         guidance = self._guidance.for_stage(run.stage)
         if not guidance.empty():
             prompt = f"{prompt}\n\n{guidance.text}"

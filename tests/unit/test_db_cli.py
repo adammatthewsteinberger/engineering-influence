@@ -89,7 +89,7 @@ def test_the_real_command_line_migrates_the_database_named_in_the_environment(
 ) -> None:
     monkeypatch.setenv("EI_DATABASE_URL", f"sqlite:///{tmp_path / 'cli.db'}")
     assert CliRuntime().build().run(["db", "upgrade"]) == 0
-    assert capsys.readouterr().out.strip() == "database schema is at revision 0003"
+    assert capsys.readouterr().out.strip() == "database schema is at revision 0004"
 
 
 def test_the_db_group_needs_a_command(capsys: pytest.CaptureFixture[str]) -> None:

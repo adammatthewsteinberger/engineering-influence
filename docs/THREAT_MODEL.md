@@ -190,7 +190,8 @@ other sections refer to the later gaps by number.
    instructions, which the lock's hash of the tools is there to catch only if the server changes after
    review: **a server that was hostile when it was locked is trusted as locked.** The grant is the
    defence in depth: a stage only sees the tools a person named for it. Whether this sandbox is strong enough is
-   an open question in the ADR. Nothing has been run against a third-party server or a live model.
+   an open question in the ADR. A server now starts only for a run that selected it and after the person approved it
+   for the session (`session/request_permission`), so an unapproved server is never run. Nothing has been run against a third-party server or a live model.
    **A remote (HTTP) server is a weaker pin still**: its code is not ours to hash, so only its address and what
    it advertises are locked, and it can change its behaviour on any day. It is held to https, a public address
    checked before every request, no redirects, no cookies and bounded replies, and its bearer token (a named

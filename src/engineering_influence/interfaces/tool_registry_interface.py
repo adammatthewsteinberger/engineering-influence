@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -20,6 +20,10 @@ class ToolRegistryInterface(ABC):
     @abstractmethod
     def lookup(self, name: str) -> ToolInterface | None:
         """The tool with this name, or None."""
+
+    @abstractmethod
+    def register(self, tools: Iterable[ToolInterface]) -> None:
+        """Add tools that started after the registry was built; a name already taken is an error."""
 
     @abstractmethod
     def definitions(self, names: Sequence[str]) -> tuple[ToolDefinition, ...]:
