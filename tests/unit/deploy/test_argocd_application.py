@@ -25,6 +25,7 @@ DEV_RENDERED_KINDS = {
     ("batch", "Job"),
     ("external-secrets.io", "ExternalSecret"),
     ("external-secrets.io", "SecretStore"),
+    ("networking.k8s.io", "Ingress"),
 }
 
 
