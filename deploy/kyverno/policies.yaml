@@ -101,7 +101,8 @@ spec:
       matchLabels:
         policy.ei/restricted: "true"
   matchImageReferences:
-    - glob: "ghcr.io/adammatthewsteinberger/engineering-influence:*"
+    # One glob covers tags, digests (@sha256:...) and the bare name, so no reference form skips the check.
+    - glob: "ghcr.io/adammatthewsteinberger/engineering-influence*"
   attestors:
     - name: release
       cosign:
@@ -114,4 +115,8 @@ spec:
   validations:
     - expression: >-
         images.containers.map(image, verifyImageSignatures(image, [attestors.release])).all(e, e > 0)
+        && (has(images.initContainers) ? images.initContainers : {}).map(image,
+          verifyImageSignatures(image, [attestors.release])).all(e, e > 0)
+        && (has(images.ephemeralContainers) ? images.ephemeralContainers : {}).map(image,
+          verifyImageSignatures(image, [attestors.release])).all(e, e > 0)
       message: "the image is not signed by the release workflow on main"
