@@ -1,6 +1,5 @@
 # The staging environment. Like dev, its Postgres, OpenBao and object store are provisioned outside this chart, and
-# openbao.server must be set to the staging OpenBao's address before the chart renders. Staging uses Let's Encrypt's
-# staging issuer, which issues certificates browsers do not trust.
+# openbao.server must be set to the staging OpenBao's address before the chart renders.
 image:
   tag: "0.1.0rc2"
 
@@ -19,6 +18,5 @@ openbao:
   server: ""
 
 ingress:
-  enabled: true
+  enabled: false
   host: engineering-influence-staging.duckdns.org
-  issuer: letsencrypt-staging

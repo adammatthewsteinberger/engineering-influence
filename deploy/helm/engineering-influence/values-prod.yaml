@@ -1,6 +1,5 @@
 # The production environment. Postgres, OpenBao and the object store are provisioned outside this chart, and
-# openbao.server must be set to the production OpenBao's address before the chart renders. Production uses Let's Encrypt's
-# production issuer: its certificates are trusted, and it has rate limits, so do not point dev or staging at it.
+# openbao.server must be set to the production OpenBao's address before the chart renders.
 image:
   tag: "0.1.0rc2"
 
@@ -21,9 +20,8 @@ api:
   replicas: 2
 
 ingress:
-  enabled: true
+  enabled: false
   host: engineering-influence.duckdns.org
-  issuer: letsencrypt-prod
 
 # One pod at a time may be taken down by a drain (see the chart's PodDisruptionBudget).
 podDisruptionBudget:
