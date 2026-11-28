@@ -40,7 +40,7 @@ ENTRYPOINT ["ei"]
 CMD ["serve", "worker"]
 
 # The slim image. Last, so it stays the default target.
-FROM python:3.13-slim
+FROM python:3.13-slim AS runtime
 # procps provides ps, which the worker uses to measure a tool's memory; the slim base does not include it. The upgrade
 # applies Debian's security fixes to the base packages (the trivy gate in CI fails on fixable HIGH and CRITICAL findings).
 RUN apt-get update \
