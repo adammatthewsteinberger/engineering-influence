@@ -24,6 +24,7 @@ class ToolLoopLimits(ToolLoopLimitsInterface):
     call_seconds: float = 60.0
 
     def __post_init__(self) -> None:
+        """Validate the caps on turns, calls, result size and call time when they are built."""
         for name in ("max_turns", "max_tool_calls", "result_characters"):
             value = getattr(self, name)
             if isinstance(value, bool) or not isinstance(value, int) or value < 1:

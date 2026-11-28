@@ -28,6 +28,7 @@ class Guidance(GuidanceInterface):
     tools: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
+        """Validate the guidance's skills and text when it is built."""
         if not isinstance(self.text, str) or not isinstance(self.identity, str):
             raise TypeError("guidance is text and the name of where it came from")
         if bool(self.text) != bool(self.identity):

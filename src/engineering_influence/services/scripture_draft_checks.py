@@ -14,6 +14,7 @@ class ScriptureDraftChecks(DraftChecksInterface):
     """The chapters are numbered from one, in the order the outline gives them, for the findings' labels."""
 
     def __init__(self, checker: ScriptureCheckerInterface) -> None:
+        """Remember the scripture checker the chapters are checked with."""
         self._checker = checker
 
     def issues(

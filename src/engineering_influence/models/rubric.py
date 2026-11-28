@@ -26,6 +26,7 @@ class Rubric(RubricInterface):
     dimensions: tuple[RubricDimension, ...]
 
     def __post_init__(self) -> None:
+        """Validate the rubric's range and pass mark when it is built."""
         if type(self.version) is not int or self.version < 1:
             raise ValueError("a rubric has a version, 1 or more")
         if not self.LOW <= self.pass_mean <= self.HIGH:

@@ -28,6 +28,7 @@ class StoryCharacter(StoryCharacterInterface):
     age: int | None = None
 
     def __post_init__(self) -> None:
+        """Validate the character's name, aliases and age when it is built."""
         StoryText.line("a character's name", self.name, self.MAX_NAME)
         if not isinstance(self.aliases, tuple) or len(self.aliases) > self.MAX_ALIASES:
             raise ValueError(f"a character has at most {self.MAX_ALIASES} aliases")

@@ -43,6 +43,7 @@ class MetadataParser(MetadataParserInterface):
     FRAME: ClassVar[str] = "*_\"'`\u201c\u201d"
 
     def __init__(self, dashes: DashRewriterInterface) -> None:
+        """Remember the dash rewriter that cleans the listing's text."""
         self._dashes = dashes
 
     def parse(self, text: str) -> BookMetadata:

@@ -36,6 +36,7 @@ class EpubRepacker(EpubRepackerInterface):
         package: EpubPackageInterface,
         identifier: EpubIdentifier,
     ) -> None:
+        """Remember the cover, package writer and identifier the EPUB is repacked with."""
         self._cover = cover
         self._package = package
         self._identifier = identifier

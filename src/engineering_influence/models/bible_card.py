@@ -25,6 +25,7 @@ class BibleCard(BibleCardInterface):
     body: str
 
     def __post_init__(self) -> None:
+        """Validate the card's fields and trim its body when it is built."""
         if self.KIND.fullmatch(self.kind) is None:
             raise ValueError(f"a bible kind is a lowercase identifier, not {self.kind!r}")
         if self.ID.fullmatch(self.id) is None:

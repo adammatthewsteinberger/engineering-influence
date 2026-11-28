@@ -20,6 +20,7 @@ class ConstantTimeApiKeyVerifier(ApiKeyVerifierInterface):
     """
 
     def __init__(self, keys: Iterable[str]) -> None:
+        """Remember the accepted keys, which must be explicit, non-empty and strong."""
         cleaned = tuple(key.strip() for key in keys if key.strip())
         if not cleaned:
             raise ValueError("at least one API key is required")

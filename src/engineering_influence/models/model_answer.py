@@ -28,6 +28,7 @@ class ModelAnswer(ModelAnswerInterface):
     tool_calls: tuple[ToolCall, ...] = ()
 
     def __post_init__(self) -> None:
+        """Validate that an incomplete answer records its issues."""
         if self.complete and self.issues:
             raise ValueError("a complete answer has no issues")
         if not self.complete and not self.issues:

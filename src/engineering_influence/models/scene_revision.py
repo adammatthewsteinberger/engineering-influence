@@ -18,6 +18,7 @@ class SceneRevision(SceneRevisionInterface):
     draft_kept: bool
 
     def __post_init__(self) -> None:
+        """Validate the revision's flags and lengths when it is built."""
         if type(self.draft_words) is not int or self.draft_words < 0:
             raise ValueError("a draft has a count of words, zero or more")
         if type(self.revised_words) is not int or self.revised_words < 0:

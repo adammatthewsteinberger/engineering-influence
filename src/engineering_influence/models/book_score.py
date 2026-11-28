@@ -16,6 +16,7 @@ class BookScore(BookScoreInterface):
     judge_micro_usd: int
 
     def __post_init__(self) -> None:
+        """Validate that every dimension has a score within the rubric range and a reason."""
         names = [name for name, _, _ in self.scores]
         if not self.scores or len(set(names)) != len(names):
             raise ValueError("a book is scored on each dimension once")

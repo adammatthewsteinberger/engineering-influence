@@ -41,6 +41,7 @@ class ScreenplayEpubPackage(ScreenplayEpubPackageInterface):
     )
 
     def __init__(self, parser: FountainParserInterface) -> None:
+        """Remember the Fountain parser the EPUB's pages are built from."""
         self._parser = parser
 
     def entries(self, script: str) -> tuple[tuple[str, bytes, bool], ...]:

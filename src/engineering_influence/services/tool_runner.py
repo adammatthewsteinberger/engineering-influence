@@ -53,6 +53,7 @@ class ToolRunner(ToolRunnerInterface):
         limits: ToolLoopLimits,
         workers: int = 4,
     ) -> None:
+        """Remember the registry, journal, limits and how many workers run tools at once."""
         if workers < 1:
             raise ValueError("at least one worker is needed")
         self._registry = registry

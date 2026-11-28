@@ -17,6 +17,7 @@ class ReadinessProbe(ReadinessProbeInterface):
     """Run every check; a check that raises counts as unhealthy, never as an error."""
 
     def __init__(self, checks: tuple[HealthCheckInterface, ...]) -> None:
+        """Remember the health checks to run."""
         self._checks = checks
 
     def check(self) -> ReadinessReport:

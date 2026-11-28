@@ -17,6 +17,7 @@ class JournalKey(JournalKeyInterface):
     context_hash: str
 
     def __post_init__(self) -> None:
+        """Validate the key's parts when it is built."""
         if not all(part.strip() for part in self._parts()):
             raise ValueError("every part of a journal key is required")
         # The digest joins the parts with the unit separator, so a part that contains it could make two different

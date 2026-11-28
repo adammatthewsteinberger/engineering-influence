@@ -42,6 +42,7 @@ class AskModel(AskModelInterface):
         max_attempts: int = 4,
         refusal_retries: int = 1,
     ) -> None:
+        """Remember the model caller, the model, and how many attempts and refusal retries a stage gets."""
         if max_attempts < 1:
             raise ValueError("at least one attempt is needed")
         if refusal_retries < 0:

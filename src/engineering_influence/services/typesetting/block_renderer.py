@@ -42,6 +42,7 @@ class BlockRenderer(BlockRendererInterface):
         openings: OpeningFormatter | None = None,
         scene_breaks: bool = False,
     ) -> None:
+        """Remember the style, the opening formatter, and whether scene breaks are drawn."""
         self.style = style
         self._scene_breaks = scene_breaks
         self.printed = False  # set once the chapter has printed anything, across its pieces

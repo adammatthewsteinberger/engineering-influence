@@ -11,6 +11,7 @@ class TcpHealthCheck(HealthCheckInterface):
     """Healthy when a TCP connection to the host and port opens within the timeout."""
 
     def __init__(self, name: str, host: str, port: int, timeout_seconds: float = 2.0) -> None:
+        """Remember the name, host, port and time limit of the check."""
         self._name = name
         self._host = host
         self._port = port

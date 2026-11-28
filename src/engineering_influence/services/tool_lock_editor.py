@@ -35,6 +35,7 @@ class ToolLockEditor(ToolLockEditorInterface):
         hasher: FileHasherInterface,
         finder: ExecutableFinderInterface,
     ) -> None:
+        """Remember the probe, the file hasher and the executable finder the lock edits use."""
         self._probe = probe
         self._hasher = hasher
         self._finder = finder

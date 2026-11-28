@@ -40,6 +40,7 @@ class RevisionReportStageExecutor(StageExecutorInterface):
         codec: ShootingLockCodecInterface,
         writer: RevisionReportWriterInterface,
     ) -> None:
+        """Remember the artifacts, scene cards, shooting lock codec and report writer."""
         self._artifacts = artifacts
         self._cards = cards
         self._codec = codec

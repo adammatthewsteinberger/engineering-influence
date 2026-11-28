@@ -58,6 +58,7 @@ class Skill(SkillInterface):
     sections: tuple[tuple[str, str], ...] = ()
 
     def __post_init__(self) -> None:
+        """Validate the skill's name, version and the text for each stage it speaks to."""
         if not isinstance(self.name, str) or not self.NAME.fullmatch(self.name):
             raise ValueError("a skill name is lowercase letters, digits and underscores")
         if type(self.version) is not int or self.version < 1:

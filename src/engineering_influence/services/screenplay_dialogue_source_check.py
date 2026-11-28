@@ -22,6 +22,7 @@ class ScreenplayDialogueSourceCheck(ScreenplayDialogueSourceCheckInterface):
     SHOWN_WORDS: ClassVar[int] = 6
 
     def __init__(self, parser: FountainParserInterface) -> None:
+        """Remember the Fountain parser the dialogue is read with."""
         self._parser = parser
 
     def problems(self, scene: str, sources: str) -> tuple[str, ...]:

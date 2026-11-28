@@ -32,12 +32,14 @@ class OpenRouterVideoGenerator(VideoGeneratorInterface):
         sleep: Callable[[float], None] = time.sleep,
         base_url: str = BASE_URL,
     ) -> None:
+        """Remember the HTTP client, the key, the sleep used between polls, and the service address."""
         self._client = client
         self._api_key = api_key.strip()
         self._sleep = sleep
         self._base_url = base_url.rstrip("/")
 
     def generate(self, shot: VideoShot) -> bytes:
+        """Start a video job for the shot, wait for it to finish, and return the video's bytes."""
         job = self._json(
             "POST",
             "/videos",

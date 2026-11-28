@@ -15,6 +15,7 @@ class ChapterTex(ChapterTexInterface):
     """Heading, table-of-contents entry, running head, epigraph, and body."""
 
     def __init__(self) -> None:
+        """Nothing to configure: the chapter parts are fixed."""
         self._tex = TexText()
         self._converter = MarkdownLatexConverter()
 

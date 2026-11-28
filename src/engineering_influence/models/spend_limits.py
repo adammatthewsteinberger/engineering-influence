@@ -24,6 +24,7 @@ class SpendLimits(SpendLimitsInterface):
     outstanding: int | None = None
 
     def __post_init__(self) -> None:
+        """Validate the limits the stack's operator allows when they are built."""
         for label, value in (("per_run", self.per_run), ("outstanding", self.outstanding)):
             if value is not None and (type(value) is not int or value < 1):
                 raise ValueError(f"{label} is a whole number of micro-dollars above zero")

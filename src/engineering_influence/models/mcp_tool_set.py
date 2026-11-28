@@ -22,6 +22,7 @@ class McpToolSet(McpToolSetInterface):
     tools: tuple[McpToolDescriptor, ...]
 
     def __post_init__(self) -> None:
+        """Validate the server's tool list when it is built."""
         if not isinstance(self.tools, tuple):
             raise TypeError("a tool set is a tuple of tools")
         names = [tool.name for tool in self.tools]

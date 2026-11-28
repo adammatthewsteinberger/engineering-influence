@@ -26,6 +26,7 @@ class MadeBook(MadeBookInterface):
     issues: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
+        """Validate the made book's outcome and costs when it is built."""
         if not self.case.strip() or not self.run_status.strip():
             raise ValueError("a made book names its case and how its run ended")
         for label, value in (

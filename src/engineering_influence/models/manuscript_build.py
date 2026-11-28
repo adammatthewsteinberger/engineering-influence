@@ -27,6 +27,7 @@ class ManuscriptBuild(ManuscriptBuildInterface):
     book: tuple[tuple[str, bytes], ...]
 
     def __post_init__(self) -> None:
+        """Validate the build's verdict and evidence when it is built."""
         if not isinstance(self.passed, bool) or not self.status.strip():
             raise ValueError("a build says whether it passed and in what status")
         for label, values in (("errors", self.errors), ("warnings", self.warnings)):

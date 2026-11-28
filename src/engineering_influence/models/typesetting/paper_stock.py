@@ -21,6 +21,7 @@ class PaperStock(PaperStockInterface):
     inches_per_page: float
 
     def __post_init__(self) -> None:
+        """Validate the paper's name and spine width per page when it is built."""
         if self.inches_per_page <= 0:
             raise ValueError("paper needs a positive thickness")
 

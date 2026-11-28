@@ -19,10 +19,12 @@ class FileArtifactStore(ArtifactStoreInterface):
     """
 
     def __init__(self, root: Path, guard: PathGuardInterface) -> None:
+        """Remember the folder that holds the artifacts and the path guard that keeps names inside it."""
         self._root = root
         self._guard = guard
 
     def put(self, run_id: str, name: str, data: bytes) -> str:
+        """Store the bytes under the run's name, refusing to replace different bytes already there, and return their SHA-256 digest."""
         path = self._path(run_id, name)
         if path.exists():
             if path.read_bytes() != data:
@@ -35,10 +37,12 @@ class FileArtifactStore(ArtifactStoreInterface):
         return hashlib.sha256(data).hexdigest()
 
     def get(self, run_id: str, name: str) -> bytes | None:
+        """The bytes stored under the run's name, or None when there are none."""
         path = self._path(run_id, name)
         return path.read_bytes() if path.is_file() else None
 
     def names(self, run_id: str) -> list[str]:
+        """The names of every artifact stored for the run, relative to the run's folder, sorted."""
         base = self._path(run_id, "x").parent
         if not base.is_dir():
             return []

@@ -26,6 +26,7 @@ class MarketplaceListing(MarketplaceListingInterface):
     unreadable: int = 0
 
     def __post_init__(self) -> None:
+        """Validate the listing's entries when it is built."""
         if not isinstance(self.name, str) or not self.name.strip() or not self.name.isprintable():
             raise ValueError("a marketplace has a one-line name")
         if not isinstance(self.entries, tuple) or len(self.entries) > self.MAX_ENTRIES:

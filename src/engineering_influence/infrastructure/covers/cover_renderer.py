@@ -33,6 +33,7 @@ class CoverRenderer(CoverRendererInterface):
         fonts: FontLoader,
         min_text_pt: float = Kdp.MIN_TEXT_PT,
     ) -> None:
+        """Remember the painter registry, the fonts and the smallest text size allowed."""
         self._registry = registry
         self._fonts = fonts
         self._min_text_pt = min_text_pt

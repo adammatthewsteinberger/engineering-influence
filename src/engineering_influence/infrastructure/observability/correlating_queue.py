@@ -10,6 +10,7 @@ class CorrelatingQueue(QueueInterface):
     """Stamp ``correlation_id`` (and ``traceparent``) onto a copy of each payload."""
 
     def __init__(self, inner: QueueInterface, correlation: CorrelationInterface) -> None:
+        """Remember the queue to publish to and the correlation that supplies the ids."""
         self._inner = inner
         self._correlation = correlation
 

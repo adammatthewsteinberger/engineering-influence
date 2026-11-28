@@ -17,6 +17,7 @@ class RabbitMqTopology(RabbitMqTopologyInterface):
     """
 
     def __init__(self, queue_name: str = "engineering-influence.jobs") -> None:
+        """Remember the name of the job queue."""
         if not queue_name.strip():
             raise ValueError("queue name is required")
         self.queue_name = queue_name

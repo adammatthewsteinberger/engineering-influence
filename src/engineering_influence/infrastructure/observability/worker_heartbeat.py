@@ -33,6 +33,7 @@ class WorkerHeartbeat(WorkerHeartbeatInterface):
         realert_seconds: float = 3600.0,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
+        """Remember the metrics and alerts, and the timings for heartbeats, silence and checks."""
         if min(heartbeat_seconds, silence_seconds, check_seconds, realert_seconds) <= 0:
             raise ValueError("every interval must be positive")
         self._metrics = metrics

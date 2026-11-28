@@ -19,6 +19,7 @@ class MarkdownLatexConverter(MarkdownLatexConverterInterface):
     )
 
     def __init__(self) -> None:
+        """Nothing to configure: the conversion is fixed."""
         self._parser = MarkdownParser()
 
     def convert(self, body: str, *, style: str, scene_breaks: bool = False) -> str:

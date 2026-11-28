@@ -47,6 +47,7 @@ class ApiApplication(ApiApplicationInterface):
         manager: RunManagementInterface | None = None,
         metrics_guard: "ApiGuard | None" = None,
     ) -> None:
+        """Remember the controller, the guard, and the optional observability, run, creator, manager and metrics guard."""
         self._controller = controller
         self._runs = runs
         self._creator = creator

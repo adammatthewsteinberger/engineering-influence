@@ -39,6 +39,7 @@ class RunToolLoop(RunToolLoopInterface):
     def __init__(
         self, ask: AskModelInterface, runner: ToolRunnerInterface, limits: ToolLoopLimits
     ) -> None:
+        """Remember the model call, tool runner and limits the loop works within."""
         self._ask = ask
         self._runner = runner
         self._limits = limits

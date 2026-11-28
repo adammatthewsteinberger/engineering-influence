@@ -26,6 +26,7 @@ class DirectoryPluginFolderReader(PluginFolderReaderInterface):
     NOT_IMPORTED = ("agents", "commands", "hooks", "output-styles", "monitors", ".lsp.json")
 
     def __init__(self, skills: SkillSourceInterface) -> None:
+        """Remember the reader that parses a plugin's skills."""
         self._skills = skills
 
     def read(self, path: Path) -> PluginFolder:

@@ -104,6 +104,7 @@ def verses(usfm: str) -> list[tuple[str, int, int, str]]:
 
 
 def build(zip_dir: Path, out_dir: Path) -> dict[str, str]:
+    """Write one zip bundle per translation into the output folder, with a digest of each."""
     out_dir.mkdir(parents=True, exist_ok=True)
     digests: dict[str, str] = {}
     for name in TRANSLATIONS:
@@ -129,6 +130,7 @@ def build(zip_dir: Path, out_dir: Path) -> dict[str, str]:
 
 
 def main(argv: list[str]) -> int:
+    """Build the bundles from the zip folder and the output folder given on the command line."""
     if len(argv) != 3:
         print(__doc__, file=sys.stderr)
         return 2

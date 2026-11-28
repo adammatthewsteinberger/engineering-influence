@@ -20,6 +20,7 @@ class ScreenplayTitle(ScreenplayTitleInterface):
     source: str | None = None
 
     def __post_init__(self) -> None:
+        """Validate the title page's lines when it is built."""
         for label, value in (("credit", self.credit), ("source", self.source)):
             if value is None:
                 continue

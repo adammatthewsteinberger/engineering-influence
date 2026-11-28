@@ -32,6 +32,7 @@ class ProcessMeter(ProcessMeterInterface):
         exists: Callable[[str], bool] = os.path.exists,
         fallback: str = "ps",
     ) -> None:
+        """Remember how to check a path exists and the fallback command that reports memory."""
         self._exists = exists
         self._fallback = fallback
 

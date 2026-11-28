@@ -23,6 +23,7 @@ class SourceDigestStageExecutor(StageExecutorInterface):
     def __init__(
         self, artifacts: ArtifactStoreInterface, digester: SourceDigesterInterface
     ) -> None:
+        """Remember the artifacts and the digester each source is condensed with."""
         self._artifacts = artifacts
         self._digester = digester
 

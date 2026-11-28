@@ -125,6 +125,13 @@ fail_under = 100
 target-version = "py312"
 line-length = 100
 
+[tool.ruff.lint]
+# Docstring rules (E21): every public module, class, function, method and magic method is documented.
+extend-select = ["D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D"]
+
 [tool.mypy]
 python_version = "3.12"
 strict = true

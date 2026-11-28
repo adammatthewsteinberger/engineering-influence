@@ -29,6 +29,7 @@ class ModelRequest(ModelRequestInterface):
     transcript: tuple[ModelTurn, ...] = ()
 
     def __post_init__(self) -> None:
+        """Validate the request's prompts and output cap when it is built."""
         if not self.prompt.strip():
             raise ValueError("a model request needs a prompt")
         if self.max_output_tokens <= 0:

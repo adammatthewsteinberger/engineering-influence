@@ -55,6 +55,7 @@ class EvaluationRuntime(ReleaseEvaluatorInterface):
         judge: ModelInterface | None = None,
         files: EvaluationFilesInterface | None = None,
     ) -> None:
+        """Remember the environment, secrets, work folder, rubric, case set and baseline paths the evaluation reads."""
         self._environment = environment
         self._secrets = secrets
         self._work = work_dir

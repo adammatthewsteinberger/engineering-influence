@@ -20,6 +20,7 @@ class BibleIntake(BibleIntakeInterface):
     FORBIDDEN_FOR_REAL: ClassVar[tuple[str, ...]] = ("likeness", "voice")
 
     def __init__(self, library: BibleLibraryInterface, parser: BibleCardParserInterface) -> None:
+        """Remember the bible library and the card parser; checks look at the whole bible at once."""
         self._library = library
         self._parser = parser
 

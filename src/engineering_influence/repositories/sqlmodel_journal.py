@@ -16,10 +16,12 @@ class SqlModelJournal(JournalInterface):
     """Persist journal entries; the database refuses a second entry for the same request."""
 
     def __init__(self, database_url: str) -> None:
+        """Remember the database; it refuses a second entry for the same request."""
         connect_args = {"check_same_thread": False} if database_url.startswith("sqlite") else {}
         self._engine = create_engine(database_url, connect_args=connect_args)
 
     def record(self, entry: JournalEntry) -> JournalEntry:
+        """Record the entry, or return the entry already recorded for the same stage and call."""
         digest = entry.key.digest()
         existing = self.find(entry.run_id, entry.stage, digest)
         if existing is not None:
@@ -46,6 +48,7 @@ class SqlModelJournal(JournalInterface):
             session.commit()
 
     def find(self, run_id: str, stage: str, digest: str) -> JournalEntry | None:
+        """The first entry recorded for this run, stage and call digest, or None."""
         with Session(self._engine) as session:
             row = session.exec(
                 select(JournalRecord)
@@ -56,6 +59,7 @@ class SqlModelJournal(JournalInterface):
         return None if row is None else self._entry(row)
 
     def entries(self, run_id: str) -> list[JournalEntry]:
+        """Every entry recorded for the run, in the order they were recorded."""
         with Session(self._engine) as session:
             rows = session.exec(
                 select(JournalRecord)

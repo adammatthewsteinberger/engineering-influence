@@ -43,6 +43,7 @@ class ReadinessDoctor(ReadinessDoctorInterface):
         finder: ExecutableFinderInterface,
         loader: AuthorProfileLoaderInterface,
     ) -> None:
+        """Remember how to check installed packages, find executables and load the author profile."""
         self._installed = installed
         self._finder = finder
         self._loader = loader

@@ -25,6 +25,7 @@ class PluginLockVerifier(PluginLockVerifierInterface):
     """
 
     def __init__(self, files: SkillFilesInterface, parser: PluginParserInterface) -> None:
+        """Remember the skill files and parser the lock is verified with."""
         self._files = files
         self._parser = parser
 

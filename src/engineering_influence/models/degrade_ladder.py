@@ -16,6 +16,7 @@ class DegradeLadder(DegradeLadderInterface):
     position: int = 0
 
     def __post_init__(self) -> None:
+        """Validate the rungs, from best to cheapest, when the ladder is built."""
         if not self.rungs or any(not rung.strip() for rung in self.rungs):
             raise ValueError("a ladder needs at least one named rung")
         if len(set(self.rungs)) != len(self.rungs):

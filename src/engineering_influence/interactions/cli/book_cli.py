@@ -53,6 +53,7 @@ class BookCli(BookCliInterface):
         read_bible: Callable[[Path], tuple[BibleCard, ...]],
         read_title: Callable[[Path], str | None],
     ) -> None:
+        """Remember how to build the publishing controller and the book creator for a folder, and the keep-awake guard."""
         self._controller_for = controller_for
         self._creator_for = creator_for
         self._keep_awake = keep_awake

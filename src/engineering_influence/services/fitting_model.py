@@ -21,17 +21,22 @@ class FittingModel(ModelInterface):
     CHARACTERS_PER_TOKEN = 3
 
     def __init__(self, model: ModelInterface) -> None:
+        """Remember the model that is wrapped and the token estimate it adds."""
         self._model = model
 
     def describe(self) -> ProviderDescriptor:
+        """The model's description, unchanged."""
         return self._model.describe()
 
     def availability(self) -> ModelAvailability:
+        """The model's availability, unchanged."""
         return self._model.availability()
 
     def count_tokens(self, request: ModelRequest) -> int:
+        """The number of tokens the request needs, estimated from its characters."""
         characters = len(request.system) + len(request.prompt)
         return -(-characters // self.CHARACTERS_PER_TOKEN)
 
     def complete(self, request: ModelRequest) -> ModelResponse:
+        """Complete the request with the model, unchanged."""
         return self._model.complete(request)

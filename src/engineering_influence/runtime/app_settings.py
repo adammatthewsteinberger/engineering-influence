@@ -38,6 +38,7 @@ class AppSettings(AppSettingsInterface):
     s3_secret_access_key: str = ""
 
     def __repr__(self) -> str:
+        """Show the settings without the secrets: the queue name, log level, host and port only."""
         return (
             f"AppSettings(queue_name={self.queue_name!r}, log_level={self.log_level!r}, "
             f"host={self.host!r}, port={self.port})"

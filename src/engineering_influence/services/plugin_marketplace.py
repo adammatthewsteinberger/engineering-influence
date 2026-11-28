@@ -45,6 +45,7 @@ class PluginMarketplace(PluginMarketplaceInterface):
         listings: MarketplaceListingParserInterface,
         max_bytes: int = 512 * 1024,
     ) -> None:
+        """Remember the fetcher, files, indexes, parser and listings the marketplace reads."""
         self._fetcher = fetcher
         self._files = files
         self._indexes = indexes

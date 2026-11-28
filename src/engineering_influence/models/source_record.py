@@ -18,6 +18,7 @@ class SourceRecord(SourceRecordInterface):
     verified: bool = False
 
     def __post_init__(self) -> None:
+        """Validate the claim's source and check status when it is built."""
         if not self.url.strip() or not self.content_hash.strip():
             raise ValueError("a source needs a url and a content hash")
 

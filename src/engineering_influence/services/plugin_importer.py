@@ -38,6 +38,7 @@ class PluginImporter(PluginImporterInterface):
         sink: SkillSinkInterface,
         max_bytes: int,
     ) -> None:
+        """Remember the reader, converter, writer and parser the import uses."""
         self._reader = reader
         self._converter = converter
         self._writer = writer

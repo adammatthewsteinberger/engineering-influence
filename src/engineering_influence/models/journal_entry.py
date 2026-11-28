@@ -19,6 +19,7 @@ class JournalEntry(JournalEntryInterface):
     cost_micro_usd: int
 
     def __post_init__(self) -> None:
+        """Validate the journal entry's answer and cost when it is built."""
         if not self.run_id.strip() or not self.stage.strip():
             raise ValueError("a journal entry needs a run and a stage")
         if self.attempt < 1:

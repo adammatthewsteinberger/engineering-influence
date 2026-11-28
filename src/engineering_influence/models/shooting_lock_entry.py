@@ -23,6 +23,7 @@ class ShootingLockEntry(ShootingLockEntryInterface):
     omitted: bool
 
     def __post_init__(self) -> None:
+        """Validate the entry's card number and the label printed for the scene."""
         if type(self.card) is not int or self.card < 1:
             raise ValueError("a locked scene is a scene card numbered from 1")
         if self.LABEL.fullmatch(self.label) is None:

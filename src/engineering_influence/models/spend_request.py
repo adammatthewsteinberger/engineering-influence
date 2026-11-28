@@ -14,6 +14,7 @@ class SpendRequest(SpendRequestInterface):
     stage: str
 
     def __post_init__(self) -> None:
+        """Validate the spend request's amount and stage when it is built."""
         if self.requested_micro_usd <= 0:
             raise ValueError("a spend request needs a positive amount")
         if not self.stage.strip():

@@ -22,6 +22,7 @@ class JsonLoggingConfigurator(JsonLoggingConfiguratorInterface):
     """Replace the root handlers with one JSON handler; safe to call more than once."""
 
     def __init__(self, level: int | str = "INFO", stream: TextIO | None = None) -> None:
+        """Remember the log level and the stream the JSON lines go to."""
         self._level = level
         self._stream = stream
 

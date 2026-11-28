@@ -21,6 +21,7 @@ class SandboxAllowance(SandboxAllowanceInterface):
     SECRET_DIRECTORIES = (".ssh", ".aws", ".gnupg", ".kube", ".config/gcloud", "Library/Keychains")
 
     def paths(self, command: tuple[str, ...], home: Path) -> tuple[Path, ...]:
+        """The directories under home that the command names, resolved and sorted, with home itself and credential folders left out."""
         found: set[Path] = set()
         real_home = home.resolve()
         for text in command:

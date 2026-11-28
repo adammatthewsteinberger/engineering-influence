@@ -20,6 +20,7 @@ class SseEventReader(SseEventReaderInterface):
     """
 
     def __init__(self, max_line_bytes: int) -> None:
+        """Remember the longest line the reader accepts."""
         if max_line_bytes < 1:
             raise ValueError("a line may be at least one byte long")
         self._max = max_line_bytes

@@ -60,6 +60,7 @@ class StdioMcpTransport(McpTransportInterface):
         sample_seconds: float = 0.5,
         kill_group: Callable[[int, int], None] | None = None,
     ) -> None:
+        """Remember the command, its environment, limits, working folder, and the meter and sampling interval."""
         if sample_seconds <= 0:
             raise ValueError("the sampling interval is more than zero")
         self._limits = limits

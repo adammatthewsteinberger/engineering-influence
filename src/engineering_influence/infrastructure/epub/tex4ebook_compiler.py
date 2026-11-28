@@ -25,6 +25,7 @@ class Tex4ebookCompiler(EpubCompilerInterface):
     def __init__(
         self, runner: ProcessRunnerInterface | None = None, limits: ToolLimits | None = None
     ) -> None:
+        """Remember the process runner and limits the compiler runs under."""
         self._runner = runner or ProcessRunner()
         self._limits = limits or self.DEFAULT_LIMITS
 

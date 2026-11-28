@@ -23,6 +23,7 @@ class StoryEvent(StoryEventInterface):
     label: str
 
     def __post_init__(self) -> None:
+        """Validate the event's time and label when it is built."""
         if type(self.when) is not int or not 0 <= self.when <= self.MAX_WHEN:
             raise ValueError(f"an event's time is a whole number from 0 to {self.MAX_WHEN:,}")
         StoryText.line("an event's label", self.label, self.MAX_LABEL)

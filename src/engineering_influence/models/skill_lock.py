@@ -23,6 +23,7 @@ class SkillLock(SkillLockInterface):
     entries: tuple[SkillLockEntry, ...] = ()
 
     def __post_init__(self) -> None:
+        """Validate the lock's entries when it is built."""
         if not isinstance(self.entries, tuple):
             raise TypeError("a skill lock is a tuple of entries")
         names = [entry.name for entry in self.entries]

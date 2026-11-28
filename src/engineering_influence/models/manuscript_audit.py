@@ -24,6 +24,7 @@ class ManuscriptAudit(ManuscriptAuditInterface):
     files: tuple[tuple[str, bytes], ...]
 
     def __post_init__(self) -> None:
+        """Validate the audit's verdict and issues when it is built."""
         if not isinstance(self.passed, bool) or not self.status.strip():
             raise ValueError("an audit says whether it passed and in what status")
         for label, values in (("errors", self.errors), ("warnings", self.warnings)):

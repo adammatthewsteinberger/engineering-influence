@@ -36,6 +36,7 @@ class ModelSceneDrafter(SceneDrafterInterface):
         loop: RunToolLoopInterface,
         guards: Callable[[Budget], SpendGuardInterface],
     ) -> None:
+        """Remember the prompts, the tool loop and the spend guard for each scene's draft."""
         self._prompts = prompts
         self._loop = loop
         self._guards = guards

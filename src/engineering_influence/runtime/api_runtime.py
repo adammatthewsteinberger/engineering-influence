@@ -68,6 +68,7 @@ class ApiRuntime(ApiRuntimeInterface):
         queue: QueueInterface | None = None,
         migrator: SchemaMigratorInterface | None = None,
     ) -> None:
+        """Remember the settings, secrets, server, queue and migrator the API is built from."""
         self._settings = settings
         self._secrets = secrets
         self._server = server

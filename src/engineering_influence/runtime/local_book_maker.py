@@ -38,6 +38,7 @@ class LocalBookMaker(BookMakerInterface):
         today: date,
         builder: ManuscriptBuilderInterface | None = None,
     ) -> None:
+        """Remember the work folder, environment, secrets, date and optional builder each case runs with."""
         self._work = work_dir
         self._environment = environment
         self._secrets = secrets

@@ -18,6 +18,7 @@ class KindStageExecutor(StageExecutorInterface):
         by_kind: Mapping[BookKind, StageExecutorInterface],
         fallback: StageExecutorInterface | None = None,
     ) -> None:
+        """Remember the executor for each book kind, and a fallback for other kinds."""
         self._by_kind = dict(by_kind)
         self._fallback = fallback
 

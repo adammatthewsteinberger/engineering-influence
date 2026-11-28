@@ -18,6 +18,7 @@ class ArtifactAddress(ArtifactAddressInterface):
     name: str
 
     def __post_init__(self) -> None:
+        """Refuse a run id or artifact name that is empty or climbs out of its folder."""
         if self.run_id in ("", ".", "..") or not self.run_id.strip():
             raise ValueError("a run id is required and cannot contain a path separator")
         if "/" in self.run_id or "\\" in self.run_id:

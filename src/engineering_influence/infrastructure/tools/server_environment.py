@@ -28,6 +28,7 @@ class ServerEnvironment(ServerEnvironmentInterface):
     CONFINED = ("HOME", "TMPDIR", "TEMP", "TMP")
 
     def __init__(self, environ: Mapping[str, str] | None = None) -> None:
+        """Remember the parent environment the server draws its allowed variables from, or none."""
         self._environ = os.environ if environ is None else environ
 
     def build(self, names: tuple[str, ...], workdir: Path) -> dict[str, str]:

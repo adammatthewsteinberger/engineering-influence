@@ -22,6 +22,7 @@ class WebSearchTool(ToolInterface):
     DEFAULT_COUNT = 5
 
     def __init__(self, search: SearchProviderInterface) -> None:
+        """Remember the search provider the tool asks."""
         self._search = search
 
     def definition(self) -> ToolDefinition:

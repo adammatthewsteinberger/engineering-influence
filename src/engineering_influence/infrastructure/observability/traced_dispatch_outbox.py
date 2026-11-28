@@ -12,6 +12,7 @@ class TracedDispatchOutbox(DispatchOutboxInterface):
     """Record latency and errors for every drain; the argument is the signing secret."""
 
     def __init__(self, inner: DispatchOutboxInterface) -> None:
+        """Wrap the outbox so that each drain is timed and its errors recorded."""
         self._inner = inner
 
     @traced_async(operation="service.dispatch_outbox", sensitive_args=("secret",))

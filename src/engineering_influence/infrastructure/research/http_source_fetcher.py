@@ -61,6 +61,7 @@ class HttpSourceFetcher(SourceFetcherInterface):
         max_bytes: int = 2_000_000,
         max_redirects: int = 3,
     ) -> None:
+        """Remember the client, the address pinner, the text extractor and the size and redirect limits."""
         if max_bytes < 1 or max_redirects < 0:
             raise ValueError("limits must allow at least one byte and no negative redirects")
         self._client = client

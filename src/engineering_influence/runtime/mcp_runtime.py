@@ -54,6 +54,7 @@ class McpRuntime(McpRuntimeInterface):
         queue: QueueInterface | None = None,
         migrator: SchemaMigratorInterface | None = None,
     ) -> None:
+        """Remember the settings, server, queue and migrator the MCP host's tools run through."""
         self._settings = settings
         self._server = server
         self._queue = queue

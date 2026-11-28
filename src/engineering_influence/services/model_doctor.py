@@ -40,6 +40,7 @@ class ModelDoctor(ModelDoctorInterface):
         probe: ModelProbeInterface | None,
         today: date,
     ) -> None:
+        """Remember the catalogs, profiles, secrets and the optional probe each profile is checked with."""
         self._catalogs = catalogs
         self._profiles = profiles
         self._secrets = secrets

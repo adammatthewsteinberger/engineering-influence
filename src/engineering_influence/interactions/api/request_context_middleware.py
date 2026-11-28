@@ -27,6 +27,7 @@ class RequestContextMiddleware(RequestContextMiddlewareInterface):
     def __init__(
         self, app: ASGIApp, correlation: CorrelationInterface, metrics: MetricsInterface
     ) -> None:
+        """Remember the wrapped app, the correlation and the metrics."""
         self.app = app
         self._correlation = correlation
         self._metrics = metrics

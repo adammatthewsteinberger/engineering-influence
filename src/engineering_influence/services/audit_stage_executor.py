@@ -37,6 +37,7 @@ class AuditStageExecutor(StageExecutorInterface):
         auditor: ManuscriptAuditorInterface,
         project: ManuscriptProjectInterface,
     ) -> None:
+        """Remember the artifacts, the manuscript auditor and the project the gates run on."""
         self._artifacts = artifacts
         self._auditor = auditor
         self._project = project

@@ -32,6 +32,7 @@ class ChapterOutline(ChapterOutlineInterface):
     leads_to: str = ""
 
     def __post_init__(self) -> None:
+        """Validate the chapter's texts when it is built."""
         if type(self.number) is not int or self.number < 1:
             raise ValueError("a chapter number is a whole number from 1")
         self._line("the title", self.title, self.MAX_TITLE)

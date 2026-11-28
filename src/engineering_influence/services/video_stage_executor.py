@@ -39,6 +39,7 @@ class VideoStageExecutor(StageExecutorInterface):
         cost: VideoCostInterface,
         generator: VideoGeneratorInterface | None,
     ) -> None:
+        """Remember the artifacts, shot planner, cost estimator and the optional video generator."""
         self._artifacts = artifacts
         self._builder = builder
         self._cost = cost

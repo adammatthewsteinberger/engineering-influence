@@ -22,6 +22,7 @@ class FallbackSearchProvider(SearchProviderInterface):
     INVALID_QUERY = "SEARCH_QUERY_INVALID"
 
     def __init__(self, primary: SearchProviderInterface, backup: SearchProviderInterface) -> None:
+        """Remember the primary and backup search providers."""
         self._primary = primary
         self._backup = backup
 

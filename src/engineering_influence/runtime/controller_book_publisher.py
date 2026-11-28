@@ -17,6 +17,7 @@ class ControllerBookPublisher(BookPublisherInterface):
     """
 
     def __init__(self, controller: PublishingControllerInterface) -> None:
+        """Remember the publishing controller for the project."""
         self._controller = controller
 
     def publish(

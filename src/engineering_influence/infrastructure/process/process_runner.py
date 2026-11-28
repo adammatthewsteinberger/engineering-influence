@@ -44,6 +44,7 @@ class ProcessRunner(ProcessRunnerInterface):
         meter: ProcessMeterInterface | None = None,
         sample_seconds: float = 0.5,
     ) -> None:
+        """Remember the time allowed to drain a stopped process, and the meter and sampling interval."""
         self._drain_seconds = drain_seconds
         self._meter = meter or ProcessMeter()
         self._sample_seconds = sample_seconds

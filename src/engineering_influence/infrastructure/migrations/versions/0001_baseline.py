@@ -30,6 +30,7 @@ def _missing(name: str) -> bool:
 
 
 def upgrade() -> None:
+    """Create the baseline tables that do not exist yet."""
     if _missing("ledgereventrecord"):
         op.create_table(
             "ledgereventrecord",
@@ -96,5 +97,6 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    """Drop every baseline table."""
     for name in TABLES:
         op.drop_table(name)

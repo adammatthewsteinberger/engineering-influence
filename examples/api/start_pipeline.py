@@ -25,6 +25,7 @@ PROJECT = json.loads(
 
 
 def main() -> int:
+    """Probe the stack, show the guarded pipeline endpoint refusing an anonymous call, then start a pipeline with the key."""
     if not API_KEY:
         print("set EI_API_KEY (see examples/.env) and, if needed, EI_BASE_URL", file=sys.stderr)
         return 2

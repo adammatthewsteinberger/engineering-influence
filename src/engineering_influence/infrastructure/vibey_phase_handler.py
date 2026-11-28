@@ -16,6 +16,7 @@ class VibeyPhaseHandler(PhaseHandlerInterface):
     """Translate vibey job payloads into the shared phase service."""
 
     def __init__(self, phase: RunPhaseInterface) -> None:
+        """Remember the phase service the payloads are translated into."""
         self._phase = phase
 
     async def handle(self, job: Any) -> Any:

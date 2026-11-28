@@ -33,6 +33,7 @@ class ServeStarter(ServeStarterInterface):
         worker_runtime: WorkerRuntimeFactory | None = None,
         mcp_runtime: McpRuntimeFactory | None = None,
     ) -> None:
+        """Remember the secrets, the runners and the API runtime factory for each serve target."""
         self._secrets = secrets
         self._run_api = run_api
         self._run_worker = run_worker

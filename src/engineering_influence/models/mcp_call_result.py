@@ -20,5 +20,6 @@ class McpCallResult(McpCallResultInterface):
     is_error: bool
 
     def __post_init__(self) -> None:
+        """Validate the tool's answer when the result is built."""
         if not isinstance(self.text, str):
             raise TypeError("a tool answers in text")

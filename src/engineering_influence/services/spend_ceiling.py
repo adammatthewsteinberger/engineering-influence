@@ -31,6 +31,7 @@ class SpendCeiling(SpendCeilingInterface):
     _LOCK = threading.RLock()
 
     def __init__(self, runs: RunRepositoryInterface, limits: SpendLimits) -> None:
+        """Remember the run repository and the spend limits the ceiling is checked against."""
         self._runs = runs
         self._limits = limits
 

@@ -21,6 +21,7 @@ class DirectorySkillFiles(SkillFilesInterface):
     MAX_BYTES = 256 * 1024
 
     def __init__(self, max_bytes: int = MAX_BYTES) -> None:
+        """Remember the largest file size a skill may have."""
         if max_bytes < 1:
             raise ValueError("a file may be at least one byte long")
         self._max_bytes = max_bytes

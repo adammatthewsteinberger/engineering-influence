@@ -28,6 +28,7 @@ class RubricDimension(RubricDimensionInterface):
     kinds: tuple[str, ...]
 
     def __post_init__(self) -> None:
+        """Validate the dimension's name, question and anchors when it is built."""
         if not self.NAME.fullmatch(self.name):
             raise ValueError("a dimension's name is lowercase letters, digits and underscores")
         if not self.question.strip():

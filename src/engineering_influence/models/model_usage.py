@@ -20,6 +20,7 @@ class ModelUsage(ModelUsageInterface):
     cache_write_tokens: int = 0
 
     def __post_init__(self) -> None:
+        """Validate the token counts when they are built."""
         if (
             min(
                 self.input_tokens,

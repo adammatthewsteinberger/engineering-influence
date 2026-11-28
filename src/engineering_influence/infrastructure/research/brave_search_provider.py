@@ -35,6 +35,7 @@ class BraveSearchProvider(SearchProviderInterface):
         api_key: str,
         base_url: str = "https://api.search.brave.com",
     ) -> None:
+        """Remember the HTTP client, the key and the service address."""
         if not api_key.strip():
             raise ValueError("a Brave Search provider needs an API key")
         self._client = client

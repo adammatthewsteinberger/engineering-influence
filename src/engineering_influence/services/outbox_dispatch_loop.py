@@ -24,6 +24,7 @@ class OutboxDispatchLoop(OutboxDispatchLoopInterface):
     def __init__(
         self, dispatch: DispatchOutboxInterface, secret: bytes, interval_seconds: float
     ) -> None:
+        """Remember the dispatch, the signing secret and the interval between passes."""
         if interval_seconds < self.MIN_INTERVAL_SECONDS:
             raise ValueError("the dispatch interval must be at least 0.01 seconds")
         self._dispatch = dispatch

@@ -26,6 +26,7 @@ class ModelResponse(ModelResponseInterface):
     calls: tuple[ToolCall, ...] = ()
 
     def __post_init__(self) -> None:
+        """Validate the response's text, usage and stop reason when it is built."""
         if self.stop_reason not in ("end_turn", "max_tokens", "refusal", "tool_use"):
             raise ValueError(f"unknown stop reason {self.stop_reason!r}")
         if (self.stop_reason == "tool_use") != bool(self.calls):

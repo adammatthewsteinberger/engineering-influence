@@ -17,6 +17,7 @@ class S3ArtifactStore(ArtifactStoreInterface):
     name are not serialised by this class; a run's artifacts are written by one worker at a time."""
 
     def __init__(self, objects: S3ObjectStoreInterface, bucket: str, prefix: str = "runs") -> None:
+        """Remember the object store, the bucket, and the key prefix for artifacts."""
         if not bucket.strip() or not prefix.strip():
             raise ValueError("an object store needs a bucket and a prefix")
         self._objects = objects
@@ -24,6 +25,7 @@ class S3ArtifactStore(ArtifactStoreInterface):
         self._prefix = prefix.strip("/")
 
     def put(self, run_id: str, name: str, data: bytes) -> str:
+        """Store the bytes under the run's key, refusing to replace different bytes already there, and return their SHA-256 digest."""
         key = self._key(run_id, name)
         existing = self._objects.get(self._bucket, key)
         if existing is None:
@@ -33,9 +35,11 @@ class S3ArtifactStore(ArtifactStoreInterface):
         return hashlib.sha256(data).hexdigest()
 
     def get(self, run_id: str, name: str) -> bytes | None:
+        """The bytes stored under the run's key, or None when there are none."""
         return self._objects.get(self._bucket, self._key(run_id, name))
 
     def names(self, run_id: str) -> list[str]:
+        """The names of every artifact stored for the run, relative to the run's prefix."""
         base = self._run_prefix(run_id)
         return [key[len(base) :] for key in self._objects.keys(self._bucket, base)]
 

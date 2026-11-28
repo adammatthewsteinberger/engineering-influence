@@ -27,6 +27,7 @@ class PluginFolder(PluginFolderInterface):
     set_aside: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
+        """Validate the plugin folder's fields when it is built."""
         if not isinstance(self.name, str) or not self.name.strip():
             raise ValueError("a plugin folder has a name")
         if not isinstance(self.description, str):

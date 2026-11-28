@@ -17,12 +17,14 @@ class SqlModelArtifactStore(ArtifactStoreInterface):
     """Persist artifacts as rows; the database refuses a second row for the same run and name."""
 
     def __init__(self, database_url: str, pooled: bool = True) -> None:
+        """Remember the database; it refuses a second row for the same run and name."""
         connect_args = {"check_same_thread": False} if database_url.startswith("sqlite") else {}
         self._engine = create_engine(
             database_url, connect_args=connect_args, **({} if pooled else {"poolclass": NullPool})
         )
 
     def put(self, run_id: str, name: str, data: bytes) -> str:
+        """Store the bytes under the run's name, refusing to replace different bytes already there, and return their SHA-256 digest."""
         address = ArtifactAddress(run_id, name)
         digest = hashlib.sha256(data).hexdigest()
         existing = self._stored_digest(run_id, name)
@@ -43,6 +45,7 @@ class SqlModelArtifactStore(ArtifactStoreInterface):
         return digest
 
     def get(self, run_id: str, name: str) -> bytes | None:
+        """The bytes stored under the run's name, or None when there are none."""
         ArtifactAddress(run_id, name)
         with Session(self._engine) as session:
             row = session.exec(
@@ -53,6 +56,7 @@ class SqlModelArtifactStore(ArtifactStoreInterface):
         return None if row is None else row.data
 
     def names(self, run_id: str) -> list[str]:
+        """The names of every artifact stored for the run, sorted."""
         ArtifactAddress(run_id, "x")
         with Session(self._engine) as session:
             return list(

@@ -57,6 +57,7 @@ class PublishPipeline(PublishPipelineInterface):
         recorder: StepRecorderInterface,
         workspace: BuildWorkspaceInterface,
     ) -> None:
+        """Remember the layout, steps, source files, PDF inspector, render QA and clock the publication runs with."""
         self._layout = layout
         self._steps = steps
         self._files = files

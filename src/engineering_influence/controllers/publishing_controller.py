@@ -61,6 +61,7 @@ class PublishingController(PublishingControllerInterface):
         publisher: PublishPipelineProviderInterface,
         packager: PackageBookInterface,
     ) -> None:
+        """Remember the project config, file source, PDF inspector, book loader and builder the operations use."""
         self._config = config
         self._files = files
         self._pdfs = pdfs

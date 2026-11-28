@@ -47,6 +47,7 @@ class RenderScreenplayStageExecutor(StageExecutorInterface):
         typesetter: ScreenplayTypesetterInterface,
         length: ScreenplayLengthInterface,
     ) -> None:
+        """Remember the artifacts, LaTeX source, typesetter and length check the render uses."""
         self._artifacts = artifacts
         self._source = source
         self._typesetter = typesetter

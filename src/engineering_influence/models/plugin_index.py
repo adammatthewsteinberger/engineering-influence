@@ -24,6 +24,7 @@ class PluginIndex(PluginIndexInterface):
     entries: tuple[PluginIndexEntry, ...] = ()
 
     def __post_init__(self) -> None:
+        """Validate the index's entries when it is built."""
         if not isinstance(self.entries, tuple):
             raise TypeError("an index is a tuple of entries")
         if len(self.entries) > self.MAX_ENTRIES:

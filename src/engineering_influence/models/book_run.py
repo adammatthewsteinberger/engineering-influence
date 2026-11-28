@@ -36,6 +36,7 @@ class BookRun(BookRunInterface):
     servers: tuple[str, ...] | None = None
 
     def __post_init__(self) -> None:
+        """Validate the run's brief, plan, money and stage when it is built."""
         if not self.run_id.strip():
             raise ValueError("a run needs an id")
         if self.plan.kind is not self.brief.kind:

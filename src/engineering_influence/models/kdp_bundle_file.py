@@ -20,6 +20,7 @@ class KdpBundleFile(KdpBundleFileInterface):
     sha256: str
 
     def __post_init__(self) -> None:
+        """Validate the bundle file's kind, size and digest when it is built."""
         if not self.name or "/" in self.name or "\\" in self.name or self.name in (".", ".."):
             raise ValueError("a bundle file is named by a plain filename")
         if self.size < 0 or len(self.sha256) != 64:

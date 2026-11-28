@@ -26,6 +26,7 @@ class CassetteReplayTransport(httpx.BaseTransport, CassettePlayerInterface):
     """
 
     def __init__(self, cassette: Cassette, redactor: SecretRedactorInterface) -> None:
+        """Remember the cassette to replay and the redactor applied to each request."""
         self._cassette = cassette
         self._redactor = redactor
         self._position = 0

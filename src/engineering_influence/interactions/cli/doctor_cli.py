@@ -56,6 +56,7 @@ class DoctorCli(DoctorCliInterface):
         environment: Mapping[str, str],
         ready: Callable[[], ReadinessDoctorInterface],
     ) -> None:
+        """Remember how to build the doctor checks and the environment they read."""
         self._doctor = doctor
         self._search = search
         self._local = local

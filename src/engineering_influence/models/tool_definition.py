@@ -36,6 +36,7 @@ class ToolDefinition(ToolDefinitionInterface):
     parameters: Mapping[str, Any]
 
     def __post_init__(self) -> None:
+        """Validate the tool's name, description and input schema when it is built."""
         if not self.NAME.fullmatch(self.name):
             raise ValueError("a tool name is 1 to 64 letters, digits, - or _")
         if not self.description.strip():

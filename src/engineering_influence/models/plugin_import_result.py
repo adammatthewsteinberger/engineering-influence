@@ -17,5 +17,6 @@ class PluginImportResult(PluginImportResultInterface):
     path: str
 
     def __post_init__(self) -> None:
+        """Validate the import result's fields when it is built."""
         if not isinstance(self.conversion, PluginConversion) or not self.path.strip():
             raise ValueError("an import wrote a file for a conversion")

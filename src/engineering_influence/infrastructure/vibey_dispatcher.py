@@ -11,6 +11,7 @@ class VibeyHandlerRegistry(HandlerRegistryInterface):
     """Own the third-party handler maps passed to vibey's dispatcher."""
 
     def __init__(self) -> None:
+        """Start with empty handler maps."""
         self._handlers: dict[str, Any] = {}
         self._factories: dict[str, Any] = {}
 

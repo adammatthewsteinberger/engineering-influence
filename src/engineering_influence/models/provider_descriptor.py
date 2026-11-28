@@ -48,6 +48,7 @@ class ProviderDescriptor(ProviderDescriptorInterface):
     max_heat: str | None = None
 
     def __post_init__(self) -> None:
+        """Validate the model's identity, limits and prices when it is built."""
         if not self.provider.strip() or not self.model.strip() or not self.family.strip():
             raise ValueError("a descriptor needs a provider, a model and a family")
         if self.context_window <= 0 or self.max_output_tokens <= 0:

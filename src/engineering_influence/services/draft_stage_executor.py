@@ -112,6 +112,7 @@ class DraftStageExecutor(StageExecutorInterface):
         checks: DraftChecksInterface = NO_CHECKS,
         screen: AnswerScreenInterface = SCREEN,
     ) -> None:
+        """Remember the artifacts, prompts, outlines, contexts and tool loop the drafting stage uses."""
         if context_window < 1 or max_output_tokens < 1:
             raise ValueError("a model has a window and an output limit")
         self._artifacts = artifacts

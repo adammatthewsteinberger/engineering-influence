@@ -17,12 +17,15 @@ class Boto3S3Client(Boto3S3ClientInterface):
     MISSING_CODES = frozenset({"NoSuchKey", "404"})
 
     def __init__(self, client: Any) -> None:
+        """Remember the boto3 S3 client the runtime created."""
         self._client = client
 
     def put_object(self, bucket: str, key: str, body: bytes) -> None:
+        """Store the body under the key in the bucket."""
         self._client.put_object(Bucket=bucket, Key=key, Body=body)
 
     def get_object(self, bucket: str, key: str) -> bytes:
+        """The bytes stored under the key; raise MissingKeyError when the key is not there."""
         try:
             response = self._client.get_object(Bucket=bucket, Key=key)
         except ClientError as error:
@@ -33,6 +36,7 @@ class Boto3S3Client(Boto3S3ClientInterface):
         return data
 
     def list_keys(self, bucket: str, prefix: str) -> list[str]:
+        """Every key in the bucket that starts with the prefix, across all result pages."""
         keys: list[str] = []
         for page in self._client.get_paginator("list_objects_v2").paginate(
             Bucket=bucket, Prefix=prefix

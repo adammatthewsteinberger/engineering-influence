@@ -11,6 +11,7 @@ class WebhookSigner(WebhookSignerInterface):
     """Signs canonical UTF-8 payloads with an HMAC-SHA256 secret."""
 
     def __init__(self, secret: bytes) -> None:
+        """Remember the secret the payloads are signed with."""
         if not secret:
             raise ValueError("webhook secret is required")
         self._secret = secret

@@ -36,6 +36,7 @@ class SystemKeepAwake(KeepAwakeInterface):
         start: Callable[[list[str]], "subprocess.Popen[bytes]"],
         warn: Callable[[str], None],
     ) -> None:
+        """Remember how to find and start the system's sleep inhibitor, and where to send warnings."""
         self._system = system
         self._find = find
         self._start = start

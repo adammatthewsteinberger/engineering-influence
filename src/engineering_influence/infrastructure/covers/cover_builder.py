@@ -58,6 +58,7 @@ class CoverBuilder(CoverBuilderInterface):
         ebooks: EbookCoverVerifierInterface | None = None,
         pdfs: PrintPdfVerifierInterface | None = None,
     ) -> None:
+        """Remember the project layout, painters, styles and font folders the covers are built from."""
         self._layout = layout
         self._images = images or ImageVerifier()
         self._ebooks = ebooks or EbookCoverVerifier()

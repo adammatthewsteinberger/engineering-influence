@@ -25,6 +25,7 @@ class ExportRun(ExportRunInterface):
     OTHER = "run/"
 
     def __init__(self, reader: ReadRunInterface, writer: ProjectFilesWriterInterface) -> None:
+        """Remember the run reader and the writer for the project files."""
         self._reader = reader
         self._writer = writer
 

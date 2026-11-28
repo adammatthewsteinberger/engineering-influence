@@ -23,6 +23,7 @@ class PublicHttpsUrlPolicy(OutboundUrlPolicyInterface):
     """
 
     def __init__(self, resolver: Resolver | None = None, allow_private: bool = False) -> None:
+        """Remember the resolver, and whether private addresses are allowed (not by default)."""
         self._resolve = resolver or self._system_resolve
         self._allow_private = allow_private
 

@@ -28,6 +28,7 @@ class BookPricing(BookPricingInterface):
     hardcover: float | None = None
 
     def __post_init__(self) -> None:
+        """Validate the prices when they are built."""
         try:
             date.fromisoformat(self.verified_on)
         except (TypeError, ValueError) as error:

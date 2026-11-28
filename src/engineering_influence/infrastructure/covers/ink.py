@@ -14,6 +14,7 @@ class Ink(InkInterface):
     """Draws at `scale` times the resolution, then reduces to a float mask in [0, 1]."""
 
     def __init__(self, w: int, h: int, scale: int = 3) -> None:
+        """Make a blank mask of w by h pixels, drawn at scale times that resolution."""
         self.scale = scale
         self.img = Image.new("L", (w * scale, h * scale), 0)
         self.draw = ImageDraw.Draw(self.img)

@@ -21,6 +21,7 @@ PROJECT = json.loads(
 
 
 async def main() -> int:
+    """Run the async SDK client example, reading EI_API_KEY; return 2 without it."""
     api_key = os.environ.get("EI_API_KEY")
     if not api_key:
         print("set EI_API_KEY (see examples/.env)", file=sys.stderr)

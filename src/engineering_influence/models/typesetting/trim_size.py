@@ -26,6 +26,7 @@ class TrimSize(TrimSizeInterface):
     hardcover: bool
 
     def __post_init__(self) -> None:
+        """Validate the page size in inches when it is built."""
         if self.width_in <= 0 or self.height_in <= 0:
             raise ValueError("a trim size needs a positive width and height")
 

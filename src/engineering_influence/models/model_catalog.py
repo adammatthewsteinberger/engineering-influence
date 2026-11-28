@@ -22,6 +22,7 @@ class ModelCatalog(ModelCatalogInterface):
     descriptors: tuple[ProviderDescriptor, ...]
 
     def __post_init__(self) -> None:
+        """Validate the descriptors keyed by provider, model and date when the catalog is built."""
         keys = [(d.provider, d.model, d.price_effective) for d in self.descriptors]
         if len(set(keys)) != len(keys):
             raise ValueError("a model cannot have two prices with the same effective date")

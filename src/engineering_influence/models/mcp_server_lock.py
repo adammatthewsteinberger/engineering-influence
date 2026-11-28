@@ -61,6 +61,7 @@ class McpServerLock(McpServerLockInterface):
     bearer_env: str = ""
 
     def __post_init__(self) -> None:
+        """Validate the approved server's fields when the lock entry is built."""
         if not self.NAME.fullmatch(self.name):
             raise ValueError(
                 "a server's lock name is lowercase letters, digits and -, from a letter"

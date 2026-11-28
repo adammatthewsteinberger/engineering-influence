@@ -29,6 +29,7 @@ class ToolLockVerifier(ToolLockVerifierInterface):
     LIST_LIMIT = 8
 
     def __init__(self, hasher: FileHasherInterface) -> None:
+        """Remember the file hasher the lock is verified with."""
         self._hasher = hasher
 
     def check_files(self, entry: McpServerLock) -> tuple[str, ...]:

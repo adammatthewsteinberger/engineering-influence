@@ -77,6 +77,7 @@ class AcpApplication(AcpApplicationInterface):
         sessions: AcpSessionStoreInterface,
         locks: Callable[[str], ToolLock] | None = None,
     ) -> None:
+        """Remember the run creator, canceller, brief reader, progress reader and spend resolver the protocol calls."""
         self._creator = creator
         self._canceller = canceller
         self._briefs = briefs

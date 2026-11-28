@@ -56,6 +56,7 @@ class PublishPipelineProvider(PublishPipelineProviderInterface):
         verifier: EpubVerifierInterface,
         strict_verifier: EpubVerifierInterface,
     ) -> None:
+        """Remember the config, file source, PDF inspector, loader and workspace one publication uses."""
         self._config = config
         self._files = files
         self._pdfs = pdfs

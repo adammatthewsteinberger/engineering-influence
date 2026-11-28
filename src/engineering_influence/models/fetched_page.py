@@ -21,6 +21,7 @@ class FetchedPage(FetchedPageInterface):
     text: str
 
     def __post_init__(self) -> None:
+        """Validate the fetched page's fields when it is built."""
         if not self.url.strip():
             raise ValueError("a fetched page has an address")
         if not self.text.strip():

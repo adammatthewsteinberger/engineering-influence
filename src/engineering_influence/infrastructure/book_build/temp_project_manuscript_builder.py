@@ -37,6 +37,7 @@ class TempProjectManuscriptBuilder(ManuscriptBuilderInterface):
         no_render: bool = False,
         strict_release: bool = False,
     ) -> None:
+        """Remember the publisher factory, and whether to skip rendering and to build a strict release."""
         self._publishers = publishers
         self._no_render = no_render
         self._strict_release = strict_release

@@ -21,6 +21,7 @@ class Outline(OutlineInterface):
     chapters: tuple[ChapterOutline, ...]
 
     def __post_init__(self) -> None:
+        """Refuse an outline with no chapters, too many, or numbering with gaps."""
         if not isinstance(self.chapters, tuple) or not self.chapters:
             raise ValueError("an outline needs at least one chapter")
         if len(self.chapters) > self.MAX_CHAPTERS:

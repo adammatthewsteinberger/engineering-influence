@@ -26,6 +26,7 @@ class BackTypesetter(BackTypesetterInterface):
     """
 
     def __init__(self, typography: Typography) -> None:
+        """Remember the typography used to set the back cover text."""
         self._t = typography
 
     def typeset(

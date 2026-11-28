@@ -90,6 +90,7 @@ class CostEstimator(CostEstimatorInterface):
         recipes: Mapping[BookKind, StageRecipesInterface],
         plans: Mapping[BookKind, StagePlan],
     ) -> None:
+        """Remember the model's descriptor, the recipes for each book kind and their plans."""
         self._descriptor = descriptor
         self._recipes = dict(recipes)
         self._plans = dict(plans)

@@ -20,9 +20,11 @@ class McpServerSandbox(McpServerSandboxInterface):
     """
 
     def __init__(self, platform: str, locate: Callable[[str], str | None], home: Path) -> None:
+        """Remember the platform, how to locate its sandbox program, and the home folder."""
         self._delegate = self._choose(platform, locate, home)
 
     def wrap(self, command: tuple[str, ...], workdir: Path) -> tuple[str, ...]:
+        """The command line that runs the command under this system's native sandbox; raise SANDBOX_UNAVAILABLE when there is none."""
         if self._delegate is None:
             raise ApplicationError(
                 code="SANDBOX_UNAVAILABLE",

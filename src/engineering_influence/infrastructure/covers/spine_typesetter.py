@@ -18,6 +18,7 @@ class SpineTypesetter(SpineTypesetterInterface):
     """Title and author surname, when the book is thick enough to carry them."""
 
     def __init__(self, typography: Typography) -> None:
+        """Remember the typography used to set the spine text."""
         self._t = typography
 
     def typeset(

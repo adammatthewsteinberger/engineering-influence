@@ -56,6 +56,7 @@ class LocalBookRun(LocalBookRunInterface):
         runs: RunRepositoryInterface,
         sleep: Callable[[float], None] = time.sleep,
     ) -> None:
+        """Remember the creator, advancer, resumer, spend resolver and run repository the local run uses."""
         self._sleep = sleep
         self._creator = creator
         self._advancer = advancer

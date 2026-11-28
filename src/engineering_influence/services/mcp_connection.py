@@ -23,6 +23,7 @@ class McpConnection(McpConnectionInterface):
     """
 
     def __init__(self, server: str, client: McpClientInterface, tools: McpToolSet) -> None:
+        """Remember the server name, its client and its tools."""
         self._server = server
         self._client = client
         self._tools = tools

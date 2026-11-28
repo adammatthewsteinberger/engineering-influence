@@ -15,6 +15,7 @@ class PricingCheck(PricingCheckInterface):
     """Validates volatile pricing assumptions and records the inputs used."""
 
     def __init__(self, today: date | None = None) -> None:
+        """Remember the date the pricing assumptions are checked on, if one is given."""
         self._today = today or date.today()
 
     def validate(

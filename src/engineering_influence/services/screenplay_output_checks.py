@@ -29,12 +29,15 @@ class ScreenplayOutputChecks(StageOutputCheckInterface):
     )
 
     def __init__(self, target_pages: int = DEFAULT_TARGET_PAGES) -> None:
+        """Remember the target page count the output is checked against."""
         self._target_pages = target_pages
 
     def repairable(self, stage: str) -> bool:
+        """Whether a failed stage may be asked again with the problems it had."""
         return stage in self.REPAIRABLE
 
     def final_code(self, stage: str) -> str:
+        """The error code for a stage whose repair also fails the check."""
         return f"SCREENPLAY_{stage.upper()}_INVALID"
 
     def check(self, stage: str, text: str, target_words: int | None) -> None:

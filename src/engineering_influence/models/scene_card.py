@@ -17,6 +17,7 @@ class SceneCard(SceneCardInterface):
     sources: tuple[int, ...]
 
     def __post_init__(self) -> None:
+        """Validate the card's number, beat and sources when it is built."""
         if type(self.number) is not int or self.number < 1:
             raise ValueError("a scene card is numbered from 1")
         if not self.beat.strip():

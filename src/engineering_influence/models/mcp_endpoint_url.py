@@ -29,6 +29,7 @@ class McpEndpointUrl(McpEndpointUrlInterface):
     url: str
 
     def __post_init__(self) -> None:
+        """Refuse an address that is not https, before anything is contacted."""
         if not isinstance(self.url, str):
             raise TypeError("a server's address is text")
         if not self.url or len(self.url) > self.MAX_LENGTH:

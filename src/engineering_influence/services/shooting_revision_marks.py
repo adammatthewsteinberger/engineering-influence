@@ -42,6 +42,7 @@ class ShootingRevisionMarks(ShootingRevisionMarksInterface):
     LABEL: ClassVar[re.Pattern[str]] = re.compile(r"\s#([^#\n]+)#\s*$")
 
     def __init__(self, parser: FountainParserInterface) -> None:
+        """Remember the Fountain parser the scene numbers are read with."""
         self._parser = parser
 
     def mark(

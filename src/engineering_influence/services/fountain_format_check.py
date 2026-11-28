@@ -45,6 +45,7 @@ class FountainFormatCheck(FountainFormatCheckInterface):
     def __init__(
         self, parser: FountainParserInterface, allowed_times: frozenset[str] = ALLOWED_TIMES
     ) -> None:
+        """Remember the Fountain parser and the times of day a scene heading may use."""
         self._parser = parser
         self._allowed_times = allowed_times
 

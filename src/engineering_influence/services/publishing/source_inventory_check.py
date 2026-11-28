@@ -14,6 +14,7 @@ class SourceInventoryCheck(SourceInventoryCheckInterface):
     """Finds unlisted sources and ignore entries that name missing files."""
 
     def __init__(self, files: ManuscriptSourceInterface) -> None:
+        """Remember the source files the inventory check reads."""
         self._files = files
 
     def run(

@@ -22,6 +22,7 @@ class DeterministicStageExecutor(StageExecutorInterface):
     """
 
     def __init__(self, artifacts: ArtifactStoreInterface, journal: JournalInterface) -> None:
+        """Remember the artifact store and the journal the stage writes through."""
         self._artifacts = artifacts
         self._journal = journal
 

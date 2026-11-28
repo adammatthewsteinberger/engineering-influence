@@ -17,6 +17,7 @@ class ReadRun(ReadRunInterface):
     """
 
     def __init__(self, runs: RunRepositoryInterface, artifacts: ArtifactStoreInterface) -> None:
+        """Remember the run repository and artifact store the reads come from."""
         self._runs = runs
         self._artifacts = artifacts
 

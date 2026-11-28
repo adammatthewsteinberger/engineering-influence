@@ -13,6 +13,7 @@ class LockToolGrants(ToolGrantsInterface):
     """
 
     def __init__(self, lock: ToolLock) -> None:
+        """Remember the tool lock whose grants are used."""
         self._lock = lock
 
     def for_stage(self, stage: str, servers: tuple[str, ...] | None = None) -> tuple[str, ...]:

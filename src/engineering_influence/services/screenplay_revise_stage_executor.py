@@ -50,6 +50,7 @@ class ScreenplayReviseStageExecutor(StageExecutorInterface):
         checks: ScreenplaySectionCheckInterface,
         dialogue: ScreenplayDialogueSourceCheckInterface,
     ) -> None:
+        """Remember the artifacts, reviser, scene cards, section checks and dialogue check the revisions use."""
         self._artifacts = artifacts
         self._reviser = reviser
         self._cards = cards

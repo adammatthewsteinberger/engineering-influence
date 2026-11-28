@@ -23,6 +23,7 @@ class RabbitMqQueueAdapter(QueueInterface):
         routing_key: str = "engineering-influence.jobs",
         connector: Callable[[str], Awaitable[Any]] = aio_pika.connect_robust,
     ) -> None:
+        """Remember the broker address, the routing key and the connector that opens connections."""
         self._url = url
         self._routing_key = routing_key
         self._connector = connector

@@ -25,6 +25,7 @@ class Cassette(CassetteInterface):
     note: str = ""
 
     def __post_init__(self) -> None:
+        """Validate the cassette's exchanges when it is built."""
         if not self.NAME.fullmatch(self.name):
             raise ValueError(
                 f"{self.name!r} is not a cassette name (lower-case letters, digits, - _)"

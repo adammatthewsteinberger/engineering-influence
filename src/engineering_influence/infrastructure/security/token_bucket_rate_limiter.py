@@ -12,6 +12,7 @@ class TokenBucketRateLimiter(RateLimiterInterface):
     """One bucket per caller key; the least recently seen keys are forgotten first."""
 
     def __init__(self, burst: float, per_second: float, max_keys: int = 10_000) -> None:
+        """Remember the burst size, the refill rate per second, and how many callers are tracked."""
         if burst <= 0 or per_second <= 0:
             raise ValueError("burst and per_second must be positive")
         if max_keys < 1:

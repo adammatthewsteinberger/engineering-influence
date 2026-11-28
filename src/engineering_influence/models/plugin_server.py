@@ -36,6 +36,7 @@ class PluginServer(PluginServerInterface):
     bearer_env: str = ""
 
     def __post_init__(self) -> None:
+        """Validate that the server names a command or an address."""
         if not isinstance(self.name, str) or not McpServerLock.NAME.fullmatch(self.name):
             raise ValueError("a server's name is lowercase letters, digits and hyphens, at most 32")
         if bool(self.command) == bool(self.url):

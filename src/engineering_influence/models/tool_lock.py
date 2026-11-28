@@ -21,6 +21,7 @@ class ToolLock(ToolLockInterface):
     servers: tuple[McpServerLock, ...] = ()
 
     def __post_init__(self) -> None:
+        """Validate the lock's servers when it is built."""
         if not isinstance(self.servers, tuple):
             raise TypeError("a tool lock is a tuple of servers")
         names = [server.name for server in self.servers]
