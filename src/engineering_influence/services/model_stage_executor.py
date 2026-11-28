@@ -3,6 +3,7 @@
 
 import asyncio
 from collections.abc import Callable
+from dataclasses import replace
 
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interfaces.artifact_store_interface import ArtifactStoreInterface
@@ -118,18 +119,47 @@ class ModelStageExecutor(StageExecutorInterface):
             prompt_version=version,
             tools=self._definitions(recipe, guidance.tools),
         )
-        outcome = await asyncio.to_thread(
-            self._loop.run, self._guards(run.budget), run.run_id, run.stage, attempt, request
+        text = await asyncio.to_thread(self._answer, run, attempt, request)
+        await asyncio.to_thread(
+            self._artifacts.put, run.run_id, recipe.output_name(), text.encode("utf-8")
         )
+        return StageReport()
+
+    REPAIR = (
+        "The answer you gave failed these checks: {findings}. Write the whole answer again with each problem fixed, "
+        "and keep everything else as it was."
+    )
+
+    def _answer(self, run: BookRun, attempt: int, request: ModelRequest) -> str:
+        """The stage's checked text. A repairable stage whose first answer fails gets one more call, with the findings."""
+        text = self._ask_usable(run, attempt, request)
+        try:
+            self._checks.check(run.stage, text, run.brief.target_words)
+            return text
+        except ApplicationError as error:
+            if error.code != "STAGE_OUTPUT_INVALID" or not self._checks.repairable(run.stage):
+                raise
+            findings = self.REPAIR.format(findings=error.message)
+        text = self._ask_usable(
+            run, attempt, replace(request, prompt=f"{request.prompt}\n\n{findings}")
+        )
+        try:
+            self._checks.check(run.stage, text, run.brief.target_words)
+        except ApplicationError as error:
+            if error.code != "STAGE_OUTPUT_INVALID":
+                raise
+            raise ApplicationError(
+                code=self._checks.final_code(run.stage), message=error.message, http_status=422
+            ) from error
+        return text
+
+    def _ask_usable(self, run: BookRun, attempt: int, request: ModelRequest) -> str:
+        outcome = self._loop.run(self._guards(run.budget), run.run_id, run.stage, attempt, request)
         if not outcome.complete or not outcome.text.strip():
             raise ApplicationError(
                 code="STAGE_ANSWER_UNUSABLE", message=self._why(outcome, run.stage), http_status=502
             )
-        self._checks.check(run.stage, outcome.text, run.brief.target_words)
-        await asyncio.to_thread(
-            self._artifacts.put, run.run_id, recipe.output_name(), outcome.text.encode("utf-8")
-        )
-        return StageReport()
+        return outcome.text
 
     async def _source_blocks(self, run: BookRun) -> str:
         """Every source file the run keeps, each under its number, for a stage that reads them all."""

@@ -17,6 +17,17 @@ def test_the_brief_is_not_checked() -> None:
     ScreenplayOutputChecks().check("brief", "anything at all", None)
 
 
+@pytest.mark.parametrize("stage", ["anchors", "audit", "beats", "scene_cards", "visual_grammar"])
+def test_each_architecture_stage_is_repairable_and_names_its_own_final_code(stage: str) -> None:
+    checks = ScreenplayOutputChecks()
+    assert checks.repairable(stage)
+    assert checks.final_code(stage) == f"SCREENPLAY_{stage.upper()}_INVALID"
+
+
+def test_the_brief_is_not_repairable_because_it_is_never_checked() -> None:
+    assert not ScreenplayOutputChecks().repairable("brief")
+
+
 def test_a_broken_beat_sheet_stops_the_stage_with_its_problems() -> None:
     with pytest.raises(ApplicationError) as error:
         ScreenplayOutputChecks().check("beats", BAD_BEATS, None)

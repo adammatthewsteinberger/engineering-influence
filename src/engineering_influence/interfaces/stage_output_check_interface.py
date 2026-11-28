@@ -18,3 +18,11 @@ class StageOutputCheckInterface(ABC):
         ``target_words`` is the brief's length, so an outline can be checked for the number of chapters it
         should have; it is None when the brief gives no length.
         """
+
+    def repairable(self, stage: str) -> bool:
+        """Whether a stage whose answer fails the check gets one more call, with the findings in its prompt."""
+        return False
+
+    def final_code(self, stage: str) -> str:
+        """The error code raised when the repair call also fails the check."""
+        return "STAGE_OUTPUT_INVALID"
