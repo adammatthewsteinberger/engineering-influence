@@ -1,6 +1,8 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Chooses what does a run's stages: the offline placeholder, or a model, only when told to."""
 
+import shutil
+import sys
 from collections.abc import Mapping
 from datetime import date
 from pathlib import Path
@@ -63,6 +65,10 @@ from engineering_influence.infrastructure.skills.toml_skill_parser import TomlSk
 from engineering_influence.infrastructure.tools.http_mcp_transport_factory import (
     HttpMcpTransportFactory,
 )
+from engineering_influence.infrastructure.tools.interfaces.mcp_server_sandbox_interface import (
+    McpServerSandboxInterface,
+)
+from engineering_influence.infrastructure.tools.mcp_server_sandbox import McpServerSandbox
 from engineering_influence.infrastructure.tools.sha256_file_hasher import Sha256FileHasher
 from engineering_influence.infrastructure.tools.stdio_mcp_transport_factory import (
     StdioMcpTransportFactory,
@@ -270,8 +276,10 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         today: date,
         request_timeout_seconds: float = 1_800.0,
         builder: ManuscriptBuilderInterface | None = None,
+        sandbox: McpServerSandboxInterface | None = None,
     ) -> None:
         self._environment = environment
+        self._sandbox = sandbox or McpServerSandbox(sys.platform, shutil.which, Path.home())
         self._secrets = secrets
         self._today = today
         self._timeout = request_timeout_seconds
@@ -822,7 +830,11 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             max_disk_bytes=self.SERVER_DISK_BYTES,
         )
         launcher = McpServerLauncher(
-            StdioMcpTransportFactory(limits, self._environment),
+            StdioMcpTransportFactory(
+                limits,
+                self._environment,
+                self._sandbox,
+            ),
             HttpMcpTransportFactory(
                 self._server_client,
                 PublicHttpsUrlPinner(PublicHttpsUrlPolicy()),

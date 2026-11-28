@@ -149,8 +149,14 @@ ei tools verify [--lock PATH] [NAME …]
   enforced to within what the server can use in one interval. Only the working directory counts for disk.
 - **A line is bounded** (4 MiB) and a server that talks faster than it is read is slowed by a short queue.
   A line that is not a JSON object is refused. Its last 2,000 bytes of error output are quoted if it dies.
-- **This is not a sandbox.** A server can still read any file the user can read, by absolute path, and use
-  the network. Linux and macOS only (it needs process groups).
+- **Each server runs inside a native sandbox, or it does not run.** The sandbox denies the network, lets the
+  server write only in its own working directory, and hides the home directory: the server cannot read it except
+  for the directories its own interpreter and the files it is started with live in (a virtual environment, and the
+  Python it resolves to). On macOS it runs under `sandbox-exec`, and reads elsewhere on the system are allowed,
+  because a server must load its libraries from where they are installed. On Linux it runs under bubblewrap, with a
+  read-only system, empty `/run` and `/tmp`, an empty home directory, fresh network, process, IPC and UTS namespaces,
+  and no capabilities. Where neither is found, a locked server is refused with `SANDBOX_UNAVAILABLE` and no server
+  starts. Linux and macOS only (it needs process groups).
 
 ## Remote servers (HTTP)
 

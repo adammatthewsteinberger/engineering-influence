@@ -21,6 +21,9 @@ import pytest
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.infrastructure.in_memory_artifact_store import InMemoryArtifactStore
 from engineering_influence.infrastructure.in_memory_journal import InMemoryJournal
+from engineering_influence.infrastructure.tools.interfaces.mcp_server_sandbox_interface import (
+    McpServerSandboxInterface,
+)
 from engineering_influence.infrastructure.tools.toml_tool_lock_store import TomlToolLockStore
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
 from engineering_influence.models.book_brief import BookBrief
@@ -65,6 +68,13 @@ base_url = "{url}"
 class NoSecrets(SecretProviderInterface):
     def require(self, name: str) -> str:
         raise ApplicationError(code="SECRET_MISSING", message=f"{name} is not set")
+
+
+class Unconfined(McpServerSandboxInterface):
+    """Starts a server as it is: these tests check the lock, not the confinement (see test_native_sandbox_live)."""
+
+    def wrap(self, command: tuple[str, ...], workdir: Path) -> tuple[str, ...]:
+        return command
 
 
 def says(text: str) -> dict[str, Any]:
@@ -135,7 +145,7 @@ class World:
         self.script = tmp_path / "server.py"
         shutil.copy(SERVER, self.script)
         self.lock = tmp_path / "ei-tools.lock.toml"
-        self.cli = CliRuntime().build()
+        self.cli = CliRuntime(sandbox=Unconfined()).build()
         self.store = InMemoryArtifactStore()
         self.journal = InMemoryJournal()
         for artifact in ("brief.md", "positioning.md"):
@@ -181,7 +191,9 @@ class World:
         return environment
 
     def runtime(self, url: str = "http://127.0.0.1:1", lock: bool = True) -> StageExecutorRuntime:
-        return StageExecutorRuntime(self.environment(url, lock), NoSecrets(), TODAY)
+        return StageExecutorRuntime(
+            self.environment(url, lock), NoSecrets(), TODAY, sandbox=Unconfined()
+        )
 
     def execute(self, rt: StageExecutorRuntime, stage: str) -> None:
         run = BookRun(
@@ -434,7 +446,9 @@ def test_a_remote_server_whose_token_is_set_in_the_runtimes_environment_reaches_
     world: World,
 ) -> None:
     lock_a_remote_server(world, bearer_env="DOCS_TOKEN")
-    rt = StageExecutorRuntime({**world.environment(), "DOCS_TOKEN": "a-token"}, NoSecrets(), TODAY)
+    rt = StageExecutorRuntime(
+        {**world.environment(), "DOCS_TOKEN": "a-token"}, NoSecrets(), TODAY, sandbox=Unconfined()
+    )
     with pytest.raises(ApplicationError) as error:
         rt.build(world.store, world.journal)
     rt.close()

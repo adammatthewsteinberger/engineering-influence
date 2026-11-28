@@ -2,6 +2,7 @@
 """Compose the command-line application."""
 
 import os
+import shutil
 import sys
 from collections.abc import Mapping
 from datetime import date
@@ -44,9 +45,13 @@ from engineering_influence.infrastructure.source_library.filesystem_source_libra
     FilesystemSourceLibrary,
 )
 from engineering_influence.infrastructure.system_keep_awake import SystemKeepAwake
+from engineering_influence.infrastructure.tools.interfaces.mcp_server_sandbox_interface import (
+    McpServerSandboxInterface,
+)
 from engineering_influence.infrastructure.tools.lazy_remote_transport_factory import (
     LazyRemoteTransportFactory,
 )
+from engineering_influence.infrastructure.tools.mcp_server_sandbox import McpServerSandbox
 from engineering_influence.infrastructure.tools.path_executable_finder import PathExecutableFinder
 from engineering_influence.infrastructure.tools.sha256_file_hasher import Sha256FileHasher
 from engineering_influence.infrastructure.tools.stdio_mcp_transport_factory import (
@@ -180,7 +185,9 @@ class CliRuntime(CliRuntimeInterface):
         bundles: BundleFetcherInterface | None = None,
         brave_base_url: str = "https://api.search.brave.com",
         local_searxng_url: str = "http://127.0.0.1:8888",
+        sandbox: McpServerSandboxInterface | None = None,
     ) -> None:
+        self._sandbox = sandbox or McpServerSandbox(sys.platform, shutil.which, Path.home())
         self._publishing = publishing
         self._queue = queue
         self._probe_timeout_seconds = probe_timeout_seconds
@@ -317,7 +324,7 @@ class CliRuntime(CliRuntimeInterface):
         )
         hasher = Sha256FileHasher()
         probe = McpServerProbe(
-            StdioMcpTransportFactory(limits, os.environ),
+            StdioMcpTransportFactory(limits, os.environ, self._sandbox),
             LazyRemoteTransportFactory(self._remote_transports),
             McpClientFactory("engineering-influence", __version__, self.TOOL_REQUEST_SECONDS),
             ToolLockVerifier(hasher),

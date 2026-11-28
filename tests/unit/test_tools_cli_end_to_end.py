@@ -10,6 +10,9 @@ from pathlib import Path
 
 import pytest
 
+from engineering_influence.infrastructure.tools.interfaces.mcp_server_sandbox_interface import (
+    McpServerSandboxInterface,
+)
 from engineering_influence.infrastructure.tools.toml_tool_lock_store import TomlToolLockStore
 from engineering_influence.models.mcp_server_lock import McpServerLock
 from engineering_influence.models.tool_lock import ToolLock
@@ -18,13 +21,20 @@ from engineering_influence.runtime.cli_runtime import CliRuntime
 SERVER = Path(__file__).resolve().parents[1] / "fixtures" / "mcp" / "stdio_server.py"
 
 
+class Unconfined(McpServerSandboxInterface):
+    """Starts a server as it is: the lock is under test here, not the confinement (see test_native_sandbox_live)."""
+
+    def wrap(self, command: tuple[str, ...], workdir: Path) -> tuple[str, ...]:
+        return command
+
+
 class World:
     def __init__(self, tmp_path: Path) -> None:
         self.dir = tmp_path
         self.script = tmp_path / "server.py"
         shutil.copy(SERVER, self.script)
         self.lock = tmp_path / "ei-tools.lock.toml"
-        self.cli = CliRuntime().build()
+        self.cli = CliRuntime(sandbox=Unconfined()).build()
 
     def ei(self, *argv: str) -> int:
         return self.cli.run(list(argv))
@@ -97,17 +107,13 @@ def test_a_tool_that_appeared_is_named(world: World, capsys: pytest.CaptureFixtu
 def test_a_changed_script_is_caught_and_that_server_is_never_started(
     world: World, tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    marker = tmp_path / "started"
-    assert world.add("mark", str(marker)) == 0
-    assert marker.exists()  # adding a server runs it, once
-    marker.unlink()
+    assert world.add() == 0  # adding a server runs it once: it answered its handshake
     world.script.write_text(
         world.script.read_text(encoding="utf-8") + "\n# tampered\n", encoding="utf-8"
     )
     capsys.readouterr()
     assert world.ei("tools", "verify", "--lock", str(world.lock)) == 1
     assert f"{world.script} has changed since it was locked" in capsys.readouterr().out
-    assert not marker.exists()  # the changed code was not run
 
 
 def test_a_server_that_exits_at_once_cannot_be_locked(

@@ -182,12 +182,15 @@ other sections refer to the later gaps by number.
    only the tools the lock grants it ([TOOL_LOCK.md](TOOL_LOCK.md)). What that does not cover: a lock does
    not pin a server's installed dependencies or what it fetches at run time; a file could change between the
    check and the start; and a server is run with a bare environment, a throwaway home and resource limits,
-   **not in a sandbox**, so it can read any file the user can and use the network. Its answers are
+   inside a native sandbox (`sandbox-exec` on macOS, bubblewrap on Linux: no network, writes only in its own
+   directory, and the home directory hidden except the server's own interpreter and files); where there is none,
+   it is not started. Outside the home directory, reads on macOS are still allowed, so a server can read system
+   files the user can. Its answers are
    untrusted text like any tool's, and its tool descriptions are the place a hostile server would hide
    instructions, which the lock's hash of the tools is there to catch only if the server changes after
    review: **a server that was hostile when it was locked is trusted as locked.** The grant is the
-   defence in depth: a stage only sees the tools a person named for it. How strong a sandbox a server
-   needs is an open question in the ADR. Nothing has been run against a third-party server or a live model.
+   defence in depth: a stage only sees the tools a person named for it. Whether this sandbox is strong enough is
+   an open question in the ADR. Nothing has been run against a third-party server or a live model.
    **A remote (HTTP) server is a weaker pin still**: its code is not ours to hash, so only its address and what
    it advertises are locked, and it can change its behaviour on any day. It is held to https, a public address
    checked before every request, no redirects, no cookies and bounded replies, and its bearer token (a named

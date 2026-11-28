@@ -10,6 +10,9 @@ from pathlib import Path
 from engineering_influence.infrastructure.process.interfaces.process_meter_interface import (
     ProcessMeterInterface,
 )
+from engineering_influence.infrastructure.tools.interfaces.mcp_server_sandbox_interface import (
+    McpServerSandboxInterface,
+)
 from engineering_influence.infrastructure.tools.server_environment import ServerEnvironment
 from engineering_influence.infrastructure.tools.stdio_mcp_transport import StdioMcpTransport
 from engineering_influence.interfaces.mcp_transport_factory_interface import (
@@ -24,16 +27,19 @@ class StdioMcpTransportFactory(McpTransportFactoryInterface):
 
     The directory is the server's current directory, its ``HOME`` and its temporary directory, and
     it is removed when the transport is closed. If the server cannot be started, it is removed here.
+    The command is wrapped by the sandbox first, so a server runs confined or not at all.
     """
 
     def __init__(
         self,
         limits: ToolLimits,
-        environ: Mapping[str, str] | None = None,
+        environ: Mapping[str, str] | None,
+        sandbox: McpServerSandboxInterface,
         meter: ProcessMeterInterface | None = None,
         sample_seconds: float = 0.5,
     ) -> None:
         self._limits = limits
+        self._sandbox = sandbox
         self._environment = ServerEnvironment(os.environ if environ is None else environ)
         self._meter = meter
         self._sample_seconds = sample_seconds
@@ -43,8 +49,9 @@ class StdioMcpTransportFactory(McpTransportFactoryInterface):
         workdir = Path(tempfile.mkdtemp(prefix="ei-mcp-"))
         try:
             env = self._environment.build(env_names, workdir)
+            confined = self._sandbox.wrap(command, workdir)
             return StdioMcpTransport(
-                command, env, self._limits, workdir, self._meter, self._sample_seconds
+                confined, env, self._limits, workdir, self._meter, self._sample_seconds
             )
         except BaseException:
             shutil.rmtree(workdir, ignore_errors=True)
