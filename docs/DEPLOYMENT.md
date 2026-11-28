@@ -105,8 +105,10 @@ The command-line book commands and the MCP server still read the database, as th
 (which must be installed, with its CRDs). `openbao.devMode=true` (the default) deploys one in-memory OpenBao with a root
 token from `openbao.bootstrapTokenSecret`: a local cluster only, and its data does not survive a restart. In production,
 set `openbao.devMode=false` and `openbao.server` to an OpenBao you run; the chart then deploys no OpenBao and refuses to
-render without a server. The SecretStore still authenticates with a token from `bootstrapTokenSecret`, so a scoped
-auth method (Kubernetes or AppRole) is the next step before production use.
+render without a server. The SecretStore authenticates with the token from `bootstrapTokenSecret` unless `openbao.auth` is `kubernetes`. Outside dev,
+set `openbao.auth: kubernetes`: the operator then logs in as the chart's ServiceAccount through the OpenBao kubernetes auth
+mount `openbao.kubernetes.mountPath` and role `openbao.kubernetes.role`. The platform configures that mount and role in OpenBao,
+binding the role to the `ei-engineering-influence` ServiceAccount in the app's namespace. No root token is stored in the cluster.
 
 ## Autoscaling
 
