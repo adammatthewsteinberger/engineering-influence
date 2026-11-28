@@ -151,7 +151,13 @@ def answer(user: str) -> str:
         return "[]"
     if user.startswith("Summarise this chapter"):
         return "Herbs need light and drainage."
-    for edit in ("Revise the structure", "Revise the story", "Line-edit", "Copy-edit"):
+    for edit in (
+        "Revise the structure",
+        "Revise the story",
+        "Line-edit",
+        "Copy-edit",
+        "Check this chapter for continuity",
+    ):
         if user.startswith(edit):
             found = CHAPTER.search(user)
             assert found is not None

@@ -102,6 +102,7 @@ def test_the_editing_passes_are_optional_and_everything_else_is_essential() -> N
         "revise_story",
         "revise_lines",
         "copy_edit",
+        "revise_continuity",
     }
 
 

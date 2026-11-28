@@ -2,8 +2,8 @@
 
 **BLUF:** `--kind novel` writes a novel in twelve stages, from a brief to a built book. A novel has no research
 stage and no built-in tools. Instead it has a story bible, a small set of facts (who, where, when) that every
-chapter is checked against. After the draft, three editing passes revise every chapter (story, lines, copy), and the
-book is built from the last of them.
+chapter is checked against. After the draft, four editing passes revise every chapter (story, lines, copy, continuity),
+and the book is built from the last of them.
 
 A novel run is a different kind of book from a non-fiction one: it is not argued from sources, so it has no research
 stage and no tools, and it has a story bible that every chapter must agree with. `BookKind.NOVEL` picks it, and the
@@ -48,10 +48,13 @@ runtime dispatches by kind, so a non-fiction run is untouched.
 | `audit` | none | the same publish audits as `ei book audit` (`audit.md`, `audit/`) | a book that fails stops the run |
 | `build` | none | the interior PDF, EPUB, covers, listing and KDP bundle under `book/`, the reports under `build/`, `quality-report.json` and `build.md` | a book that does not pass stops the run (`BUILD_FAILED`) |
 
-The plan is twelve stages, from the brief to a built book. The draft writes each chapter one beat at a time. Then three
+The plan is thirteen stages, from the brief to a built book. The draft writes each chapter one beat at a time. Then four
 editing passes revise every chapter: `revise_story` (scenes, goals, pacing, with the bible, the outline and the beats),
-`revise_lines` (sentences, dialogue and point of view, in the brief's voice) and `copy_edit` (spelling and consistency
-with the bible). Each pass may keep a chapter's own text when its answer is implausible, and a novel keeps its dashes.
+`revise_lines` (sentences, dialogue and point of view, in the brief's voice), `copy_edit` (spelling and consistency
+with the bible) and `revise_continuity` (every chapter checked against the bible and the outline, with a line on every
+other chapter: a name, an age, a place, a date or the order of events is corrected to agree with the bible, and a chapter
+with nothing to correct comes back unchanged). The continuity pass runs on every chapter, so it adds one model call per
+chapter. Each pass may keep a chapter's own text when its answer is implausible, and a novel keeps its dashes.
 
 ## Drafting
 
