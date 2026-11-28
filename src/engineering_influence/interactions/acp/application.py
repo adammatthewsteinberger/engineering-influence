@@ -39,9 +39,11 @@ class AcpApplication(AcpApplicationInterface):
     answered with ``end_turn`` once the run is saved and its first stage queued, because the stages are done by the
     worker, not here. ``session/cancel`` stops the run. Progress is reported as ``session/update`` notifications.
 
-    Sessions live in this process: a run outlives the session, and a new session can find it with ``ei run status``.
-    Nothing here connects MCP servers, loads a session or asks for permission; a run that spends asks through the
-    worker, which this slice does not yet do.
+    Sessions are stored beside the runs, so ``session/load`` re-attaches one from any process, and a run outlives its
+    session: a new session can find it with ``ei run status``. A run that would spend past its cap asks the client
+    through ``session/request_permission``, and the answer decides the run. MCP servers are not connected:
+    ``session/new`` refuses a non-empty ``mcpServers`` list, since a server the client names would run commands this
+    agent has not locked.
     """
 
     PROTOCOL_VERSION: ClassVar[int] = 1
