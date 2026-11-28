@@ -3,7 +3,10 @@
 
 from pathlib import Path
 
-from engineering_influence.infrastructure.tools.bubblewrap_command import BubblewrapCommand
+from engineering_influence.infrastructure.tools.bubblewrap_command import (
+    PRIVATE_TMP,
+    BubblewrapCommand,
+)
 from engineering_influence.infrastructure.tools.sandbox_allowance import SandboxAllowance
 
 
@@ -70,3 +73,18 @@ def test_an_allowed_interpreter_directory_is_bound_back_read_only_over_the_home_
     home_at = wrapped.index("--tmpfs", wrapped.index(str(home.resolve())) - 1)
     bound = wrapped.index("--ro-bind", home_at)
     assert wrapped[bound : bound + 3] == ("--ro-bind", str(venv.resolve()), str(venv.resolve()))
+
+
+def test_the_directories_above_a_working_directory_under_tmp_are_read_only() -> None:
+    ancestors = BubblewrapCommand._ancestors_under_tmp(Path(PRIVATE_TMP) / "a" / "b" / "work")
+    assert ancestors == (
+        "--perms",
+        "0555",
+        "--dir",
+        "/tmp/a",
+        "--perms",
+        "0555",
+        "--dir",
+        "/tmp/a/b",
+    )
+    assert BubblewrapCommand._ancestors_under_tmp(Path("/home/x/work")) == ()

@@ -26,7 +26,7 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       latexmk texlive-luatex texlive-latex-recommended texlive-latex-extra \
       texlive-pictures texlive-fonts-recommended texlive-plain-generic \
-      texlive-extra-utils poppler-utils epubcheck default-jre-headless zip tidy \
+      texlive-extra-utils poppler-utils epubcheck default-jre-headless zip tidy tex-gyre \
  && rm -rf /var/lib/apt/lists/*
 RUN useradd --system --uid 10001 --no-create-home --shell /usr/sbin/nologin app
 COPY --from=build /app/.venv /app/.venv
