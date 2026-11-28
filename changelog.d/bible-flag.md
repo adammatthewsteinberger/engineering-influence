@@ -1,1 +1,0 @@
-A screenplay run takes its bible with `--bible DIR` (ADR 0018). The bible is checked before the run starts and its cards are kept in the run, and each scene is handed the cards it names, by name or id, so a scene's prompt grows by those cards only. A bible given to any other kind of book is refused. Compatible: runs without `--bible` are unchanged.

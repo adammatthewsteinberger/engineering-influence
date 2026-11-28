@@ -1,1 +1,0 @@
-Kyverno admission policies (`deploy/kyverno/policies.yaml`) refuse pods in namespaces labelled `policy.ei/restricted=true` that run as root or are privileged, and report containers without a memory limit. The minikube install labels its namespace and applies the policies when Kyverno is installed. Compatible: nothing applies to a namespace without the label.
