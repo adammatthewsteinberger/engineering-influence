@@ -82,6 +82,9 @@ class CallModel(CallModelInterface):
         key = self._key(descriptor.model, request, outcome)
         entry = JournalEntry(run_id, stage, attempt, key, self._encoded(request, response), actual)
         stored = self._journal.record(entry)
+        if stored is not entry:
+            # Another worker journaled this request first, so ours was paid for and not kept: count it.
+            self._journal.spend(entry)
         guard.settle(reserved, actual)
         if unoffered:
             raise ApplicationError(

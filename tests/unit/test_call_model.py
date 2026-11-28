@@ -305,7 +305,8 @@ def test_when_another_worker_journaled_the_request_first_its_answer_is_the_one_r
     result = caller.call(guard, "run-1", "draft", 2, REQUEST)
 
     assert result.text == "theirs"
-    assert len(journal.entries("run-1")) == 1
+    # Replay still answers with theirs; our paid call is counted in the spend as well.
+    assert len(journal.entries("run-1")) == 2
 
 
 def test_replay_finds_a_complete_answer_and_nothing_else() -> None:

@@ -27,6 +27,9 @@ class LatexEscaper(LatexEscaperInterface):
         "<": r"\textless{}",
         ">": r"\textgreater{}",
     }
+    # Control characters (C0 and C1, and DEL) other than tab and newline. They are not TeX, but a stray one can fail a
+    # build or print oddly, so none reaches the page.
+    CONTROL = re.compile(r"[\x00-\x08\x0b-\x1f\x7f-\x9f]")
     PATTERN = re.compile("|".join(re.escape(key) for key in SPECIALS))
     # What may appear in a URL unencoded. Everything else, including backslash, braces, "^"
     # (TeX reads "^^5c" as a backslash inside any macro argument), quotes, "<", ">", spaces,
@@ -37,6 +40,7 @@ class LatexEscaper(LatexEscaperInterface):
 
     def escape(self, text: str) -> str:
         """Return text safe to place in a LaTeX body."""
+        text = self.CONTROL.sub("", text)
         text = self.PATTERN.sub(lambda match: self.SPECIALS[match.group(0)], text)
         # A non-breaking space keeps "Chapter 7", "p. 12" and initials together.
         text = re.sub(r"\b(Chapters?|Psalms?|Part|pp?\.|No\.|vol\.) (\d)", r"\1~\2", text)

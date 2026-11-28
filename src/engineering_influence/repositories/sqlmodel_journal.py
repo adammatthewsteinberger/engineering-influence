@@ -1,6 +1,8 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """SQLModel-backed run journal."""
 
+import uuid
+
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, col, create_engine, select
 
@@ -35,6 +37,13 @@ class SqlModelJournal(JournalInterface):
                 )
             return winner
         return entry
+
+    def spend(self, entry: JournalEntry) -> None:
+        """Count a paid call whose answer another worker recorded first. The row takes its own digest, so a replay still
+        finds the first entry for the request, and the cost is part of the run's spend."""
+        with Session(self._engine) as session:
+            session.add(self._row(entry, f"{entry.key.digest()}:copy:{uuid.uuid4().hex}"))
+            session.commit()
 
     def find(self, run_id: str, stage: str, digest: str) -> JournalEntry | None:
         with Session(self._engine) as session:

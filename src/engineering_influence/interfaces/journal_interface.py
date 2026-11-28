@@ -20,6 +20,11 @@ class JournalInterface(ABC):
         """Store the entry; if its run, stage and request were recorded before, keep and return the first."""
 
     @abstractmethod
+    def spend(self, entry: JournalEntry) -> None:
+        """Count a paid call whose answer another worker recorded first, so the run's spend includes it. Replay still
+        answers with the first entry for the request."""
+
+    @abstractmethod
     def find(self, run_id: str, stage: str, digest: str) -> JournalEntry | None:
         """The recorded answer to a request, or None if it has not been made."""
 

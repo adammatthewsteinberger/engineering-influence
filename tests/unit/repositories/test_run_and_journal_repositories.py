@@ -322,3 +322,15 @@ def test_a_refused_swap_queues_nothing(runs: RunRepositoryInterface, database_ur
     event = OutboxEvent("evt-refused", "https://hook.example/in", "pipeline.started", {})
     assert runs.swap_with_events(before, before.start(), (event,)) is False
     assert queued_ids(runs, database_url) == []
+
+
+def test_a_paid_copy_counts_toward_spend_while_replay_keeps_the_first_answer(
+    journal: JournalInterface,
+) -> None:
+    from dataclasses import replace
+
+    journal.record(make_entry(response="text"))
+    journal.spend(replace(make_entry(response="other"), cost_micro_usd=400))
+    assert journal.find("run-1", "draft", make_entry().key.digest()).response == "text"
+    assert [e.response for e in journal.entries("run-1")] == ["text", "other"]
+    assert sum(entry.cost_micro_usd for entry in journal.entries("run-1")) == 900 + 400

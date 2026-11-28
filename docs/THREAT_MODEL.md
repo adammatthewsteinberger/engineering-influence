@@ -160,19 +160,23 @@ live internet, a live search service or a live model.
 
 ## Known gaps
 
-These are open, in the order they would be fixed.
+These are open, in the order they would be fixed. Gaps 1 to 5 are closed (see each one); their numbers stay, because
+other sections refer to the later gaps by number.
 
-1. **Control characters in body text** (other than newline and tab) are not removed or tested.
-   They are not an injection path (they are not TeX syntax), but a stray one may fail the build or
-   print oddly. This has not been tried.
-2. **tex4ebook's shell-escape-off state is its default, not enforced** (above).
-3. **The journal key** (`JournalKey`) joins its four parts with a separator. The model and the
-   prompt version are free strings but come from configuration, not from untrusted text.
-4. **Two workers journaling the same request at once** record only the first, so the second
-   call's cost is not counted.
-5. **The print and ebook documents were checked field by field in M5**; a new metadata field
-   that bypasses `TexText` would be caught by `test_latex_injection.py` only if it is added to
-   that test's field list.
+1. **Closed: control characters in body text.** The LaTeX escaper removes control characters other than tab and
+   newline (C0, C1 and DEL), and `test_latex_escaper_controls.py` pins it. They were not an injection path, since they
+   are not TeX syntax.
+2. **Closed: tex4ebook's shell escape is enforced.** `ToolEnvironment` sets `shell_escape=f` for every TeX tool,
+   whatever the parent environment says, so the setting does not depend on the TeX installation's default. TeX's own
+   configuration lookup returns `f` with that override, even when the configuration enables shell escape.
+3. **Closed: the journal key cannot be made ambiguous.** `JournalKey` refuses a part that contains the unit separator
+   it joins the parts with. Ordinary digests are unchanged, so no journal entry stops matching; a test pins the format.
+4. **Closed: a paid copy is counted.** When two workers journal the same request, the first answer still wins for
+   replay. The model call only happens when the caller finds no answer, so when its own answer loses the race, `CallModel`
+   calls `JournalInterface.spend` for it: the call was paid for, and its cost is part of the run's spend. A writer that
+   re-records an answer it did not pay for (the stage executors in the crash-recovery tests) does not go through `spend`.
+5. **Closed: a new metadata field cannot be missed.** `test_latex_injection.py` reads every metadata key that the print
+   and ebook documents read. A key that is neither escaped through `TexText` nor on the reviewed non-text list fails.
 6. **Third-party tool servers (MCP): a model can now call them, and a lock has limits.** A run given
    `EI_TOOL_LOCK` starts each locked server, refuses to start if one differs from the lock, and offers a stage
    only the tools the lock grants it ([TOOL_LOCK.md](TOOL_LOCK.md)). What that does not cover: a lock does

@@ -18,6 +18,11 @@ class InMemoryJournal(JournalInterface):
         self._entries.append(entry)
         return entry
 
+    def spend(self, entry: JournalEntry) -> None:
+        """Count a paid call whose answer another worker recorded first. find still returns the first entry, since it
+        comes first in recording order."""
+        self._entries.append(entry)
+
     def find(self, run_id: str, stage: str, digest: str) -> JournalEntry | None:
         for entry in self._entries:
             if (entry.run_id, entry.stage, entry.key.digest()) == (run_id, stage, digest):
