@@ -1,0 +1,1 @@
+The screenplay rehearsal now runs a screenplay plan through every stage that does not need a paid model or the TeX toolchain: the revision log, a clean canon check, and the video stage (which writes a not-generated manifest with no provider). A toolchain-marked test runs the whole plan, render and EPUB included. The live smoke test page says so. Tests and documentation only.
