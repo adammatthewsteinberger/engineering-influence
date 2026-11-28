@@ -110,13 +110,13 @@ spec:
           identities:
             - issuer: "https://token.actions.githubusercontent.com"
               subject: "https://github.com/adammatthewsteinberger/engineering-influence/.github/workflows/release.yml@refs/heads/main"
-          ctlog:
-            url: "https://rekor.sigstore.dev"
+        ctlog:
+          url: "https://rekor.sigstore.dev"
   validations:
     - expression: >-
         images.containers.map(image, verifyImageSignatures(image, [attestors.release])).all(e, e > 0)
-        && (has(images.initContainers) ? images.initContainers : {}).map(image,
+        && (has(images.initContainers) ? images.initContainers : []).map(image,
           verifyImageSignatures(image, [attestors.release])).all(e, e > 0)
-        && (has(images.ephemeralContainers) ? images.ephemeralContainers : {}).map(image,
+        && (has(images.ephemeralContainers) ? images.ephemeralContainers : []).map(image,
           verifyImageSignatures(image, [attestors.release])).all(e, e > 0)
       message: "the image is not signed by the release workflow on main"

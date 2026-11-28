@@ -34,6 +34,20 @@ helm install kyverno kyverno/kyverno --version 3.10.0 -n kyverno --create-namesp
 Check it refuses a root pod: `kubectl -n ei run roottest --image=busybox:1.37 --restart=Never --command -- sleep 5` is
 denied with "pods in this namespace must run as non-root". Only new and updated pods are checked.
 
+## CloudNativePG (optional)
+
+`deploy/cnpg/cluster.yaml` is a two-instance PostgreSQL cluster run by the CloudNativePG operator. Verified on minikube
+with operator chart 0.29.2 and a healthy cluster with a primary and a standby:
+
+```bash
+helm repo add cnpg https://cloudnative-pg.github.io/charts
+helm install cnpg cnpg/cloudnative-pg --version 0.29.2 -n cnpg-system --create-namespace
+kubectl -n ei apply -f deploy/cnpg/cluster.yaml
+kubectl -n ei wait cluster/ei-postgres --for=condition=Ready --timeout=600s
+```
+
+The app still uses the chart's own Postgres until its connection string is stored in OpenBao as `EI_DATABASE_URL`.
+
 ## Install
 
 From the repository root, build the image and install the chart:
