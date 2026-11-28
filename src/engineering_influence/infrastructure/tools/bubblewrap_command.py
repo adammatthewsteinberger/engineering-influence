@@ -46,10 +46,18 @@ class BubblewrapCommand(McpServerSandboxInterface):
             "/dev",
             "--proc",
             "/proc",
+            # /run, /tmp and the home directory are empty and read-only: a write anywhere but the working directory is
+            # refused, and the working directory is bound back in below as the one writable place.
+            "--perms",
+            "0555",
             "--tmpfs",
             "/run",
+            "--perms",
+            "0555",
             "--tmpfs",
             PRIVATE_TMP,
+            "--perms",
+            "0555",
             "--tmpfs",
             str(self._home.resolve()),
         ]

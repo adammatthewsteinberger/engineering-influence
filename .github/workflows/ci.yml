@@ -258,10 +258,29 @@ jobs:
             start="$baseline"
           fi
           echo "commits=$start..$HEAD" >> "$GITHUB_OUTPUT"
-      - if: github.event_name == 'pull_request' && github.event.pull_request.user.login != 'dependabot[bot]'
+      - if: github.event_name == 'pull_request' && github.event.pull_request.user.login != 'dependabot[bot]' && github.event.pull_request.base.ref != 'main'
         env:
           COMMITS: ${{ steps.range.outputs.commits }}
         run: uv run vibey-gh provenance-check --commits "$COMMITS"
+      # A release pull request also carries Dependabot's commits that reached develop; they cannot add the trailer. So it
+      # is checked one commit at a time: Dependabot-authored commits, and merges of them, are skipped, and every other
+      # commit must pass on its own. The range form cannot skip a single commit.
+      - if: github.event_name == 'pull_request' && github.event.pull_request.user.login != 'dependabot[bot]' && github.event.pull_request.base.ref == 'main'
+        env:
+          COMMITS: ${{ steps.range.outputs.commits }}
+        run: |
+          set -eu
+          is_dependabot() { case "$1" in *dependabot*) return 0 ;; *) return 1 ;; esac; }
+          skipped=0
+          for sha in $(git rev-list --reverse "$COMMITS"); do
+            if is_dependabot "$(git log -1 --format='%an <%ae>' "$sha")"; then skipped=$((skipped + 1)); continue; fi
+            second="$(git log -1 --format='%P' "$sha" | cut -d' ' -f2)"
+            if [ -n "$second" ] && is_dependabot "$(git log -1 --format='%an <%ae>' "$second")"; then
+              skipped=$((skipped + 1)); continue
+            fi
+            uv run vibey-gh provenance-check --commits "$sha^..$sha"
+          done
+          echo "skipped $skipped Dependabot commits or merges of them"
       - if: github.event_name == 'pull_request'
         env:
           COMMITS: ${{ steps.range.outputs.commits }}
