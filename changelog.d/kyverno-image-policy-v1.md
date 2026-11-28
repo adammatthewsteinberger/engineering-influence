@@ -1,0 +1,1 @@
+The release image signature policy (ImageValidatingPolicy) now applies on Kyverno 1.20: the transparency log sits beside the keyless block as the v1 schema requires, and an absent init or ephemeral container list falls back to an empty list. Found by a server dry-run on minikube; the policy was refused before.
