@@ -1,0 +1,95 @@
+{{- if .Values.otelCollector.enabled }}
+{{- $endpoint := .Values.otelCollector.exporter.endpoint }}
+{{- if and (not $endpoint) (not .Values.tracing.enabled) }}
+{{- fail "otelCollector needs tracing.enabled (to forward to Tempo) or otelCollector.exporter.endpoint" }}
+{{- end }}
+{{- $target := $endpoint | default (printf "http://%s-tempo:4318" (include "ei.fullname" .)) }}
+# A collector between the API and its trace backend: the app sends OTLP here, and the collector batches it and forwards
+# it. Traces only, so the collector adds nothing the app does not already send.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ei.fullname" . }}-otel-collector
+  labels:
+    {{- include "ei.labels" . | nindent 4 }}
+    app.kubernetes.io/component: otel-collector
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          http:
+            endpoint: 0.0.0.0:4318
+    processors:
+      batch: {}
+    exporters:
+      otlphttp:
+        endpoint: {{ $target | quote }}
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlphttp]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ei.fullname" . }}-otel-collector
+  labels:
+    {{- include "ei.labels" . | nindent 4 }}
+    app.kubernetes.io/component: otel-collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "ei.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: otel-collector
+  template:
+    metadata:
+      labels:
+        {{- include "ei.labels" . | nindent 8 }}
+        app.kubernetes.io/component: otel-collector
+    spec:
+      serviceAccountName: {{ include "ei.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: otel-collector
+          image: {{ printf "%s:%s" .Values.otelCollector.image.repository .Values.otelCollector.image.tag | quote }}
+          args: ["--config=/etc/otelcol/config.yaml"]
+          ports:
+            - name: otlp-http
+              containerPort: 4318
+          resources:
+            {{- toYaml .Values.otelCollector.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otelcol
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "ei.fullname" . }}-otel-collector
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ei.fullname" . }}-otel-collector
+  labels:
+    {{- include "ei.labels" . | nindent 4 }}
+    app.kubernetes.io/component: otel-collector
+spec:
+  selector:
+    app.kubernetes.io/name: {{ include "ei.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: otel-collector
+  ports:
+    - name: otlp-http
+      port: 4318
+      targetPort: otlp-http
+{{- end }}
