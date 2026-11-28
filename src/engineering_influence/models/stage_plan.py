@@ -15,6 +15,7 @@ class StagePlan(StagePlanInterface):
     stages: tuple[str, ...]
 
     def __post_init__(self) -> None:
+        """Refuse a plan that names a stage more than once."""
         if not self.stages or any(not stage.strip() for stage in self.stages):
             raise ValueError("a plan needs at least one named stage")
         if len(set(self.stages)) != len(self.stages):

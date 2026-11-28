@@ -38,6 +38,7 @@ class StdioMcpTransportFactory(McpTransportFactoryInterface):
         meter: ProcessMeterInterface | None = None,
         sample_seconds: float = 0.5,
     ) -> None:
+        """Remember the limits, the environment, the sandbox, and the meter and sampling interval."""
         self._limits = limits
         self._sandbox = sandbox
         self._environment = ServerEnvironment(os.environ if environ is None else environ)

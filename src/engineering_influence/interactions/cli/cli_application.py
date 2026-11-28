@@ -56,6 +56,7 @@ class CliApplication(CliApplicationInterface):
         acp_cli: AcpCliInterface,
         evaluate_cli: EvaluateCliInterface,
     ) -> None:
+        """Remember the project controller and the command groups the CLI dispatches to."""
         self._controller = controller
         self._book_cli = book_cli
         self._serve_cli = serve_cli

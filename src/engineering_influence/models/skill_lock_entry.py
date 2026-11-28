@@ -29,6 +29,7 @@ class SkillLockEntry(SkillLockEntryInterface):
     stages: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
+        """Validate the lock entry's name, version, digest and stages when it is built."""
         if not isinstance(self.name, str) or not Skill.NAME.fullmatch(self.name):
             raise ValueError("a locked skill's name is lowercase letters, digits and underscores")
         if type(self.version) is not int or self.version < 1:

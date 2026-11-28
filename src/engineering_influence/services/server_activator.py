@@ -21,11 +21,13 @@ class ServerActivator(ServerActivatorInterface):
     def __init__(
         self, lock: ToolLock, fleet: ToolServerFleetInterface, tools: ToolRegistryInterface
     ) -> None:
+        """Remember the tool lock, the server fleet and the tool registry."""
         self._lock = lock
         self._fleet = fleet
         self._tools = tools
 
     def activate(self, stage: str, selected: tuple[str, ...] | None) -> None:
+        """Start and register the tools of each selected server that is granted for the stage."""
         for entry in sorted(self._lock.servers, key=lambda server: server.name):
             if selected is not None and entry.name not in selected:
                 continue

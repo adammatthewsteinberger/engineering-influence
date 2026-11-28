@@ -18,6 +18,7 @@ class ScreenplaySectionCheck(ScreenplaySectionCheckInterface):
     FRAME_CLOSE = "\n\nFADE OUT.\n\n>THE END<\n"
 
     def __init__(self, parser: FountainParserInterface) -> None:
+        """Remember the Fountain parser the section is checked with."""
         self._parser = parser
         self._format = FountainFormatCheck(parser)
 

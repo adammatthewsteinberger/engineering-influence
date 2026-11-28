@@ -41,6 +41,7 @@ class ContextAssembler(ContextAssemblerInterface):
     def __init__(
         self, model: ModelInterface, template: PromptTemplate, max_tail_characters: int = 4000
     ) -> None:
+        """Remember the model, prompt template and the tail length kept from history."""
         if max_tail_characters < 0:
             raise ValueError("the tail limit cannot be negative")
         self._model = model

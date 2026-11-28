@@ -21,5 +21,6 @@ class ScreenplayTypeset(ScreenplayTypesetInterface):
     facts: tuple[PdfPage, ...] = ()
 
     def __post_init__(self) -> None:
+        """Validate the typesetting result when it is built."""
         if self.status == 0 and (not self.pdf or self.pages < 1):
             raise ValueError("a finished typesetting has a PDF with at least one page")

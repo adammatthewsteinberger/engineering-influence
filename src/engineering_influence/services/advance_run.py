@@ -67,6 +67,7 @@ class AdvanceRun(AdvanceRunInterface):
         max_attempts: int = 3,
         events: RunEventBuilderInterface | None = None,
     ) -> None:
+        """Remember the runs, journal, executor, queue and failure classifier used to advance a run."""
         if max_attempts < 1:
             raise ValueError("a stage needs at least one attempt")
         self._runs = runs

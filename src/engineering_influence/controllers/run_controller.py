@@ -12,6 +12,7 @@ class RunController(RunControllerInterface):
     """Maps the read service's answers to the versioned contract every transport shares."""
 
     def __init__(self, reader: ReadRunInterface) -> None:
+        """Remember the service that reads runs."""
         self._reader = reader
 
     def summary(self, run_id: str) -> RunSummaryV1:

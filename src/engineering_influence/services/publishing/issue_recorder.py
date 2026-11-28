@@ -15,6 +15,7 @@ class IssueRecorder(IssueRecorderInterface):
     """Turns a path and a text offset into a root-relative path and a line number."""
 
     def __init__(self, report: AuditReport, relativizer: PathRelativizer) -> None:
+        """Remember the audit report the issues are recorded in and the path relativizer."""
         self._report = report
         self._relativizer = relativizer
 

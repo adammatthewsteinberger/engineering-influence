@@ -41,6 +41,7 @@ class PublishSteps(PublishStepsInterface):
         verifier: EpubVerifierInterface,
         strict_verifier: EpubVerifierInterface,
     ) -> None:
+        """Remember the layout, builder, PDF verifier, covers, EPUB builder and loader the publication steps use."""
         self._layout = layout
         self._builder = builder
         self._pdf_verifier = pdf_verifier

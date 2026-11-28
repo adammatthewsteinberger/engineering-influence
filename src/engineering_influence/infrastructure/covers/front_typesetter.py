@@ -17,6 +17,7 @@ class FrontTypesetter(FrontTypesetterInterface):
     """Title, subtitle, and author, centred in the front safe area."""
 
     def __init__(self, typography: Typography) -> None:
+        """Remember the typography used to set the front cover text."""
         self._t = typography
 
     def typeset(

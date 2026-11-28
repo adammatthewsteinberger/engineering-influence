@@ -32,6 +32,7 @@ class BookBuilder(BookBuilderInterface):
         assets: PackageAssetsInterface,
         files: ManuscriptSourceInterface,
     ) -> None:
+        """Remember the layout, loader, LaTeX compiler, workspace and assets the book is built from."""
         self._layout = layout
         self._loader = loader
         self._compiler = compiler

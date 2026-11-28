@@ -40,6 +40,7 @@ class BookBrief(BookBriefInterface):
     heat: str | None = None
 
     def __post_init__(self) -> None:
+        """Validate the brief's idea, kind and spending cap when it is built."""
         if not self.idea.strip():
             raise ValueError("a brief needs an idea")
         if self.budget_micro_usd <= 0:

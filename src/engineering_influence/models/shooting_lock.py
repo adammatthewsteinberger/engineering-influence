@@ -15,6 +15,7 @@ class ShootingLock(ShootingLockInterface):
     entries: tuple[ShootingLockEntry, ...] = ()
 
     def __post_init__(self) -> None:
+        """Validate that the entries run in script order, with each card and label checked."""
         cards = [entry.card for entry in self.entries]
         labels = [entry.label for entry in self.entries]
         if len(set(cards)) != len(cards):

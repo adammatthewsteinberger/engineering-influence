@@ -82,6 +82,7 @@ class ModelStageExecutor(StageExecutorInterface):
         guards: Callable[[Budget], SpendGuardInterface],
         activator: ServerActivatorInterface | None = None,
     ) -> None:
+        """Remember the recipes, prompts, artifacts, tool loop and tools each model stage uses."""
         self._activator = activator
         self._recipes = recipes
         self._prompts = prompts

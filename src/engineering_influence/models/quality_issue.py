@@ -16,5 +16,6 @@ class QualityIssue(QualityIssueInterface):
     blocking: bool = False
 
     def __post_init__(self) -> None:
+        """Validate the issue's fields when it is built."""
         if not self.stage.strip() or not self.code.strip():
             raise ValueError("quality issue stage and code are required")

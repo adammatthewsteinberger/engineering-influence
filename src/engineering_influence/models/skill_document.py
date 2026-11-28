@@ -23,6 +23,7 @@ class SkillDocument(SkillDocumentInterface):
     ignored: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
+        """Validate the name, description and sections read from a SKILL.md."""
         for label, value in (("name", self.name), ("description", self.description)):
             if not isinstance(value, str) or not value.strip() or "\n" in value:
                 raise ValueError(f"a skill document has a one-line {label}")

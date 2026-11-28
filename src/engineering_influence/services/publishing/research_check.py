@@ -17,6 +17,7 @@ class ResearchCheck(ResearchCheckInterface):
     """Counts words and URLs in the configured research files."""
 
     def __init__(self, files: ManuscriptSourceInterface) -> None:
+        """Remember the source files the research check reads."""
         self._files = files
 
     def run(

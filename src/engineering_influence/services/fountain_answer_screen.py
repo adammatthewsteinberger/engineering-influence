@@ -16,6 +16,7 @@ class FountainAnswerScreen(AnswerScreenInterface):
     NON_DIALOGUE: frozenset[str] = frozenset({"action", "heading", "transition", "centered"})
 
     def __init__(self, parser: FountainParserInterface) -> None:
+        """Remember the Fountain parser, so dialogue is not read as a refusal."""
         self._parser = parser
 
     def refused(self, text: str) -> bool:

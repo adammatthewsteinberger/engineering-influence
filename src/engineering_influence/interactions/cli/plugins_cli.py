@@ -64,6 +64,7 @@ class PluginsCli(PluginsCliInterface):
         skill_store: SkillLockStoreInterface,
         environment: Mapping[str, str],
     ) -> None:
+        """Remember the installer, importer, verifier and marketplace the plugin commands use."""
         self._installer = installer
         self._importer = importer
         self._verifier = verifier

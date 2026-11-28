@@ -28,6 +28,7 @@ class RunManagement(RunManagementInterface):
         canceller: CancelRunInterface,
         resolver: ResolveSpendConsentInterface,
     ) -> None:
+        """Remember the services for listing, resuming, cancelling and resolving spend consent."""
         self._lister = lister
         self._resumer = resumer
         self._canceller = canceller

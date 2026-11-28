@@ -37,6 +37,7 @@ class EpubBuilder(EpubBuilderInterface):
         files: ManuscriptSourceInterface,
         identifier: EpubIdentifier,
     ) -> None:
+        """Remember the layout, loader, compiler, workspace and package assets the EPUB is built from."""
         self._layout = layout
         self._loader = loader
         self._compiler = compiler

@@ -26,6 +26,7 @@ class ModelCallResult(ModelCallResultInterface):
     tool_calls: tuple[ToolCall, ...] = ()
 
     def __post_init__(self) -> None:
+        """Validate the call's text, stop reason and cost when it is built."""
         if self.stop_reason not in ("end_turn", "max_tokens", "refusal", "tool_use"):
             raise ValueError(f"unknown stop reason {self.stop_reason!r}")
         if (self.stop_reason == "tool_use") != bool(self.tool_calls):

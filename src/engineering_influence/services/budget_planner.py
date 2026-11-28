@@ -19,6 +19,7 @@ class BudgetPlanner(BudgetPlannerInterface):
     """
 
     def __init__(self, estimator: CostEstimatorInterface) -> None:
+        """Remember the cost estimator used to find a cap that cannot finish the book."""
         self._estimator = estimator
 
     def plan(self, brief: BookBrief) -> BudgetPlan:

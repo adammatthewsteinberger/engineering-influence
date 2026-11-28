@@ -19,6 +19,7 @@ class Narration(NarrationInterface):
     samples: array  # type: ignore[type-arg]
 
     def __post_init__(self) -> None:
+        """Validate the samples and sample rate when the narration is built."""
         if type(self.sample_rate) is not int or self.sample_rate < 1:
             raise ValueError("a narration has a positive whole-number sample rate")
         if not isinstance(self.samples, array) or self.samples.typecode != "f":

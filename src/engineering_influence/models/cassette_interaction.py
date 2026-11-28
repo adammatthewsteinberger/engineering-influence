@@ -26,6 +26,7 @@ class CassetteInteraction(CassetteInteractionInterface):
     ABSENT = object()
 
     def __post_init__(self) -> None:
+        """Validate the recorded request and reply when the exchange is built."""
         if not (self.method.isalpha() and self.method == self.method.upper()):
             raise ValueError("a recorded method is upper-case letters, such as 'POST'")
         if not self.path.startswith("/"):

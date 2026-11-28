@@ -20,6 +20,7 @@ class SearchHit(SearchHitInterface):
     title: str
 
     def __post_init__(self) -> None:
+        """Validate the hit's link and title when it is built."""
         parts = urlsplit(self.url)
         if parts.scheme not in ("http", "https") or not parts.hostname:
             raise ValueError("a search hit is an http or https link with a host")

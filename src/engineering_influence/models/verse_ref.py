@@ -23,6 +23,7 @@ class VerseRef(VerseRefInterface):
     verse: int
 
     def __post_init__(self) -> None:
+        """Refuse a book code, chapter or verse that is not valid."""
         if not isinstance(self.book, str) or not self.BOOK.fullmatch(self.book):
             raise ValueError("a verse's book is a three-character code such as JHN or 1SA")
         if type(self.chapter) is not int or self.chapter < 1:

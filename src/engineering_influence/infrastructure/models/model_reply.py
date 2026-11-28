@@ -14,6 +14,7 @@ class ModelReply(ModelReplyInterface):
 
     @staticmethod
     def body(response: httpx.Response, label: str) -> dict[str, Any]:
+        """The JSON object in the reply's body, or an unexpected-reply error when the body is not a JSON object."""
         try:
             data = response.json()
         except ValueError as error:
@@ -24,6 +25,7 @@ class ModelReply(ModelReplyInterface):
 
     @staticmethod
     def unexpected(label: str, what: str) -> ApplicationError:
+        """The error for a model reply this adapter does not understand, which stops the stage as a bad upstream reply."""
         return ApplicationError(
             code="MODEL_RESPONSE_UNEXPECTED",
             message=f"{label} sent a {what} this adapter does not understand",

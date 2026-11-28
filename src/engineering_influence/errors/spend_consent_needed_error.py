@@ -15,6 +15,7 @@ class SpendConsentNeededError(SpendConsentNeededErrorInterface, BudgetExceededEr
     """
 
     def __init__(self, requested_micro_usd: int) -> None:
+        """Record how many micro-dollars the call needs above the cap."""
         super().__init__(
             f"the next call needs {requested_micro_usd} micro-USD beyond the run's cap"
         )

@@ -28,6 +28,7 @@ class StageRecipe(StageRecipeInterface):
     tools: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
+        """Validate the recipe's name, template, inputs and output cap when it is built."""
         for label, value in (("stage", self.stage), ("template", self.template)):
             if not self.NAME.fullmatch(value):
                 raise ValueError(f"a recipe's {label} is lowercase letters, digits and underscores")

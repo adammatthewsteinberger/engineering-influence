@@ -15,6 +15,7 @@ class PinDecision(PinDecisionInterface):
     reason: str = ""
 
     def __post_init__(self) -> None:
+        """Refuse a decision that has both a target and a reason, or neither."""
         if (self.target is None) == (not self.reason):
             raise ValueError("a decision is a target to connect to, or a reason for refusing")
 

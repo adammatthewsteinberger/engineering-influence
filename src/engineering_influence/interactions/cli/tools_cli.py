@@ -39,6 +39,7 @@ class ToolsCli(ToolsCliInterface):
         store: ToolLockStoreInterface,
         environment: Mapping[str, str],
     ) -> None:
+        """Remember the editor, auditor, lock store and environment the tool commands use."""
         self._editor = editor
         self._auditor = auditor
         self._store = store

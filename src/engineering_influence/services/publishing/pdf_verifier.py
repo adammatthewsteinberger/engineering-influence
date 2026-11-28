@@ -22,6 +22,7 @@ class PdfVerifier(PdfVerifierInterface):
     """Checks an interior PDF against KDP print rules and against itself."""
 
     def __init__(self, pdfs: PdfInspectorInterface, files: ManuscriptSourceInterface) -> None:
+        """Remember the PDF inspector and the source files the PDF is checked against."""
         self._pdfs = pdfs
         self._files = files
 

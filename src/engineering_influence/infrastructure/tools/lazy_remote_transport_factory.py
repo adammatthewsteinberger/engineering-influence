@@ -19,6 +19,7 @@ class LazyRemoteTransportFactory(McpRemoteTransportFactoryInterface):
     """
 
     def __init__(self, build: Callable[[], McpRemoteTransportFactoryInterface]) -> None:
+        """Remember the function that builds the real remote transport factory, to call it on first use."""
         self._build = build
         self._factory: McpRemoteTransportFactoryInterface | None = None
 

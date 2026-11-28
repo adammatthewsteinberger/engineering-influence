@@ -20,5 +20,6 @@ class ToolLimits(ToolLimitsInterface):
     max_disk_bytes: int
 
     def __post_init__(self) -> None:
+        """Validate the ceilings one tool run must stay under when they are built."""
         if min(self.timeout_seconds, self.max_memory_bytes, self.max_disk_bytes) <= 0:
             raise ValueError("every tool limit must be positive")

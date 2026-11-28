@@ -30,6 +30,7 @@ class ContinuityFinding(ContinuityFindingInterface):
     message: str
 
     def __post_init__(self) -> None:
+        """Validate the finding's fields when it is built."""
         if type(self.chapter) is not int or self.chapter < 1:
             raise ValueError("a finding names a chapter from 1")
         if self.kind not in self.KINDS:

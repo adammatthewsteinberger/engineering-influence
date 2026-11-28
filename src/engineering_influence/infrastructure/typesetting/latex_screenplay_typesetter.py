@@ -31,6 +31,7 @@ class LatexScreenplayTypesetter(ScreenplayTypesetterInterface):
         inspector: PdfInspectorInterface,
         source_date_epoch: int = 0,
     ) -> None:
+        """Remember the compiler, the PDF inspector and the source date."""
         self._compiler = compiler
         self._inspector = inspector
         self._epoch = source_date_epoch

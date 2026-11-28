@@ -46,6 +46,7 @@ class OpenAICompatibleModel(ModelInterface):
         output_cap_field: str = "max_tokens",
         reasoning_effort: str = "",
     ) -> None:
+        """Remember the HTTP client, key, model descriptor, base address and the name of the output-length field."""
         self._client = client
         self._api_key = api_key.strip()
         self._descriptor = descriptor

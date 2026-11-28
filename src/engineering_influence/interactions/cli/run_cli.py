@@ -58,6 +58,7 @@ class RunCli(RunCliInterface):
         briefs: BriefReaderInterface,
         resolver: Callable[[], ResolveSpendConsentInterface],
     ) -> None:
+        """Remember the run services the run commands call: resume, cancel, status and export."""
         self._resume = resume
         self._cancel = cancel
         self._status = status

@@ -22,6 +22,7 @@ class TomlPromptLibrary(PromptLibraryInterface):
     KEYS = frozenset({"name", "version", "description", "untrusted", "parts"})
 
     def __init__(self, root: Traversable | None = None) -> None:
+        """Remember the folder holding the template files, by default the package's templates."""
         self._root = root if root is not None else files(__package__).joinpath("templates")
 
     def names(self) -> list[str]:

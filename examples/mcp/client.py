@@ -17,6 +17,7 @@ PROJECT = json.loads(
 
 
 async def main() -> int:
+    """Spawn the example MCP server over stdio, list its tools, and call start_pipeline; return 1 when the call fails."""
     server = StdioServerParameters(
         command=sys.executable, args=[str(Path(__file__).with_name("server.py"))]
     )

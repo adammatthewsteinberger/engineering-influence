@@ -16,6 +16,7 @@ class PrintDocument(PrintDocumentInterface):
     """Half title, title page, copyright, dedication, contents, chapters, and author note."""
 
     def __init__(self) -> None:
+        """Nothing to configure: the print parts and their order are fixed."""
         self._tex = TexText()
         self._chapters = ChapterTex()
 

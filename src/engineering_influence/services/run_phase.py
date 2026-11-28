@@ -14,6 +14,7 @@ class RunPhase(RunPhaseInterface):
     """Run one phase through an injected runner and gate evaluator."""
 
     def __init__(self, runner: RunnerInterface, gates: GateEvaluatorInterface) -> None:
+        """Remember the runner and the gate evaluator the phase is run through."""
         self._runner = runner
         self._gates = gates
 

@@ -17,6 +17,7 @@ class FontLoader(FontLoaderInterface):
     """The first directory that holds the file wins."""
 
     def __init__(self, directories: Sequence[Path]) -> None:
+        """Remember the folders to search for fonts, in order."""
         self._directories = list(directories)
 
     def load(self, name: str, size_px: float) -> ImageFont.FreeTypeFont:

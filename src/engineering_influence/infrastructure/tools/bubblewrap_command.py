@@ -23,11 +23,13 @@ class BubblewrapCommand(McpServerSandboxInterface):
     """
 
     def __init__(self, executable: str, home: Path, allowance: SandboxAllowanceInterface) -> None:
+        """Remember the bubblewrap executable, the home folder and the allowance rules."""
         self._executable = executable
         self._home = home
         self._allowance = allowance
 
     def wrap(self, command: tuple[str, ...], workdir: Path) -> tuple[str, ...]:
+        """The command line that runs the command under bubblewrap, confined to the working directory."""
         place = str(workdir.resolve())
         home = str(self._home.resolve())
         arguments: list[str] = [

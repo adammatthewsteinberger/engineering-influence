@@ -15,12 +15,14 @@ class SqlModelAcpSessionStore(AcpSessionStoreInterface):
     """Sessions in the same database as the runs, so any process can load a session another started."""
 
     def __init__(self, database_url: str, pooled: bool = True) -> None:
+        """Remember the database, pooled or not, so any process can load a session another started."""
         connect_args = {"check_same_thread": False} if database_url.startswith("sqlite") else {}
         self._engine = create_engine(
             database_url, connect_args=connect_args, **({} if pooled else {"poolclass": NullPool})
         )
 
     def get(self, session_id: str) -> AcpSession | None:
+        """The saved session with this id, or None."""
         with Session(self._engine) as session:
             record = session.get(AcpSessionRecord, session_id)
             if record is None:
@@ -30,6 +32,7 @@ class SqlModelAcpSessionStore(AcpSessionStoreInterface):
             return AcpSession(record.session_id, record.cwd, record.run_id, servers, approved)
 
     def save(self, acp_session: AcpSession) -> None:
+        """Save the session, replacing any saved under the same id."""
         with Session(self._engine) as session:
             record = session.get(AcpSessionRecord, acp_session.session_id)
             if record is None:

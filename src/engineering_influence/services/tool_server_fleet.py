@@ -31,6 +31,7 @@ class ToolServerFleet(ToolServerFleetInterface):
     def __init__(
         self, launcher: McpServerLauncherInterface, factory: McpToolFactoryInterface
     ) -> None:
+        """Remember the launcher and the factory the servers are started with."""
         self._launcher = launcher
         self._factory = factory
         self._connections: dict[str, McpConnectionInterface] = {}

@@ -32,6 +32,7 @@ class EvaluateCli(EvaluateCliInterface):
     def __init__(
         self, evaluator_for: EvaluatorFor, environment: Mapping[str, str], default_release: str
     ) -> None:
+        """Remember how to build the evaluator, the environment, and the default release label."""
         self._evaluator_for = evaluator_for
         self._environment = environment
         self._release = default_release

@@ -33,6 +33,7 @@ class EpubVerifier(EpubVerifierInterface):
         epubcheck: EpubcheckInterface,
         cover_inspector: EpubCoverInspectorInterface,
     ) -> None:
+        """Remember the archive reader, epubcheck and cover inspector used to verify an EPUB."""
         self._archive = archive
         self._epubcheck = epubcheck
         self._cover_inspector = cover_inspector

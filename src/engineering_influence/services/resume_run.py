@@ -20,6 +20,7 @@ class ResumeRun(ResumeRunInterface):
     """
 
     def __init__(self, runs: RunRepositoryInterface, queue: QueueInterface) -> None:
+        """Remember the run repository and queue the resumed stage goes to."""
         self._runs = runs
         self._queue = queue
 

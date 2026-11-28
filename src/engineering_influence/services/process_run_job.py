@@ -17,6 +17,7 @@ class ProcessRunJob(ProcessJobInterface):
     """
 
     def __init__(self, advance: AdvanceRunInterface) -> None:
+        """Remember the service that advances the run."""
         self._advance = advance
 
     async def process(self, message: JobMessage) -> JobOutcome:

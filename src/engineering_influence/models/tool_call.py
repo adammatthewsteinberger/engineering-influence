@@ -23,6 +23,7 @@ class ToolCall(ToolCallInterface):
     arguments: Mapping[str, Any]
 
     def __post_init__(self) -> None:
+        """Validate the call's id, name and arguments when it is built."""
         if not self.id.strip():
             raise ValueError("a tool call has the id the provider gave it")
         if not ToolDefinition.NAME.fullmatch(self.name):

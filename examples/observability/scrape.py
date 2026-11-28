@@ -25,6 +25,7 @@ PROJECT = json.loads(
 
 
 def main() -> int:
+    """Scrape the authenticated metrics endpoint with the API key and print its output."""
     if not API_KEY:
         print("set EI_API_KEY (see examples/.env)", file=sys.stderr)
         return 2

@@ -29,6 +29,7 @@ class TocLabels(TocLabelsInterface):
     )
 
     def __init__(self) -> None:
+        """Build the Markdown parser the contents labels are cleaned with."""
         self._parser = MarkdownParser()
 
     def for_book(self, book: Book) -> list[tuple[str, int]]:

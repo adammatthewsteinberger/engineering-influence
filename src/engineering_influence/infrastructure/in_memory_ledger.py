@@ -8,7 +8,9 @@ class InMemoryLedger(LedgerInterface):
     """Append-only ledger adapter used for local demonstrations."""
 
     def __init__(self) -> None:
+        """Start with no events."""
         self.events: list[tuple[str, dict[str, object]]] = []
 
     def append(self, event_name: str, payload: dict[str, object]) -> None:
+        """Record an event with a copy of its payload."""
         self.events.append((event_name, dict(payload)))

@@ -29,6 +29,7 @@ class NarrationRenderer(NarrationRendererInterface):
     FULL_SCALE: ClassVar[int] = 32767
 
     def __init__(self, text: NarrationTextInterface) -> None:
+        """Remember the narration text to render."""
         self._text = text
 
     def render(self, narrator: NarratorInterface, source: str) -> Narration:

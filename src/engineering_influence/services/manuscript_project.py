@@ -20,6 +20,7 @@ class ManuscriptProject(ManuscriptProjectInterface):
     PREFIX = "manuscript/"
 
     def __init__(self, artifacts: ArtifactStoreInterface) -> None:
+        """Remember the artifact store the manuscript project is read from."""
         self._artifacts = artifacts
 
     async def load(self, run: BookRun) -> tuple[dict[str, bytes], str]:

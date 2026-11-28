@@ -82,6 +82,7 @@ class WorkerRuntime(WorkerRuntimeInterface):
         migrator: SchemaMigratorInterface | None = None,
         executors: StageExecutorRuntimeInterface | None = None,
     ) -> None:
+        """Remember the settings, migrator and stage executors the worker runs with."""
         self._settings = settings
         self._migrator = migrator or SchemaMigrator()
         self._executors = executors or StageExecutorRuntime(

@@ -33,6 +33,7 @@ class JobMessageHandler(JobMessageHandlerInterface):
         alerts: AlertInterface,
         correlation: CorrelationInterface,
     ) -> None:
+        """Remember the job processor, metrics, alerts and correlation the handler reports through."""
         self._process_job = process_job
         self._metrics = metrics
         self._alerts = alerts

@@ -24,6 +24,7 @@ class McpCommand(McpCommandInterface):
     argv: tuple[str, ...]
 
     def __post_init__(self) -> None:
+        """Refuse an empty or unsafe command before anything is started."""
         if not isinstance(self.argv, tuple) or not self.argv:
             raise ValueError("a server's command is a non-empty tuple")
         if any(not isinstance(part, str) or not part for part in self.argv):

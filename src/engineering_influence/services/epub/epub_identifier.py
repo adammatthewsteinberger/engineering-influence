@@ -20,6 +20,7 @@ class EpubIdentifier(EpubIdentifierInterface):
     DEFAULT_WEBSITE = "https://github.com/adammatthewsteinberger/engineering-influence"
 
     def __init__(self, default_website: str = DEFAULT_WEBSITE) -> None:
+        """Remember the website used when the book has no ISBN."""
         self._default_website = default_website
 
     def of(self, book: Book) -> tuple[str, str]:

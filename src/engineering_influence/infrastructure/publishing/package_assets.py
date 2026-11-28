@@ -15,6 +15,7 @@ class PackageAssets(PackageAssetsInterface):
     """
 
     def __init__(self, override: Path | None = None) -> None:
+        """Remember an override folder for the assets, if one is given."""
         self._override = override
 
     def directory(self) -> AbstractContextManager[Path]:

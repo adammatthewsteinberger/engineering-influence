@@ -17,5 +17,6 @@ class Artifact(ArtifactInterface):
     gate: Gate
 
     def __post_init__(self) -> None:
+        """Validate the artifact's fields when it is built."""
         if not self.artifact_id.strip() or not self.artifact_type.strip():
             raise ValueError("artifact id and type are required")

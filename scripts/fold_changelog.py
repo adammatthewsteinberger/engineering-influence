@@ -14,6 +14,7 @@ class ChangelogFolder:
     """Turns the Unreleased section plus every fragment into a section named for a version."""
 
     def __init__(self, root: Path) -> None:
+        """Remember the repository root whose changelog and fragments are folded."""
         self._changelog = root / "CHANGELOG.md"
         self._fragments = root / "changelog.d"
 

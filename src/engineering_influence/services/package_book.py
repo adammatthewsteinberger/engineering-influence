@@ -34,6 +34,7 @@ class PackageBook(PackageBookInterface):
         inventory: ArtifactInventoryInterface,
         publisher: PublisherInterface,
     ) -> None:
+        """Remember the layout, the artifact inventory and the publisher used to package a book."""
         self._layout = layout
         self._relativizer = PathRelativizer(layout.root)
         self._inventory = inventory

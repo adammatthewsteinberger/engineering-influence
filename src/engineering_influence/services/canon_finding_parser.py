@@ -19,6 +19,7 @@ class CanonFindingParser(CanonFindingParserInterface):
     )
 
     def parse(self, output: str) -> tuple[CanonFinding, ...]:
+        """The findings in the check's output; lines that are not findings are ignored."""
         findings: list[CanonFinding] = []
         for line in output.splitlines():
             match = self.LINE.match(line.strip())

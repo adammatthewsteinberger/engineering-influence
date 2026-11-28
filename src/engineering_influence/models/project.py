@@ -20,6 +20,7 @@ class Project(ProjectInterface):
     limits: LimitsOnMeans = field(default_factory=LimitsOnMeans)
 
     def __post_init__(self) -> None:
+        """Validate the project's postulates and means limits when it is built."""
         if not self.slug.strip() or not self.title.strip():
             raise ValueError("project slug and title are required")
         if not self.stages:

@@ -11,6 +11,7 @@ class CorrelatedPhaseHandler(PhaseHandlerInterface):
     """Run the inner handler inside the id the job was queued with."""
 
     def __init__(self, inner: PhaseHandlerInterface, correlation: CorrelationInterface) -> None:
+        """Remember the handler to run and the correlation that carries the job's id."""
         self._inner = inner
         self._correlation = correlation
 

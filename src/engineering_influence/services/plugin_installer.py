@@ -43,6 +43,7 @@ class PluginInstaller(PluginInstallerInterface):
         writer: SkillWriterInterface,
         skills: SkillLockEditorInterface,
     ) -> None:
+        """Remember the skill files, parser, writer and skill lock editor the install uses."""
         self._files = files
         self._parser = parser
         self._writer = writer

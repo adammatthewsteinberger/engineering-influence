@@ -15,6 +15,7 @@ class BackCoverTextTooLongError(BackCoverTextTooLongErrorInterface, BookBuildErr
     """
 
     def __init__(self, characters: int, capacity: int, overflow_in: float) -> None:
+        """Record the text's length, the room the back cover has, and how far the text overflows."""
         self.characters = characters
         self.capacity = capacity
         self.overflow_in = overflow_in

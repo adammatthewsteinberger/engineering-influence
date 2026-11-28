@@ -34,6 +34,7 @@ class NovelOutputChecks(StageOutputCheckInterface):
         outlines: OutlineParserInterface,
         metadata: MetadataParserInterface,
     ) -> None:
+        """Remember the bible, outline and metadata parsers the output is checked with."""
         self._bibles = bibles
         self._outlines = outlines
         self._metadata = metadata

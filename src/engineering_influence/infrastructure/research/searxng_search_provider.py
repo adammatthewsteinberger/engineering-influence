@@ -30,6 +30,7 @@ class SearxngSearchProvider(SearchProviderInterface):
     MAX_COUNT = 20
 
     def __init__(self, client: httpx.Client, base_url: str) -> None:
+        """Remember the HTTP client and the SearXNG address."""
         parts = urlsplit(base_url.strip())
         if parts.scheme not in ("http", "https") or not parts.hostname:
             raise ValueError("a SearXNG address is an http or https URL with a host")

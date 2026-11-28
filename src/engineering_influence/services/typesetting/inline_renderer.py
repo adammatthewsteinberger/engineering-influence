@@ -18,6 +18,7 @@ class InlineRenderer(InlineRendererInterface):
     URL = re.compile(r"https?://[^\s<>\"\u201d\u2019)]+[^\s<>\"\u201d\u2019).,;:]")
 
     def __init__(self) -> None:
+        """Nothing to configure: the inline styles are fixed."""
         self._escaper = LatexEscaper()
         self._href: str | None = None
 

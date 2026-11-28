@@ -40,6 +40,7 @@ class McpServerProbe(McpServerProbeInterface):
         clients: McpClientFactoryInterface,
         verifier: ToolLockVerifierInterface,
     ) -> None:
+        """Remember the transport and remote factories, the client factory and the tool lock verifier."""
         self._transports = transports
         self._remote = remote
         self._clients = clients

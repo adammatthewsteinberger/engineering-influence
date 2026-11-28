@@ -33,6 +33,7 @@ class BuildScreenplayEpubStageExecutor(StageExecutorInterface):
         package: ScreenplayEpubPackageInterface,
         writer: ScreenplayEpubWriterInterface,
     ) -> None:
+        """Remember the artifacts, the EPUB package and the EPUB writer the stage uses."""
         self._artifacts = artifacts
         self._package = package
         self._writer = writer

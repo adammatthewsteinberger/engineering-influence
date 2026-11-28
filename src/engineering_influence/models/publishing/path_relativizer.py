@@ -12,6 +12,7 @@ class PathRelativizer(PathRelativizerInterface):
     """Reports stable root-relative paths, falling back to the absolute path."""
 
     def __init__(self, root: Path) -> None:
+        """Remember the root that paths are shown relative to."""
         self._root = root.resolve()
 
     def relative(self, path: Path) -> str:

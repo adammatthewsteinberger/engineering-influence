@@ -16,6 +16,7 @@ class CoverImage(EbookCoverInterface):
     """The Kindle Publishing Guidelines require an internal cover declared in the OPF."""
 
     def __init__(self, layout: ProjectLayout) -> None:
+        """Remember the project layout the cover image is read from."""
         self._layout = layout
 
     def source(self, book: Book) -> Path:

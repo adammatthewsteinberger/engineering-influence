@@ -29,6 +29,7 @@ class ResolveSpendConsent(ResolveSpendConsentInterface):
         queue: QueueInterface,
         ceiling: SpendCeilingInterface | None = None,
     ) -> None:
+        """Remember the run repository, queue and the optional spend ceiling."""
         self._runs = runs
         self._queue = queue
         self._ceiling = ceiling

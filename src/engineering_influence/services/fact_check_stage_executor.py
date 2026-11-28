@@ -76,6 +76,7 @@ class FactCheckStageExecutor(StageExecutorInterface):
         parser: FactClaimParserInterface,
         max_output_tokens: int,
     ) -> None:
+        """Remember the artifacts, prompts, outlines, tool loop and search the fact check uses."""
         if max_output_tokens < 1:
             raise ValueError("a model has an output limit")
         self._artifacts = artifacts

@@ -28,6 +28,7 @@ class EpubcheckRunner(EpubcheckInterface):
         runner: ProcessRunnerInterface | None = None,
         limits: ToolLimits | None = None,
     ) -> None:
+        """Remember whether epubcheck is required, and the process runner and limits it uses."""
         self._required = required
         self._runner = runner or ProcessRunner()
         self._limits = limits or self.DEFAULT_LIMITS

@@ -17,6 +17,7 @@ class JobRouter(ProcessJobInterface):
     """
 
     def __init__(self, routes: Mapping[str, ProcessJobInterface]) -> None:
+        """Remember the handler for each kind of job."""
         self._routes = dict(routes)
 
     async def process(self, message: JobMessage) -> JobOutcome:

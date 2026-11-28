@@ -28,6 +28,7 @@ class JsonCassetteStore(CassetteStoreInterface):
     RESPONSE_KEYS = frozenset({"status", "body"})
 
     def __init__(self, root: Path, redactor: SecretRedactorInterface) -> None:
+        """Remember the folder and the redactor used for every cassette."""
         self._root = root
         self._redactor = redactor
 

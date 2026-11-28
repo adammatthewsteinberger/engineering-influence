@@ -31,6 +31,7 @@ class RunInput(RunInputInterface):
     origin: str = "pasted"
 
     def __post_init__(self) -> None:
+        """Validate the input's name and origin when it is built."""
         if not isinstance(self.name, str) or not self.NAME.fullmatch(self.name):
             raise ValueError(
                 "an input's name is lowercase letters, digits, dots, hyphens and underscores, "

@@ -21,6 +21,7 @@ class AcpSession(AcpSessionInterface):
     approved: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
+        """Validate the session's fields when it is built."""
         if not self.session_id.strip():
             raise ValueError("a session needs an id")
         if not self.cwd.startswith("/"):

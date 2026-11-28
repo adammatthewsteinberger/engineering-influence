@@ -19,6 +19,7 @@ class LayoutFactory(LayoutFactoryInterface):
     """
 
     def __init__(self, trim: TrimSize | None = None, paper: PaperStock | None = None) -> None:
+        """Remember the trim size and paper stock; by default the standard ones."""
         self._trim = trim or TrimSize.for_name(None)
         self._paper = paper or PaperStock.for_name(None)
 

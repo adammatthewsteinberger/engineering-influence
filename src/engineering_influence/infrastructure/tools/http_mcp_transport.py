@@ -68,6 +68,7 @@ class HttpMcpTransport(McpTransportInterface):
         session_seconds: float = 4 * 3600.0,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
+        """Remember the HTTP client, the server address, the address pinner, the bearer token, and the reply and request limits."""
         if max_reply_bytes < 1 or request_seconds <= 0 or session_seconds <= 0:
             raise ValueError("a reply, a request and a session each get some room")
         self._client = client

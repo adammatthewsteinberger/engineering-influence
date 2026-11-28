@@ -30,6 +30,7 @@ class HttpModelProbe(ModelProbeInterface):
     }
 
     def __init__(self, client: httpx.Client) -> None:
+        """Remember the HTTP client."""
         self._client = client
 
     def probe(self, profile: ModelProfile, api_key: str) -> ModelAvailability:

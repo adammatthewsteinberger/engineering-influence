@@ -30,6 +30,7 @@ class LockStageGuidance(StageGuidanceInterface):
     def __init__(
         self, lock: SkillLock, skills: tuple[Skill, ...], template: PromptTemplate
     ) -> None:
+        """Remember the skill lock, the skills and the prompt template the stage's guidance is built from."""
         self._lock = lock
         self._skills = {skill.name: skill for skill in skills}
         self._template = template

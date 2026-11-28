@@ -14,6 +14,7 @@ depends_on = None
 
 
 def upgrade() -> None:
+    """Create the ACP session table when it does not exist yet."""
     if not sa.inspect(op.get_bind()).has_table("acpsessionrecord"):
         op.create_table(
             "acpsessionrecord",
@@ -24,5 +25,6 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    """Drop the ACP session table when it exists."""
     if sa.inspect(op.get_bind()).has_table("acpsessionrecord"):
         op.drop_table("acpsessionrecord")

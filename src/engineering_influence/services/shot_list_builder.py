@@ -33,9 +33,11 @@ class ShotListBuilder(ShotListBuilderInterface):
     LONG_SHOT: ClassVar[int] = 30
 
     def __init__(self, parser: FountainParserInterface) -> None:
+        """Remember the Fountain parser the shot list is built from."""
         self._parser = parser
 
     def build(self, script: str) -> tuple[VideoShot, ...]:
+        """The shots for the script's scenes, each scene split into shots no longer than the model allows."""
         shots: list[VideoShot] = []
         for scene in self._parser.scenes(script):
             model, longest = self._route(scene)

@@ -12,6 +12,7 @@ class GitState(GitStateInterface):
     """Commit, branch, and dirty status; None for each when git is unavailable."""
 
     def __init__(self, root: Path) -> None:
+        """Remember the repository root to read the git state from."""
         self._root = root
 
     def read(self) -> dict[str, Any]:

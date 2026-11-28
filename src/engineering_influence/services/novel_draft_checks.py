@@ -28,6 +28,7 @@ class NovelDraftChecks(DraftChecksInterface):
     def __init__(
         self, bibles: StoryBibleParserInterface, continuity: ContinuityCheckerInterface
     ) -> None:
+        """Remember the bible parser and the continuity checker."""
         self._bibles = bibles
         self._continuity = continuity
 

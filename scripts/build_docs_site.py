@@ -198,6 +198,7 @@ def build(root: Path, out: Path, branch: str) -> list[str]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Assemble the documentation site's source from the command line arguments."""
     parser = argparse.ArgumentParser(description="Assemble the documentation site's source.")
     parser.add_argument("--out", type=Path, default=Path(".site-src"), help="where to write it")
     parser.add_argument("--root", type=Path, default=Path(), help="the repository (default: here)")

@@ -25,6 +25,7 @@ class FetchUrlTool(ToolInterface):
     TRAILING = ".,;:!?)]}"
 
     def __init__(self, fetcher: SourceFetcherInterface) -> None:
+        """Remember the source fetcher the page is read through."""
         self._fetcher = fetcher
 
     def definition(self) -> ToolDefinition:

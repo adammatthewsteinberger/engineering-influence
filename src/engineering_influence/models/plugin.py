@@ -32,6 +32,7 @@ class Plugin(PluginInterface):
     skills: tuple[Skill, ...] = ()
 
     def __post_init__(self) -> None:
+        """Validate the plugin's name and version when it is built."""
         if not isinstance(self.name, str) or not Skill.NAME.fullmatch(self.name):
             raise ValueError("a plugin name is lowercase letters, digits and underscores")
         if type(self.version) is not int or self.version < 1:

@@ -152,6 +152,7 @@ def homepage_json_ld(config: SiteConfig, description: str) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Add search and social metadata to a built documentation site, from the command line."""
     parser = argparse.ArgumentParser(
         description="Add search and social metadata to a built documentation site."
     )

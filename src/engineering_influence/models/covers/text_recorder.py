@@ -10,6 +10,7 @@ class TextRecorder(TextRecorderInterface):
     """Per-render state that replaces a module-level list, so renders never share it."""
 
     def __init__(self) -> None:
+        """Start with no recorded text."""
         self._sizes: list[int] = []
 
     def record(self, size: int) -> None:

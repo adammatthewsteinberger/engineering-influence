@@ -44,6 +44,7 @@ class AnthropicModel(ModelInterface):
         descriptor: ProviderDescriptor,
         base_url: str = "https://api.anthropic.com",
     ) -> None:
+        """Remember the HTTP client, the key, the model descriptor and the base address."""
         if not api_key.strip():
             raise ValueError("an Anthropic model needs an API key")
         self._client = client

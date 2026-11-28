@@ -31,6 +31,7 @@ class BookAuditor(BookAuditorInterface):
     """
 
     def __init__(self, root: Path, files: ManuscriptSourceInterface) -> None:
+        """Remember the book's root folder and its source files."""
         self._root = root
         self._files = files
         self._relativizer = PathRelativizer(root)

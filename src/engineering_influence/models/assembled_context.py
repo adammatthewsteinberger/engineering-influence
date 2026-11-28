@@ -23,6 +23,7 @@ class AssembledContext(AssembledContextInterface):
     tail_characters: int
 
     def __post_init__(self) -> None:
+        """Validate the prompt text and token counts when the context is built."""
         if not self.system.strip() or not self.prompt.strip():
             raise ValueError("an assembled context needs a system and a prompt")
         if (

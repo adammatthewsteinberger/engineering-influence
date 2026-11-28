@@ -22,6 +22,7 @@ class CoverPluginInterface(ABC):
     __slots__ = ("root",)
 
     def __init__(self, root: Path | None = None) -> None:
+        """Remember the private project folder the plugin is read from, if one is given."""
         self.root = root or Path.cwd()
 
     @abstractmethod

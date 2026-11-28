@@ -31,6 +31,7 @@ class ModelSceneReviser(SceneReviserInterface):
         guards: Callable[[Budget], SpendGuardInterface],
         template: str = TEMPLATE,
     ) -> None:
+        """Remember the prompts, tool loop, spend guard and the prompt template for each revision."""
         self._prompts = prompts
         self._loop = loop
         self._guards = guards

@@ -35,6 +35,7 @@ class LocalDefaultModel(LocalDefaultModelInterface):
     NAME: ClassVar[str] = "local-default"
 
     def __init__(self, environment: Mapping[str, str]) -> None:
+        """Remember the environment the local model's address is read from."""
         self._model = environment.get("EI_LOCAL_MODEL", "").strip() or self.MODEL
         self._url = environment.get("EI_LOCAL_URL", "").strip() or self.URL
 

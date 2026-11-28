@@ -29,6 +29,7 @@ class McpToolDescriptor(McpToolDescriptorInterface):
     input_schema: Mapping[str, Any]
 
     def __post_init__(self) -> None:
+        """Validate the tool's name, description and schema when it is built."""
         if not isinstance(self.name, str) or not self.name.strip():
             raise ValueError("an MCP tool has a name")
         if not isinstance(self.description, str):

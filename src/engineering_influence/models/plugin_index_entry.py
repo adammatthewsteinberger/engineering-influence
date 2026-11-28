@@ -34,6 +34,7 @@ class PluginIndexEntry(PluginIndexEntryInterface):
     description: str = ""
 
     def __post_init__(self) -> None:
+        """Validate the entry's name, version, address and digest when it is built."""
         if not isinstance(self.name, str) or not Skill.NAME.fullmatch(self.name):
             raise ValueError("a listed plugin's name is lowercase letters, digits and underscores")
         if type(self.version) is not int or self.version < 1:

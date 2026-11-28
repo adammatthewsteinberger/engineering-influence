@@ -17,6 +17,7 @@ class EbookDocument(EbookDocumentInterface):
     """
 
     def __init__(self) -> None:
+        """Nothing to configure: the ebook document layout is fixed."""
         self._tex = TexText()
         self._chapters = ChapterTex()
 

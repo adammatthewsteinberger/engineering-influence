@@ -38,6 +38,7 @@ class SkillImporter(SkillImporterInterface):
         sink: SkillSinkInterface,
         max_file_bytes: int,
     ) -> None:
+        """Remember the source, parser, converter, writer and sink the import uses."""
         self._source = source
         self._parser = parser
         self._converter = converter

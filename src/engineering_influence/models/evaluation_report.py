@@ -18,6 +18,7 @@ class EvaluationReport(EvaluationReportInterface):
     results: tuple[tuple[MadeBook, BookScore | None], ...]
 
     def __post_init__(self) -> None:
+        """Validate the report's label and cases when it is built."""
         if not self.release.strip():
             raise ValueError("an evaluation names the release it measured")
         cases = [book.case for book, _ in self.results]

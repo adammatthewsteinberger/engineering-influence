@@ -32,6 +32,7 @@ class CanonCheckStageExecutor(StageExecutorInterface):
         parser: CanonFindingParserInterface,
         blocking: bool,
     ) -> None:
+        """Remember the canon check, its parser, and whether its findings block the run."""
         self._check = check
         self._parser = parser
         self._blocking = blocking

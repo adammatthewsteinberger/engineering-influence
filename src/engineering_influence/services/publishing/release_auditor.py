@@ -30,6 +30,7 @@ class ReleaseAuditor(ReleaseAuditorInterface):
         pdfs: PdfInspectorInterface,
         today: date | None = None,
     ) -> None:
+        """Remember the root folder, the source files, the PDF inspector and the date the release is audited on, if one is given."""
         self._root = root
         self._files = files
         self._pdfs = pdfs

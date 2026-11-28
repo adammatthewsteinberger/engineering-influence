@@ -30,6 +30,7 @@ class ReadSkillTool(ToolInterface):
     NAME = "read_skill"
 
     def __init__(self, skills: tuple[Skill, ...]) -> None:
+        """Remember the skills whose reference sections can be read."""
         self._skills = {skill.name: skill for skill in skills if skill.sections}
         parts = [
             f"{skill.name}@{skill.version}\n" + "\n".join(f"{t}\n{x}" for t, x in skill.sections)

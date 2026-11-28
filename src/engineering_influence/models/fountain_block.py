@@ -23,6 +23,7 @@ class FountainBlock(FountainBlockInterface):
     lines: tuple[str, ...]
 
     def __post_init__(self) -> None:
+        """Validate the block's kind and lines when it is built."""
         if self.kind not in self.KINDS:
             raise ValueError(f"a Fountain block is one of {sorted(self.KINDS)}, not {self.kind!r}")
         if not self.lines:

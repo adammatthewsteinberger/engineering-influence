@@ -47,6 +47,7 @@ class McpApplication(McpApplicationInterface):
         allow_spend: bool = False,
         max_run_budget_micro_usd: int | None = None,
     ) -> None:
+        """Remember the controller and the optional creator, run manager and run reader the tools call."""
         self._controller = controller
         self._creator = creator
         self._manager = manager

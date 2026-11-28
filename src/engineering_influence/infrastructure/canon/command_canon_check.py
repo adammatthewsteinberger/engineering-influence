@@ -30,6 +30,7 @@ class CommandCanonCheck(CanonCheckInterface):
         folder: Path,
         runner: ProcessRunnerInterface | None = None,
     ) -> None:
+        """Remember the command, its folder, and the process runner that runs it."""
         self._command = command
         self._folder = folder
         self._runner = runner or ProcessRunner()
@@ -53,5 +54,6 @@ class CommandCanonCheck(CanonCheckInterface):
         return cls(shlex.split(command), Path(folder), runner)
 
     def run(self) -> tuple[int, str]:
+        """Run the author's check command in its folder, and return its exit status and its output, standard error after standard output."""
         status, stdout, stderr = self._runner.run(self._command, self.LIMITS, cwd=self._folder)
         return status, stdout + stderr

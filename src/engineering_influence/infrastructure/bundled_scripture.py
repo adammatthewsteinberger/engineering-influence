@@ -20,6 +20,7 @@ class BundledScripture(ScriptureIndexInterface):
     NAMES: ClassVar[tuple[str, ...]] = ("asv", "bsb", "dra", "kjv", "web", "ylt")
 
     def __init__(self, folder: Path = FOLDER) -> None:
+        """Remember the folder holding the bundled translations."""
         self._folder = folder
         self._verses: dict[str, dict[str, str]] = {}
 

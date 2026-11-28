@@ -19,6 +19,7 @@ class Typography(TypographyInterface):
     """Tracked (letter-spaced) text, fitting, wrapping, and the print size floor."""
 
     def __init__(self, fonts: FontLoader, recorder: TextRecorder) -> None:
+        """Remember the font loader and the recorder that notes the text it sets."""
         self.fonts = fonts
         self.recorder = recorder
 

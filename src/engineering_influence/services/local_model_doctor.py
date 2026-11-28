@@ -40,6 +40,7 @@ class LocalModelDoctor(LocalModelDoctorInterface):
         model: ModelInterface,
         server: OllamaServerInterface,
     ) -> None:
+        """Remember the free model, the model, and the server the checks look at."""
         self._free = free
         self._model = model
         self._server = server

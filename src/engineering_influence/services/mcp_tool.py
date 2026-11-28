@@ -24,6 +24,7 @@ class McpTool(ToolInterface):
     """
 
     def __init__(self, connection: McpConnectionInterface, tool: McpToolDescriptor) -> None:
+        """Remember the connection to the server and the tool's descriptor."""
         self._connection = connection
         self._tool = tool
         self._revision = connection.tools().digest()

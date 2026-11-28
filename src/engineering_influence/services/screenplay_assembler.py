@@ -15,6 +15,7 @@ class ScreenplayAssembler(ScreenplayAssemblerInterface):
     page must name the title. Continuation lines of a title-page value are indented, as Fountain reads them."""
 
     def __init__(self, parser: FountainParserInterface) -> None:
+        """Remember the Fountain parser the scenes are assembled with."""
         self._parser = parser
 
     def assemble(self, title_page: tuple[tuple[str, str], ...], scenes: tuple[str, ...]) -> str:

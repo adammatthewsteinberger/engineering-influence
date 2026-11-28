@@ -28,6 +28,7 @@ class EnvironmentSettingsLoader(EnvironmentSettingsLoaderInterface):
     def __init__(
         self, secrets: SecretProviderInterface, environ: Mapping[str, str] | None = None
     ) -> None:
+        """Remember the secrets and the environment the settings are read from."""
         self._secrets = secrets
         self._environ = os.environ if environ is None else environ
 

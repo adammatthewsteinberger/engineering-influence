@@ -19,6 +19,7 @@ class RunEventBuilder(RunEventBuilderInterface):
     GATE: str = "spend-consent"
 
     def __init__(self, urls: tuple[str, ...]) -> None:
+        """Remember the receiver URLs each event is sent to."""
         self._urls = urls
 
     def started(self, run: BookRun) -> tuple[OutboxEvent, ...]:

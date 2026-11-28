@@ -187,6 +187,7 @@ class CliRuntime(CliRuntimeInterface):
         local_searxng_url: str = "http://127.0.0.1:8888",
         sandbox: McpServerSandboxInterface | None = None,
     ) -> None:
+        """Remember the publishing factory, queue, probe timeout and bundles the commands use."""
         self._sandbox = sandbox or McpServerSandbox(sys.platform, shutil.which, Path.home())
         self._publishing = publishing
         self._queue = queue

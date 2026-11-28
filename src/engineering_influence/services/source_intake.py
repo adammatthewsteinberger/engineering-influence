@@ -14,6 +14,7 @@ class SourceIntake(SourceIntakeInterface):
     """A folder with no source files is refused, since a screenplay built from nothing is not what was asked for."""
 
     def __init__(self, library: SourceLibraryInterface) -> None:
+        """Remember the source library the source folder is read from."""
         self._library = library
 
     def intake(self, folder: Path) -> tuple[SourceEntry, ...]:
