@@ -62,12 +62,22 @@ class ScreenplayLatexSource(ScreenplayLatexSourceInterface):
     def render(self, script: str) -> str:
         """The whole document: the preamble, the title page, then the body. A changed scene's heading is marked in its
         revision colour, with a bar and a star in the margin."""
-        title = self._title_page(script)
+        header = self._header(script)
+        title = self._title_page(script, header is not None)
         revisions = self._revisions(script)
         body = "\n".join(
             self._element(kind, lines, revisions) for kind, lines in self._elements(script)
         )
-        return f"{self._preamble()}\n\\begin{{document}}\n{title}\n{body}\n\\end{{document}}\n"
+        return (
+            f"{self._preamble(header)}\n\\begin{{document}}\n{title}\n{body}\n\\end{{document}}\n"
+        )
+
+    def _header(self, script: str) -> str | None:
+        """The running header of a revision script: its title page's Revision line, escaped. An ordinary script has none."""
+        for key, value in self._parser.title_page(script):
+            if key == "Revision":
+                return self._escape(f"{key}: {value}")
+        return None
 
     def _elements(self, script: str) -> list[tuple[str, tuple[str, ...]]]:
         return [(block.kind, block.lines) for block in self._parser.blocks(script)]
@@ -117,15 +127,28 @@ class ScreenplayLatexSource(ScreenplayLatexSourceInterface):
             f"\\textcolor{{rev{colour}}}{{*}}\\hspace{{4pt}}}}"
         )
 
-    def _title_page(self, script: str) -> str:
+    def _title_page(self, script: str, headed: bool = False) -> str:
         pairs = self._parser.title_page(script)
         lines = "\n".join(
             f"\\par{{\\centering\\bfseries {self._escape(key)}: {self._escape(value)}\\par}}"
             for key, value in pairs
         )
-        return f"\\vspace*{{3in}}\n{lines}\n\\clearpage"
+        # The title page of a revision script is the only page without its running header.
+        unheaded = "\\thispagestyle{empty}\n" if headed else ""
+        return f"{unheaded}\\vspace*{{3in}}\n{lines}\n\\clearpage"
 
-    def _preamble(self) -> str:
+    def _preamble(self, header: str | None = None) -> str:
+        page_style: tuple[str, ...] = (
+            ("\\pagestyle{empty}",)
+            if header is None
+            else (
+                "\\usepackage{fancyhdr}",
+                "\\pagestyle{fancy}",
+                "\\fancyhf{}",
+                f"\\fancyhead[R]{{\\small {header}}}",
+                "\\renewcommand{\\headrulewidth}{0pt}",
+            )
+        )
         return "\n".join(
             (
                 "\\documentclass[12pt]{article}",
@@ -140,7 +163,7 @@ class ScreenplayLatexSource(ScreenplayLatexSourceInterface):
                 "\\setlength{\\parindent}{0pt}",
                 "\\setlength{\\parskip}{12pt}",
                 "\\setlength{\\baselineskip}{12pt}",
-                "\\pagestyle{empty}",
+                *page_style,
             )
         )
 

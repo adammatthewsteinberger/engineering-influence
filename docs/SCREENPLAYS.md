@@ -125,7 +125,7 @@ names each page that breaks a rule. The check runs on the typeset PDF, so it mea
 When a run has revision pages (see Revision colours above), the printed PDF is typeset from them rather than from the
 shooting script. Each changed scene's heading has a bar and a star in the left margin, in its revision colour (Blue for
 revision 1, Pink for 2, and so on through Tan for 9). The colours are approximations of the studio colours, not a
-published standard. The date on each revision's header is not printed yet: a run has no date of its own to print.
+published standard. Every page after the title page of a revision carries a running header with the revision and its date, for example `Revision: Pink (2026-11-27)`. The title page has no header.
 
 The revision pages' title page names the revision and its date, for example `Revision: Pink (2026-11-27)`. The date is
 `--revision-date`, or today when a baseline is given without one. It is kept with the run, so a resumed run prints the
