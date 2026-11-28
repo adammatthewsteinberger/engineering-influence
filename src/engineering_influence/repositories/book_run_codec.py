@@ -46,4 +46,5 @@ class BookRunCodec(BookRunCodecInterface):
             consent=(
                 None if document.get("consent") is None else SpendRequest(**document["consent"])
             ),
+            servers=(None if document.get("servers") is None else tuple(document["servers"])),
         )

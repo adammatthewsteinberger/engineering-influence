@@ -111,6 +111,7 @@ def offered(
     tool_lock: ToolLock,
     stage: str = "research",
     registered: tuple[str, ...] = (),
+    servers: tuple[str, ...] | None = None,
 ) -> tuple[list[str], Asker]:
     names = registered or ("native", "files__read", "files__write", "other__x")
     registry = ToolRegistry(tuple(Named(name) for name in names))
@@ -137,6 +138,7 @@ def offered(
         BASE.plan(),
         Budget(cap=5_000_000),
         stage=stage,
+        servers=servers,
     )
     asyncio.run(executor.execute(run, 1))
     return [tool.name for tool in asker.requests[0].tools], asker
@@ -177,3 +179,14 @@ def test_a_granted_tool_nobody_registered_stops_the_stage_before_anything_is_ask
         offered((), lock(("files", "research", ("read",))), registered=("native",))
     assert (error.value.code, error.value.http_status) == ("STAGE_TOOL_UNKNOWN", 500)
     assert "files__read" in error.value.message
+
+
+def test_a_run_that_selected_some_servers_is_offered_only_their_granted_tools() -> None:
+    tool_lock = lock(("files", "research", ("read",)), ("other", "research", ("x",)))
+    names, _ = offered((), tool_lock, servers=("other",))
+    assert names == ["other__x"]
+
+
+def test_a_run_that_selected_no_servers_is_offered_no_locked_tools() -> None:
+    names, _ = offered(("native",), lock(("files", "research", ("read",))), servers=())
+    assert names == ["native"]

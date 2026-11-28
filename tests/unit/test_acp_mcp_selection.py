@@ -39,8 +39,10 @@ def lock_with(*names: str) -> ToolLock:
     return ToolLock(servers=tuple(server(name) for name in names))
 
 
-def agent(store: InMemoryAcpSessionStore, locks: Any = None) -> AcpApplication:
-    runs = InMemoryRunRepository()
+def agent(
+    store: InMemoryAcpSessionStore, locks: Any = None, runs: InMemoryRunRepository | None = None
+) -> AcpApplication:
+    runs = InMemoryRunRepository() if runs is None else runs
     return AcpApplication(
         CreateRun(runs, InMemoryQueue()),
         CancelRun(runs),
@@ -149,3 +151,38 @@ def test_the_cli_reads_the_lock_named_by_the_environment_or_the_session_folder(
     monkeypatch.setenv("EI_TOOL_LOCK", str(elsewhere))
     assert CliRuntime._session_lock(str(folder)).server("search") is not None
     assert CliRuntime._session_lock(str(folder)).server("docs") is None
+
+
+BRIEF = 'kind = "nonfiction"\nidea = "Windowsill herbs"\nbudget_micro_usd = 5000000\n'
+
+
+def started_run(runs: InMemoryRunRepository, servers: list[Any], locks: Any) -> Any:
+    store = InMemoryAcpSessionStore()
+    app = agent(store, locks, runs)
+    session_id = new_session(app, servers)["result"]["sessionId"]
+    app.handle(
+        {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "session/prompt",
+            "params": {
+                "sessionId": session_id,
+                "prompt": [{"type": "text", "text": BRIEF}],
+            },
+        }
+    )
+    run_id = store.get(session_id).run_id
+    assert run_id is not None
+    return runs.get(run_id)
+
+
+def test_a_prompt_starts_a_run_that_may_use_only_the_servers_its_session_selected() -> None:
+    run = started_run(
+        InMemoryRunRepository(), [{"name": "docs"}], lambda cwd: lock_with("docs", "maps")
+    )
+    assert run is not None and run.servers == ("docs",)
+
+
+def test_a_session_that_selected_no_servers_starts_a_run_that_may_use_none() -> None:
+    run = started_run(InMemoryRunRepository(), [], lambda cwd: lock_with("docs"))
+    assert run is not None and run.servers == ()

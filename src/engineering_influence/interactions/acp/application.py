@@ -329,7 +329,9 @@ class AcpApplication(AcpApplicationInterface):
                 f"this session already has run {self._sessions[session_id]}",
             )
         text = self._text(params.get("prompt"))
-        run = self._creator.create(self._briefs.read_text(text, "the prompt"))
+        run = self._creator.create(
+            self._briefs.read_text(text, "the prompt"), servers=self._servers[session_id]
+        )
         self._sessions[session_id] = run.run_id
         self._store.save(
             AcpSession(session_id, self._cwds[session_id], run.run_id, self._servers[session_id])

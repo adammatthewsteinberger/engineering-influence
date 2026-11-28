@@ -25,8 +25,11 @@ class ToolLockInterface(ABC):
         """This lock with the server added; an existing one of that name is replaced only if asked."""
 
     @abstractmethod
-    def granted(self, stage: str) -> tuple[str, ...]:
-        """The model names of every locked tool this stage may call, servers in name order."""
+    def granted(self, stage: str, servers: tuple[str, ...] | None = None) -> tuple[str, ...]:
+        """The model names of every locked tool this stage may call, servers in name order.
+
+        ``servers`` restricts the answer to the named servers; ``None`` means every locked server.
+        """
 
     @abstractmethod
     def names(self) -> tuple[str, ...]:
