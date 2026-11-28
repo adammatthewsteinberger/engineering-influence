@@ -6,7 +6,7 @@ import pytest
 from alembic import command
 from alembic.autogenerate import compare_metadata
 from alembic.runtime.migration import MigrationContext
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import create_engine, inspect, text
 from sqlmodel import Session, SQLModel, select
 
 from engineering_influence.errors.application_error import ApplicationError
@@ -26,7 +26,7 @@ TABLES = {
     "ledgereventrecord",
     "outboxrecord",
 }
-HEAD = "0002"
+HEAD = "0004"
 
 
 def fresh_url(tmp_path: Path) -> str:
@@ -129,6 +129,18 @@ def test_the_baseline_can_be_undone(tmp_path: Path) -> None:
     assert migrator.current(url) is None
 
 
+def test_undoing_the_session_table_tolerates_it_already_being_gone(tmp_path: Path) -> None:
+    url = fresh_url(tmp_path)
+    migrator = SchemaMigrator()
+    migrator.upgrade(url)
+    engine = create_engine(url)
+    with engine.begin() as connection:
+        connection.execute(text("DROP TABLE acpsessionrecord"))
+    engine.dispose()
+    command.downgrade(migrator._config(url), "base")
+    assert tables_in(url) == set()
+
+
 def test_checking_a_database_that_was_never_migrated_says_to_upgrade(tmp_path: Path) -> None:
     with pytest.raises(ApplicationError) as raised:
         SchemaMigrator().check(fresh_url(tmp_path))
@@ -149,3 +161,31 @@ def test_an_unreachable_database_is_reported_without_its_password() -> None:
         assert raised.value.code == "DATABASE_UNAVAILABLE"
         assert "hunter2" not in raised.value.message
         assert "OperationalError" in raised.value.message
+
+
+def test_undoing_the_selection_column_tolerates_it_already_being_gone(tmp_path: Path) -> None:
+    url = fresh_url(tmp_path)
+    migrator = SchemaMigrator()
+    migrator.upgrade(url)
+    engine = create_engine(url)
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE acpsessionrecord DROP COLUMN servers"))
+    engine.dispose()
+    command.downgrade(migrator._config(url), "0002")
+    assert "servers" not in {
+        c["name"] for c in inspect(create_engine(url)).get_columns("acpsessionrecord")
+    }
+
+
+def test_undoing_the_approval_column_tolerates_it_already_being_gone(tmp_path: Path) -> None:
+    url = fresh_url(tmp_path)
+    migrator = SchemaMigrator()
+    migrator.upgrade(url)
+    engine = create_engine(url)
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE acpsessionrecord DROP COLUMN approved"))
+    engine.dispose()
+    command.downgrade(migrator._config(url), "0003")
+    assert "approved" not in {
+        c["name"] for c in inspect(create_engine(url)).get_columns("acpsessionrecord")
+    }

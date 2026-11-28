@@ -1,0 +1,39 @@
+{{- if .Values.seaweedfs.enabled }}
+# SeaweedFS's master, volume and filer ports have no authentication. Only the S3 port is reachable from the other
+# pods, and only from the API, the worker and the bucket Job; every other pod is refused. This needs a network plugin
+# that enforces NetworkPolicy.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "ei.fullname" . }}-seaweedfs
+  labels:
+    {{- include "ei.labels" . | nindent 4 }}
+    app.kubernetes.io/component: seaweedfs
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "ei.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: seaweedfs
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ include "ei.name" . }}
+              app.kubernetes.io/instance: {{ .Release.Name }}
+              app.kubernetes.io/component: api
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ include "ei.name" . }}
+              app.kubernetes.io/instance: {{ .Release.Name }}
+              app.kubernetes.io/component: worker
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ include "ei.name" . }}
+              app.kubernetes.io/instance: {{ .Release.Name }}
+              app.kubernetes.io/component: seaweedfs-bucket
+      ports:
+        - protocol: TCP
+          port: 8333
+{{- end }}

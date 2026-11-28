@@ -45,6 +45,9 @@ nav:
       - Getting started: getting-started.md
       - Driving it from another AI: agents-driving.md
       - Books and KDP: books-and-kdp.md
+      - Audiobooks: audiobooks.md
+      - Webhooks: webhooks.md
+      - Screenplays: screenplays.md
       - Novels: novels.md
   - Writing books:
       - The local model: local-model.md
@@ -64,6 +67,9 @@ nav:
       - Threat model: threat-model.md
   - Operating:
       - Worker image: worker-image.md
+      - Kubernetes deployment: deployment.md
+      - Running on minikube: minikube.md
+      - Test and CI performance: test-performance.md
       - Troubleshooting: troubleshooting.md
       - Releasing: releasing.md
       - Documentation site: documentation-site.md
@@ -86,6 +92,12 @@ nav:
           - "ADR 0009: Publishing follows the branch: develop to TestPyPI, main to PyPI": adr/0009-branch-driven-publishing.md
           - "ADR 0010: Chapters are drafted in order, inside one stage": adr/0010-chapters-are-drafted-in-order-in-one-stage.md
           - "ADR 0011: Run inputs are untrusted text carried inside the brief": adr/0011-run-inputs.md
+          - "ADR 0012: Scripture quotations are checked against bundled translations": adr/0012-scripture-quotations-are-checked-against-bundled-translations.md
+          - "ADR 0013: A factual claim is supported only by a quotation the code found in a page it read": adr/0013-fact-claims-need-a-quotation-the-code-found-in-a-page.md
+          - "ADR 0014: Audiobook narration uses Kokoro-82M through mlx-audio (proposed)": adr/0014-audiobook-narration-uses-kokoro-via-mlx-audio.md
+          - "ADR 0016: Audible audio is voiced inside ACX; other stores get a locally narrated audiobook": adr/0016-audiobooks-for-audible-are-voiced-in-acx-and-everything-else-is-narrated-locally.md
+          - "ADR 0017: A screenplay's source is a folder of files, read whole and pinned by digest": adr/0017-screenplay-source-is-a-folder-of-files-read-whole.md
+          - "ADR 0018: A screenplay's bible is a folder of TOML cards, checked as a whole": adr/0018-a-screenplay-bible-is-a-folder-of-toml-cards.md
       - Changelog: changelog.md
       - Security: security.md
       - Support: support.md

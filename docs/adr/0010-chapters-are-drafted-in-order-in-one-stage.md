@@ -1,6 +1,6 @@
 # ADR 0010: Chapters are drafted in order, inside one stage
 
-Status: proposed
+Status: accepted. A large outline is not yet split into batches (see the amendments).
 
 ## Context
 
@@ -179,3 +179,94 @@ A non-fiction plan now has three editing stages between `draft` and `assemble`: 
 - **Not known:** whether the edits improve the prose. Nothing here has run against a live model, and the length bounds only catch an answer
   that is plainly not an edit.
 
+## Amendment: chapters are drafted one section per beat (2026-11-25)
+
+A non-fiction chapter is no longer one model call. `DraftStageExecutor` writes it as one call per outline beat, each
+section stored as `chapter_NN_sKK.md`, then joins the sections under `# Chapter N: Title` into `chapter_NN.md`. The reason
+is the local model: a single reply was capped at 8,192 tokens and the model ended its chapters at 1,300 to 2,800 words,
+so a 100,000-word book came out at 15,479 words.
+
+- **Sections, not chapters, are the unit of resume.** A section that is stored is never redrafted; a chapter is done when
+  its joined file and its summary exist, as before.
+- **Each section sees the end of the one before it.** Section *k* gets section *k-1* as its previous tail (chapter *n-1*
+  for section 1), the full chapter beats, and the earlier chapter summaries. The instruction holds numbers only.
+- **The model writes no heading.** `context_pack` is version 3; the executor adds the chapter heading to section 1.
+- **Length.** A chapter's share of the target is the brief's `target_words` over the chapters (2,500 when there is none),
+  never under 300 or over 12,000. Each section is that share over the chapter's beats, never under 150 or over 3,000
+  words, so one reply stays inside the output cap.
+- **Novels are unchanged.** `DraftRecipe.sectioned` is false for novels, so they still draft a chapter in one call.
+
+Not yet checked: that a section keeps to its beat, that a refusal is caught, and that a chapter reaches its length. Those
+belong to the refusal and outline-sizing slices (PR 2 and PR 3 of the plan). Nothing here has run against a live model.
+
+## Amendment: fitting a prompt does not use the spend count (2026-11-26)
+
+`ContextAssembler` fitted prompts with the model's `count_tokens`, which for the local model is the UTF-8 byte count:
+a deliberate upper bound for spend reservations, but about four times the real token count of English prose. A 30-chapter
+outline (about 36 KB) alone overflowed the window, so drafting stopped at chapter 1.
+
+- **Fitting uses its own estimate.** `FittingModel` wraps the model for the assembler only: everything is delegated, and
+  the token count is characters divided by three, rounded up. Three characters a token is generous for English prose, so
+  a fitted prompt still fits the window.
+- **Reservation is unchanged.** `CallModel` still reserves with the wrapped model's own count, so spend stays bounded.
+- **Each section sees the chapter titles, not the whole outline.** The grounding labels the list "The chapter titles" and
+  holds one heading a line; the section's own beats come from the chapter's entry, as before. Novels get the same grounding.
+- **Summaries may be longer.** The summary call is capped at 1,000 tokens, since reasoning counts against the cap.
+- **The model request timeout is 1,800 seconds**, up from 600, so a long section on a slow laptop is not cut off.
+
+## Amendment (2026-11-25): the outline is sized to the target
+
+- **One rule for the number of chapters.** `ChapterCount` gives one chapter per 3,500 words of the brief's target, rounded and
+  kept between 3 and 30. With no target the model chooses, as before.
+- **The outline is told the number and checked against it.** `stage_outline` (version 5) and `novel_outline` (version 2) state
+  it. The outline check refuses an outline more than 15% away from it, with `OUTLINE_CHAPTER_COUNT`, before any drafting is paid
+  for. The check port now receives the brief's target.
+- **Outlines may run to 8,192 tokens**, up from 4,000 (non-fiction) and 5,000 (novel), enough for about thirty chapters. Thirty
+  chapters that do not fit in one reply are not yet split into batches; a run that hits the cap stops at the outline.
+- **A chapter is at most 6,000 words**, down from 12,000 for sectioned drafts, so each chapter fits one editing call.
+
+Not yet done: a configurable timeout (it is a constructor default only), batching an outline that does not fit one reply, and
+the editing passes, which are the next slices of the plan.
+
+## Amendment (2026-11-25): refusals and short sections are caught
+
+- **A refusal is asked again, once, in other words.** `AnswerScreen` reads the first 300 characters of each chapter or section
+  and recognises a model declining ("I can't", "I'm sorry, but", "I must decline"). The retry adds a fixed note to the prompt
+  under a version that says so, so the journal does not replay the refusal. A second refusal stops the stage with
+  `DRAFT_REFUSED`, naming the chapter and section. Nothing is stored for it.
+- **A short section is asked again for its length, once.** A section with under half the words asked for gets a retry that asks
+  for the full length; the longer of the two answers is kept, and a retry that refuses is ignored.
+- **A section that stays short is kept and reported.** The report carries a non-blocking `DRAFT_SHORT` issue naming the chapter,
+  the section and the counts, so the length is visible in the stage report rather than failing the run.
+- **Compatibility.** `DRAFT_REFUSED` is a new error code; `DRAFT_SHORT` is a report issue. Both are additive.
+
+## Amendment (2026-11-25): long chapters are edited in parts
+
+- **A chapter above 4,000 words is revised in parts.** The revision passes cut it at its blank lines into parts of at most
+  4,000 words, edit each in its own call with its own length bounds, and join the answers with the blank lines they were cut
+  at. A chapter of up to 4,000 words is one part, as before, so ordinary chapters are unaffected.
+- **Why 4,000.** A whole-chapter edit must fit the reply cap; a 4,000-word part, edited at the widest bound, fits it with
+  room for reasoning. Above about 5,800 words a whole chapter was cut off, which is what this prevents.
+- **The structure pass reorders within a part.** Moving material between parts is not done, so a book's chapters above
+  4,000 words are reordered only inside each part. Within the book's chapter budget (about 3,500 words, see ChapterCount)
+  this does not arise.
+- **A rejected part keeps its own text.** The report counts rejected parts (`N of M parts rejected`), and the rejection
+  file records that count. Compatible: no error codes or public contracts change.
+
+## Amendment (2026-11-25): novels are sectioned, and edited in three passes
+
+- **A novel's chapter is drafted one beat at a time**, as a non-fiction chapter is (`sectioned`). The instruction says which
+  section and beat to write, and `novel_context_pack` (version 2) tells the model to write the part asked for with no heading:
+  the book adds the chapter's heading.
+- **Three editing passes follow the draft**: `revise_story` (scenes, goals, pacing and beat order, with the story bible,
+  outline and beats), `revise_lines` (sentences, dialogue and point of view, in the brief's voice) and `copy_edit` (spelling
+  and consistency with the bible). The plan has them after `draft`; `assemble` reads the last one.
+- **The revision stages are routed by kind.** The non-fiction and novel passes share stage names (`revise_lines`,
+  `copy_edit`), so the runtime keys each stage by book kind. A novel's passes run behind the content policy.
+- **A novel's voice comes from its brief**, not from `positioning.md`. The revision executor reads the voice from a source the
+  runtime names.
+- **The last novel pass is read against the bible again.** Continuity findings there are non-blocking issues in the stage
+  report; they do not stop the run.
+- **Editing is optional, as for non-fiction**: the cost estimator prices the novel passes as optional, so a run that runs
+  out of money skips them and builds the book from what it has.
+- **Compatibility.** No error codes change. The prompt versions `novel_context_pack` 2 and three new templates are additive.

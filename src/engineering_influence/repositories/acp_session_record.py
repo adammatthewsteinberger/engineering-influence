@@ -9,8 +9,11 @@ from engineering_influence.repositories.interfaces.acp_session_record_interface 
 
 
 class AcpSessionRecord(AcpSessionRecordInterface, SQLModel, table=True):
-    """One row per session; the run is empty until the first prompt starts one."""
+    """One row per session; the run is empty until the first prompt starts one. ``servers`` is the selected server names,
+    as a JSON list, and is empty for a session that selected none (migration 0003 backfills that)."""
 
     session_id: str = Field(primary_key=True)
     cwd: str
     run_id: str | None = None
+    servers: str = "[]"
+    approved: str = "[]"

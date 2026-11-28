@@ -10,10 +10,12 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from pathlib import Path
 
+    from engineering_influence.models.bible_card import BibleCard
     from engineering_influence.models.book_brief import BookBrief
     from engineering_influence.models.book_run import BookRun
     from engineering_influence.models.budget_plan import BudgetPlan
     from engineering_influence.models.export_summary import ExportSummary
+    from engineering_influence.models.source_entry import SourceEntry
 
 
 class LocalBookCreatorInterface(ABC):
@@ -26,8 +28,21 @@ class LocalBookCreatorInterface(ABC):
         """The brief's cap set against what the book is expected to cost, or None when no model is priced."""
 
     @abstractmethod
-    def start(self, brief: BookBrief, progress: Callable[[str], None]) -> BookRun:
-        """Run the brief's plan until the run finishes or stops."""
+    def start(
+        self,
+        brief: BookBrief,
+        progress: Callable[[str], None],
+        sources: tuple[SourceEntry, ...] = (),
+        previous_lock: str | None = None,
+        stop_after: str | None = None,
+        mode: str = "book",
+        bible: tuple[BibleCard, ...] = (),
+        title: str | None = None,
+        previous_script: str | None = None,
+        revision: int = 1,
+        revision_date: str | None = None,
+    ) -> BookRun:
+        """Run the brief's plan, with its source files, until the run finishes or stops."""
 
     @abstractmethod
     def resume(self, approve_spend: bool, progress: Callable[[str], None]) -> BookRun:

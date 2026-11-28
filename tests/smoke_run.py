@@ -32,6 +32,7 @@ from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget import Budget
 from engineering_influence.models.run_status import RunStatus
+from engineering_influence.models.stage_plan import StagePlan
 from engineering_influence.runtime.stage_executor_runtime import StageExecutorRuntime
 from engineering_influence.services.advance_run import AdvanceRun
 from engineering_influence.services.failure_classifier import FailureClassifier
@@ -179,11 +180,15 @@ class SmokeRun:
         brief: BookBrief,
         today: date | None = None,
         builder: ManuscriptBuilderInterface | None = None,
+        plan: StagePlan | None = None,
+        sources: Mapping[str, bytes] | None = None,
     ) -> None:
         self._runtime = StageExecutorRuntime(
             environment, secrets, today or date.today(), builder=builder
         )
         self._brief = brief
+        self._plan = plan
+        self._sources = dict(sources or {})
 
     def run(self) -> SmokeReport:
         """Run every stage of the plan for the brief's kind of book, or as many as advance."""
@@ -193,8 +198,13 @@ class SmokeRun:
         try:
             service = AdvanceRun(runs, journal, executor, InMemoryQueue(), FailureClassifier())
             plan = (
-                NovelRecipes() if self._brief.kind is BookKind.NOVEL else NonfictionRecipes()
-            ).plan()
+                self._plan
+                or (
+                    NovelRecipes() if self._brief.kind is BookKind.NOVEL else NonfictionRecipes()
+                ).plan()
+            )
+            for name, data in self._sources.items():
+                store.put(RUN_ID, name, data)
             cap = self._brief.budget_micro_usd
             runs.save(BookRun(RUN_ID, self._brief, plan, Budget(cap=cap)))
             rows: list[StageRow] = []

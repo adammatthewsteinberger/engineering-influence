@@ -8,8 +8,10 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from engineering_influence.models.bible_card import BibleCard
     from engineering_influence.models.book_brief import BookBrief
     from engineering_influence.models.book_run import BookRun
+    from engineering_influence.models.source_entry import SourceEntry
 
 
 class LocalBookRunInterface(ABC):
@@ -18,8 +20,21 @@ class LocalBookRunInterface(ABC):
     __slots__ = ()
 
     @abstractmethod
-    def start(self, brief: BookBrief, progress: Callable[[str], None]) -> BookRun:
-        """Create the run and drive it until it finishes or stops; ``progress`` hears one line per stage."""
+    def start(
+        self,
+        brief: BookBrief,
+        progress: Callable[[str], None],
+        sources: tuple[SourceEntry, ...] = (),
+        previous_lock: str | None = None,
+        stop_after: str | None = None,
+        mode: str = "book",
+        bible: tuple[BibleCard, ...] = (),
+        title: str | None = None,
+        previous_script: str | None = None,
+        revision: int = 1,
+        revision_date: str | None = None,
+    ) -> BookRun:
+        """Create the run with its source files and drive it until it finishes or stops; ``progress`` hears one line per stage."""
 
     @abstractmethod
     def resume(self, approve_spend: bool, progress: Callable[[str], None]) -> BookRun:

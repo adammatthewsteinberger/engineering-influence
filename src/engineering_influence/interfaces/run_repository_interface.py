@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from engineering_influence.models.book_run import BookRun
+    from engineering_influence.models.outbox_event import OutboxEvent
 
 
 class RunRepositoryInterface(ABC):
@@ -20,11 +21,27 @@ class RunRepositoryInterface(ABC):
         """Store the run, replacing any earlier state saved under the same id."""
 
     @abstractmethod
+    def save_with_events(self, run: BookRun, events: tuple[OutboxEvent, ...]) -> None:
+        """Store the run and queue the events in one commit: both happen or neither does.
+
+        An event whose id is already queued is skipped, so a retried stage queues each event once.
+        """
+
+    @abstractmethod
     def swap(self, expected: BookRun, replacement: BookRun) -> bool:
         """Store ``replacement`` only if the stored run is still exactly ``expected``.
 
         Returns False, changing nothing, when another worker changed the run first or the run
         was never saved. This is how two deliveries of one stage avoid overwriting each other.
+        """
+
+    @abstractmethod
+    def swap_with_events(
+        self, expected: BookRun, replacement: BookRun, events: tuple[OutboxEvent, ...]
+    ) -> bool:
+        """Like ``swap``, and the events are queued in the same commit, only if the swap stored the replacement.
+
+        When the swap is refused nothing is written, events included, so a delivery that lost the race queues nothing.
         """
 
     @abstractmethod

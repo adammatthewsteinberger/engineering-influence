@@ -1,6 +1,8 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """Chooses what does a run's stages: the offline placeholder, or a model, only when told to."""
 
+import shutil
+import sys
 from collections.abc import Mapping
 from datetime import date
 from pathlib import Path
@@ -18,9 +20,16 @@ from engineering_influence.infrastructure.author.toml_author_profile_loader impo
 from engineering_influence.infrastructure.book_build.temp_project_manuscript_builder import (
     TempProjectManuscriptBuilder,
 )
+from engineering_influence.infrastructure.bundled_scripture import BundledScripture
+from engineering_influence.infrastructure.canon.command_canon_check import CommandCanonCheck
 from engineering_influence.infrastructure.deterministic_stage_executor import (
     DeterministicStageExecutor,
 )
+from engineering_influence.infrastructure.epub.epubcheck_runner import EpubcheckRunner
+from engineering_influence.infrastructure.epub.temporary_screenplay_epub_writer import (
+    TemporaryScreenplayEpubWriter,
+)
+from engineering_influence.infrastructure.epub.zip_epub_package import ZipEpubPackage
 from engineering_influence.infrastructure.models.anthropic_model import AnthropicModel
 from engineering_influence.infrastructure.models.openai_compatible_model import (
     OpenAICompatibleModel,
@@ -31,9 +40,11 @@ from engineering_influence.infrastructure.models.toml_model_catalog_loader impor
 from engineering_influence.infrastructure.models.toml_model_profile_loader import (
     TomlModelProfileLoader,
 )
+from engineering_influence.infrastructure.narration.kokoro_mlx_narrator import KokoroMlxNarrator
 from engineering_influence.infrastructure.prompt_library.toml_prompt_library import (
     TomlPromptLibrary,
 )
+from engineering_influence.infrastructure.publishing.pypdf_pdf_inspector import PypdfPdfInspector
 from engineering_influence.infrastructure.research.brave_search_provider import (
     BraveSearchProvider,
 )
@@ -54,22 +65,36 @@ from engineering_influence.infrastructure.skills.toml_skill_parser import TomlSk
 from engineering_influence.infrastructure.tools.http_mcp_transport_factory import (
     HttpMcpTransportFactory,
 )
+from engineering_influence.infrastructure.tools.interfaces.mcp_server_sandbox_interface import (
+    McpServerSandboxInterface,
+)
+from engineering_influence.infrastructure.tools.mcp_server_sandbox import McpServerSandbox
 from engineering_influence.infrastructure.tools.sha256_file_hasher import Sha256FileHasher
 from engineering_influence.infrastructure.tools.stdio_mcp_transport_factory import (
     StdioMcpTransportFactory,
 )
 from engineering_influence.infrastructure.tools.toml_tool_lock_store import TomlToolLockStore
+from engineering_influence.infrastructure.typesetting.latex_compiler import LatexCompiler
+from engineering_influence.infrastructure.typesetting.latex_screenplay_typesetter import (
+    LatexScreenplayTypesetter,
+)
+from engineering_influence.infrastructure.video.openrouter_video_generator import (
+    OpenRouterVideoGenerator,
+)
 from engineering_influence.interfaces.artifact_store_interface import ArtifactStoreInterface
 from engineering_influence.interfaces.book_publisher_interface import BookPublisherInterface
 from engineering_influence.interfaces.journal_interface import JournalInterface
 from engineering_influence.interfaces.manuscript_builder_interface import ManuscriptBuilderInterface
 from engineering_influence.interfaces.model_interface import ModelInterface
+from engineering_influence.interfaces.narrator_interface import NarratorInterface
 from engineering_influence.interfaces.publish_pipeline_interface import PublishPipelineInterface
 from engineering_influence.interfaces.search_provider_interface import SearchProviderInterface
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
+from engineering_influence.interfaces.source_fetcher_interface import SourceFetcherInterface
 from engineering_influence.interfaces.stage_executor_interface import StageExecutorInterface
 from engineering_influence.interfaces.stage_guidance_interface import StageGuidanceInterface
 from engineering_influence.interfaces.tool_interface import ToolInterface
+from engineering_influence.interfaces.video_generator_interface import VideoGeneratorInterface
 from engineering_influence.models.author_profile import AuthorProfile
 from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.model_profile import ModelProfile
@@ -82,12 +107,21 @@ from engineering_influence.runtime.controller_publish_pipeline import Controller
 from engineering_influence.runtime.interfaces.stage_executor_runtime_interface import (
     StageExecutorRuntimeInterface,
 )
+from engineering_influence.services.acx_export_stage_executor import AcxExportStageExecutor
 from engineering_influence.services.ask_model import AskModel
 from engineering_influence.services.assemble_stage_executor import AssembleStageExecutor
+from engineering_influence.services.audiobook_outline_stage_executor import (
+    AudiobookOutlineStageExecutor,
+)
 from engineering_influence.services.audit_stage_executor import AuditStageExecutor
 from engineering_influence.services.book_config_writer import BookConfigWriter
+from engineering_influence.services.build_screenplay_epub_stage_executor import (
+    BuildScreenplayEpubStageExecutor,
+)
 from engineering_influence.services.build_stage_executor import BuildStageExecutor
 from engineering_influence.services.call_model import CallModel
+from engineering_influence.services.canon_check_stage_executor import CanonCheckStageExecutor
+from engineering_influence.services.canon_finding_parser import CanonFindingParser
 from engineering_influence.services.chapter_cleaner import ChapterCleaner
 from engineering_influence.services.content_policy import ContentPolicy
 from engineering_influence.services.content_policy_stage_executor import (
@@ -99,13 +133,25 @@ from engineering_influence.services.cost_estimator import CostEstimator
 from engineering_influence.services.create_run import CreateRun
 from engineering_influence.services.dash_rewriter import DashRewriter
 from engineering_influence.services.draft_stage_executor import DraftStageExecutor
+from engineering_influence.services.fact_check_stage_executor import FactCheckStageExecutor
+from engineering_influence.services.fact_claim_parser import FactClaimParser
 from engineering_influence.services.fallback_search_provider import FallbackSearchProvider
 from engineering_influence.services.fetch_url_tool import FetchUrlTool
+from engineering_influence.services.fitting_model import FittingModel
+from engineering_influence.services.fountain_answer_screen import FountainAnswerScreen
+from engineering_influence.services.fountain_page_estimate import FountainPageEstimate
+from engineering_influence.services.fountain_parser import FountainParser
 from engineering_influence.services.interfaces.cost_estimator_interface import (
     CostEstimatorInterface,
 )
+from engineering_influence.services.interfaces.tool_server_fleet_interface import (
+    ToolServerFleetInterface,
+)
 from engineering_influence.services.kind_stage_executor import KindStageExecutor
 from engineering_influence.services.local_default_model import LocalDefaultModel
+from engineering_influence.services.lock_shooting_script_stage_executor import (
+    LockShootingScriptStageExecutor,
+)
 from engineering_influence.services.lock_stage_guidance import LockStageGuidance
 from engineering_influence.services.lock_tool_grants import LockToolGrants
 from engineering_influence.services.manuscript_project import ManuscriptProject
@@ -113,7 +159,13 @@ from engineering_influence.services.mcp_client_factory import McpClientFactory
 from engineering_influence.services.mcp_server_launcher import McpServerLauncher
 from engineering_influence.services.mcp_tool_factory import McpToolFactory
 from engineering_influence.services.metadata_parser import MetadataParser
+from engineering_influence.services.model_scene_drafter import ModelSceneDrafter
+from engineering_influence.services.model_scene_reviser import ModelSceneReviser
+from engineering_influence.services.model_source_digester import ModelSourceDigester
 from engineering_influence.services.model_stage_executor import ModelStageExecutor
+from engineering_influence.services.narration_gate import NarrationGate
+from engineering_influence.services.narration_stage_executor import NarrationStageExecutor
+from engineering_influence.services.narration_text import NarrationText
 from engineering_influence.services.no_stage_guidance import NoStageGuidance
 from engineering_influence.services.nonfiction_output_checks import NonfictionOutputChecks
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
@@ -121,12 +173,56 @@ from engineering_influence.services.nonfiction_revision_passes import Nonfiction
 from engineering_influence.services.novel_draft_checks import NovelDraftChecks
 from engineering_influence.services.novel_output_checks import NovelOutputChecks
 from engineering_influence.services.novel_recipes import NovelRecipes
+from engineering_influence.services.novel_revision_passes import NovelRevisionPasses
 from engineering_influence.services.outline_parser import OutlineParser
 from engineering_influence.services.quality_report import QualityReport
 from engineering_influence.services.read_skill_tool import ReadSkillTool
+from engineering_influence.services.reference_parser import ReferenceParser
+from engineering_influence.services.render_screenplay_stage_executor import (
+    RenderScreenplayStageExecutor,
+)
+from engineering_influence.services.revision_report_stage_executor import (
+    RevisionReportStageExecutor,
+)
+from engineering_influence.services.revision_report_writer import RevisionReportWriter
 from engineering_influence.services.revision_stage_executor import RevisionStageExecutor
 from engineering_influence.services.run_tool_loop import RunToolLoop
+from engineering_influence.services.scene_card_list import SceneCardList
+from engineering_influence.services.scene_pass_stage_executor import ScenePassStageExecutor
+from engineering_influence.services.screenplay_assemble_stage_executor import (
+    ScreenplayAssembleStageExecutor,
+)
+from engineering_influence.services.screenplay_assembler import ScreenplayAssembler
+from engineering_influence.services.screenplay_beat_position_check import (
+    ScreenplayBeatPositionCheck,
+)
+from engineering_influence.services.screenplay_bible_context import ScreenplayBibleContext
+from engineering_influence.services.screenplay_dialogue_source_check import (
+    ScreenplayDialogueSourceCheck,
+)
+from engineering_influence.services.screenplay_draft_stage_executor import (
+    ScreenplayDraftStageExecutor,
+)
+from engineering_influence.services.screenplay_epub_package import ScreenplayEpubPackage
+from engineering_influence.services.screenplay_latex_source import ScreenplayLatexSource
+from engineering_influence.services.screenplay_length import ScreenplayLength
+from engineering_influence.services.screenplay_output_checks import ScreenplayOutputChecks
+from engineering_influence.services.screenplay_recipes import ScreenplayRecipes
+from engineering_influence.services.screenplay_revise_stage_executor import (
+    ScreenplayReviseStageExecutor,
+)
+from engineering_influence.services.screenplay_section_check import ScreenplaySectionCheck
+from engineering_influence.services.screenplay_title_parser import ScreenplayTitleParser
+from engineering_influence.services.scripture_checker import ScriptureChecker
+from engineering_influence.services.scripture_draft_checks import ScriptureDraftChecks
+from engineering_influence.services.server_activator import ServerActivator
+from engineering_influence.services.shooting_lock_codec import ShootingLockCodec
+from engineering_influence.services.shooting_lock_planner import ShootingLockPlanner
+from engineering_influence.services.shooting_revision_marks import ShootingRevisionMarks
+from engineering_influence.services.shooting_script_renderer import ShootingScriptRenderer
+from engineering_influence.services.shot_list_builder import ShotListBuilder
 from engineering_influence.services.skill_lock_verifier import SkillLockVerifier
+from engineering_influence.services.source_digest_stage_executor import SourceDigestStageExecutor
 from engineering_influence.services.spend_guard import SpendGuard
 from engineering_influence.services.stage_executor_router import StageExecutorRouter
 from engineering_influence.services.story_bible_parser import StoryBibleParser
@@ -135,6 +231,8 @@ from engineering_influence.services.tool_registry import ToolRegistry
 from engineering_influence.services.tool_runner import ToolRunner
 from engineering_influence.services.tool_server_fleet import ToolServerFleet
 from engineering_influence.services.verbatim_dashes import VerbatimDashes
+from engineering_influence.services.video_cost import VideoCost
+from engineering_influence.services.video_stage_executor import VideoStageExecutor
 from engineering_influence.services.web_search_tool import WebSearchTool
 
 
@@ -180,10 +278,12 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         environment: Mapping[str, str],
         secrets: SecretProviderInterface,
         today: date,
-        request_timeout_seconds: float = 600.0,
+        request_timeout_seconds: float = 1_800.0,
         builder: ManuscriptBuilderInterface | None = None,
+        sandbox: McpServerSandboxInterface | None = None,
     ) -> None:
         self._environment = environment
+        self._sandbox = sandbox or McpServerSandbox(sys.platform, shutil.which, Path.home())
         self._secrets = secrets
         self._today = today
         self._timeout = request_timeout_seconds
@@ -211,8 +311,10 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         self._free = kind == "local"
         model = self._local_model() if self._free else self._model()
         guidance, skill_tools = self._guidance()
-        lock, locked_tools = self._locked_servers()
-        tools = ToolRegistry((*self._tools(), *locked_tools, *skill_tools))
+        lock, fleet = self._locked_servers()
+        search, fetcher = self._research()
+        tools = ToolRegistry((WebSearchTool(search), FetchUrlTool(fetcher), *skill_tools))
+        activator = None if fleet is None else ServerActivator(lock, fleet, tools)
         limits = ToolLoopLimits()
         runner = ToolRunner(tools, journal, limits)
         self._runner = runner
@@ -224,10 +326,15 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         metadata = MetadataParser(dashes)
         profile = self._author_profile()
         revisions = NonfictionRevisionPasses()
+        novel_revisions = NovelRevisionPasses()
         descriptor = model.describe()
         estimator = CostEstimator(
             descriptor,
-            {BookKind.NONFICTION: NonfictionRecipes(), BookKind.NOVEL: NovelRecipes()},
+            {
+                BookKind.NONFICTION: NonfictionRecipes(),
+                BookKind.NOVEL: NovelRecipes(),
+                BookKind.SCREENPLAY: ScreenplayRecipes(),
+            },
             CreateRun.PLANS,
         )
         self._estimator = estimator
@@ -235,20 +342,23 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             artifacts,
             prompts,
             outlines,
-            ContextAssembler(model, prompts.get("context_pack")),
+            ContextAssembler(FittingModel(model), prompts.get("context_pack")),
             loop,
             guidance,
             SpendGuard,
             descriptor.context_window,
             descriptor.max_output_tokens,
             tools,
+            checks=ScriptureDraftChecks(
+                ScriptureChecker(BundledScripture(), ReferenceParser()),
+            ),
         )
         novel_drafter = ContentPolicyStageExecutor(
             DraftStageExecutor(
                 artifacts,
                 prompts,
                 outlines,
-                ContextAssembler(model, prompts.get("novel_context_pack")),
+                ContextAssembler(FittingModel(model), prompts.get("novel_context_pack")),
                 loop,
                 guidance,
                 SpendGuard,
@@ -272,6 +382,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             guidance,
             NonfictionOutputChecks(outlines, metadata),
             SpendGuard,
+            activator,
         )
         novel = ContentPolicyStageExecutor(
             ModelStageExecutor(
@@ -284,31 +395,257 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                 guidance,
                 NovelOutputChecks(StoryBibleParser(), outlines, metadata),
                 SpendGuard,
+                activator,
             ),
             ContentPolicy(),
             descriptor,
         )
+        screenplay = ModelStageExecutor(
+            ScreenplayRecipes(),
+            prompts,
+            artifacts,
+            loop,
+            tools,
+            grants,
+            guidance,
+            ScreenplayOutputChecks(),
+            SpendGuard,
+            activator,
+        )
+        revising: dict[str, dict[BookKind, StageExecutorInterface]] = {}
+        for editing in revisions.passes():
+            revising.setdefault(editing.stage, {})[BookKind.NONFICTION] = RevisionStageExecutor(
+                editing,
+                artifacts,
+                prompts,
+                outlines,
+                loop,
+                guidance,
+                SpendGuard,
+                descriptor.context_window,
+                descriptor.max_output_tokens,
+                tools,
+            )
+        for editing in novel_revisions.passes():
+            # Only the last pass is read against the story bible again: that is the text the book is built from.
+            last = editing.output == novel_revisions.final()
+            revision = RevisionStageExecutor(
+                editing,
+                artifacts,
+                prompts,
+                outlines,
+                loop,
+                guidance,
+                SpendGuard,
+                descriptor.context_window,
+                descriptor.max_output_tokens,
+                tools,
+                voice_source="brief.md",
+                checks=NovelDraftChecks(StoryBibleParser(), ContinuityChecker()) if last else None,
+            )
+            revising.setdefault(editing.stage, {})[BookKind.NOVEL] = ContentPolicyStageExecutor(
+                revision, ContentPolicy(), descriptor
+            )
+        fact_checker = FactCheckStageExecutor(
+            artifacts,
+            prompts,
+            outlines,
+            loop,
+            SpendGuard,
+            search,
+            fetcher,
+            FactClaimParser(),
+            descriptor.max_output_tokens,
+        )
+        manuscript_audit = AuditStageExecutor(
+            artifacts,
+            TempProjectManuscriptAuditor(self._pipeline),
+            ManuscriptProject(artifacts),
+        )
+        default = KindStageExecutor(
+            {
+                BookKind.NONFICTION: nonfiction,
+                BookKind.NOVEL: novel,
+                BookKind.SCREENPLAY: screenplay,
+            }
+        )
         return StageExecutorRouter(
-            KindStageExecutor({BookKind.NONFICTION: nonfiction, BookKind.NOVEL: novel}),
+            default,
             {
                 DraftStageExecutor.STAGE: KindStageExecutor(
-                    {BookKind.NONFICTION: drafter, BookKind.NOVEL: novel_drafter}
+                    {
+                        BookKind.NONFICTION: drafter,
+                        BookKind.NOVEL: novel_drafter,
+                        BookKind.SCREENPLAY: ScreenplayDraftStageExecutor(
+                            artifacts,
+                            ModelSceneDrafter(prompts, loop, SpendGuard),
+                            SceneCardList(),
+                            ScreenplaySectionCheck(FountainParser()),
+                            ScreenplayDialogueSourceCheck(FountainParser()),
+                            FountainAnswerScreen(FountainParser()),
+                            bible=ScreenplayBibleContext(artifacts),
+                        ),
+                    }
                 ),
-                **{
-                    editing.stage: RevisionStageExecutor(
-                        editing,
-                        artifacts,
-                        prompts,
-                        outlines,
-                        loop,
-                        guidance,
-                        SpendGuard,
-                        descriptor.context_window,
-                        descriptor.max_output_tokens,
-                        tools,
-                    )
-                    for editing in revisions.passes()
-                },
+                ScreenplayReviseStageExecutor.STAGE: KindStageExecutor(
+                    {
+                        BookKind.SCREENPLAY: ScreenplayReviseStageExecutor(
+                            artifacts,
+                            ModelSceneReviser(prompts, loop, SpendGuard),
+                            SceneCardList(),
+                            ScreenplaySectionCheck(FountainParser()),
+                            ScreenplayDialogueSourceCheck(FountainParser()),
+                        ),
+                    }
+                ),
+                SourceDigestStageExecutor.STAGE: KindStageExecutor(
+                    {
+                        BookKind.SCREENPLAY: SourceDigestStageExecutor(
+                            artifacts,
+                            ModelSourceDigester(prompts, loop, SpendGuard),
+                        ),
+                    }
+                ),
+                ScreenplayRecipes.STRUCTURE_STAGE: KindStageExecutor(
+                    {
+                        BookKind.SCREENPLAY: ScenePassStageExecutor(
+                            artifacts,
+                            ScreenplayRecipes.STRUCTURE_STAGE,
+                            ModelSceneReviser(
+                                prompts, loop, SpendGuard, "screenplay_pass_structure"
+                            ),
+                            SceneCardList(),
+                            ScreenplaySectionCheck(FountainParser()),
+                            lambda card: card.revised(),
+                            lambda card: card.structured(),
+                        ),
+                    }
+                ),
+                ScreenplayRecipes.DIALOGUE_STAGE: KindStageExecutor(
+                    {
+                        BookKind.SCREENPLAY: ScenePassStageExecutor(
+                            artifacts,
+                            ScreenplayRecipes.DIALOGUE_STAGE,
+                            ModelSceneReviser(
+                                prompts, loop, SpendGuard, "screenplay_pass_dialogue"
+                            ),
+                            SceneCardList(),
+                            ScreenplaySectionCheck(FountainParser()),
+                            lambda card: card.structured(),
+                            lambda card: card.dialogued(),
+                        ),
+                    }
+                ),
+                AudiobookOutlineStageExecutor.STAGE: KindStageExecutor(
+                    {BookKind.NONFICTION: AudiobookOutlineStageExecutor(artifacts)}
+                ),
+                RenderScreenplayStageExecutor.STAGE: KindStageExecutor(
+                    {
+                        BookKind.SCREENPLAY: RenderScreenplayStageExecutor(
+                            artifacts,
+                            ScreenplayLatexSource(FountainParser()),
+                            LatexScreenplayTypesetter(LatexCompiler(), PypdfPdfInspector()),
+                            ScreenplayLength(),
+                        ),
+                    }
+                ),
+                BuildScreenplayEpubStageExecutor.STAGE: KindStageExecutor(
+                    {
+                        BookKind.SCREENPLAY: BuildScreenplayEpubStageExecutor(
+                            artifacts,
+                            ScreenplayEpubPackage(FountainParser()),
+                            TemporaryScreenplayEpubWriter(ZipEpubPackage(), EpubcheckRunner()),
+                        ),
+                    }
+                ),
+                VideoStageExecutor.STAGE: KindStageExecutor(
+                    {
+                        BookKind.SCREENPLAY: VideoStageExecutor(
+                            artifacts,
+                            ShotListBuilder(FountainParser()),
+                            VideoCost(),
+                            self._video_generator(self._environment),
+                        ),
+                    }
+                ),
+                ScreenplayAssembleStageExecutor.STAGE: KindStageExecutor(
+                    {
+                        BookKind.SCREENPLAY: ScreenplayAssembleStageExecutor(
+                            artifacts,
+                            SceneCardList(),
+                            ScreenplayAssembler(FountainParser()),
+                            FountainParser(),
+                            ScreenplayBeatPositionCheck(
+                                FountainPageEstimate(FountainParser()),
+                                ScreenplayOutputChecks.DEFAULT_TARGET_PAGES,
+                            ),
+                            ScreenplayTitleParser(),
+                        ),
+                    }
+                ),
+                LockShootingScriptStageExecutor.STAGE: KindStageExecutor(
+                    {
+                        BookKind.SCREENPLAY: LockShootingScriptStageExecutor(
+                            artifacts,
+                            SceneCardList(),
+                            FountainParser(),
+                            ShootingLockPlanner(),
+                            ShootingLockCodec(),
+                            ShootingScriptRenderer(FountainParser()),
+                            ShootingRevisionMarks(FountainParser()),
+                        ),
+                    }
+                ),
+                RevisionReportStageExecutor.STAGE: KindStageExecutor(
+                    {
+                        BookKind.SCREENPLAY: RevisionReportStageExecutor(
+                            artifacts,
+                            SceneCardList(),
+                            ShootingLockCodec(),
+                            RevisionReportWriter(),
+                        ),
+                    }
+                ),
+                CanonCheckStageExecutor.STAGE: KindStageExecutor(
+                    {
+                        BookKind.SCREENPLAY: CanonCheckStageExecutor(
+                            CommandCanonCheck.from_environment(self._environment),
+                            CanonFindingParser(),
+                            self._environment.get("EI_SCREENPLAY_CANON_BLOCKING", "")
+                            .strip()
+                            .lower()
+                            in ("1", "true", "yes"),
+                        ),
+                    }
+                ),
+                **{stage: KindStageExecutor(by_kind) for stage, by_kind in revising.items()},
+                FactCheckStageExecutor.STAGE: KindStageExecutor(
+                    {BookKind.NONFICTION: fact_checker}
+                ),
+                AcxExportStageExecutor.STAGE: KindStageExecutor(
+                    {
+                        BookKind.NONFICTION: AcxExportStageExecutor(
+                            artifacts,
+                            outlines,
+                            NarrationText(),
+                            MetadataParser(dashes),
+                            profile.author if profile is not None else "",
+                            self._narrator(self._environment),
+                            NarrationGate(),
+                        )
+                    }
+                ),
+                NarrationStageExecutor.STAGE: KindStageExecutor(
+                    {
+                        BookKind.NONFICTION: NarrationStageExecutor(
+                            artifacts,
+                            outlines,
+                            self._narrator(self._environment),
+                            NarrationText(),
+                            NarrationGate(),
+                        )
+                    }
+                ),
                 AssembleStageExecutor.STAGE: KindStageExecutor(
                     {
                         BookKind.NONFICTION: AssembleStageExecutor(
@@ -318,10 +655,10 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                             ChapterCleaner(dashes),
                             BookConfigWriter(),
                             profile,
-                            revisions.final(),
+                            FactCheckStageExecutor.OUTPUT,
                         ),
-                        # A novel has no editing passes yet, so it is assembled from the draft's own chapters,
-                        # and it keeps the dashes its prose has: only non-fiction refuses them.
+                        # A novel is assembled from its last editing pass, and keeps the dashes its prose has:
+                        # only non-fiction refuses them.
                         BookKind.NOVEL: AssembleStageExecutor(
                             artifacts,
                             outlines,
@@ -329,14 +666,16 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                             ChapterCleaner(VerbatimDashes()),
                             BookConfigWriter(),
                             profile,
-                            "chapter",
+                            novel_revisions.final(),
                         ),
                     }
                 ),
-                AuditStageExecutor.STAGE: AuditStageExecutor(
-                    artifacts,
-                    TempProjectManuscriptAuditor(self._pipeline),
-                    ManuscriptProject(artifacts),
+                AuditStageExecutor.STAGE: KindStageExecutor(
+                    {
+                        BookKind.NONFICTION: manuscript_audit,
+                        BookKind.NOVEL: manuscript_audit,
+                    },
+                    fallback=default,
                 ),
                 BuildStageExecutor.STAGE: BuildStageExecutor(
                     artifacts,
@@ -475,15 +814,16 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         guidance = LockStageGuidance(lock, skills, TomlPromptLibrary().get("skill_guidance"))
         return guidance, (ReadSkillTool(skills),)
 
-    def _locked_servers(self) -> tuple[ToolLock, tuple[ToolInterface, ...]]:
-        """The servers in the lock that ``EI_TOOL_LOCK`` names, started and verified, and their tools.
+    def _locked_servers(self) -> tuple[ToolLock, ToolServerFleetInterface | None]:
+        """The servers in the lock that ``EI_TOOL_LOCK`` names: their files verified here, each started when a
+        stage first needs it.
 
         A lock is read only when it is named: a stray file in the working directory starts nothing.
         A server that is not what the lock approved stops the process at start.
         """
         named = self._environment.get("EI_TOOL_LOCK", "").strip()
         if not named:
-            return ToolLock(), ()
+            return ToolLock(), None
         lock = TomlToolLockStore().load(Path(named))
         if lock is None:
             raise ApplicationError(
@@ -497,7 +837,11 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             max_disk_bytes=self.SERVER_DISK_BYTES,
         )
         launcher = McpServerLauncher(
-            StdioMcpTransportFactory(limits, self._environment),
+            StdioMcpTransportFactory(
+                limits,
+                self._environment,
+                self._sandbox,
+            ),
             HttpMcpTransportFactory(
                 self._server_client,
                 PublicHttpsUrlPinner(PublicHttpsUrlPolicy()),
@@ -509,9 +853,9 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             ToolLockVerifier(Sha256FileHasher()),
         )
         fleet = ToolServerFleet(launcher, McpToolFactory())
-        fleet.start(lock)
+        fleet.verify(lock)
         self._fleet = fleet
-        return lock, fleet.tools()
+        return lock, fleet
 
     def _server_client(self) -> httpx.Client:
         """A client for one remote tool server: it owns its connection pool and is closed with the session."""
@@ -519,8 +863,53 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             timeout=httpx.Timeout(self.SERVER_REQUEST_SECONDS, connect=self.CONNECT_TIMEOUT_SECONDS)
         )
 
-    def _tools(self) -> tuple[ToolInterface, ...]:
-        """Search and page reading, which the research stage names."""
+    @staticmethod
+    def _narrator(environment: Mapping[str, str]) -> NarratorInterface | None:
+        """The narrator for the non-Audible audiobook: none unless ``EI_NARRATOR`` names one.
+
+        ``kokoro`` is the built-in engine (Kokoro-82M through mlx-audio, ADR 0014), with the voice ``EI_NARRATOR_VOICE``
+        names. Any other name is refused, rather than producing a book without the audio that was asked for.
+        """
+        name = environment.get("EI_NARRATOR", "").strip()
+        if not name:
+            return None
+        if name == "kokoro":
+            voice = environment.get("EI_NARRATOR_VOICE", "").strip() or "af_heart"
+            return KokoroMlxNarrator(voice)
+        raise ApplicationError(
+            code="NARRATOR_UNAVAILABLE",
+            message=(
+                f"the narrator {name!r} is not in this build: its engine follows the listening test in "
+                "docs/adr/0014-audiobook-narration-uses-kokoro-via-mlx-audio.md"
+            ),
+            http_status=503,
+        )
+
+    @staticmethod
+    def _video_generator(environment: Mapping[str, str]) -> VideoGeneratorInterface | None:
+        """The hosted video model for a screenplay: none unless ``EI_VIDEO_PROVIDER`` names one.
+
+        ``openrouter`` submits each shot to OpenRouter's video API with ``EI_OPENROUTER_API_KEY``. A provider named
+        without its key is refused, rather than a film that quietly skips the video it was asked for.
+        """
+        name = environment.get("EI_VIDEO_PROVIDER", "").strip()
+        if not name:
+            return None
+        key = environment.get("EI_OPENROUTER_API_KEY", "").strip()
+        if name == "openrouter" and key:
+            return OpenRouterVideoGenerator(
+                httpx.Client(timeout=httpx.Timeout(120.0, connect=10.0)), key
+            )
+        raise ApplicationError(
+            code="VIDEO_PROVIDER_UNAVAILABLE",
+            message=(
+                f"the video provider {name!r} needs EI_OPENROUTER_API_KEY and is one of: openrouter"
+            ),
+            http_status=503,
+        )
+
+    def _research(self) -> tuple[SearchProviderInterface, SourceFetcherInterface]:
+        """The web search and the page reader, which the research stage and the fact checker share."""
         client = httpx.Client(
             timeout=httpx.Timeout(
                 self.RESEARCH_TIMEOUT_SECONDS, connect=self.CONNECT_TIMEOUT_SECONDS
@@ -530,7 +919,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         fetcher = HttpSourceFetcher(
             client, PublicHttpsUrlPinner(PublicHttpsUrlPolicy()), HtmlTextExtractor()
         )
-        return (WebSearchTool(self._search(client)), FetchUrlTool(fetcher))
+        return self._search(client), fetcher
 
     def _search(self, client: httpx.Client) -> SearchProviderInterface:
         """SearXNG first when ``EI_SEARXNG_URL`` is set, Brave behind it when its key is set."""

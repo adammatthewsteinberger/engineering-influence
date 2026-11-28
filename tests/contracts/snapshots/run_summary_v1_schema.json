@@ -3,7 +3,8 @@
     "BookKind": {
       "enum": [
         "nonfiction",
-        "novel"
+        "novel",
+        "screenplay"
       ],
       "title": "BookKind",
       "type": "string"

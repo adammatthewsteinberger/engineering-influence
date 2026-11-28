@@ -22,7 +22,7 @@ class Server(OllamaServerInterface):
     def __init__(
         self,
         models: tuple[str, ...] | None = ("gpt-oss:20b",),
-        context: int | None = 32_768,
+        context: int | None = 131_072,
         down: bool = False,
     ) -> None:
         self._models, self._context, self._down = models, context, down
@@ -72,7 +72,7 @@ def test_a_ready_setup_passes_all_four_checks() -> None:
         "ok   local: server: Ollama answers at http://127.0.0.1:11434",
         "ok   local: model: gpt-oss:20b is pulled",
         "ok   local: answers: gpt-oss:20b replied in 3 tokens",
-        "ok   local: context: 32768 tokens, at least the 32768 a prompt is assembled to fit",
+        "ok   local: context: 131072 tokens, at least the 131072 a prompt is assembled to fit",
     ]
 
 
@@ -168,14 +168,14 @@ def test_an_empty_reply_is_a_failure_that_says_why(text: str) -> None:
 def test_a_context_below_what_a_prompt_assumes_is_a_failure_with_the_fix() -> None:
     found = lines(server=Server(context=4096))
     assert found[-1] == (
-        "FAIL local: context: Ollama loaded gpt-oss:20b with a context of 4096, below the 32768 a prompt is "
-        "assembled to fit, and it would cut a prompt short; start Ollama with OLLAMA_CONTEXT_LENGTH=32768"
+        "FAIL local: context: Ollama loaded gpt-oss:20b with a context of 4096, below the 131072 a prompt is "
+        "assembled to fit, and it would cut a prompt short; start Ollama with OLLAMA_CONTEXT_LENGTH=131072"
     )
 
 
 def test_a_context_one_below_fails_and_one_above_passes() -> None:
-    assert lines(server=Server(context=32_767))[-1].startswith("FAIL local: context")
-    assert lines(server=Server(context=32_769))[-1].startswith("ok   local: context")
+    assert lines(server=Server(context=131_071))[-1].startswith("FAIL local: context")
+    assert lines(server=Server(context=131_073))[-1].startswith("ok   local: context")
 
 
 def test_a_context_the_server_does_not_report_cannot_be_checked() -> None:

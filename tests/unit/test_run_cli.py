@@ -96,7 +96,7 @@ class Creator(CreateRunInterface):
         self.failure = failure
         self.briefs: list[BookBrief] = []
 
-    def create(self, brief: BookBrief) -> BookRun:
+    def create(self, brief: BookBrief, servers: tuple[str, ...] | None = None) -> BookRun:
         if self.failure is not None:
             raise self.failure
         self.briefs.append(brief)

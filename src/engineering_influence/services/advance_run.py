@@ -14,6 +14,7 @@ from engineering_influence.models.advance_outcome import AdvanceOutcome
 from engineering_influence.models.book_run import FINISHED, BookRun
 from engineering_influence.models.budget import Budget
 from engineering_influence.models.failure_kind import FailureKind
+from engineering_influence.models.outbox_event import OutboxEvent
 from engineering_influence.models.quality_issue import QualityIssue
 from engineering_influence.models.run_status import RunStatus
 from engineering_influence.models.spend_request import SpendRequest
@@ -21,6 +22,10 @@ from engineering_influence.services.interfaces.advance_run_interface import Adva
 from engineering_influence.services.interfaces.failure_classifier_interface import (
     FailureClassifierInterface,
 )
+from engineering_influence.services.interfaces.run_event_builder_interface import (
+    RunEventBuilderInterface,
+)
+from engineering_influence.services.run_event_builder import RunEventBuilder
 
 DETAIL_LIMIT = 200
 # Runs that wait for a person or for credit: an advance message leaves them alone.
@@ -60,10 +65,12 @@ class AdvanceRun(AdvanceRunInterface):
         queue: QueueInterface,
         classifier: FailureClassifierInterface,
         max_attempts: int = 3,
+        events: RunEventBuilderInterface | None = None,
     ) -> None:
         if max_attempts < 1:
             raise ValueError("a stage needs at least one attempt")
         self._runs = runs
+        self._events = events if events is not None else RunEventBuilder(())
         self._journal = journal
         self._executor = executor
         self._queue = queue
@@ -88,7 +95,7 @@ class AdvanceRun(AdvanceRunInterface):
             return early
         if run.status is RunStatus.PENDING:
             started = run.start()
-            if not await self._swap(run, started):
+            if not await self._swap(run, started, self._events.started(started)):
                 return AdvanceOutcome.SKIPPED
             run = started
         try:
@@ -103,8 +110,11 @@ class AdvanceRun(AdvanceRunInterface):
             settled = settled.with_issue(issue)
         advanced = settled.advance()
         if advanced.status is RunStatus.COMPLETED:
-            return await self._commit(run, advanced, AdvanceOutcome.COMPLETED)
-        outcome = await self._commit(run, advanced, AdvanceOutcome.ADVANCED)
+            done = self._events.phase_completed(run, run.stage) + self._events.completed(advanced)
+            return await self._commit(run, advanced, AdvanceOutcome.COMPLETED, done)
+        outcome = await self._commit(
+            run, advanced, AdvanceOutcome.ADVANCED, self._events.phase_completed(run, run.stage)
+        )
         if outcome is AdvanceOutcome.ADVANCED:
             await self._enqueue(advanced, advanced.stage, 1)
         return outcome
@@ -145,7 +155,12 @@ class AdvanceRun(AdvanceRunInterface):
         code = "stage-failed" if kind is FailureKind.UNRECOVERABLE else "retries-exhausted"
         detail = f"{type(error).__name__}: {error}"[:DETAIL_LIMIT]
         issue = QualityIssue(stage=run.stage, code=code, detail=detail, blocking=True)
-        return await self._commit(run, settled.with_issue(issue).fail(), AdvanceOutcome.FAILED)
+        return await self._commit(
+            run,
+            settled.with_issue(issue).fail(),
+            AdvanceOutcome.FAILED,
+            self._events.failed(run, code),
+        )
 
     async def _awaiting_consent(
         self, run: BookRun, error: SpendConsentNeededError
@@ -157,7 +172,10 @@ class AdvanceRun(AdvanceRunInterface):
             return await self._overspent(run)
         request = SpendRequest(error.requested_micro_usd, run.stage)
         return await self._commit(
-            run, settled.await_consent(request), AdvanceOutcome.AWAITING_CONSENT
+            run,
+            settled.await_consent(request),
+            AdvanceOutcome.AWAITING_CONSENT,
+            self._events.awaiting_gate(run, run.stage),
         )
 
     async def _overspent(self, run: BookRun) -> AdvanceOutcome:
@@ -167,21 +185,32 @@ class AdvanceRun(AdvanceRunInterface):
             detail="the journal records more spend than the run's cap",
             blocking=True,
         )
-        return await self._commit(run, run.with_issue(issue).fail(), AdvanceOutcome.FAILED)
+        return await self._commit(
+            run,
+            run.with_issue(issue).fail(),
+            AdvanceOutcome.FAILED,
+            self._events.failed(run, "budget-exceeded"),
+        )
 
     async def _settled(self, run: BookRun) -> BookRun:
         entries = await asyncio.to_thread(self._journal.entries, run.run_id)
         spent = sum(entry.cost_micro_usd for entry in entries)
         return run.with_budget(Budget(cap=run.budget.cap, spent=spent))
 
-    async def _swap(self, before: BookRun, after: BookRun) -> bool:
-        return await asyncio.to_thread(self._runs.swap, before, after)
+    async def _swap(
+        self, before: BookRun, after: BookRun, events: tuple[OutboxEvent, ...] = ()
+    ) -> bool:
+        return await asyncio.to_thread(self._runs.swap_with_events, before, after, events)
 
     async def _commit(
-        self, before: BookRun, after: BookRun, outcome: AdvanceOutcome
+        self,
+        before: BookRun,
+        after: BookRun,
+        outcome: AdvanceOutcome,
+        events: tuple[OutboxEvent, ...] = (),
     ) -> AdvanceOutcome:
-        """The outcome if this delivery's change was stored, SKIPPED if another delivery won."""
-        return outcome if await self._swap(before, after) else AdvanceOutcome.SKIPPED
+        """The outcome if this delivery's change was stored, with its events, SKIPPED if another delivery won."""
+        return outcome if await self._swap(before, after, events) else AdvanceOutcome.SKIPPED
 
     async def _enqueue(self, run: BookRun, stage: str, attempt: int) -> None:
         await asyncio.to_thread(

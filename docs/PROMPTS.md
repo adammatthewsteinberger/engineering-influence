@@ -1,6 +1,6 @@
 # Prompts
 
-**BLUF:** The prompts are code: nineteen versioned TOML templates, generic, with no author's voice in them. Change
+**BLUF:** The prompts are code: thirty-six versioned TOML templates, generic, with no author's voice in them. Change
 one word and its version must go up, which a locked test enforces. Every blank that takes free text from outside
 (your idea, a web page, an earlier stage's output) is declared untrusted and reaches the model fenced off as data,
 never as instructions. The exceptions are checked numbers and levels, and the skills a person installed, which are
@@ -12,9 +12,9 @@ in `src/engineering_influence/infrastructure/prompt_library/templates/`, one TOM
 is called `templates`, never `prompts`, because the `leak-scan` CI job rejects any path containing
 `prompts/`.
 
-Today nineteen templates ship, the seven `novel_*` ones among them (see [NOVELS.md](NOVELS.md)). `stage_brief`, `stage_positioning`, `stage_research`, `stage_outline` and `stage_metadata` are the
+Today twenty-five templates ship, the ten `novel_*` ones among them (see [NOVELS.md](NOVELS.md)). `stage_brief`, `stage_positioning`, `stage_research`, `stage_outline` and `stage_metadata` are the
 prompts for five of the non-fiction stages; every blank in them that is filled from outside (the author's idea, and what an earlier stage
-wrote) is declared untrusted. `context_pack` (version 2) is the layout of the prompt that drafts one chapter: its fixed system text and the
+wrote) is declared untrusted. `context_pack` (version 3) is the layout of the prompt that drafts one section of a chapter: its fixed system text and the
 labels the context assembler puts between the parts. **Where each part goes is a trust decision**: the system part
 is fixed text, and the voice, the outline and research, the earlier chapters' summaries, the tail of the last chapter
 and this chapter's beats all came from a model or the web, so each is an untrusted blank and reaches the model as its
@@ -72,20 +72,37 @@ its shape (`BookMetadata`). Em and en dashes in it are rewritten before it is re
 | `stage_brief` | 2 | Turns a rough idea into a precise brief for a non-fiction book |
 | `stage_positioning` | 1 | Positions a non-fiction book for its reader, from its brief |
 | `stage_research` | 2 | Researches a non-fiction book on the web with search and page-reading tools |
-| `stage_outline` | 4 | Plans the chapters of a non-fiction book from its brief, positioning and research |
+| `stage_outline` | 5 | Plans the chapters of a non-fiction book from its brief, positioning and research |
 | `stage_metadata` | 1 | Writes the store listing of a non-fiction book: title, subtitle, description, keywords and categories |
-| `context_pack` | 2 | The fixed instructions and the labels for the prompt that drafts one chapter |
+| `context_pack` | 3 | The fixed instructions and the labels for the prompt that drafts one section of a chapter |
 | `stage_summary` | 1 | Summarises one drafted chapter so that later chapters can be written to follow it |
 | `stage_revise_structure` | 2 | Revises the structure of one non-fiction chapter against the outline and the other chapters |
+| `stage_extract_claims` | 1 | Lists the factual claims in one non-fiction chapter that a reader could check against a source, each with a search query |
+| `stage_check_claim` | 1 | Asks whether one web page states a claim, and for the exact words of the page that do |
+| `stage_soften_claims` | 1 | Softens or removes the sentences of one non-fiction chapter that no source supports, changing nothing else |
 | `stage_revise_lines` | 2 | Line-edits one non-fiction chapter for clarity, rhythm and concision in the book's voice |
 | `stage_copy_edit` | 2 | Copy-edits one non-fiction chapter for spelling, grammar, punctuation and consistency |
 | `novel_brief` | 1 | Turns a rough idea into a precise brief for a novel |
 | `novel_story_bible` | 1 | Writes the story bible, as JSON, that every chapter of a novel must agree with |
 | `novel_beats` | 1 | Plans the beats of a whole novel, in story order, from its brief and story bible |
-| `novel_outline` | 1 | Plans the chapters of a novel from its brief, story bible and beats |
+| `screenplay_brief` | 1 | Turns the author's idea into a short screenplay brief: logline, length and the source to adapt |
+| `screenplay_draft_scene` | 2 | Drafts one scene of a screenplay, in Fountain, from its scene card, the source files the card cites, and the anchors and beat sheet |
+| `screenplay_digest_source` | 1 | Condenses one source file for a screenplay: its events, named people and places, plot-carrying dialogue and the numbers used later, in about 250 words |
+| `screenplay_pass_dialogue` | 1 | Dialogue pass over one structured scene of a screenplay: cut lines that explain what the audience can see, keep the lines that carry the plot |
+| `screenplay_pass_structure` | 1 | Structure pass over one revised scene of a screenplay: the scene's card must happen on screen and turn the story toward its next beat |
+| `screenplay_revise_scene` | 1 | Revises one drafted scene of a screenplay: sharper dialogue and a clean format, the same events, about the same length |
+| `screenplay_anchors` | 5 | Writes the anchors of a screenplay: spine, opening and closing images, All Is Lost, what can and cannot be lost, and the structural mode |
+| `screenplay_audit` | 1 | Audits a novel for its screenplay: a verdict on each source file, how each character is internalized, the source each beat comes from, and what the film adds |
+| `screenplay_beats` | 2 | Writes the fifteen-beat sheet of a screenplay: pages, scene, central character and relationship function |
+| `screenplay_scene_cards` | 2 | Writes one scene card per scene, linked causally to the next, placed under a beat, and naming the source files it draws on |
+| `screenplay_visual_grammar` | 1 | Writes the visual grammar of a screenplay: the light, colour and texture of each primary set, and a visual signature for each major character |
+| `novel_outline` | 2 | Plans the chapters of a novel from its brief, story bible and beats |
 | `novel_metadata` | 1 | Writes the store listing of a novel: title, subtitle, blurb, keywords and categories |
-| `novel_context_pack` | 1 | The fixed instructions and the labels for the prompt that drafts one chapter of a novel |
+| `novel_context_pack` | 2 | The fixed instructions and the labels for the prompt that drafts one section of a novel's chapter |
 | `novel_summary` | 1 | Summarises one drafted chapter of a novel so that later chapters can be written to follow it |
+| `novel_revise_story` | 1 | Revises the story of one drafted chapter of a novel: scenes, goals, pacing and the order of its beats |
+| `novel_revise_lines` | 1 | Line-edits one drafted chapter of a novel for rhythm, dialogue and point of view, in the book's voice |
+| `novel_copy_edit` | 1 | Copy-edits one drafted chapter of a novel for spelling, grammar and consistency with the story bible |
 | `skill_guidance` | 2 | Frames the installed skills added to the end of a stage's prompt |
 | `eval_judge` | 1 | Scores a finished book on each dimension of the evaluation rubric, with a reason for every score |
 
@@ -139,8 +156,8 @@ says it is not a source for a fact.
 ## Versions are part of the journal key
 
 A model call's journal key contains the prompt version, so a resumed run reuses an answer only for the same
-prompt. The assembler records `template.identifier()` (`context_pack@2`). A stage with skills enabled adds their identity
-(`stage_outline@4+skill_guidance@2:<digest>`), so a skill's text is part of the key too. Editing a template's text and
+prompt. The assembler records `template.identifier()` (`context_pack@3`). A stage with skills enabled adds their identity
+(`stage_outline@5+skill_guidance@2:<digest>`), so a skill's text is part of the key too. Editing a template's text and
 keeping its version would make a resumed run replay answers written for the old text, so
 `tests/unit/test_prompt_template_lock.py` compares each shipped template with
 `tests/fixtures/prompt_templates.lock.toml`, which pins its version to a fingerprint of everything the
@@ -157,7 +174,7 @@ A new template needs a file, a lock entry and tests that render it.
 
 ## The outline is a format, not just prose
 
-`stage_outline` (version 4) is read by a program: the stage that drafts chapters walks the outline, so the
+`stage_outline` (version 5) is read by a program: the stage that drafts chapters walks the outline, so the
 template tells the model to write each chapter as
 
 ```
@@ -172,6 +189,10 @@ Leads to: one line connecting it to the next chapter
 
 `OutlineParser` reads that strictly, and a check run when the outline stage finishes refuses an answer it cannot
 read before it is stored (`OUTLINE_INVALID`), so a malformed outline stops the run at the outline rather than after
-drafting has been paid for. Chapters are numbered 1, 2, 3 with no gaps (at most 50). A preamble before the first
+drafting has been paid for. Chapters are numbered 1, 2, 3 with no gaps (at most 50). The template also states
+how many chapters to write: a book with a target length gets one chapter per 3,500 words (between 3 and 30), and
+the same check refuses an outline more than 15% away from that number (`OUTLINE_CHAPTER_COUNT`), before drafting
+starts. A brief with no target has no number, and the model chooses. The outline may run to 8,192 tokens, enough for
+about thirty chapters. A preamble before the first
 heading and a closing paragraph after a blank line are ignored. Because it is a contract, changing the template's
 format means changing the parser too ([ADR 0010](adr/0010-chapters-are-drafted-in-order-in-one-stage.md)).

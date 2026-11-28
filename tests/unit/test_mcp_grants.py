@@ -127,3 +127,15 @@ def test_a_lock_lists_what_a_stage_may_call_across_servers_in_server_name_order(
     assert lock.granted("research") == ("alpha__list", "alpha__read", "zed__write")
     assert lock.granted("outline") == ("alpha__read",)
     assert lock.granted("drafting") == () and ToolLock().granted("research") == ()
+
+
+def test_a_lock_lists_only_the_grants_of_the_servers_a_run_selected() -> None:
+    lock = ToolLock(
+        (
+            server("zed", grants=(("research", ("write",)),)),
+            server("alpha", grants=(("research", ("read",)),)),
+        )
+    )
+    assert lock.granted("research", ("zed",)) == ("zed__write",)
+    assert lock.granted("research", ()) == ()
+    assert lock.granted("research", None) == ("alpha__read", "zed__write")

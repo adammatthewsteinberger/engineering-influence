@@ -4,6 +4,10 @@ import os
 import shutil
 from pathlib import Path
 
+# pypdf 7 compares the jbig2dec path its filters module found on import with the default configuration. filters is
+# otherwise imported lazily by the first reader, which can be inside a test that narrows PATH; import it here, before any
+# test runs, so the two always agree.
+import pypdf.filters  # noqa: F401
 import pytest
 from paid_gate import PaidGate
 

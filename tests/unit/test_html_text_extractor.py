@@ -191,4 +191,6 @@ def test_a_page_of_stray_end_tags_is_read_in_time_proportional_to_its_size() -> 
     page = "<b>" * 500 + "</i>" * 1_500_000 + "</b>" * 500 + "text"
     started = time.monotonic()
     assert text(page) == "text"
-    assert time.monotonic() - started < 10.0
+    # The guard is for quadratic work, which would take hours here, not for a slow runner: the linear pass takes about
+    # 11 seconds on a loaded CI machine, so the bound leaves room for that and still catches the regression.
+    assert time.monotonic() - started < 60.0

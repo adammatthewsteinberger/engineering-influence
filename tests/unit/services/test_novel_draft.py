@@ -3,6 +3,7 @@
 import asyncio
 import json
 from collections.abc import Mapping
+from dataclasses import replace
 
 import pytest
 
@@ -18,12 +19,17 @@ from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget import Budget
 from engineering_influence.models.context_plan import ContextPlan
+from engineering_influence.models.draft_recipe import DraftRecipe
 from engineering_influence.models.model_request import ModelRequest
 from engineering_influence.models.quality_issue import QualityIssue
 from engineering_influence.models.stage_report import StageReport
 from engineering_influence.models.tool_loop_result import ToolLoopResult
+from engineering_influence.services.answer_screen import AnswerScreen
 from engineering_influence.services.continuity_checker import ContinuityChecker
 from engineering_influence.services.draft_stage_executor import DraftStageExecutor
+from engineering_influence.services.interfaces.answer_screen_interface import (
+    AnswerScreenInterface,
+)
 from engineering_influence.services.interfaces.context_assembler_interface import (
     ContextAssemblerInterface,
 )
@@ -110,12 +116,24 @@ class Checks(DraftChecksInterface):
         return self._issues
 
 
+class PassScreen(AnswerScreenInterface):
+    """Lets every answer through, so the flow tests are not about length or refusal."""
+
+    def refused(self, text: str) -> bool:
+        return False
+
+    def short(self, text: str, asked_words: int) -> bool:
+        return False
+
+
 class World:
     def __init__(
         self,
         *chapters: str,
         checks: DraftChecksInterface | None = None,
         stored: dict[str, str] | None = None,
+        screen: AnswerScreenInterface | None = None,
+        recipe: DraftRecipe | None = None,
         **brief: str,
     ) -> None:
         self.store = InMemoryArtifactStore()
@@ -132,8 +150,9 @@ class World:
             200_000,
             32_000,
             ToolRegistry(()),
-            NovelRecipes.DRAFT,
+            recipe or NovelRecipes.DRAFT,
             checks or NovelDraftChecks(StoryBibleParser(), ContinuityChecker()),
+            screen=screen or PassScreen(),
         )
         self.run = BookRun(
             "run-1",
@@ -164,7 +183,7 @@ def test_every_chapter_is_drafted_and_summarised_with_the_novel_prompts() -> Non
     drafts = [r for r in world.loop.requests if r.prompt_version.startswith("novel_context_pack")]
     summaries = [r for r in world.loop.requests if r.prompt_version.startswith("novel_summary")]
     assert (len(drafts), len(summaries)) == (2, 2)
-    assert drafts[0].prompt_version == "novel_context_pack@1"
+    assert drafts[0].prompt_version == "novel_context_pack@2"
 
 
 def test_the_prompt_is_built_from_the_brief_the_bible_the_beats_and_the_outline() -> None:
@@ -174,10 +193,10 @@ def test_the_prompt_is_built_from_the_brief_the_bible_the_beats_and_the_outline(
     assert plan.style == f"The author's brief:\nBRIEF: a reunion\n\nThe story bible:\n{BIBLE}"
     assert (
         plan.grounding
-        == f"The whole outline:\n{OUTLINE}\n\nThe beats of the whole novel:\nBEATS: 1. They meet."
+        == "The chapter titles:\nChapter 1: The Car Park\nChapter 2: The Hearing\n\nThe beats of the whole novel:\nBEATS: 1. They meet."
     )
     assert "violence mild, heat sweet" in plan.instruction
-    assert plan.instruction.startswith("Write chapter 1 of 2 now")
+    assert plan.instruction.startswith("Write section 1 of 1 of chapter 1 of 2 now")
 
 
 def test_levels_not_given_are_said_so_in_the_instruction() -> None:
@@ -226,7 +245,10 @@ def test_the_checks_read_every_chapter_in_order_and_the_inputs() -> None:
     world = World("first chapter", "second chapter", checks=checks)
     world.execute()
     ((texts, chapters),) = checks.seen
-    assert chapters == ("first chapter", "second chapter")
+    assert chapters == (
+        "# Chapter 1: The Car Park\n\nfirst chapter",
+        "# Chapter 2: The Hearing\n\nsecond chapter",
+    )
     assert texts["story_bible"] == BIBLE and set(texts) == {
         "brief",
         "story_bible",
@@ -277,3 +299,31 @@ def test_the_novel_checks_turn_each_finding_into_one_issue_of_its_kind() -> None
     ]
     assert all(item.stage == "draft" and not item.blocking for item in found)
     assert found[3].detail.startswith("chapter 3 (timeline): ")
+
+
+def test_a_novel_chapter_far_short_of_its_length_is_reported_as_draft_short() -> None:
+    long_two = " ".join(["word"] * 1_300)
+    world = World(
+        "Tiny.",
+        "Tiny again.",
+        "A summary of one.",
+        long_two,
+        "A summary of two.",
+        screen=AnswerScreen(),
+    )
+    report = world.execute()
+    (issue,) = [item for item in report.issues if item.code == "DRAFT_SHORT"]
+    assert issue.detail == "chapter 1 section 1 has 2 words where about 2500 were asked"
+    assert not issue.blocking
+
+
+def test_an_unsectioned_novel_chapter_is_drafted_in_one_call_and_screened_as_a_whole() -> None:
+    whole = replace(NovelRecipes.DRAFT, sectioned=False)
+    long_two = " ".join(["word"] * 1_300)
+    world = World("Tiny.", "Tiny again.", long_two, recipe=whole, screen=AnswerScreen())
+    report = world.execute()
+    assert [issue.detail for issue in report.issues if issue.code == "DRAFT_SHORT"] == [
+        "chapter 1 has 2 words where about 2500 were asked"
+    ]
+    first_calls = [r for r in world.loop.requests if r.prompt_version == "novel_context_pack@2"]
+    assert len(first_calls) == 2  # one first call per chapter; the retry is its own request

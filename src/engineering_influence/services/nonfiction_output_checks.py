@@ -1,9 +1,11 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 """The checks a non-fiction run makes on what its stages write."""
 
+from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interfaces.stage_output_check_interface import (
     StageOutputCheckInterface,
 )
+from engineering_influence.models.chapter_count import ChapterCount
 from engineering_influence.services.interfaces.metadata_parser_interface import (
     MetadataParserInterface,
 )
@@ -26,9 +28,14 @@ class NonfictionOutputChecks(StageOutputCheckInterface):
         self._outlines = outlines
         self._metadata = metadata
 
-    def check(self, stage: str, text: str) -> None:
+    def check(self, stage: str, text: str, target_words: int | None) -> None:
         """Return when the answer is usable; raise an ApplicationError saying what is wrong when it is not."""
         if stage == self.OUTLINE:
-            self._outlines.parse(text)
+            outline = self._outlines.parse(text)
+            problem = ChapterCount.mismatch(target_words, outline.count())
+            if problem:
+                raise ApplicationError(
+                    code="OUTLINE_CHAPTER_COUNT", message=problem, http_status=422
+                )
         elif stage == self.METADATA:
             self._metadata.parse(text)

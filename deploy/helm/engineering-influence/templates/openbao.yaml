@@ -1,0 +1,80 @@
+{{- if and .Values.openbao.enabled (not .Values.openbao.devMode) (not .Values.openbao.server) }}
+{{- fail "openbao.devMode is false: set openbao.server to the address of an OpenBao you run" }}
+{{- end }}
+{{- if and .Values.openbao.enabled .Values.openbao.devMode }}
+{{- $name := printf "%s-openbao" (include "ei.fullname" .) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "ei.labels" . | nindent 4 }}
+    app.kubernetes.io/component: openbao
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "ei.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: openbao
+  template:
+    metadata:
+      labels:
+        {{- include "ei.labels" . | nindent 8 }}
+        app.kubernetes.io/component: openbao
+    spec:
+      automountServiceAccountToken: false
+      # The image's own user (openbao, uid 100): it starts as non-root, so its entrypoint needs no privilege to switch user.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: openbao
+          image: {{ printf "%s:%s" .Values.openbao.image.repository .Values.openbao.image.tag | quote }}
+          args:
+            - server
+            - -dev
+            - -dev-listen-address=0.0.0.0:8200
+            - -dev-root-token-id=$(EI_OPENBAO_ROOT_TOKEN)
+          env:
+            - name: EI_OPENBAO_ROOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "openbao.bootstrapTokenSecret must name the Secret that holds EI_OPENBAO_ROOT_TOKEN" .Values.openbao.bootstrapTokenSecret }}
+                  key: EI_OPENBAO_ROOT_TOKEN
+          ports:
+            - name: http
+              containerPort: 8200
+          readinessProbe:
+            httpGet:
+              path: /v1/sys/health
+              port: http
+            periodSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "ei.labels" . | nindent 4 }}
+    app.kubernetes.io/component: openbao
+spec:
+  selector:
+    app.kubernetes.io/name: {{ include "ei.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: openbao
+  ports:
+    - name: http
+      port: 8200
+      targetPort: http
+{{- end }}

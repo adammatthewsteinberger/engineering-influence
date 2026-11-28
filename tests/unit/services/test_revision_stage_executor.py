@@ -12,10 +12,10 @@ from engineering_influence.infrastructure.in_memory_artifact_store import InMemo
 from engineering_influence.infrastructure.prompt_library.toml_prompt_library import (
     TomlPromptLibrary,
 )
+from engineering_influence.interfaces.draft_checks_interface import DraftChecksInterface
 from engineering_influence.interfaces.stage_executor_interface import StageExecutorInterface
 from engineering_influence.interfaces.stage_guidance_interface import StageGuidanceInterface
 from engineering_influence.models.book_brief import BookBrief
-from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget import Budget
 from engineering_influence.models.guidance import Guidance
@@ -23,6 +23,7 @@ from engineering_influence.models.model_request import ModelRequest
 from engineering_influence.models.quality_issue import QualityIssue
 from engineering_influence.models.revision_pass import RevisionPass
 from engineering_influence.models.skill import Skill
+from engineering_influence.models.stage_plan import StagePlan
 from engineering_influence.models.stage_report import StageReport
 from engineering_influence.models.tool_loop_result import ToolLoopResult
 from engineering_influence.services.interfaces.run_tool_loop_interface import (
@@ -32,6 +33,8 @@ from engineering_influence.services.interfaces.spend_guard_interface import Spen
 from engineering_influence.services.no_stage_guidance import NoStageGuidance
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 from engineering_influence.services.nonfiction_revision_passes import NonfictionRevisionPasses
+from engineering_influence.services.novel_recipes import NovelRecipes
+from engineering_influence.services.novel_revision_passes import NovelRevisionPasses
 from engineering_influence.services.outline_parser import OutlineParser
 from engineering_influence.services.read_skill_tool import ReadSkillTool
 from engineering_influence.services.revision_stage_executor import RevisionStageExecutor
@@ -116,6 +119,9 @@ class World:
         model_max: int = 32_000,
         guidance: StageGuidanceInterface | None = None,
         tools: ToolRegistry | None = None,
+        voice_source: str = "positioning.md",
+        checks: DraftChecksInterface | None = None,
+        plan: StagePlan | None = None,
     ) -> None:
         self.editing = editing
         self.store = InMemoryArtifactStore()
@@ -133,11 +139,13 @@ class World:
             window,
             model_max,
             tools or ToolRegistry(()),
+            voice_source=voice_source,
+            checks=checks,
         )
         self.run = BookRun(
             run_id="run-1",
-            brief=BookBrief(BookKind.NONFICTION, "bees", CAP),
-            plan=NonfictionRecipes().plan(),
+            brief=(BookBrief((plan or NonfictionRecipes().plan()).kind, "bees", CAP)),
+            plan=plan or NonfictionRecipes().plan(),
             budget=Budget(cap=CAP, spent=7),
             stage=editing.stage,
         )
@@ -359,13 +367,13 @@ def test_an_edit_that_is_blank_or_the_wrong_length_is_not_kept_and_the_chapter_p
         QualityIssue(
             "revise_structure",
             "revision-rejected",
-            f"chapter 1's answer from revise_structure had {len(answer.split()):,} words, outside the "
-            "34 to 52 the chapter allows, so the chapter was kept as it was",
+            "chapter 1: 1 of 1 parts of the answer from revise_structure fell outside the bounds the chapter "
+            "allows, so those parts were kept as they were",
             blocking=False,
         ),
     )
-    assert world.text("revise_structure_rejected_01.md") == f"{len(answer.split())}\n"
-    assert "- Chapter 1: The Hive (43 to 43 words, answer rejected: " in (
+    assert world.text("revise_structure_rejected_01.md") == "1\n"
+    assert "- Chapter 1: The Hive (43 to 43 words, 1 of 1 parts rejected, kept as they were)" in (
         world.text("revise_structure.md") or ""
     )
     assert "- Chapter 2: The Site (43 to 44 words)" in (world.text("revise_structure.md") or "")
@@ -390,8 +398,8 @@ def test_the_rejected_chapters_are_counted_in_the_list_so_a_redelivery_reports_t
     )
     first = world.execute()
     calls = len(world.loop.calls)
-    assert world.text("revise_structure_rejected_01.md") == "2\n"
-    assert world.text("revise_structure_rejected_02.md") == "2\n"
+    assert world.text("revise_structure_rejected_01.md") == "1\n"
+    assert world.text("revise_structure_rejected_02.md") == "1\n"
     second = world.execute(attempt=2)
     assert second.issues == first.issues
     assert len(world.loop.calls) == calls
@@ -543,16 +551,16 @@ def test_a_second_answer_that_is_also_rejected_is_the_one_reported() -> None:
     world = World(STRUCTURE, done("a b c"), done("a b c d"))
     report = world.execute()
     assert world.out(1) == SOURCES[1]
-    assert world.text("revise_structure_rejected_01.md") == "4\n"
+    assert world.text("revise_structure_rejected_01.md") == "1\n"
     assert [issue.code for issue in report.issues] == ["revision-rejected"]
-    assert "had 4 words" in report.issues[0].detail
+    assert "1 of 1 parts" in report.issues[0].detail
 
 
 def test_a_second_answer_that_did_not_finish_leaves_the_first_ones_rejection_standing() -> None:
     world = World(STRUCTURE, done("a b c"), cut())
     report = world.execute()
     assert world.out(1) == SOURCES[1]
-    assert world.text("revise_structure_rejected_01.md") == "3\n"
+    assert world.text("revise_structure_rejected_01.md") == "1\n"
     assert [issue.code for issue in report.issues] == ["revision-rejected"]
 
 
@@ -562,3 +570,109 @@ def test_a_second_ask_that_runs_out_of_money_skips_the_chapter_like_any_other_ca
     assert [world.out(n) for n in (1, 2, 3)] == [SOURCES[n] for n in (1, 2, 3)]
     assert [issue.code for issue in report.issues] == ["revision-skipped-budget"]
     assert len(world.loop.calls) == 2
+
+
+FIRST_HALF = "ALPHA " + "one " * 2_499
+SECOND_HALF = "BRAVO " + "two " * 2_499
+LONG = FIRST_HALF + "\n\n" + SECOND_HALF
+
+
+def long_world(*scripted: ToolLoopResult) -> "World":
+    files = {
+        "outline.md": OUTLINE,
+        "positioning.md": "POSITIONING: the calm guide",
+        "chapter_01.md": LONG,
+        **{f"chapter_{n:02d}.md": text for n, text in SOURCES.items() if n != 1},
+        **{f"summary_{n:02d}.md": text for n, text in SUMMARIES.items()},
+    }
+    return World(STRUCTURE, *scripted, stored=files)
+
+
+def test_a_chapter_longer_than_a_call_is_revised_in_parts_and_rejoined() -> None:
+    world = long_world(done(FIRST_HALF + " edited"), done(SECOND_HALF + " edited"))
+    report = world.execute()
+    first, second = world.loop.calls[0][4], world.loop.calls[1][4]
+    assert "ALPHA" in first.prompt and "BRAVO" not in first.prompt
+    assert "BRAVO" in second.prompt and "ALPHA" not in second.prompt
+    assert world.out(1) == FIRST_HALF + " edited\n\n" + SECOND_HALF + " edited"
+    assert report.issues == ()
+
+
+def test_a_part_whose_answer_is_implausible_keeps_its_own_text_and_the_rest_is_revised() -> None:
+    world = long_world(done(FIRST_HALF + " edited"), done("short"), done("tiny"))
+    report = world.execute()
+    assert world.out(1) == FIRST_HALF + " edited\n\n" + SECOND_HALF
+    assert world.text("revise_structure_rejected_01.md") == "1\n"
+    assert [issue.code for issue in report.issues] == ["revision-rejected"]
+    assert "1 of 2 parts" in report.issues[0].detail
+
+
+NOVEL_STORY, NOVEL_LINES, NOVEL_COPY = NovelRevisionPasses.PASSES
+
+
+def test_a_novel_pass_is_told_the_brief_as_its_voice_and_the_bible() -> None:
+    stored = {
+        "outline.md": OUTLINE,
+        "brief.md": "BRIEF: close third person, past tense",
+        "story_bible.md": "BIBLE: Ana, aged 30",
+        "chapter_01.md": "# Chapter 1: The Hive\n\nAna walked.",
+        "chapter_02.md": "# Chapter 2: The Site\n\nShe waited.",
+        "chapter_03.md": "# Chapter 3: The Suit\n\nThey left.",
+        **{f"summary_{n:02d}.md": text for n, text in SUMMARIES.items()},
+    }
+    world = World(
+        NOVEL_STORY,
+        done("# Chapter 1: The Hive\n\nAna walked."),
+        done("# Chapter 2: The Site\n\nShe waited."),
+        done("# Chapter 3: The Suit\n\nThey left."),
+        stored=stored,
+        voice_source="brief.md",
+        plan=NovelRecipes().plan(),
+    )
+    world.execute()
+    prompt = world.loop.calls[0][4].prompt
+    assert "BRIEF: close third person, past tense" in prompt
+    assert "BIBLE: Ana, aged 30" in prompt
+
+
+class RecordingChecks(DraftChecksInterface):
+    def __init__(self) -> None:
+        self.seen: list[tuple[dict[str, str], tuple[str, ...]]] = []
+
+    def issues(self, texts, chapters):  # type: ignore[no-untyped-def]
+        self.seen.append((dict(texts), tuple(chapters)))
+        return (
+            QualityIssue(
+                "draft", "CONTINUITY_NAME", "Katherine is spelled two ways", blocking=False
+            ),
+        )
+
+
+def test_the_continuity_checks_read_the_edited_chapters_against_the_bible() -> None:
+    checks = RecordingChecks()
+    stored = {
+        "outline.md": OUTLINE,
+        "story_bible.md": "BIBLE",
+        **{f"lines_{n:02d}.md": text for n, text in SOURCES.items()},
+        **{f"summary_{n:02d}.md": text for n, text in SUMMARIES.items()},
+    }
+    world = World(
+        NOVEL_COPY, *(done(SOURCES[n] + " fixed") for n in (1, 2, 3)), stored=stored, checks=checks
+    )
+    report = world.execute()
+    texts, chapters = checks.seen[0]
+    assert texts == {"story_bible": "BIBLE"}
+    assert chapters[0] == SOURCES[1] + " fixed"
+    assert [issue.code for issue in report.issues if issue.code == "CONTINUITY_NAME"] == [
+        "CONTINUITY_NAME"
+    ]
+
+
+def test_the_novel_passes_are_three_and_the_book_is_assembled_from_the_last() -> None:
+    assert [editing.stage for editing in (NOVEL_STORY, NOVEL_LINES, NOVEL_COPY)] == [
+        "revise_story",
+        "revise_lines",
+        "copy_edit",
+    ]
+    assert NovelRevisionPasses().final() == "copy"
+    assert "bible" in NOVEL_COPY.blanks and "voice" in NOVEL_STORY.blanks

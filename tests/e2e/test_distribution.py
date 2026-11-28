@@ -316,9 +316,27 @@ def test_the_prompt_templates_are_installed_and_load_without_any_extra(
     )
 
     assert result.stdout.strip() == (
-        "['context_pack', 'eval_judge', 'novel_beats', 'novel_brief', 'novel_context_pack', 'novel_metadata', 'novel_outline', "
-        "'novel_story_bible', 'novel_summary', 'skill_guidance', 'stage_brief', 'stage_copy_edit', "
-        "'stage_metadata', "
+        "['context_pack', 'eval_judge', 'novel_beats', 'novel_brief', 'novel_context_pack', 'novel_copy_edit', "
+        "'novel_metadata', 'novel_outline', 'novel_revise_lines', 'novel_revise_story', 'novel_story_bible', "
+        "'novel_summary', 'screenplay_anchors', 'screenplay_audit', 'screenplay_beats', 'screenplay_brief', "
+        "'screenplay_digest_source', 'screenplay_draft_scene', 'screenplay_pass_dialogue', 'screenplay_pass_structure', 'screenplay_revise_scene', 'screenplay_scene_cards', 'screenplay_visual_grammar', 'skill_guidance', "
+        "'stage_brief', 'stage_check_claim', 'stage_copy_edit', "
+        "'stage_extract_claims', 'stage_metadata', "
         "'stage_outline', 'stage_positioning', 'stage_research', 'stage_revise_lines', "
-        "'stage_revise_structure', 'stage_summary'] context_pack@2"
+        "'stage_revise_structure', 'stage_soften_claims', 'stage_summary'] context_pack@3"
     )
+
+
+def test_the_bundled_scripture_is_installed_and_reads_offline(dist: Path, clean_env: Path) -> None:
+    install(clean_env, str(wheel(dist)))
+
+    result = run(
+        clean_env / "bin" / "python",
+        "-c",
+        "from engineering_influence.infrastructure.bundled_scripture import BundledScripture;"
+        "from engineering_influence.models.verse_ref import VerseRef;"
+        "scripture = BundledScripture();"
+        "print(scripture.translations(), scripture.text('bsb', (VerseRef('JHN', 3, 16),)) is not None)",
+    )
+
+    assert result.stdout.strip() == "('asv', 'bsb', 'dra', 'kjv', 'web', 'ylt') True"

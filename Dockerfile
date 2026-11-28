@@ -16,7 +16,8 @@ COPY packages ./packages
 COPY src ./src
 # Locked and non-editable: the runtime image gets exactly the versions in uv.lock. The publishing extra is
 # here so the TeX worker can run book commands; it is a few tens of megabytes beside the TeX packages.
-RUN uv sync --frozen --no-dev --no-editable --extra api --extra runtime --extra publishing
+# The cache mount keeps downloaded wheels between builds, so a change to the source does not download them again.
+RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-dev --no-editable --extra api --extra runtime --extra publishing --extra s3 --extra tracing
 
 # The TeX worker. The packages are the ones the CI toolchain job installs, plus zip and tidy: the CI runners
 # already have zip, and tex4ebook needs it to pack an EPUB. Recommended packages are not installed.
@@ -25,7 +26,7 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       latexmk texlive-luatex texlive-latex-recommended texlive-latex-extra \
       texlive-pictures texlive-fonts-recommended texlive-plain-generic \
-      texlive-extra-utils poppler-utils epubcheck default-jre-headless zip tidy \
+      texlive-extra-utils poppler-utils epubcheck default-jre-headless zip tidy fonts-texgyre \
  && rm -rf /var/lib/apt/lists/*
 RUN useradd --system --uid 10001 --no-create-home --shell /usr/sbin/nologin app
 COPY --from=build /app/.venv /app/.venv
@@ -40,10 +41,18 @@ CMD ["serve", "worker"]
 
 # The slim image. Last, so it stays the default target.
 FROM python:3.13-slim
-# procps provides ps, which the worker uses to measure a tool's memory; the slim base does not include it.
+# procps provides ps, which the worker uses to measure a tool's memory; the slim base does not include it. The upgrade
+# applies Debian's security fixes to the base packages (the trivy gate in CI fails on fixable HIGH and CRITICAL findings).
 RUN apt-get update \
+ && apt-get upgrade -y --no-install-recommends \
  && apt-get install -y --no-install-recommends procps \
  && rm -rf /var/lib/apt/lists/*
+# The app runs from /app/.venv, so the base image's bundled pip and setuptools are not needed here. Removing them also
+# removes the copies of urllib3 and msgpack that pip vendors, which the scanner reports for the base image.
+RUN rm -rf /usr/local/lib/python3.13/ensurepip \
+ && rm -rf /usr/local/lib/python3.13/site-packages/pip /usr/local/lib/python3.13/site-packages/pip-*.dist-info \
+ && rm -rf /usr/local/lib/python3.13/site-packages/setuptools /usr/local/lib/python3.13/site-packages/setuptools-*.dist-info \
+ && rm -f /usr/local/bin/pip /usr/local/bin/pip3 /usr/local/bin/pip3.13
 RUN useradd --system --uid 10001 --no-create-home --shell /usr/sbin/nologin app
 COPY --from=build /app/.venv /app/.venv
 ENV PATH="/app/.venv/bin:${PATH}" PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1

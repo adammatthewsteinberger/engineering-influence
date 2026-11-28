@@ -19,6 +19,9 @@ from engineering_influence.errors.transient_stage_error import TransientStageErr
 from engineering_influence.infrastructure.process.interfaces.process_meter_interface import (
     ProcessMeterInterface,
 )
+from engineering_influence.infrastructure.tools.interfaces.mcp_server_sandbox_interface import (
+    McpServerSandboxInterface,
+)
 from engineering_influence.infrastructure.tools.stdio_mcp_transport import StdioMcpTransport
 from engineering_influence.infrastructure.tools.stdio_mcp_transport_factory import (
     StdioMcpTransportFactory,
@@ -46,12 +49,19 @@ class Meter(ProcessMeterInterface):
         return self.disk
 
 
+class Unconfined(McpServerSandboxInterface):
+    """A sandbox that changes nothing: these tests exercise the transport, not the confinement."""
+
+    def wrap(self, command: tuple[str, ...], workdir: Path) -> tuple[str, ...]:
+        return command
+
+
 def factory(
     limits: ToolLimits = ROOMY,
     environ: Mapping[str, str] | None = None,
     meter: ProcessMeterInterface | None = None,
 ) -> StdioMcpTransportFactory:
-    return StdioMcpTransportFactory(limits, environ or {}, meter, sample_seconds=0.05)
+    return StdioMcpTransportFactory(limits, environ or {}, Unconfined(), meter, sample_seconds=0.05)
 
 
 @contextmanager
@@ -342,7 +352,7 @@ def test_the_sampling_interval_is_more_than_zero() -> None:
 
 
 def test_the_default_meter_runs_and_a_modest_server_stays_inside_the_limits() -> None:
-    real = StdioMcpTransportFactory(ROOMY, {}, None, 0.05)
+    real = StdioMcpTransportFactory(ROOMY, {}, Unconfined(), None, 0.05)
     transport = real.open((sys.executable, str(SERVER)), ())
     try:
         time.sleep(0.3)
@@ -449,3 +459,22 @@ def test_a_group_that_is_already_gone_is_not_an_error_whatever_the_platform_call
     transport.close()
     assert kills.calls
     transport.close()
+
+
+class Refusing(McpServerSandboxInterface):
+    def __init__(self) -> None:
+        self.workdirs: list[Path] = []
+
+    def wrap(self, command: tuple[str, ...], workdir: Path) -> tuple[str, ...]:
+        self.workdirs.append(workdir)
+        raise ApplicationError(code="SANDBOX_UNAVAILABLE", message="no sandbox", http_status=503)
+
+
+def test_a_refused_sandbox_refuses_the_start_and_removes_its_directory() -> None:
+    refusing = Refusing()
+    with pytest.raises(ApplicationError) as raised:
+        StdioMcpTransportFactory(ROOMY, {}, refusing, None, 0.05).open(
+            (sys.executable, str(SERVER)), ()
+        )
+    assert raised.value.code == "SANDBOX_UNAVAILABLE"
+    assert len(refusing.workdirs) == 1 and not refusing.workdirs[0].exists()

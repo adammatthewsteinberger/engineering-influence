@@ -92,10 +92,17 @@ def test_the_editing_passes_are_optional_and_everything_else_is_essential() -> N
         "revise_structure",
         "revise_lines",
         "copy_edit",
+        "fact_check",
+        "audiobook",
+        "narration",
     }
-    assert not any(
-        essential is False for name, (_, essential) in by_stage(brief(BookKind.NOVEL)).items()
-    )
+    assert {
+        name for name, (_, essential) in by_stage(brief(BookKind.NOVEL)).items() if not essential
+    } == {
+        "revise_story",
+        "revise_lines",
+        "copy_edit",
+    }
 
 
 def test_a_planning_stage_is_priced_from_its_recipe_with_a_share_of_the_output_cap() -> None:

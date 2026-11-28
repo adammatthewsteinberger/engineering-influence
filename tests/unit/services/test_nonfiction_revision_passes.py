@@ -22,8 +22,9 @@ def test_the_passes_are_structure_then_lines_then_copy_and_match_the_plan() -> N
     assert [p.stage for p in PASSES.passes()] == ["revise_structure", "revise_lines", "copy_edit"]
     assert tuple(p.stage for p in PASSES.passes()) == NonfictionRecipes.REVISION_STAGES
     plan = NonfictionRecipes().plan().stages
-    assert (
-        plan[plan.index("draft") + 1 : plan.index("assemble")] == NonfictionRecipes.REVISION_STAGES
+    assert plan[plan.index("draft") + 1 : plan.index("assemble")] == (
+        *NonfictionRecipes.REVISION_STAGES,
+        NonfictionRecipes.FACT_STAGE,
     )
 
 

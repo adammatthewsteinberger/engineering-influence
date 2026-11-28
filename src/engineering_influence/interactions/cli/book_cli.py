@@ -8,6 +8,8 @@ import json
 import sys
 import tomllib
 from collections.abc import Callable, Mapping
+from contextlib import AbstractContextManager, nullcontext
+from datetime import date
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -16,13 +18,16 @@ from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 from engineering_influence.errors.typesetting.manuscript_error import ManuscriptError
 from engineering_influence.interactions.cli.interfaces.book_cli_interface import BookCliInterface
+from engineering_influence.interfaces.keep_awake_interface import KeepAwakeInterface
 from engineering_influence.interfaces.local_book_creator_interface import (
     LocalBookCreatorInterface,
 )
+from engineering_influence.models.bible_card import BibleCard
 from engineering_influence.models.book_brief import BookBrief
 from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.run_status import RunStatus
+from engineering_influence.models.source_entry import SourceEntry
 
 if TYPE_CHECKING:
     from engineering_influence.controllers.publishing_controller import PublishingController
@@ -43,9 +48,17 @@ class BookCli(BookCliInterface):
         self,
         controller_for: Callable[[Path], PublishingController],
         creator_for: Callable[[Path, Mapping[str, str]], LocalBookCreatorInterface],
+        keep_awake: KeepAwakeInterface,
+        read_sources: Callable[[Path], tuple[SourceEntry, ...]],
+        read_bible: Callable[[Path], tuple[BibleCard, ...]],
+        read_title: Callable[[Path], str | None],
     ) -> None:
         self._controller_for = controller_for
         self._creator_for = creator_for
+        self._keep_awake = keep_awake
+        self._read_sources = read_sources
+        self._read_bible = read_bible
+        self._read_title = read_title
 
     def register(self, subparsers: Any) -> None:
         """Add the `book` command and its subcommands."""
@@ -91,6 +104,46 @@ class BookCli(BookCliInterface):
             "--out", type=Path, required=True, help="a new or empty folder for the book"
         )
         create.add_argument(
+            "--source",
+            type=Path,
+            help="a folder of source files (.md, .txt) the run adapts; each file is kept in the run",
+        )
+        create.add_argument(
+            "--bible",
+            type=Path,
+            help="a bible folder of TOML cards (ADR 0018) the screenplay's scenes draw on by name (screenplay runs only)",
+        )
+        create.add_argument(
+            "--mode",
+            choices=["book", "audiobook"],
+            default="book",
+            help="book (the default) writes a book from an idea; audiobook narrates a finished nonfiction manuscript given with --source, one chapter per file",
+        )
+        create.add_argument(
+            "--stop-after",
+            help="stop the run after this stage, for example scene_cards; the stages after it are not run",
+        )
+        create.add_argument(
+            "--previous-lock",
+            type=Path,
+            help="the shooting_lock.json of an earlier run, so its scene numbers carry over (screenplay runs only)",
+        )
+        create.add_argument(
+            "--previous-script",
+            type=Path,
+            help="the shooting_script.fountain of an earlier run: the baseline a revision's changed scenes are marked against (screenplay runs only)",
+        )
+        create.add_argument(
+            "--revision-date",
+            help="the date printed on the revision pages, YYYY-MM-DD (with --previous-script; default today)",
+        )
+        create.add_argument(
+            "--revision",
+            type=int,
+            default=1,
+            help="the revision number of this run, 1 for Blue, 2 for Pink, and so on (with --previous-script)",
+        )
+        create.add_argument(
             "--budget-usd", help="the most the run may spend, in dollars (no default)"
         )
         create.add_argument("--profile", type=Path, help="the author's details and pricing (TOML)")
@@ -113,6 +166,11 @@ class BookCli(BookCliInterface):
             "--ignore-estimate",
             action="store_true",
             help="start even if the budget is below what the book is expected to cost",
+        )
+        create.add_argument(
+            "--no-keep-awake",
+            action="store_true",
+            help="do not hold the computer awake while the book is made",
         )
         create.add_argument(
             "--approve-spend",
@@ -199,17 +257,72 @@ class BookCli(BookCliInterface):
                 creator, brief, arguments.ignore_estimate
             ):
                 return 2
-            run = (
-                creator.resume(arguments.approve_spend, progress)
-                if brief is None
-                else creator.start(brief, progress)
-            )
+            with self._awake(arguments):
+                run = (
+                    creator.resume(arguments.approve_spend, progress)
+                    if brief is None
+                    else creator.start(
+                        brief,
+                        progress,
+                        self._sources(arguments.source),
+                        self._previous_lock(arguments.previous_lock),
+                        arguments.stop_after,
+                        arguments.mode,
+                        bible=self._bible(arguments.bible),
+                        title=self._title(arguments.source),
+                        previous_script=self._previous_script(arguments.previous_script),
+                        revision=arguments.revision,
+                        revision_date=self._revision_date(arguments),
+                    )
+                )
             return self._finish(creator, run, arguments.out, state)
         except ApplicationError as error:
             print(f"error: {error.message}", file=sys.stderr)
             return 2
         finally:
             creator.close()
+
+    @staticmethod
+    def _revision_date(arguments: argparse.Namespace) -> str | None:
+        """The revision's date: the one given, else today's when a previous script is given, else none."""
+        given: str | None = arguments.revision_date
+        if given is not None:
+            return given
+        return date.today().isoformat() if arguments.previous_script is not None else None
+
+    @staticmethod
+    def _previous_script(path: Path | None) -> str | None:
+        """The previous run's shooting script as text, the baseline its revision is marked against, or none."""
+        return None if path is None else path.read_text(encoding="utf-8")
+
+    @staticmethod
+    def _previous_lock(path: Path | None) -> str | None:
+        """The previous run's shooting script lock, as text, or none when no lock file was given."""
+        return None if path is None else path.read_text(encoding="utf-8")
+
+    def _bible(self, folder: Path | None) -> tuple[BibleCard, ...]:
+        """The bible folder's cards, checked, or none when no folder was given."""
+        if folder is None:
+            return ()
+        return self._read_bible(folder)
+
+    def _title(self, folder: Path | None) -> str | None:
+        """The source folder's title.toml, checked, or none when there is no folder or no file."""
+        if folder is None:
+            return None
+        return self._read_title(folder)
+
+    def _sources(self, folder: Path | None) -> tuple[SourceEntry, ...]:
+        """The folder's source files, numbered and pinned, or none when no folder was given."""
+        if folder is None:
+            return ()
+        return self._read_sources(folder)
+
+    def _awake(self, arguments: argparse.Namespace) -> AbstractContextManager[None]:
+        """The keep-awake hold for the run, or nothing when the author asked for none."""
+        if arguments.no_keep_awake:
+            return nullcontext()
+        return self._keep_awake.hold()
 
     @staticmethod
     def _check_out(out: Path, state: Path, resuming: bool) -> None:

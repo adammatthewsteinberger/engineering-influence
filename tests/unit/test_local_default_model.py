@@ -35,7 +35,7 @@ def test_the_default_is_gpt_oss_on_ollama_at_no_cost() -> None:
     )
     assert not profile.requires_key()
     assert (descriptor.provider, descriptor.model) == ("local", "gpt-oss:20b")
-    assert (descriptor.context_window, descriptor.max_output_tokens) == (32_768, 8_192)
+    assert (descriptor.context_window, descriptor.max_output_tokens) == (131_072, 8_192)
     assert descriptor.usage_policy_url == "https://huggingface.co/openai/gpt-oss-20b"
     assert descriptor.price_effective == "2026-01-01"
 

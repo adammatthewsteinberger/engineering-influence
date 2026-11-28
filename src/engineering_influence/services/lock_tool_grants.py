@@ -15,6 +15,6 @@ class LockToolGrants(ToolGrantsInterface):
     def __init__(self, lock: ToolLock) -> None:
         self._lock = lock
 
-    def for_stage(self, stage: str) -> tuple[str, ...]:
+    def for_stage(self, stage: str, servers: tuple[str, ...] | None = None) -> tuple[str, ...]:
         """The model names of the tools granted to the stage; none when it has no grant."""
-        return self._lock.granted(stage)
+        return self._lock.granted(stage, servers)

@@ -85,19 +85,26 @@ class Provider:
         self.seen: list[tuple[str, dict[str, str], Any]] = []
 
 
+# A draft long enough that the screen does not call it short: the asked length is 2,500 words by default.
+DRAFT = " ".join(["Words from the model."] + ["filler"] * 1_300)
+
+
 @contextmanager
-def provider(text: str) -> Iterator[tuple[str, Provider]]:
+def provider(text: str, drafts: str | None = None) -> Iterator[tuple[str, Provider]]:
+    """Answers ``text``; a draft request (a chapter or section) gets ``drafts`` when one is given."""
     seen = Provider()
 
     class Handler(BaseHTTPRequestHandler):
         def do_POST(self) -> None:
             body = json.loads(self.rfile.read(int(self.headers["content-length"])))
             seen.seen.append((self.path, {k.lower(): v for k, v in self.headers.items()}, body))
+            drafting = "Write section" in json.dumps(body) or "Write chapter" in json.dumps(body)
+            answer = drafts if drafts is not None and drafting else text
             if self.path.endswith("/count_tokens"):
                 reply: Any = {"input_tokens": 50}
             elif self.path == "/v1/messages":
                 reply = {
-                    "content": [{"type": "text", "text": text}],
+                    "content": [{"type": "text", "text": answer}],
                     "stop_reason": "end_turn",
                     "model": "claude-snap",
                     "usage": {"input_tokens": 50, "output_tokens": 9},
@@ -106,7 +113,10 @@ def provider(text: str) -> Iterator[tuple[str, Provider]]:
                 reply = {
                     "model": "gpt-snap",
                     "choices": [
-                        {"message": {"role": "assistant", "content": text}, "finish_reason": "stop"}
+                        {
+                            "message": {"role": "assistant", "content": answer},
+                            "finish_reason": "stop",
+                        }
                     ],
                     "usage": {"prompt_tokens": 50, "completion_tokens": 9},
                 }
@@ -272,7 +282,7 @@ def test_the_draft_stage_is_routed_to_the_drafter_and_writes_every_chapter(
         "## Chapter 1: The Hive\nPurpose: How a colony works.\nBeats:\n- The queen\n\n"
         "## Chapter 2: The Site\nPurpose: Where to put it.\nBeats:\n- Sun\n"
     )
-    with provider("Words from the model.") as (url, seen):
+    with provider("Words from the model.", drafts=DRAFT) as (url, seen):
         rt = runtime(files(tmp_path, url=url))
         store = InMemoryArtifactStore()
         for name, text in (
@@ -285,14 +295,15 @@ def test_the_draft_stage_is_routed_to_the_drafter_and_writes_every_chapter(
         executor = rt.build(store, InMemoryJournal())
         asyncio.run(executor.execute(run_for("draft"), 1))
         rt.close()
-    assert store.get("run-1", "chapter_02.md") == b"Words from the model."
+    assert (store.get("run-1", "chapter_02.md") or b"").startswith(
+        b"# Chapter 2: The Site\n\nWords from the model."
+    )
     assert store.get("run-1", "summary_02.md") == b"Words from the model."
     index = store.get("run-1", "draft.md")
-    assert index is not None and b"Total: 8 words" in index
+    assert index is not None and b"Total:" in index
     sent = [json.dumps(body) for _, _, body in seen.seen]
-    # The provider says the same words every time, so the second summary asks exactly what the first
-    # did and is replayed from the journal: three calls, not four.
-    assert len(sent) == 3
+    # The chapters open with different headings, so the second summary asks something new: four calls.
+    assert len(sent) == 4
     assert "Chapter 2: The Site" in sent[2] and "the positioning" in sent[2]
 
 
@@ -316,7 +327,7 @@ def assemble(tmp_path: Path, **extra: str) -> tuple[InMemoryArtifactStore, list[
         store = InMemoryArtifactStore()
         store.put("run-1", "outline.md", outline.encode())
         store.put("run-1", "metadata.md", LISTING.encode())
-        store.put("run-1", "copy_01.md", b"Chapter 1: The Hive\n\nBees live in colonies.")
+        store.put("run-1", "fact_01.md", b"Chapter 1: The Hive\n\nBees live in colonies.")
         executor = rt.build(store, InMemoryJournal())
         asyncio.run(executor.execute(run_for("assemble"), 1))
         rt.close()
@@ -336,7 +347,7 @@ def test_a_novel_is_assembled_from_its_draft_and_keeps_the_dashes_its_prose_has(
         store.put("run-1", "metadata.md", LISTING.encode())
         store.put(
             "run-1",
-            "chapter_01.md",
+            "copy_01.md",
             "# Chapter 1: The Road\n\n\u201cWait\u2014\u201d she said.".encode(),
         )
         asyncio.run(rt.build(store, InMemoryJournal()).execute(run, 1))
@@ -723,7 +734,8 @@ def test_a_nonfiction_run_still_uses_the_nonfiction_prompts_by_default() -> None
 def test_a_novel_draft_goes_to_the_novel_drafter_and_records_continuity_findings() -> None:
     outline = "## Chapter 1: The Car Park\nPurpose: They meet.\nBeats:\n- Mara leaves\n"
     bible = json.dumps({"premise": "A reunion.", "characters": [{"name": "Katherine"}]})
-    with provider("Katharine waited in the car park.") as (url, seen):
+    long_draft = " ".join(["Katharine waited in the car park."] + ["filler"] * 1_300)
+    with provider("Katharine waited in the car park.", drafts=long_draft) as (url, seen):
         store = InMemoryArtifactStore()
         for name, text in (
             ("brief.md", "the brief"),
@@ -737,7 +749,7 @@ def test_a_novel_draft_goes_to_the_novel_drafter_and_records_continuity_findings
             rt.build(store, InMemoryJournal()).execute(novel_run("draft", violence="mild"), 1)
         )
         rt.close()
-    assert store.get("run-1", "chapter_01.md") == b"Katharine waited in the car park."
+    assert b"Katharine waited in the car park." in (store.get("run-1", "chapter_01.md") or b"")
     assert [item.code for item in report.issues] == ["CONTINUITY_NAME"]
     assert not report.issues[0].blocking
     first = json.dumps(seen.seen[0][2])

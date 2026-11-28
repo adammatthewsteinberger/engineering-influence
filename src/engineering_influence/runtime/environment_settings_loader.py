@@ -36,6 +36,11 @@ class EnvironmentSettingsLoader(EnvironmentSettingsLoaderInterface):
         level = self._text("EI_LOG_LEVEL", "INFO").upper()
         if level not in _LEVELS:
             raise ValueError(f"EI_LOG_LEVEL must be one of {', '.join(sorted(_LEVELS))}")
+        webhook_urls = self._urls()
+        store = self._text("EI_ARTIFACT_STORE", "database").lower()
+        if store not in ("database", "s3"):
+            raise ValueError("EI_ARTIFACT_STORE must be database or s3")
+        s3 = store == "s3"
         return AppSettings(
             database_url=self._secrets.require("EI_DATABASE_URL"),
             rabbitmq_url=self._secrets.require("EI_RABBITMQ_URL"),
@@ -48,10 +53,35 @@ class EnvironmentSettingsLoader(EnvironmentSettingsLoaderInterface):
             mcp_allow_spend=self._text("EI_MCP_ALLOW_SPEND", "").lower() in ("1", "true", "yes"),
             mcp_max_run_budget_micro_usd=self._whole("EI_MCP_MAX_RUN_BUDGET_MICRO_USD", 5_000_000),
             spend_limits=SpendLimits.from_environment(self._environ),
+            webhook_urls=webhook_urls,
+            webhook_secret=self._secrets.require("EI_WEBHOOK_SECRET") if webhook_urls else "",
+            webhook_interval_seconds=self._positive("EI_WEBHOOK_INTERVAL_SECONDS", 5.0),
+            artifact_store=store,
+            otlp_endpoint=self._text("EI_OTLP_ENDPOINT", ""),
+            s3_bucket=self._required_text("EI_S3_BUCKET") if s3 else "",
+            s3_endpoint_url=self._text("EI_S3_ENDPOINT_URL", "") if s3 else "",
+            s3_region=self._text("EI_S3_REGION", "us-east-1"),
+            s3_access_key_id=self._secrets.require("EI_S3_ACCESS_KEY_ID") if s3 else "",
+            s3_secret_access_key=self._secrets.require("EI_S3_SECRET_ACCESS_KEY") if s3 else "",
         )
+
+    def _urls(self) -> tuple[str, ...]:
+        """The webhook receivers: a comma-separated list of https:// addresses, empty when none is configured."""
+        urls = tuple(
+            part.strip() for part in self._text("EI_WEBHOOK_URLS", "").split(",") if part.strip()
+        )
+        if any(not url.startswith("https://") for url in urls):
+            raise ValueError("EI_WEBHOOK_URLS must hold https:// addresses only")
+        return urls
 
     def _text(self, name: str, default: str) -> str:
         return self._environ.get(name, default).strip() or default
+
+    def _required_text(self, name: str) -> str:
+        value = self._environ.get(name, "").strip()
+        if not value:
+            raise ValueError(f"{name} is required when EI_ARTIFACT_STORE is s3")
+        return value
 
     def _port(self) -> int:
         raw = self._text("EI_PORT", "8000")

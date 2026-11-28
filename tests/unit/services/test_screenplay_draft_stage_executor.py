@@ -1,0 +1,365 @@
+# Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
+
+"""ScreenplayDraftStageExecutor: scenes drafted in order and checked, one retry, resume, and cited sources only."""
+
+import asyncio
+
+import pytest
+
+from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.infrastructure.in_memory_artifact_store import InMemoryArtifactStore
+from engineering_influence.interfaces.scene_drafter_interface import SceneDrafterInterface
+from engineering_influence.models.book_brief import BookBrief
+from engineering_influence.models.book_kind import BookKind
+from engineering_influence.models.book_run import BookRun
+from engineering_influence.models.budget import Budget
+from engineering_influence.models.scene_card import SceneCard
+from engineering_influence.services.fountain_answer_screen import FountainAnswerScreen
+from engineering_influence.services.fountain_parser import FountainParser
+from engineering_influence.services.interfaces.screenplay_bible_context_interface import (
+    ScreenplayBibleContextInterface,
+)
+from engineering_influence.services.scene_card_list import SceneCardList
+from engineering_influence.services.screenplay_dialogue_source_check import (
+    ScreenplayDialogueSourceCheck,
+)
+from engineering_influence.services.screenplay_draft_stage_executor import (
+    ScreenplayDraftStageExecutor,
+)
+from engineering_influence.services.screenplay_recipes import ScreenplayRecipes
+from engineering_influence.services.screenplay_scene_cards_check import ScreenplaySceneCardsCheck
+from engineering_influence.services.screenplay_section_check import ScreenplaySectionCheck
+
+BEATS = ["Opening Image", "Set-Up", "All Is Lost", "Closing Image"]
+CARDS = "\n".join(
+    f"## S{n:02d} · scene {n}\n**What changes:** it changes.\n**Therefore:** next.\n**Beat:** {beat}\n**Storyline:** A\n**Sources:** 001\n"
+    for n, beat in enumerate(BEATS, 1)
+)
+
+
+class Drafter(SceneDrafterInterface):
+    """Writes a good scene for each card, except the cards named in `bad`, which fail a format rule the first time."""
+
+    def __init__(self, bad: frozenset[int] = frozenset()) -> None:
+        self.bad = bad
+        self.calls: list[int] = []
+        self.sources: dict[int, str] = {}
+        self._failed: set[int] = set()
+        self.findings: list[str] = []
+
+    def draft(
+        self,
+        run: BookRun,
+        card: SceneCard,
+        anchors: str,
+        beats: str,
+        sources: str,
+        try_number: int,
+        findings: str = "",
+    ) -> str:
+        self.calls.append(card.number)
+        self.findings.append(findings)
+        self.sources[card.number] = sources
+        if card.number in self.bad and card.number not in self._failed:
+            self._failed.add(card.number)
+            return f"INT. ROOM - MORNING\n\nScene {card.number}."
+        return f"INT. ROOM - DAY\n\nScene {card.number} plays out."
+
+
+def run() -> BookRun:
+    brief = BookBrief(BookKind.SCREENPLAY, "a film", 5_000_000, title_hint="TEST FILM")
+    return BookRun(
+        run_id="run-1", brief=brief, plan=ScreenplayRecipes().plan(), budget=Budget(cap=5_000_000)
+    )
+
+
+def stage(
+    store: InMemoryArtifactStore, drafter: Drafter, shareable: frozenset[int] = frozenset()
+) -> ScreenplayDraftStageExecutor:
+    return ScreenplayDraftStageExecutor(
+        store,
+        drafter,
+        SceneCardList(),
+        ScreenplaySectionCheck(FountainParser()),
+        ScreenplayDialogueSourceCheck(FountainParser()),
+        FountainAnswerScreen(FountainParser()),
+        shareable,
+    )
+
+
+def seeded() -> InMemoryArtifactStore:
+    store = InMemoryArtifactStore()
+    store.put("run-1", "scene_cards.md", CARDS.encode("utf-8"))
+    store.put("run-1", "anchors.md", b"anchors")
+    store.put("run-1", "beats.md", b"beats")
+    store.put("run-1", "source/001.md", b"the first source")
+    return store
+
+
+def text(store: InMemoryArtifactStore, name: str) -> str:
+    data = store.get("run-1", name)
+    assert data is not None
+    return data.decode("utf-8")
+
+
+def test_each_scene_is_drafted_in_order_and_stored_as_its_own_artifact() -> None:
+    store, drafter = seeded(), Drafter()
+    asyncio.run(stage(store, drafter).execute(run(), 1))
+    assert drafter.calls == [1, 4, 3, 2]
+    assert "Scene 1 plays out." in text(store, "scenes/001.md")
+    assert "Scene 4 plays out." in text(store, "scenes/004.md")
+
+
+def test_the_drafting_stage_writes_no_script() -> None:
+    store = seeded()
+    asyncio.run(stage(store, Drafter()).execute(run(), 1))
+    assert store.get("run-1", "screenplay.fountain") is None
+
+
+def test_a_scene_that_fails_its_check_is_drafted_once_more() -> None:
+    store, drafter = seeded(), Drafter(bad=frozenset({2}))
+    asyncio.run(stage(store, drafter).execute(run(), 1))
+    assert drafter.calls.count(2) == 2
+    assert "Scene 2 plays out." in text(store, "scenes/002.md")
+
+
+def test_a_scene_that_fails_twice_stops_the_stage_with_its_problems() -> None:
+    class Always(Drafter):
+        def draft(
+            self,
+            run: BookRun,
+            card: SceneCard,
+            anchors: str,
+            beats: str,
+            sources: str,
+            try_number: int,
+            findings: str = "",
+        ) -> str:
+            return "INT. ROOM - MORNING\n\nNever right."
+
+    with pytest.raises(ApplicationError) as error:
+        asyncio.run(stage(seeded(), Always()).execute(run(), 1))
+    assert error.value.code == "STAGE_OUTPUT_INVALID"
+    assert error.value.message.startswith("S01: ")
+    assert "time 'MORNING' is not one of" in error.value.message
+
+
+def test_a_redelivered_stage_drafts_only_what_is_missing() -> None:
+    store, drafter = seeded(), Drafter()
+    asyncio.run(stage(store, drafter).execute(run(), 1))
+    again = Drafter()
+    asyncio.run(stage(store, again).execute(run(), 2))
+    assert again.calls == []
+
+
+def test_the_shareable_scenes_are_drafted_last() -> None:
+    store, drafter = seeded(), Drafter()
+    asyncio.run(stage(store, drafter, shareable=frozenset({2})).execute(run(), 1))
+    assert drafter.calls == [1, 4, 3, 2]
+
+
+def test_missing_input_is_refused() -> None:
+    store = InMemoryArtifactStore()
+    with pytest.raises(ApplicationError) as error:
+        asyncio.run(stage(store, Drafter()).execute(run(), 1))
+    assert error.value.code in {"STAGE_INPUT_MISSING", "SCENE_CARDS_UNREADABLE"}
+
+
+def test_a_card_without_a_beat_is_unreadable() -> None:
+    with pytest.raises(ApplicationError) as error:
+        SceneCardList().parse("## S01 · no beat\n**What changes:** x\n")
+    assert error.value.code == "SCENE_CARDS_UNREADABLE"
+
+
+def test_the_scene_cards_are_read_with_their_beats() -> None:
+    cards = SceneCardList().parse(CARDS)
+    assert [(c.number, c.beat) for c in cards] == list(enumerate(BEATS, 1))
+    assert cards[0].artifact() == "scenes/001.md"
+    assert cards[0].revised() == "revised/001.md"
+
+
+def test_a_scene_card_number_starts_at_one() -> None:
+    with pytest.raises(ValueError, match="numbered from 1"):
+        SceneCard(0, "Set-Up", "x", (1,))
+
+
+def test_the_card_check_is_the_same_as_the_stage_reads() -> None:
+    assert ScreenplaySceneCardsCheck().problems(CARDS) == ()
+
+
+def test_a_scene_card_names_its_beat() -> None:
+    with pytest.raises(ValueError, match="names its beat"):
+        SceneCard(1, "  ", "body", (1,))
+
+
+def test_text_with_no_card_is_unreadable() -> None:
+    with pytest.raises(ApplicationError) as error:
+        SceneCardList().parse("# Cards\n\nNothing here.\n")
+    assert error.value.code == "SCENE_CARDS_UNREADABLE"
+
+
+def test_the_plan_drafts_revises_and_assembles_scenes_after_the_architecture() -> None:
+    assert tuple(ScreenplayRecipes().plan().stages) == (
+        "digest_sources",
+        "brief",
+        "anchors",
+        "audit",
+        "beats",
+        "scene_cards",
+        "visual_grammar",
+        "draft",
+        "revise_scenes",
+        "structure_scenes",
+        "dialogue_scenes",
+        "assemble_script",
+        "lock_script",
+        "log_revisions",
+        "check_canon",
+        "render_script",
+        "build_epub",
+        "video",
+    )
+
+
+def with_cards(cards: str, *sources: tuple[str, bytes]) -> InMemoryArtifactStore:
+    """A run holding the given cards, the anchors and beats, and the given source files."""
+    store = InMemoryArtifactStore()
+    store.put("run-1", "scene_cards.md", cards.encode("utf-8"))
+    store.put("run-1", "anchors.md", b"anchors")
+    store.put("run-1", "beats.md", b"beats")
+    for name, data in sources:
+        store.put("run-1", name, data)
+    return store
+
+
+def test_each_scene_is_drafted_from_only_the_sources_its_card_cites() -> None:
+    cards = CARDS.replace("**Sources:** 001", "**Sources:** 002", 1)
+    store = with_cards(
+        cards, ("source/001.md", b"the first source"), ("source/002.md", b"the second source")
+    )
+    drafter = Drafter()
+    asyncio.run(stage(store, drafter).execute(run(), 1))
+    assert drafter.sources[1] == "Source 002:\nthe second source"
+    assert drafter.sources[2] == "Source 001:\nthe first source"
+
+
+def test_a_card_citing_a_source_the_run_does_not_hold_stops_the_stage() -> None:
+    cards = CARDS.replace("**Sources:** 001", "**Sources:** 009", 1)
+    store = with_cards(cards, ("source/001.md", b"the first source"))
+    with pytest.raises(ApplicationError) as error:
+        asyncio.run(stage(store, Drafter()).execute(run(), 1))
+    assert error.value.code == "STAGE_INPUT_MISSING"
+
+
+class NamedBible(ScreenplayBibleContextInterface):
+    """Answers every scene with the same block, and records the text each scene was matched against."""
+
+    def __init__(self, block: str) -> None:
+        self.block = block
+        self.asked: list[str] = []
+
+    def for_scene(self, run_id: str, text: str) -> str:
+        self.asked.append(text)
+        return self.block
+
+
+def drafted_with(bible: ScreenplayBibleContextInterface) -> Drafter:
+    drafter = Drafter()
+    executor = ScreenplayDraftStageExecutor(
+        seeded(),
+        drafter,
+        SceneCardList(),
+        ScreenplaySectionCheck(FountainParser()),
+        ScreenplayDialogueSourceCheck(FountainParser()),
+        FountainAnswerScreen(FountainParser()),
+        bible=bible,
+    )
+    asyncio.run(executor.execute(run(), 1))
+    return drafter
+
+
+def test_each_scene_is_handed_the_bible_cards_it_names() -> None:
+    bible = NamedBible("Bible character/ada:\nKeeps the log.")
+    drafter = drafted_with(bible)
+    assert drafter.sources[1].endswith("\n\nBible character/ada:\nKeeps the log.")
+    assert len(bible.asked) == len(BEATS)
+    assert "Source 001:" in drafter.sources[1]
+
+
+def test_a_scene_that_names_no_card_is_handed_its_sources_alone() -> None:
+    drafter = drafted_with(NamedBible(""))
+    assert "Bible" not in drafter.sources[1]
+    assert drafter.sources[1].startswith("Source 001:")
+
+
+LONG_SOURCE = "The reserve held forty days of air before the stack would crack under load."
+
+
+class Copier(SceneDrafterInterface):
+    """Writes every scene as a speech that repeats the source word for word."""
+
+    def draft(
+        self,
+        run: BookRun,
+        card: SceneCard,
+        anchors: str,
+        beats: str,
+        sources: str,
+        try_number: int,
+        findings: str = "",
+    ) -> str:
+        return f"INT. ROOM - DAY\n\nMARA\n{LONG_SOURCE}"
+
+
+def with_long_source() -> InMemoryArtifactStore:
+    store = InMemoryArtifactStore()
+    store.put("run-1", "scene_cards.md", CARDS.encode("utf-8"))
+    store.put("run-1", "anchors.md", b"anchors")
+    store.put("run-1", "beats.md", b"beats")
+    store.put("run-1", "source/001.md", LONG_SOURCE.encode("utf-8"))
+    return store
+
+
+def test_a_speech_that_copies_its_source_is_drafted_again_and_then_refused() -> None:
+    executor = ScreenplayDraftStageExecutor(
+        with_long_source(),
+        Copier(),
+        SceneCardList(),
+        ScreenplaySectionCheck(FountainParser()),
+        ScreenplayDialogueSourceCheck(FountainParser()),
+        FountainAnswerScreen(FountainParser()),
+    )
+    with pytest.raises(ApplicationError) as error:
+        asyncio.run(executor.execute(run(), 1))
+    assert error.value.code == "STAGE_OUTPUT_INVALID"
+    assert "dialogue repeats source text" in error.value.message
+
+
+def test_a_refused_draft_is_drafted_again_and_the_second_draft_is_told_the_refusal() -> None:
+    class Refuses(Drafter):
+        def draft(
+            self,
+            run: BookRun,
+            card: SceneCard,
+            anchors: str,
+            beats: str,
+            sources: str,
+            try_number: int,
+            findings: str = "",
+        ) -> str:
+            self.findings.append(findings)
+            if len(self.findings) == 1:
+                return "INT. ROOM - DAY\n\nI can't write this scene."
+            return f"INT. ROOM - DAY\n\nScene {card.number} plays out."
+
+    drafter, store = Refuses(), seeded()
+    asyncio.run(stage(store, drafter).execute(run(), 1))
+    assert "refusal" in drafter.findings[1]
+    assert "Scene 1 plays out." in text(store, "scenes/001.md")
+
+
+def test_the_second_draft_is_told_the_problems_the_first_one_failed() -> None:
+    drafter = Drafter(bad=frozenset({2}))
+    asyncio.run(stage(seeded(), drafter).execute(run(), 1))
+    assert drafter.findings[0] == ""
+    assert "time 'MORNING' is not one of" in drafter.findings[-1]

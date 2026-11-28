@@ -22,9 +22,12 @@ class NonfictionRecipes(StageRecipesInterface):
 
     DRAFT_STAGE = "draft"
     REVISION_STAGES = ("revise_structure", "revise_lines", "copy_edit")
+    FACT_STAGE = "fact_check"
     ASSEMBLE_STAGE = "assemble"
     AUDIT_STAGE = "audit"
     BUILD_STAGE = "build"
+    AUDIOBOOK_STAGE = "audiobook"
+    NARRATION_STAGE = "narration"
 
     RECIPES: ClassVar[tuple[StageRecipe, ...]] = (
         StageRecipe("brief", "stage_brief", (), 1_500),
@@ -36,7 +39,7 @@ class NonfictionRecipes(StageRecipesInterface):
             4_000,
             ("web_search", "fetch_url"),
         ),
-        StageRecipe("outline", "stage_outline", ("brief", "positioning", "research"), 4_000),
+        StageRecipe("outline", "stage_outline", ("brief", "positioning", "research"), 8_192),
         StageRecipe("metadata", "stage_metadata", ("brief", "positioning", "outline"), 2_500),
     )
 
@@ -46,9 +49,12 @@ class NonfictionRecipes(StageRecipesInterface):
             *(recipe.stage for recipe in self.RECIPES),
             self.DRAFT_STAGE,
             *self.REVISION_STAGES,
+            self.FACT_STAGE,
             self.ASSEMBLE_STAGE,
             self.AUDIT_STAGE,
             self.BUILD_STAGE,
+            self.AUDIOBOOK_STAGE,
+            self.NARRATION_STAGE,
         )
         return StagePlan(BookKind.NONFICTION, stages)
 

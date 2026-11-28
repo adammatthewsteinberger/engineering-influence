@@ -2,6 +2,7 @@
 """Compose the command-line application."""
 
 import os
+import shutil
 import sys
 from collections.abc import Mapping
 from datetime import date
@@ -14,6 +15,9 @@ from engineering_influence.controllers.interfaces.run_controller_interface impor
 )
 from engineering_influence.controllers.project_controller import ProjectController
 from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.infrastructure.bible_library.filesystem_bible_library import (
+    FilesystemBibleLibrary,
+)
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
 from engineering_influence.infrastructure.plugins.directory_plugin_folder_reader import (
@@ -37,9 +41,17 @@ from engineering_influence.infrastructure.skills.new_file_skill_sink import NewF
 from engineering_influence.infrastructure.skills.toml_skill_lock_store import TomlSkillLockStore
 from engineering_influence.infrastructure.skills.toml_skill_parser import TomlSkillParser
 from engineering_influence.infrastructure.skills.toml_skill_writer import TomlSkillWriter
+from engineering_influence.infrastructure.source_library.filesystem_source_library import (
+    FilesystemSourceLibrary,
+)
+from engineering_influence.infrastructure.system_keep_awake import SystemKeepAwake
+from engineering_influence.infrastructure.tools.interfaces.mcp_server_sandbox_interface import (
+    McpServerSandboxInterface,
+)
 from engineering_influence.infrastructure.tools.lazy_remote_transport_factory import (
     LazyRemoteTransportFactory,
 )
+from engineering_influence.infrastructure.tools.mcp_server_sandbox import McpServerSandbox
 from engineering_influence.infrastructure.tools.path_executable_finder import PathExecutableFinder
 from engineering_influence.infrastructure.tools.sha256_file_hasher import Sha256FileHasher
 from engineering_influence.infrastructure.tools.stdio_mcp_transport_factory import (
@@ -79,12 +91,17 @@ from engineering_influence.interfaces.run_repository_interface import RunReposit
 from engineering_influence.interfaces.schema_migrator_interface import SchemaMigratorInterface
 from engineering_influence.interfaces.search_provider_interface import SearchProviderInterface
 from engineering_influence.interfaces.secret_provider_interface import SecretProviderInterface
+from engineering_influence.models.bible_card import BibleCard
+from engineering_influence.models.source_entry import SourceEntry
 from engineering_influence.models.tool_limits import ToolLimits
+from engineering_influence.models.tool_lock import ToolLock
 from engineering_influence.runtime.interfaces.cli_runtime_interface import CliRuntimeInterface
 from engineering_influence.runtime.interfaces.publishing_controller_factory_interface import (
     PublishingControllerFactoryInterface,
 )
 from engineering_influence.runtime.serve_starter import ServeStarter
+from engineering_influence.services.bible_card_parser import BibleCardParser
+from engineering_influence.services.bible_intake import BibleIntake
 from engineering_influence.services.brief_reader import BriefReader
 from engineering_influence.services.cancel_run import CancelRun
 from engineering_influence.services.interfaces.cancel_run_interface import CancelRunInterface
@@ -124,12 +141,14 @@ from engineering_influence.services.readiness_doctor import ReadinessDoctor
 from engineering_influence.services.resolve_spend_consent import ResolveSpendConsent
 from engineering_influence.services.resume_run import ResumeRun
 from engineering_influence.services.run_progress import RunProgress
+from engineering_influence.services.screenplay_title_parser import ScreenplayTitleParser
 from engineering_influence.services.search_doctor import SearchDoctor
 from engineering_influence.services.skill_converter import SkillConverter
 from engineering_influence.services.skill_importer import SkillImporter
 from engineering_influence.services.skill_lock_editor import SkillLockEditor
 from engineering_influence.services.skill_lock_verifier import SkillLockVerifier
 from engineering_influence.services.skill_markdown_parser import SkillMarkdownParser
+from engineering_influence.services.source_intake import SourceIntake
 from engineering_influence.services.start_pipeline import StartPipeline
 from engineering_influence.services.tool_lock_auditor import ToolLockAuditor
 from engineering_influence.services.tool_lock_editor import ToolLockEditor
@@ -166,7 +185,9 @@ class CliRuntime(CliRuntimeInterface):
         bundles: BundleFetcherInterface | None = None,
         brave_base_url: str = "https://api.search.brave.com",
         local_searxng_url: str = "http://127.0.0.1:8888",
+        sandbox: McpServerSandboxInterface | None = None,
     ) -> None:
+        self._sandbox = sandbox or McpServerSandbox(sys.platform, shutil.which, Path.home())
         self._publishing = publishing
         self._queue = queue
         self._probe_timeout_seconds = probe_timeout_seconds
@@ -179,7 +200,14 @@ class CliRuntime(CliRuntimeInterface):
         controller = ProjectController(StartPipeline(InMemoryLedger(), InMemoryQueue()))
         return CliApplication(
             controller,
-            BookCli(self._publishing_controller, self._local_book_creator),
+            BookCli(
+                self._publishing_controller,
+                self._local_book_creator,
+                self._keep_awake(),
+                self._read_sources,
+                self._read_bible,
+                self._read_title,
+            ),
             ServeCli(ServeStarter()),
             DbCli(self._schema_migrator, self._secret_provider),
             RunCli(
@@ -296,7 +324,7 @@ class CliRuntime(CliRuntimeInterface):
         )
         hasher = Sha256FileHasher()
         probe = McpServerProbe(
-            StdioMcpTransportFactory(limits, os.environ),
+            StdioMcpTransportFactory(limits, os.environ, self._sandbox),
             LazyRemoteTransportFactory(self._remote_transports),
             McpClientFactory("engineering-influence", __version__, self.TOOL_REQUEST_SECONDS),
             ToolLockVerifier(hasher),
@@ -508,6 +536,31 @@ class CliRuntime(CliRuntimeInterface):
             date.today(),
         )
 
+    @staticmethod
+    def _read_bible(folder: Path) -> tuple[BibleCard, ...]:
+        """The bible folder's cards, checked as a whole before a run keeps them (ADR 0018)."""
+        return BibleIntake(FilesystemBibleLibrary(), BibleCardParser()).intake(folder)
+
+    @staticmethod
+    def _read_title(folder: Path) -> str | None:
+        """The folder's title.toml as text, checked against the title rules, or none when the folder has no such file."""
+        path = folder / ScreenplayTitleParser.ARTIFACT
+        if not path.is_file():
+            return None
+        text = path.read_text(encoding="utf-8")
+        ScreenplayTitleParser().parse(text)
+        return text
+
+    @staticmethod
+    def _read_sources(folder: Path) -> tuple[SourceEntry, ...]:
+        """The source files in a folder, numbered and pinned, as a run keeps them."""
+        return SourceIntake(FilesystemSourceLibrary()).intake(folder)
+
+    @staticmethod
+    def _keep_awake() -> SystemKeepAwake:
+        """The sleep inhibitor for this machine; its warning goes to standard error."""
+        return SystemKeepAwake.for_this_machine()
+
     def _local_book_creator(
         self, state_dir: Path, settings: Mapping[str, str]
     ) -> LocalBookCreatorInterface:
@@ -602,7 +655,16 @@ class CliRuntime(CliRuntimeInterface):
             SqlModelAcpSessionStore(
                 self._secret_provider().require("EI_DATABASE_URL"), pooled=False
             ),
+            locks=self._session_lock,
         )
+
+    @staticmethod
+    def _session_lock(cwd: str) -> ToolLock:
+        """The operator's lock for a session: EI_TOOL_LOCK, else ei-tools.lock.toml in the session's folder, the file the
+        ``tools`` command reads. With no lock, the session can select no server."""
+        configured = os.environ.get("EI_TOOL_LOCK", "").strip()
+        path = Path(configured) if configured else Path(cwd) / "ei-tools.lock.toml"
+        return TomlToolLockStore().load(path) or ToolLock()
 
     def _cancel_run(self) -> CancelRunInterface:
         """Build the cancel service; it needs only the database."""

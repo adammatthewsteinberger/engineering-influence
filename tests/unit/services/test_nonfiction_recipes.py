@@ -12,8 +12,16 @@ from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.stage_recipe import StageRecipe
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 
-FROM_THE_BRIEF = {"idea", "audience", "title_hint", "target_words", "language", "inputs"}
-TRUSTED = {"target_words"}
+FROM_THE_BRIEF = {
+    "idea",
+    "audience",
+    "title_hint",
+    "target_words",
+    "chapters",
+    "language",
+    "inputs",
+}
+TRUSTED = {"target_words", "chapters"}
 RECIPES = NonfictionRecipes()
 
 
@@ -34,22 +42,28 @@ def test_the_plan_is_the_recipes_stages_in_order() -> None:
         "revise_structure",
         "revise_lines",
         "copy_edit",
+        "fact_check",
         "assemble",
         "audit",
         "build",
+        "audiobook",
+        "narration",
     )
-    assert plan.stages[:-7] == tuple(recipe.stage for recipe in NonfictionRecipes.RECIPES)
+    assert plan.stages[:-10] == tuple(recipe.stage for recipe in NonfictionRecipes.RECIPES)
 
 
 def test_the_stages_that_are_not_one_prompt_are_in_the_plan_and_have_no_recipe() -> None:
-    assert RECIPES.plan().stages[-7:] == (
+    assert RECIPES.plan().stages[-10:] == (
         "draft",
         "revise_structure",
         "revise_lines",
         "copy_edit",
+        "fact_check",
         "assemble",
         "audit",
         "build",
+        "audiobook",
+        "narration",
     )
     assert (
         NonfictionRecipes.DRAFT_STAGE,
@@ -64,7 +78,7 @@ def test_the_stages_that_are_not_one_prompt_are_in_the_plan_and_have_no_recipe()
         "audit",
         "build",
     )
-    for stage in RECIPES.plan().stages[-7:]:
+    for stage in RECIPES.plan().stages[-10:]:
         with pytest.raises(ValueError, match=f"no recipe for stage '{stage}'"):
             RECIPES.recipe(stage)
 

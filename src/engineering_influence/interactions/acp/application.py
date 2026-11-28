@@ -17,6 +17,7 @@ from engineering_influence.interactions.acp.interfaces.application_interface imp
 from engineering_influence.interfaces.acp_session_store_interface import AcpSessionStoreInterface
 from engineering_influence.models.acp_session import AcpSession
 from engineering_influence.models.run_status import RunStatus
+from engineering_influence.models.tool_lock import ToolLock
 from engineering_influence.services.interfaces.brief_reader_interface import BriefReaderInterface
 from engineering_influence.services.interfaces.cancel_run_interface import CancelRunInterface
 from engineering_influence.services.interfaces.create_run_interface import CreateRunInterface
@@ -26,6 +27,7 @@ from engineering_influence.services.interfaces.resolve_spend_consent_interface i
 from engineering_influence.services.interfaces.run_progress_interface import RunProgressInterface
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from typing import TextIO
 
     from engineering_influence.models.book_run import BookRun
@@ -39,9 +41,11 @@ class AcpApplication(AcpApplicationInterface):
     answered with ``end_turn`` once the run is saved and its first stage queued, because the stages are done by the
     worker, not here. ``session/cancel`` stops the run. Progress is reported as ``session/update`` notifications.
 
-    Sessions live in this process: a run outlives the session, and a new session can find it with ``ei run status``.
-    Nothing here connects MCP servers, loads a session or asks for permission; a run that spends asks through the
-    worker, which this slice does not yet do.
+    Sessions are stored beside the runs, so ``session/load`` re-attaches one from any process, and a run outlives its
+    session: a new session can find it with ``ei run status``. A run that would spend past its cap asks the client
+    through ``session/request_permission``, and the answer decides the run. ``session/new`` may select MCP servers, but
+    only by the name of a server the operator's lock already has: a client cannot name a command or a URL. Connecting
+    the selected servers to the run is a later change.
     """
 
     PROTOCOL_VERSION: ClassVar[int] = 1
@@ -71,6 +75,7 @@ class AcpApplication(AcpApplicationInterface):
         progress: RunProgressInterface,
         resolver: ResolveSpendConsentInterface,
         sessions: AcpSessionStoreInterface,
+        locks: Callable[[str], ToolLock] | None = None,
     ) -> None:
         self._creator = creator
         self._canceller = canceller
@@ -78,6 +83,12 @@ class AcpApplication(AcpApplicationInterface):
         self._progress = progress
         self._resolver = resolver
         self._store = sessions
+        # The operator's lock for a session's folder. Without one, a session selects no servers at all.
+        self._locks = locks or self._no_locks
+        self._servers: dict[str, tuple[str, ...]] = {}
+        self._approved: dict[str, tuple[str, ...]] = {}
+        # A server approval the client has not answered: request id -> (session, prompt request id, prompt text, servers still to ask).
+        self._approvals: dict[str, tuple[str, Any, str, tuple[str, ...]]] = {}
         self._cwds: dict[str, str] = {}
         # Permission requests sent and not yet answered: request id -> (session id, run id).
         self._open_requests: dict[str, tuple[str, str]] = {}
@@ -86,6 +97,11 @@ class AcpApplication(AcpApplicationInterface):
         self._sessions: dict[str, str | None] = {}
         # For each session whose run is still followed: the run's id and the (status, stage) last reported.
         self._reported: dict[str, tuple[str, tuple[str, str]]] = {}
+
+    @staticmethod
+    def _no_locks(cwd: str) -> ToolLock:
+        """The lock used when none is given: it names no servers, so a session can select none."""
+        return ToolLock()
 
     def handle(self, message: Any) -> list[dict[str, Any]]:
         """The messages to send back for one incoming message; a notification gets none unless it fails."""
@@ -209,6 +225,8 @@ class AcpApplication(AcpApplicationInterface):
     def _answer(self, message: dict[str, Any]) -> list[dict[str, Any]]:
         """The client's answer to a permission request: grant or deny the run, or keep it waiting."""
         request_id = message["id"]
+        if isinstance(request_id, str) and request_id in self._approvals:
+            return self._answer_approval(request_id, message)
         opened = self._open_requests.get(request_id) if isinstance(request_id, str) else None
         if opened is None:
             return []
@@ -281,15 +299,39 @@ class AcpApplication(AcpApplicationInterface):
         cwd = params.get("cwd")
         if not isinstance(cwd, str) or not cwd.startswith("/"):
             raise self._refusal("ACP_INVALID_PARAMS", "cwd is an absolute path")
-        if params.get("mcpServers", []) != []:
-            raise self._refusal("ACP_INVALID_PARAMS", "this agent does not connect MCP servers yet")
+        servers = self._selected(params.get("mcpServers", []), cwd)
         session_id = f"sess_{uuid.uuid4().hex}"
         self._sessions[session_id] = None
         self._cwds[session_id] = cwd
-        self._store.save(AcpSession(session_id, cwd, None))
+        self._servers[session_id] = servers
+        self._approved[session_id] = ()
+        self._store.save(AcpSession(session_id, cwd, None, servers))
         return {"sessionId": session_id}
 
+    def _selected(self, entries: Any, cwd: str) -> tuple[str, ...]:
+        """The names of the locked servers a session selects. An entry names a server the operator's lock already has;
+        it cannot carry a command or a URL, so a client cannot start code the operator has not locked."""
+        if not isinstance(entries, list):
+            raise self._refusal("ACP_INVALID_PARAMS", "mcpServers is a list")
+        lock = self._locks(cwd)
+        names: list[str] = []
+        for entry in entries:
+            name = entry.get("name") if isinstance(entry, dict) else None
+            if not isinstance(name, str) or lock.server(name) is None:
+                shown = str(name)[:40]
+                raise self._refusal(
+                    "ACP_INVALID_PARAMS", f"the MCP server {shown!r} is not in the operator's lock"
+                )
+            if name in names:
+                raise self._refusal("ACP_INVALID_PARAMS", f"the MCP server {name!r} is named twice")
+            names.append(name)
+        return tuple(names)
+
     def _prompt(self, request_id: Any, params: dict[str, Any]) -> list[dict[str, Any]]:
+        """Start the session's run, after the person approves each selected MCP server the session has not yet approved.
+
+        A server is asked for first and started by its run only after the answer; the prompt's reply waits for it.
+        """
         session_id = self._session(params)
         if self._sessions[session_id] is not None:
             raise self._refusal(
@@ -297,15 +339,119 @@ class AcpApplication(AcpApplicationInterface):
                 f"this session already has run {self._sessions[session_id]}",
             )
         text = self._text(params.get("prompt"))
-        run = self._creator.create(self._briefs.read_text(text, "the prompt"))
+        self._briefs.read_text(
+            text, "the prompt"
+        )  # a brief that cannot be read is refused before anything is asked
+        pending = tuple(
+            name for name in self._servers[session_id] if name not in self._approved[session_id]
+        )
+        if pending:
+            return [self._approval_request(session_id, request_id, text, pending)]
+        return self._start(session_id, request_id, text)
+
+    def _start(self, session_id: str, request_id: Any, text: str) -> list[dict[str, Any]]:
+        """Create the run the prompt asks for, with the servers the session selected; reply end_turn."""
+        run = self._creator.create(
+            self._briefs.read_text(text, "the prompt"), servers=self._servers[session_id]
+        )
         self._sessions[session_id] = run.run_id
-        self._store.save(AcpSession(session_id, self._cwds[session_id], run.run_id))
+        self._store.save(
+            AcpSession(
+                session_id,
+                self._cwds[session_id],
+                run.run_id,
+                self._servers[session_id],
+                self._approved[session_id],
+            )
+        )
         self._reported[session_id] = (run.run_id, (run.status.value, run.stage))
         notice = self._update(
             session_id,
             f"run {run.run_id} is {run.status.value} at stage {run.stage!r}; its first stage is queued",
         )
         return [notice, *self._reply(request_id, {"stopReason": "end_turn"})]
+
+    def _stop(
+        self, session_id: str, request_id: Any, reason: str, text: str
+    ) -> list[dict[str, Any]]:
+        """End the prompt without a run, saying why."""
+        return [self._update(session_id, text), *self._reply(request_id, {"stopReason": reason})]
+
+    def _approval_request(
+        self, session_id: str, request_id: Any, text: str, pending: tuple[str, ...]
+    ) -> dict[str, Any]:
+        """Ask the client to let the first pending server start; the answer returns with this request's id."""
+        name = pending[0]
+        entry = self._locks(self._cwds[session_id]).server(name)
+        if entry is None:
+            raise self._refusal(
+                "ACP_INVALID_PARAMS", f"the MCP server {name!r} is not in the operator's lock"
+            )
+        permission_id = f"approve-{uuid.uuid4().hex}"
+        self._approvals[permission_id] = (session_id, request_id, text, pending)
+        tools = ", ".join(entry.tool_names)
+        return {
+            "jsonrpc": "2.0",
+            "id": permission_id,
+            "method": "session/request_permission",
+            "params": {
+                "sessionId": session_id,
+                "toolCall": {
+                    "toolCallId": f"mcp-{name}",
+                    "title": f"Start the MCP server {name!r}: runs {' '.join(entry.command)}; its tools are {tools}",
+                    "status": "pending",
+                },
+                "options": [
+                    {
+                        "optionId": "allow",
+                        "name": f"Allow the MCP server {name}",
+                        "kind": "allow_once",
+                    },
+                    {"optionId": "deny", "name": "Refuse; no run starts", "kind": "reject_once"},
+                ],
+            },
+        }
+
+    def _answer_approval(self, permission_id: str, message: dict[str, Any]) -> list[dict[str, Any]]:
+        """The answer to a server approval: record an allow and ask for the next server, or start the run; a refusal or
+        a cancellation ends the prompt without a run."""
+        session_id, prompt_id, text, remaining = self._approvals[permission_id]
+        result = message.get("result")
+        outcome = result.get("outcome") if isinstance(result, dict) else None
+        name = remaining[0]
+        if not isinstance(outcome, dict) or outcome.get("outcome") != "selected":
+            del self._approvals[permission_id]
+            return self._stop(
+                session_id,
+                prompt_id,
+                "cancelled",
+                f"the approval of MCP server {name!r} was cancelled; no run started",
+            )
+        choice = outcome.get("optionId")
+        if choice not in ("allow", "deny"):
+            return []  # not an answer this request understands: it keeps waiting
+        del self._approvals[permission_id]
+        if choice == "deny":
+            return self._stop(
+                session_id,
+                prompt_id,
+                "refusal",
+                f"the MCP server {name!r} was not approved; no run started",
+            )
+        self._approved[session_id] = (*self._approved[session_id], name)
+        self._store.save(
+            AcpSession(
+                session_id,
+                self._cwds[session_id],
+                self._sessions[session_id],
+                self._servers[session_id],
+                self._approved[session_id],
+            )
+        )
+        rest = remaining[1:]
+        if rest:
+            return [self._approval_request(session_id, prompt_id, text, rest)]
+        return self._start(session_id, prompt_id, text)
 
     def _load(self, request_id: Any, params: dict[str, Any]) -> list[dict[str, Any]]:
         """Re-attach a stored session and replay where its run stands; the reply has no result."""
@@ -322,6 +468,8 @@ class AcpApplication(AcpApplicationInterface):
             )
         self._sessions[session_id] = stored.run_id
         self._cwds[session_id] = stored.cwd
+        self._servers[session_id] = stored.servers
+        self._approved[session_id] = stored.approved
         messages: list[dict[str, Any]] = []
         if stored.run_id is not None:
             run = self._progress.current(stored.run_id)

@@ -232,6 +232,21 @@
             {
               "choices": null,
               "default": null,
+              "dest": "bible",
+              "flags": [
+                "--bible"
+              ],
+              "name": "--bible",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": null,
               "dest": "budget_usd",
               "flags": [
                 "--budget-usd"
@@ -262,7 +277,8 @@
             {
               "choices": [
                 "nonfiction",
-                "novel"
+                "novel",
+                "screenplay"
               ],
               "default": null,
               "dest": "kind",
@@ -278,6 +294,39 @@
               "type": null
             },
             {
+              "choices": [
+                "audiobook",
+                "book"
+              ],
+              "default": "book",
+              "dest": "mode",
+              "flags": [
+                "--mode"
+              ],
+              "name": "--mode",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": false,
+              "dest": "no_keep_awake",
+              "flags": [
+                "--no-keep-awake"
+              ],
+              "name": "--no-keep-awake",
+              "nargs": 0,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": false,
+              "type": null
+            },
+            {
               "choices": null,
               "default": null,
               "dest": "out",
@@ -289,6 +338,36 @@
               "positional": false,
               "repeatable": false,
               "required": true,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "previous_lock",
+              "flags": [
+                "--previous-lock"
+              ],
+              "name": "--previous-lock",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "previous_script",
+              "flags": [
+                "--previous-script"
+              ],
+              "name": "--previous-script",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
               "takes_value": true,
               "type": "Path"
             },
@@ -324,6 +403,51 @@
             },
             {
               "choices": null,
+              "default": 1,
+              "dest": "revision",
+              "flags": [
+                "--revision"
+              ],
+              "name": "--revision",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "int"
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "revision_date",
+              "flags": [
+                "--revision-date"
+              ],
+              "name": "--revision-date",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": null
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "source",
+              "flags": [
+                "--source"
+              ],
+              "name": "--source",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": "Path"
+            },
+            {
+              "choices": null,
               "default": null,
               "dest": "state_dir",
               "flags": [
@@ -336,6 +460,21 @@
               "required": false,
               "takes_value": true,
               "type": "Path"
+            },
+            {
+              "choices": null,
+              "default": null,
+              "dest": "stop_after",
+              "flags": [
+                "--stop-after"
+              ],
+              "name": "--stop-after",
+              "nargs": null,
+              "positional": false,
+              "repeatable": false,
+              "required": false,
+              "takes_value": true,
+              "type": null
             },
             {
               "choices": null,
@@ -844,7 +983,7 @@
         },
         {
           "choices": null,
-          "default": "1.0.0",
+          "default": "0.1.0rc1",
           "dest": "release",
           "flags": [
             "--release"

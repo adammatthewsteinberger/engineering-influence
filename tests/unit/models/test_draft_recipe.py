@@ -52,10 +52,11 @@ def test_the_nonfiction_recipe_gives_the_same_words_the_drafter_always_gave() ->
     texts = {"brief": "B", "positioning": "P", "research": "R", "outline": "O"}
     value = DraftStageExecutor.NONFICTION
     assert value.style_text(texts) == "The author's brief:\nB\n\nThe positioning:\nP"
-    assert value.grounding_text(texts) == "The whole outline:\nO\n\nThe research notes:\nR"
-    assert value.instruction_text(2, 5, 800, "not given", "not given") == (
-        "Write chapter 2 of 5 now, following the beats above, in about 800 words. "
-        "Begin with the chapter's heading line."
+    assert value.grounding_text(texts) == "The chapter titles:\nO\n\nThe research notes:\nR"
+    assert value.sectioned is True
+    assert value.instruction_text(2, 5, 800, "not given", "not given", 1, 2) == (
+        "Write section 1 of 2 of chapter 2 of 5 now, covering beat 1 above, in about 800 words. "
+        "Write only this section."
     )
     assert (value.context_template, value.summary_template) == ("context_pack", "stage_summary")
 
@@ -66,12 +67,14 @@ def test_the_novel_recipe_reads_the_bible_and_the_beats_and_carries_the_levels()
     texts = {"brief": "B", "story_bible": "S", "beats": "T", "outline": "O"}
     assert value.style_text(texts) == "The author's brief:\nB\n\nThe story bible:\nS"
     assert (
-        value.grounding_text(texts) == "The whole outline:\nO\n\nThe beats of the whole novel:\nT"
+        value.grounding_text(texts) == "The chapter titles:\nO\n\nThe beats of the whole novel:\nT"
     )
-    sentence = value.instruction_text(3, 12, 2500, "mild", "none")
+    assert value.sectioned
+    sentence = value.instruction_text(3, 12, 2500, "mild", "none", 2, 4)
     assert sentence.startswith(
-        "Write chapter 3 of 12 now, following the beats above, in about 2500 words."
+        "Write section 2 of 4 of chapter 3 of 12 now, following beat 2 above, in about 2500 words."
     )
+    assert "Write only this section, with no heading." in sentence
     assert "violence mild, heat none" in sentence
     assert "Keep to the story bible's names, ages, places and order of events." in sentence
     assert "not given means mild violence and sweet heat." in sentence
@@ -125,5 +128,21 @@ def test_a_draft_needs_both_templates(field: str) -> None:
     ],
 )
 def test_the_instruction_has_the_three_numbers_and_no_other_blank(instruction: str) -> None:
-    with pytest.raises(ValueError, match="number, count and words, and no other blank"):
+    with pytest.raises(ValueError, match="and no other blank"):
         recipe(instruction=instruction)
+
+
+def test_a_sectioned_instruction_fills_the_section_and_the_section_count() -> None:
+    value = recipe(
+        instruction="Section {section} of {sections}, chapter {number} of {count} in {words} words.",
+        sectioned=True,
+    )
+    assert (
+        value.instruction_text(2, 9, 700, "mild", "none", 3, 4)
+        == "Section 3 of 4, chapter 2 of 9 in 700 words."
+    )
+
+
+def test_a_sectioned_instruction_also_needs_the_section_and_the_section_count() -> None:
+    with pytest.raises(ValueError, match="and no other blank"):
+        recipe(instruction="Chapter {number} of {count} in {words} words.", sectioned=True)

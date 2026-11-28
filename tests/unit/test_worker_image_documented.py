@@ -15,10 +15,12 @@ CI_TOOLCHAIN = {
     "texlive-latex-extra",
     "texlive-pictures",
     "texlive-fonts-recommended",
+    "fonts-texgyre",
     "texlive-plain-generic",
     "texlive-extra-utils",
     "epubcheck",
     "default-jre-headless",
+    "poppler-utils",
 }
 
 
@@ -51,11 +53,11 @@ def test_the_runtime_image_installs_procps_which_provides_the_ps_the_meter_needs
     assert "`procps`" in PAGE
 
 
-def test_the_tex_image_is_the_ci_toolchain_plus_the_three_packages_the_page_names() -> None:
+def test_the_tex_image_is_the_ci_toolchain_plus_the_packages_the_page_names() -> None:
     tex = apt_packages(stage("worker-tex"))
 
     assert CI_TOOLCHAIN <= tex
-    assert tex - CI_TOOLCHAIN == {"poppler-utils", "zip", "tidy"}
+    assert tex - CI_TOOLCHAIN == {"zip", "tidy"}
     for name in sorted(tex - CI_TOOLCHAIN):
         assert f"`{name}`" in PAGE, f"WORKER_IMAGE.md does not name {name}"
 

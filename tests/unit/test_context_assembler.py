@@ -252,7 +252,7 @@ def test_the_prompt_version_is_the_templates_identifier_and_reaches_every_count(
             return super().count_tokens(request)
 
     ContextAssembler(Spy(), TEMPLATE).assemble(plan(), 10_000)
-    assert seen and set(seen) == {"context_pack@2"}
+    assert seen and set(seen) == {"context_pack@3"}
 
 
 def test_the_section_labels_are_the_templates_text() -> None:

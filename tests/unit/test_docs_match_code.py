@@ -116,6 +116,9 @@ LAYERED = (
 )
 PLAIN = (
     "AGENTS.md",
+    "docs/DEPLOYMENT.md",
+    "docs/MINIKUBE.md",
+    "docs/TEST_PERFORMANCE.md",
     "CLAUDE.md",
     "GEMINI.md",
     "CHANGELOG.md",
@@ -125,6 +128,9 @@ PLAIN = (
     "llms.txt",
     "llms-full.txt",
     "docs/STYLE.md",
+    "docs/AUDIOBOOKS.md",
+    "docs/SCREENPLAYS.md",
+    "docs/WEBHOOKS.md",
     "docs/THREAT_MODEL.md",
     "packages/engineering-influence-sdk/README.md",
     "examples/claude-code/engineering-influence/SKILL.md",

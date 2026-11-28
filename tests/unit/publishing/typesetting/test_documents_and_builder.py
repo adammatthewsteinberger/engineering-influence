@@ -244,9 +244,9 @@ def test_a_book_with_no_kind_leaves_its_rules_unprinted_in_both_formats() -> Non
 
 
 def test_an_unknown_kind_stops_the_document_before_any_tex_is_written() -> None:
-    with pytest.raises(ManuscriptError, match="'nonfiction' or 'novel'"):
+    with pytest.raises(ManuscriptError, match="'nonfiction', 'novel' or 'screenplay'"):
         PrintDocument().render(story_book({**MINIMAL, "kind": "poem"}))
-    with pytest.raises(ManuscriptError, match="'nonfiction' or 'novel'"):
+    with pytest.raises(ManuscriptError, match="'nonfiction', 'novel' or 'screenplay'"):
         EbookDocument().render(story_book({**MINIMAL, "kind": "poem"}))
 
 

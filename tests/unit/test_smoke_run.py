@@ -48,11 +48,14 @@ def test_every_stage_of_the_plan_advances_and_the_run_completes(tmp_path: Path) 
         "revise_structure",
         "revise_lines",
         "copy_edit",
+        "fact_check",
         "assemble",
         "audit",
         "build",
+        "audiobook",
+        "narration",
     ]
-    assert [row.outcome for row in report.rows] == ["advanced"] * 11 + ["completed"]
+    assert [row.outcome for row in report.rows] == ["advanced"] * 14 + ["completed"]
     assert {row.attempts for row in report.rows} == {1}
     assert report.issues == ()
 
@@ -67,11 +70,14 @@ def test_a_novel_runs_from_its_brief_to_a_built_book(tmp_path: Path) -> None:
         "outline",
         "metadata",
         "draft",
+        "revise_story",
+        "revise_lines",
+        "copy_edit",
         "assemble",
         "audit",
         "build",
     ]
-    assert [row.outcome for row in report.rows] == ["advanced"] * 8 + ["completed"]
+    assert [row.outcome for row in report.rows] == ["advanced"] * 11 + ["completed"]
     files = report.artifacts
     config = files["manuscript/books/the-salt-road.toml"].decode()
     assert 'kind = "novel"' in config and 'trim_size = "5.5x8.5"' in config
@@ -125,7 +131,7 @@ def test_the_report_and_every_artifact_are_written_to_a_new_folder(tmp_path: Pat
     report.write(folder)
     summary = json.loads((folder / "smoke-report.json").read_text(encoding="utf-8"))
     assert summary["status"] == "completed" and summary["budget"]["cap_micro_usd"] == 5_000_000
-    assert [row["stage"] for row in summary["stages"]][-1] == "build"
+    assert [row["stage"] for row in summary["stages"]][-1] == "narration"
     assert summary["budget"]["spent_usd"] == round(report.spent_micro_usd / 1_000_000, 4)
     assert (folder / "manuscript" / "src" / "chapter_01.md").is_file()
     assert (folder / "audit" / "release-readiness.json").is_file()

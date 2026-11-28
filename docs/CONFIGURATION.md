@@ -148,12 +148,22 @@ never prints a traceback, which could carry a connection string.
 | `EI_DATABASE_URL` | both | SQLAlchemy URL, for example `postgresql+psycopg://user:pw@host:5432/db`. Required. |
 | `EI_RABBITMQ_URL` | both | `amqp://user:pw@host:5672/`. Required. |
 | `EI_API_KEYS` | API | Comma-separated keys, each at least 24 characters. Required: with none, the API will not start. |
+| `EI_METRICS_API_KEYS` | API | Comma-separated keys, each at least 24 characters, accepted on `/metrics` only (never on another route). Optional: without it, `/metrics` takes the main keys |
+| `EI_ARTIFACT_STORE` | API and worker | Where a run's files are kept: `database` (default, in Postgres) or `s3` (a bucket, AWS S3 or an S3-compatible service such as SeaweedFS). See [Object storage](#object-storage) |
+| `EI_S3_BUCKET` | API and worker | The bucket for run files. Required when `EI_ARTIFACT_STORE` is `s3` |
+| `EI_S3_ENDPOINT_URL` | API and worker | The address of an S3-compatible service; empty for AWS S3 |
+| `EI_S3_REGION` | API and worker | The region name; default `us-east-1` |
+| `EI_S3_ACCESS_KEY_ID`, `EI_S3_SECRET_ACCESS_KEY` | API and worker | The credentials for the bucket, read from the secret provider when `EI_ARTIFACT_STORE` is `s3`; never printed or logged |
 | `EI_QUEUE_NAME` | both | Job queue name. Default `engineering-influence.jobs`; the dead-letter queue is that name plus `.dead`. |
 | `EI_HOST`, `EI_PORT` | API | Default `127.0.0.1` and `8000`. A bare run is never reachable from the network. |
 | `EI_LOG_LEVEL` | both | `DEBUG` to `CRITICAL`. Default `INFO`. |
+| `EI_OTLP_ENDPOINT` | API and worker | The OpenTelemetry collector that receives traces, over OTLP/HTTP, for example `http://tempo:4318`. The path `/v1/traces` is added. Empty by default, which exports nothing. See [Tracing](DEPLOYMENT.md#tracing) |
 | `EI_RATE_BURST`, `EI_RATE_PER_SECOND` | API | Token-bucket limits, default 30 and 10. |
 | `EI_MAX_RUN_BUDGET_MICRO_USD` | API, `ei run`, MCP, ACP | **The most any one run may be given, in micro-dollars, at its start and after every grant.** Not set by default (no ceiling). A bigger brief, or a grant that would take a cap over it, is refused with `BUDGET_ABOVE_LIMIT` (HTTP 422) before anything is saved or queued. |
 | `EI_MAX_OUTSTANDING_BUDGET_MICRO_USD` | API, `ei run`, MCP, ACP | **The most unspent budget all runs may hold together**: each unfinished run's cap less what it has spent (a parked or waiting run still counts; a completed, failed or cancelled one does not). Not set by default. A new run or a grant that would take the total over it is refused with `OUTSTANDING_BUDGET_EXCEEDED` (422). A client that starts many runs, or is granted more again and again, runs out of room instead of out of money. A check and the save that follows it are one locked step, so many requests at once to one API or MCP process cannot each pass against the same total; two *processes* (the API and a command line, say) each hold their own lock, so across processes it is a check with a window of a few milliseconds. `ei book create` runs on your own machine and is not held to it. |
+| `EI_SCREENPLAY_CANON_CHECK` | screenplay runs | **The author's own canon check command**, split into words the way a shell would split it and run with no shell. Not set by default, so the `check_canon` stage does nothing. Set `EI_SCREENPLAY_CANON_FOLDER` with it: naming a command without its folder is refused. This repository never holds the author's canon; the command reads the author's own files. |
+| `EI_SCREENPLAY_CANON_FOLDER` | screenplay runs | The folder the canon check runs in. Required with `EI_SCREENPLAY_CANON_CHECK`. |
+| `EI_SCREENPLAY_CANON_BLOCKING` | screenplay runs | `1`, `true` or `yes` stops a screenplay run at a canon `ERROR` finding. Unset, every finding is recorded as a quality issue and none stops the run. `WARN` findings never block. |
 | `EI_MCP_MAX_RUN_BUDGET_MICRO_USD` | MCP server | The most a run started over MCP may be given, in micro-dollars (default 5,000,000, five dollars). A bigger brief is refused with `BUDGET_ABOVE_LIMIT`. It bounds one run, not how many an agent starts. |
 | `EI_MCP_ALLOW_SPEND` | MCP server | `1`, `true` or `yes` lets `ei serve mcp` offer `grant_run` and `deny_run`, so an agent can answer a run's request for more budget. Off by default: an agent can then start, watch, resume, cancel and read runs, but cannot raise a run's cap. |
 
@@ -176,6 +186,9 @@ when this index names one nothing uses. The two `compose only` rows are read by 
 | `EI_LOCAL_MODEL`, `EI_LOCAL_URL` | the free local model's name and address | [LOCAL_MODEL.md](LOCAL_MODEL.md) |
 | `EI_LOG_LEVEL` | log verbosity | [Running the stack](#running-the-stack) |
 | `EI_MAX_OUTSTANDING_BUDGET_MICRO_USD` | the most unspent budget all runs may hold together | [Running the stack](#running-the-stack) |
+| `EI_SCREENPLAY_CANON_CHECK` | the author's canon check command, run in the author's folder | [Running the stack](#running-the-stack) |
+| `EI_SCREENPLAY_CANON_FOLDER` | the folder the canon check runs in | [Running the stack](#running-the-stack) |
+| `EI_SCREENPLAY_CANON_BLOCKING` | stops a screenplay run at a canon ERROR | [Running the stack](#running-the-stack) |
 | `EI_MAX_RUN_BUDGET_MICRO_USD` | the most any one run may be given | [Running the stack](#running-the-stack) |
 | `EI_MCP_ALLOW_SPEND` | lets `ei serve mcp` offer `grant_run` and `deny_run` | [Running the stack](#running-the-stack) |
 | `EI_MCP_MAX_RUN_BUDGET_MICRO_USD` | the most a run started over MCP may be given | [Running the stack](#running-the-stack) |
@@ -185,6 +198,17 @@ when this index names one nothing uses. The two `compose only` rows are read by 
 | `EI_RABBITMQ_URL` | the broker | [Running the stack](#running-the-stack) |
 | `EI_RATE_BURST`, `EI_RATE_PER_SECOND` | the API's rate limit | [Running the stack](#running-the-stack) |
 | `EI_SEARXNG_PORT` (compose only) | the host port of the local search container, default 8888 | [A free local web search](#a-free-local-web-search-searxng) |
+| `EI_WEBHOOK_URLS` | the receivers of a run's events: a comma-separated list of `https://` addresses. Empty by default, which sends nothing | [Webhooks](WEBHOOKS.md) |
+| `EI_WEBHOOK_SECRET` | the secret that signs each delivery. Required when `EI_WEBHOOK_URLS` is set; never printed or logged | [Webhooks](WEBHOOKS.md) |
+| `EI_WEBHOOK_INTERVAL_SECONDS` | how often the worker delivers queued events, in seconds (at least 0.01; default 5) | [Webhooks](WEBHOOKS.md) |
+| `EI_METRICS_API_KEYS` | the keys that may read `/metrics`, and no other route | [Running on minikube](MINIKUBE.md#metrics-and-dashboards) |
+| `EI_ARTIFACT_STORE` | where a run's files are kept: the database or an S3-compatible bucket | [Object storage](#object-storage) |
+| `EI_S3_BUCKET`, `EI_S3_ENDPOINT_URL`, `EI_S3_REGION`, `EI_S3_ACCESS_KEY_ID`, `EI_S3_SECRET_ACCESS_KEY` | the bucket and its credentials, for `EI_ARTIFACT_STORE=s3` | [Object storage](#object-storage) |
+| `EI_OTLP_ENDPOINT` | where the API and worker send traces (OTLP over HTTP); empty exports nothing | [Tracing](DEPLOYMENT.md#tracing) |
+| `EI_NARRATOR_VOICE` | the Kokoro voice, for example `af_heart` (the default) or `bf_emma` | [AUDIOBOOKS.md](AUDIOBOOKS.md) |
+| `EI_NARRATOR` | the narrator for the locally narrated (non-Audible) audiobook: `kokoro` is built in (Kokoro-82M through mlx-audio, on an Apple Silicon Mac with the `audio` extra); any other name is refused | [Audiobooks](AUDIOBOOKS.md) |
+| `EI_VIDEO_PROVIDER` | the hosted video model for a screenplay's video stage: `openrouter` is the built-in provider (OpenRouter's video API); unset, the stage makes no video and records that it did not. Any other name is refused | Screenplays (video stage) |
+| `EI_OPENROUTER_API_KEY` | the OpenRouter key the video stage uses with `EI_VIDEO_PROVIDER=openrouter`. Each shot is a paid job: the stage prices every shot before the first and stops for consent if the run's budget does not cover them | Screenplays (video stage) |
 | `EI_SEARXNG_URL` | the SearXNG address the research stage searches through | [A free local web search](#a-free-local-web-search-searxng) |
 | `EI_SKILL_LOCK` | the skill lock file | [The skill lock](#the-skill-lock-installed-prompt-text) |
 | `EI_STAGE_EXECUTOR` | what writes a run's stages: `local`, `model` or `deterministic` | [Limits to know](#limits-to-know) |
@@ -400,3 +424,13 @@ invisible character. `[pricing]` needs `verified_on` (an ISO date), `source_url`
 profile the assembled book loads but does not build, and the build says which of these is missing. Em and en dashes are
 refused in non-fiction when the book is built, and the profile is not rewritten, so leave them out of your own text.
 
+## Object storage
+
+A run's files (the stages' answers, the sources, the book's parts) are kept in one of two places, chosen by `EI_ARTIFACT_STORE`:
+
+- `database` (the default): in Postgres, as before.
+- `s3`: one object per file, at `runs/<run id>/<name>` in `EI_S3_BUCKET`. Any S3-compatible service works: AWS S3, or SeaweedFS run in the cluster (set `EI_S3_ENDPOINT_URL` to its address). The bucket must exist; the store does not create it.
+
+The files are write-once, as in the database: a file written again with the same bytes is accepted, and different bytes are refused. The `s3` extra (`pip install 'engineering-influence[s3]'`) provides boto3; it is needed only for the `s3` store.
+
+**Limit:** the API and the worker use the chosen store. The command-line book commands, the MCP server and the local single-process runs still read the database, so a run kept in S3 is not visible to them yet.

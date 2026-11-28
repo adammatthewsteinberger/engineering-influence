@@ -44,7 +44,7 @@ Find the symptom, then the cause. Commands assume you ran `set -a; . examples/.e
 | `ei book create` exits 2 and prints `a book needs the author's details to be typeset` (code `AUTHOR_PROFILE_REQUIRED`) | A book needs the author's details to be typeset, and none was named | Pass `--profile FILE` or set `EI_AUTHOR_PROFILE`; `examples/author-profile.example.toml` is a starting point. (`ei doctor --ready` takes `--author-profile`.) |
 | `ei book create` exits 3 | The run stopped to ask for more budget. Nothing is lost | Decide, then `ei book create --out DIR --resume --approve-spend` |
 | `ei doctor --ready` fails `local: server` | Ollama is not running at `EI_LOCAL_URL` | Start Ollama, or set `EI_LOCAL_URL`; see [LOCAL_MODEL.md](LOCAL_MODEL.md) |
-| `ei doctor --ready` fails `local: context` | The server loaded the model with fewer than 32,768 tokens | Set `OLLAMA_CONTEXT_LENGTH=32768` where you start Ollama and restart it |
+| `ei doctor --ready` fails `local: context` | The server loaded the model with fewer than 131,072 tokens | Set `OLLAMA_CONTEXT_LENGTH=131072` where you start Ollama and restart it |
 | `ei doctor --ready` prints `FAIL searxng at its default address: search: …` | Nothing answered a real test search at `http://127.0.0.1:8888`, or at the `EI_SEARXNG_URL` or Brave you set | Start the SearXNG in `examples/searxng/` (see [RESEARCH.md](RESEARCH.md)) or set `EI_SEARXNG_URL` or `BRAVE_SEARCH_API_KEY` |
 | `ei doctor --ready` prints `FAIL install: tool <name>` or `FAIL install: extra <name>` | The build stage needs that tool, or the run needs that extra | Install it; [WORKER_IMAGE.md](WORKER_IMAGE.md) lists the TeX packages |
 | `ei doctor --ready` fails `local: model` or `local: answers` | The model is not pulled, or it returned an empty answer | `ollama pull gpt-oss:20b`; see [LOCAL_MODEL.md](LOCAL_MODEL.md) |
@@ -92,9 +92,35 @@ recorded cassettes) and need no action from you.
 | `SCHEMA_OUT_OF_DATE` | `the database schema is not at the latest revision; run ei db upgrade` | Run `ei db upgrade` |
 | `TOOL_URL_REFUSED` | the address was refused by the URL policy | A remote tool server must be a public `https` address. See [TOOL_LOCK.md](TOOL_LOCK.md) |
 | `TOOL_ENV_MISSING` | `the environment variable NAME is not set` | Set the variable the tool server's configuration names, then start again |
+| `SANDBOX_UNAVAILABLE` | `this system has no native sandbox for MCP servers ...` | Install bubblewrap on Linux (`bwrap` on the path); macOS ships `sandbox-exec`. A locked server is not started without one |
 | `WEBHOOK_TARGET_REJECTED` | `webhook destination refused: REASON` | The webhook's address was refused: it must be public `https` |
 | `SKILL_IMPORT_TOO_LARGE` | `the chosen text is N characters and a part holds at most M; choose sections with --section` | Pick fewer reference sections with `--section`. The message lists each section and its length |
 | `SOURCE_TOO_COMPLEX` | `the page nests elements more than N deep` | A fetched web page is too deeply nested to read safely. The research stage skips it; no action needed |
+| `SOURCE_EMPTY` | `the source folder ... has no readable source files` | A screenplay's source folder holds no `.md` or `.txt` files. Put the manuscript files in it (ADR 0017) |
+| `SOURCE_FOLDER_MISSING` | `the source folder ... does not exist` | The path given for the source folder is wrong. Check it |
+| `SOURCE_TOO_LARGE` | `source file ... is over 2000000 bytes; split it` | A source file is larger than the limit. Split it into several files in the folder |
+| `STAGE_OUTPUT_INVALID` | `beats: the beat sheet needs the fifteen beats in order ...` | A stage's answer broke a format rule. A screenplay architecture stage (anchors, audit, beats, scene cards, visual grammar) gets one repair call that is told the problems; if that also fails, the stage stops with its own code below. Other stages stop at once. Read the named problems; a re-run of the stage asks again |
+| `SCREENPLAY_ANCHORS_INVALID`, `SCREENPLAY_AUDIT_INVALID`, `SCREENPLAY_BEATS_INVALID`, `SCREENPLAY_SCENE_CARDS_INVALID`, `SCREENPLAY_VISUAL_GRAMMAR_INVALID` | `beats: the beat sheet needs the fifteen beats in order ...` | The named stage's answer still failed its checks after the repair call. The message names the problems left; fix the source or the bible, then re-run the stage |
+| `SCREENPLAY_NO_TITLE` | `the title page must name the title` | A screenplay's title page has no `Title:` line. Add one to the screenplay settings |
+| `SCREENPLAY_NO_SCENES` | `a screenplay has at least one scene` | The screenplay has no scenes to join. Check the drafted scenes |
+| `SCREENPLAY_SCENE_INVALID` | `scene N must be exactly one scene heading and its elements` | A drafted scene holds more than one scene heading. Split it or redraft it |
+| `RUN_MODE_UNKNOWN` | `a book run is a book or an audiobook, not 'x'` | The `--mode` is not `book` or `audiobook`. Use one of those |
+| `NARRATION_FAILED` | `the narrator could not read a segment: ...` | The local voice engine could not narrate a piece of text: it is missing (install the `audio` extra on an Apple Silicon Mac), it exited with an error, or it wrote no audio. The message names the engine's last output |
+| `VIDEO_PROVIDER_UNAVAILABLE` | `the video provider 'veo' needs EI_OPENROUTER_API_KEY and is one of: openrouter` | `EI_VIDEO_PROVIDER` names a provider this build does not have, or names `openrouter` without `EI_OPENROUTER_API_KEY`. Set the key, or unset `EI_VIDEO_PROVIDER` so the screenplay makes no video |
+| `VIDEO_GENERATION_FAILED` | `the video service ended job ... as 'failed' for shot N` | The hosted model failed, was cancelled or expired a shot's job. The run stops; `--resume` keeps the shots already made and asks again only for the rest |
+| `VIDEO_REJECTED` | `the video service rejected the request (400): ...` | The hosted service refused a shot's request, for example a prompt or length it does not accept. The message gives its reply; change the shot before trying again |
+| `STOP_STAGE_UNKNOWN` | `a screenplay run has no stage 'x' to stop after` | The `--stop-after` stage name is not a stage of that kind of run. Use a stage name from the plan, such as `scene_cards` |
+| `SHOOTING_LOCK_UNREADABLE` | `the shooting script lock is unreadable: ...` | The previous shooting script lock the run was given is not a version 1 lock file, or one of its scenes has a bad number. Re-export the lock from the run that made it |
+| `SCENE_CARDS_UNREADABLE` | `the scene cards have no '## S01 ·' card` | The scene cards from the architecture stage cannot be read: a card has no `**Beat:**` field, no `**Sources:**` field of source numbers, or there are no cards at all. Re-run the scene-cards stage |
+| `SCREENPLAY_NO_SOURCES` | `a screenplay run needs a source folder, given with --source` | A screenplay is written from the author's source files, so the run needs `--source DIR`. Give the folder and start again |
+| `BIBLE_FOLDER_MISSING` | `the bible folder ... does not exist` | The screenplay's bible folder is not where it was pointed. Check the path (ADR 0018) |
+| `BIBLE_CARD_INVALID` | `kind/id.md: its front matter ...` | A bible card must open with a `+++` line, hold TOML, close with a second `+++` line, and use a lowercase kind folder and id file name (ADR 0018) |
+| `BIBLE_SCHEMA_INVALID` | `bible.toml holds only a [required] table ...` | `bible.toml` may hold only a `[required]` table that maps each kind to a list of key names |
+| `BIBLE_FIELD_MISSING` | `kind/id must set name` | A card lacks a key that `bible.toml` requires for its kind. Add the key to the card |
+| `BIBLE_DUPLICATE_ID` | `two cards are kind/id` | Two files in one kind folder share a name, or two cards carry one id. An id is unique within its kind |
+| `BIBLE_LINK_UNKNOWN` | `kind/id links to kind: id, which is not a card` | A `[[kind: id]]` link in a card names no card. Fix the id or add the card |
+| `BIBLE_KIND_UNSUPPORTED` | `a bible is for screenplay runs only` | `--bible` was given for a book that is not a screenplay. Only `--kind screenplay` takes a bible |
+| `BIBLE_REAL_PERSON` | `kind/id is a real person ...` | A card with `real = true` must name its `clearance`, and must not carry a `likeness` or `voice` key (ADR 0018) |
 
 ## Collecting evidence for a bug report
 

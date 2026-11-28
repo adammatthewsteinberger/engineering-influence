@@ -135,7 +135,8 @@
       "BookKind": {
         "enum": [
           "nonfiction",
-          "novel"
+          "novel",
+          "screenplay"
         ],
         "title": "BookKind",
         "type": "string"
@@ -423,7 +424,7 @@
   },
   "info": {
     "title": "engineering-influence",
-    "version": "1.0.0"
+    "version": "0.1.0rc1"
   },
   "openapi": "3.1.0",
   "paths": {

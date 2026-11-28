@@ -1,0 +1,27 @@
+{{- if .Values.observability.enabled }}
+# Prometheus has no authentication of its own. Only Grafana may reach it; the scrape is outbound from Prometheus.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "ei.fullname" . }}-prometheus
+  labels:
+    {{- include "ei.labels" . | nindent 4 }}
+    app.kubernetes.io/component: prometheus
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "ei.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: prometheus
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ include "ei.name" . }}
+              app.kubernetes.io/instance: {{ .Release.Name }}
+              app.kubernetes.io/component: grafana
+      ports:
+        - protocol: TCP
+          port: 9090
+{{- end }}

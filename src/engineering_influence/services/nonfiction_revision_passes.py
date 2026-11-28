@@ -13,7 +13,8 @@ class NonfictionRevisionPasses(RevisionPassesInterface):
     """Each pass edits more narrowly than the one before, and may change the chapter's length less.
 
     **Structure** sees the whole outline, a line on every other chapter and this chapter's beats, and may
-    reorder and cut so the chapter does its job and does not repeat another (a fifth either way). **Lines**
+    reorder and cut so the chapter does its job and does not repeat another (a fifth either way); in a long chapter it
+    reorders within each part (see ``RevisionStageExecutor``). **Lines**
     sees the voice and the chapter and edits sentence by sentence, keeping the facts and the order (a tenth
     either way). **Copy** sees only the chapter and corrects spelling, grammar, punctuation and consistency
     (a twentieth either way). The first reads the drafted ``chapter_NN.md``; each next reads what the last wrote;

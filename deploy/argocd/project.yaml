@@ -1,0 +1,27 @@
+# The AppProject bounds what the engineering-influence Application may do: sync only this repository, deploy only into the
+# ei-dev namespace of the local cluster, create no cluster-scoped objects, and create only the kinds the dev overlay renders.
+# Namespace creation (CreateNamespace) is handled by Argo CD itself and needs no entry here.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: engineering-influence
+  namespace: argocd
+spec:
+  description: The engineering-influence dev overlay only.
+  sourceRepos:
+    - https://github.com/adammatthewsteinberger/engineering-influence.git
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: ei-dev
+  clusterResourceWhitelist: []
+  namespaceResourceWhitelist:
+    - group: ""
+      kind: ConfigMap
+    - group: ""
+      kind: Service
+    - group: ""
+      kind: ServiceAccount
+    - group: apps
+      kind: Deployment
+    - group: batch
+      kind: Job

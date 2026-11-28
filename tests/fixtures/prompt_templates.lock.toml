@@ -2,8 +2,8 @@
 # Regenerate with EI_UPDATE_PROMPT_LOCK=1 (see tests/unit/test_prompt_template_lock.py).
 
 [context_pack]
-version = 2
-fingerprint = "6536536270f882538435c9ee6af2c3e7ee9ff09d94f659c3919739b61834a676"
+version = 3
+fingerprint = "5ee67074505558a626bc5b75c32092215af0cd4a13294ab3fc890d2b7e383468"
 
 [eval_judge]
 version = 1
@@ -18,16 +18,28 @@ version = 1
 fingerprint = "1467a7838d0bd3ba6b4ab29472c2d332ed8b77eac715a4916d7505a256a24397"
 
 [novel_context_pack]
+version = 2
+fingerprint = "d18904b880aabfdbf98c5eff6f7a13f9bd864e6c39648f0c93ee3a1cc7267e5b"
+
+[novel_copy_edit]
 version = 1
-fingerprint = "9c52e5ff3c5a73975bb4acc3fa575e61fb787d2be55c650f7a4beffbea1b87f5"
+fingerprint = "c34e02aca1e1efdc34e245182837c51cfb7d48413cdba23032ec21edb88c8685"
 
 [novel_metadata]
 version = 1
 fingerprint = "7fcfbaa16e3d3d2b7f4bde3d4f69779ad433bdbdd482cc80b7193c9a5c8cd1a5"
 
 [novel_outline]
+version = 2
+fingerprint = "886b6d1bb7aaffd7056dbfb8901694b5644a48c04a79d634785ab33673fc766c"
+
+[novel_revise_lines]
 version = 1
-fingerprint = "ddeaf38eff9a41cc49fc44a1c26f3e41fde5d81e94d17c4111b09139f03f9f7d"
+fingerprint = "d5ec52dad765847debe71cfdf9ff301ac27458bd411468d2b1fc5bf1c505084f"
+
+[novel_revise_story]
+version = 1
+fingerprint = "26b612ea2c34346525d4f6f62019619809903323d9dc910b128ece566a2c61a7"
 
 [novel_story_bible]
 version = 1
@@ -37,6 +49,50 @@ fingerprint = "94f201acab95ae06de536bdc086f96f7e3ec2177a7c5aed70c43bd7daec18aac"
 version = 1
 fingerprint = "6f4e44f3c43f42730bba78da0ba2277a2b266f2e3313fdf20c6132f68da78015"
 
+[screenplay_anchors]
+version = 5
+fingerprint = "e13f368ed12e866f1c1fe8f10ffa52c487c482a4a081239fa87ffa571d66c76e"
+
+[screenplay_audit]
+version = 1
+fingerprint = "94b20d28af85b3cf83ec3086527056d811dcfe20331f7efd6bbed1c9dcba462f"
+
+[screenplay_beats]
+version = 2
+fingerprint = "826200295354f69e2b8c8b3f8d35f0dbfdf91a6c06540acc86877eb365aae209"
+
+[screenplay_brief]
+version = 1
+fingerprint = "c7835a27b384260094883858cb207fe4c68eff8a7f0383152ffafcc5030f35b5"
+
+[screenplay_digest_source]
+version = 1
+fingerprint = "d50e6131175a0b730b61291e0cdefb5bc7cad02481f5c5f8a62f244de7ea2c59"
+
+[screenplay_draft_scene]
+version = 2
+fingerprint = "84f372c9c8c6817087d8d824aaa57062e4b162b7b73c448a50b9c58383c14e8b"
+
+[screenplay_pass_dialogue]
+version = 1
+fingerprint = "aac8cc7f28a5e14b5cb8eff4e6efd78af011b484f346b47362c627711d39194b"
+
+[screenplay_pass_structure]
+version = 1
+fingerprint = "84848a632a50b69b22ab08923157b7d20f943636bb5d8145542e3c22055385ed"
+
+[screenplay_revise_scene]
+version = 1
+fingerprint = "599e98a76074527a81fa340c14dd61fc990ced53398f84cca8b732f81656cf13"
+
+[screenplay_scene_cards]
+version = 2
+fingerprint = "7502004ce04df5446a535a52eba13efccf3720421301b9dff83ace600a3b3820"
+
+[screenplay_visual_grammar]
+version = 1
+fingerprint = "571feeae0eda7dfc27af080958c82f6fc380b1af5bba598359a7aa8d8861a9b2"
+
 [skill_guidance]
 version = 2
 fingerprint = "a4201ec270b5535eadbad3b7fa5df2ad493f34e1036f55f10a04da2dd13ea9aa"
@@ -45,17 +101,25 @@ fingerprint = "a4201ec270b5535eadbad3b7fa5df2ad493f34e1036f55f10a04da2dd13ea9aa"
 version = 2
 fingerprint = "0c8a89733fbb2f3ed2d11958cafcc15ba4b7be615130a9194448fcba65a2ae3b"
 
+[stage_check_claim]
+version = 1
+fingerprint = "b82826cdc2910b02bfb193bc3b9de0fb1f727b3d3ee3d475f369fd1bf6de0992"
+
 [stage_copy_edit]
 version = 2
 fingerprint = "0f7fe6160a2e1e7864101f98e580c58a5d49129033b1c00eb42774ef50614391"
+
+[stage_extract_claims]
+version = 1
+fingerprint = "680d722ce3a00b9d54613dd9c44670c0d892e9c39bbee943cfa69d00e38b45c4"
 
 [stage_metadata]
 version = 1
 fingerprint = "a5d4aac337b08a56252d013038c9a562dac86c38897f3c22c405fcef7d98b007"
 
 [stage_outline]
-version = 4
-fingerprint = "be5718fd75e583d7556771122330c56eb871d35fb213d721cbbc781435a5262e"
+version = 5
+fingerprint = "0ae1c5a3c61f128f97aad745a07fe91748c33fe6e46c9d6ffb71339a0be441fe"
 
 [stage_positioning]
 version = 1
@@ -72,6 +136,10 @@ fingerprint = "5e99b86a60e85631e8297ec535e97d6f3b663360ffabbdc202ae2122bec04fda"
 [stage_revise_structure]
 version = 2
 fingerprint = "685a359337927389c02736a1e2690273a9cae66965bebca7336278b39ab2d203"
+
+[stage_soften_claims]
+version = 1
+fingerprint = "776435307f27f3c0f604314bdbcb8593358a3c9b0e008a8d95ec253495ee4479"
 
 [stage_summary]
 version = 1

@@ -20,6 +20,7 @@ from engineering_influence.models.book_brief import BookBrief
 from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.budget import Budget
+from engineering_influence.models.outbox_event import OutboxEvent
 from engineering_influence.models.run_status import RunStatus
 from engineering_influence.models.stage_plan import StagePlan
 from engineering_influence.repositories.sqlmodel_artifact_store import SqlModelArtifactStore
@@ -45,11 +46,14 @@ class ChaosRuns(SqlModelRunRepository):
         self.crash_on = crash_on
         self.writes = 0
 
-    def swap(self, expected: BookRun, replacement: BookRun) -> bool:
+    def swap_with_events(
+        self, expected: BookRun, replacement: BookRun, events: tuple[OutboxEvent, ...]
+    ) -> bool:
+        # AdvanceRun stores every change through swap_with_events, so the crash is injected there.
         self.writes += 1
         if self.writes == self.crash_on:
             raise Crash
-        return super().swap(expected, replacement)
+        return super().swap_with_events(expected, replacement, events)
 
 
 class ChaosQueue(RabbitMqQueueAdapter):

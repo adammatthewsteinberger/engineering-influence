@@ -1,0 +1,180 @@
+# Image. The slim runtime image runs the API and the migration; the worker needs the TeX image (`worker-tex`) to build
+# a book's PDF and EPUB, so set worker.image.tag to a build of that target if the worker must build books.
+image:
+  repository: ghcr.io/adammatthewsteinberger/engineering-influence
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+
+# The one Secret the pods read. It must exist before install and hold these keys:
+#   EI_DATABASE_URL   SQLAlchemy URL for Postgres, e.g. postgresql+psycopg://user:pw@host:5432/db
+#   EI_RABBITMQ_URL   amqp://user:pw@host:5672/
+#   EI_API_KEYS       comma-separated API keys, each at least 24 characters
+#   plus any model or search keys the run settings name (see docs/CONFIGURATION.md)
+existingSecret: ""
+
+# Non-secret settings, written to a ConfigMap and read by every pod.
+config:
+  EI_HOST: "0.0.0.0"
+  EI_PORT: "8000"
+  EI_QUEUE_NAME: "engineering-influence.jobs"
+
+# Where a run's files are kept. `database` (default) keeps them in Postgres. `s3` keeps each file as an object in
+# `bucket`: at `endpointUrl`, or at the in-cluster SeaweedFS when seaweedfs.enabled is true. The S3 credentials
+# (EI_S3_ACCESS_KEY_ID and EI_S3_SECRET_ACCESS_KEY) must be keys of existingSecret.
+artifactStore:
+  kind: database
+  bucket: ei-artifacts
+  endpointUrl: ""
+  region: us-east-1
+
+# An optional single-replica SeaweedFS (S3 API) in the namespace, for clusters without an object store. It is not
+# highly available and keeps its data on one volume; use an external S3 service for production.
+seaweedfs:
+  enabled: false
+  image:
+    repository: chrislusf/seaweedfs
+    tag: "3.68"
+  storage: 20Gi
+  curlImage:
+    repository: curlimages/curl
+    tag: "8.10.1"
+
+# Optional in-cluster Postgres and RabbitMQ, for a local cluster such as minikube. Production uses a managed or operator-run
+# service and leaves these off. Postgres reads EI_POSTGRES_PASSWORD and RabbitMQ reads EI_RABBITMQ_PASSWORD from the Secret.
+postgres:
+  enabled: false
+  image:
+    repository: postgres
+    tag: "17"
+  storage: 5Gi
+rabbitmq:
+  enabled: false
+  image:
+    repository: rabbitmq
+    tag: "3.13-alpine"
+
+# Metrics and dashboards: Prometheus scrapes the API's /metrics, and Grafana reads Prometheus. The API guards /metrics with
+# an API key, so the Secret must hold a dedicated key (metricsApiKeyName) that is also listed in EI_API_KEYS.
+# Logs: Alloy reads the pods' logs in this namespace through the Kubernetes API and sends them to Loki, which Grafana reads.
+# Both are off by default; observability.enabled is also needed for Grafana.
+logs:
+  enabled: false
+  loki:
+    image:
+      repository: grafana/loki
+      tag: "3.2.0"
+    storage: 5Gi
+  alloy:
+    image:
+      repository: grafana/alloy
+      tag: "v1.4.0"
+# Traces: the API and the worker export OpenTelemetry spans over OTLP/HTTP to Tempo, which Grafana reads. Off by default.
+# With tracing enabled, the ConfigMap sets EI_OTLP_ENDPOINT to Tempo's receiver. observability.enabled is needed for Grafana.
+tracing:
+  enabled: false
+  tempo:
+    image:
+      repository: grafana/tempo
+      tag: "2.6.1"
+    storage: 5Gi
+# Secrets from OpenBao (an open-source Vault fork), synced into the existingSecret by the External Secrets Operator. The
+# operator's CRDs must exist (install external-secrets first). openbao.devMode runs one in-memory server with the root
+# token from bootstrapTokenSecret, for a local cluster only; production points secretStore at an OpenBao it runs.
+openbao:
+  enabled: false
+  # devMode runs the in-memory server in this chart; it is for a local cluster only. Otherwise set server to an OpenBao
+  # you run, and the chart deploys nothing for it.
+  devMode: true
+  server: ""
+  image:
+    repository: openbao/openbao
+    tag: "2.1.0"
+  # A Secret, created before install, holding EI_OPENBAO_ROOT_TOKEN. It is separate from existingSecret, which the
+  # operator overwrites.
+  bootstrapTokenSecret: ei-openbao-token
+  # The KV v2 path (under secret/) that holds the app's values, and the keys the operator copies into existingSecret.
+  path: ei
+  keys:
+    - EI_DATABASE_URL
+    - EI_RABBITMQ_URL
+    - EI_API_KEYS
+    - EI_POSTGRES_PASSWORD
+    - EI_RABBITMQ_PASSWORD
+    - EI_S3_ACCESS_KEY_ID
+    - EI_S3_SECRET_ACCESS_KEY
+    - EI_METRICS_API_KEY
+    - EI_GRAFANA_ADMIN_PASSWORD
+  refreshInterval: 1h
+
+observability:
+  enabled: false
+  metricsApiKeyName: EI_METRICS_API_KEY
+  prometheus:
+    image:
+      repository: prom/prometheus
+      tag: "v2.55.1"
+  grafana:
+    image:
+      repository: grafana/grafana
+      tag: "11.3.0"
+
+api:
+  replicas: 2
+  port: 8000
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 512Mi }
+
+# Autoscaling. The API scales on CPU with a HorizontalPodAutoscaler; the worker scales on its queue depth with KEDA,
+# which must be installed in the cluster (its ScaledObject and TriggerAuthentication CRDs). When KEDA manages the worker,
+# the worker's replicas field is left to KEDA.
+autoscaling:
+  api:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+  keda:
+    enabled: false
+    # 0 lets the worker scale to nothing when the queue is empty (dev); 1 keeps one worker warm (production).
+    minReplicaCount: 1
+    maxReplicaCount: 10
+    # Messages waiting per worker before KEDA adds another.
+    queueLengthPerReplica: 10
+    pollingInterval: 30
+    cooldownPeriod: 300
+
+worker:
+  replicas: 1
+  image:
+    # Leave the tag empty to use the slim image; set a `worker-tex` build to build books.
+    tag: ""
+  resources:
+    requests: { cpu: 500m, memory: 1Gi }
+    limits: { memory: 4Gi }
+
+migration:
+  # Runs `ei db upgrade` before each install and upgrade. Set false to run the migration yourself.
+  enabled: true
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+serviceAccount:
+  create: true
+  name: ""
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

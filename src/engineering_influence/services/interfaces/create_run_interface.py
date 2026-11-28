@@ -7,8 +7,10 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from engineering_influence.models.bible_card import BibleCard
     from engineering_influence.models.book_brief import BookBrief
     from engineering_influence.models.book_run import BookRun
+    from engineering_influence.models.source_entry import SourceEntry
 
 
 class CreateRunInterface(ABC):
@@ -17,5 +19,18 @@ class CreateRunInterface(ABC):
     __slots__ = ()
 
     @abstractmethod
-    def create(self, brief: BookBrief) -> BookRun:
+    def create(
+        self,
+        brief: BookBrief,
+        sources: tuple[SourceEntry, ...] = (),
+        previous_lock: str | None = None,
+        stop_after: str | None = None,
+        mode: str = "book",
+        bible: tuple[BibleCard, ...] = (),
+        title: str | None = None,
+        previous_script: str | None = None,
+        revision: int = 1,
+        revision_date: str | None = None,
+        servers: tuple[str, ...] | None = None,
+    ) -> BookRun:
         """Save a new pending run for the brief and queue its first stage; return the run."""

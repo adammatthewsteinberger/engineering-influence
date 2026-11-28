@@ -87,7 +87,7 @@ ok   install: extra runtime: installed
 ok   install: tool lualatex: /Library/TeX/texbin/lualatex
 FAIL install: author profile: none named: set EI_AUTHOR_PROFILE or pass --author-profile FILE (…)
 ok   local: model: gpt-oss:20b is pulled
-ok   local: context: 131072 tokens, at least the 32768 a prompt is assembled to fit
+ok   local: context: 131072 tokens, at least the 131072 a prompt is assembled to fit
 …
 1 of 14 checks failed
 ```
@@ -130,6 +130,8 @@ ei book create --kind nonfiction "how to keep herbs alive indoors" --budget-usd 
 It prints an estimate, then one line per stage as each finishes, then a summary. `--kind novel` writes a novel.
 `--out` must be a new or empty folder. `--budget-usd` is required even with the free model, where it is only a
 cap. A whole book takes a long time; how long on your machine is not yet measured.
+
+`--source DIR` gives the run a folder of source files (`.md` and `.txt`, hidden files skipped, at most 2,000,000 bytes each). They are read when the run is created, numbered in name order, and kept inside the run as `source/NNN.md`, so the run never reads the folder again and the folder may be moved or deleted afterwards. An empty or missing folder is refused before any money is spent.
 
 | Exit | Meaning | What to do |
 |---|---|---|

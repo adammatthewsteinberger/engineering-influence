@@ -30,7 +30,11 @@ class BookJudge(BookJudgeInterface):
     ATTEMPTS = 2
     ANSWER_BASE_TOKENS = 300
     ANSWER_TOKENS_PER_DIMENSION = 150
-    LABELS: ClassVar[Mapping[str, str]] = {"nonfiction": "non-fiction book", "novel": "novel"}
+    LABELS: ClassVar[Mapping[str, str]] = {
+        "nonfiction": "non-fiction book",
+        "novel": "novel",
+        "screenplay": "screenplay",
+    }
 
     def __init__(
         self,

@@ -40,7 +40,7 @@ def test_a_finished_book_is_described_by_what_the_run_wrote(tmp_path: Path) -> N
         "completed",
         True,
     )
-    assert book.title == "Herbs Indoors" and len(book.chapters) == 2
+    assert book.title == "Herbs Indoors" and len(book.chapters) == 3
     assert book.chapters[0].startswith("# Light") and "bright window" in book.chapters[0]
     assert 0 < book.spent_micro_usd <= 5_000_000
     assert isinstance(book.estimated_micro_usd, int) and book.estimated_micro_usd > 0
@@ -126,7 +126,7 @@ class FakeCreator:
         self.fail_start = fail_start
         self.closed = 0
 
-    def start(self, brief: object, progress: object) -> SimpleNamespace:
+    def start(self, brief: object, progress: object, sources: object = ()) -> SimpleNamespace:
         if self.fail_start:
             raise ApplicationError(code="BOOM", message="stopped", http_status=500)
         return SimpleNamespace(status=self.status, budget=SimpleNamespace(spent=7), issues=())

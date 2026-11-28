@@ -1,3 +1,6 @@
 # A made-up key in a test, flagged by the generic API-key rule in the commit that added it.
 # The line now carries '# gitleaks:allow'; this entry covers the PR range that still contains the earlier commit.
 b4ca96e7861cc8da7059d28c541d2650a1b69243:tests/unit/test_brave_search_provider.py:generic-api-key:22
+# A placeholder in the deployment doc's example, flagged by the generic API-key rule in the commit that added it.
+# The line now names what to put there; this entry covers the PR range that still contains the earlier commit.
+40f12f414256be0a51711b85123a9a02ddea58c7:docs/DEPLOYMENT.md:generic-api-key:32

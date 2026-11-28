@@ -1,0 +1,173 @@
+{{- if .Values.seaweedfs.enabled }}
+{{- $name := printf "%s-seaweedfs" (include "ei.fullname" .) }}
+{{- $labels := include "ei.labels" . }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $name }}-data
+  labels:
+    {{- $labels | nindent 4 }}
+    app.kubernetes.io/component: seaweedfs
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: {{ .Values.seaweedfs.storage }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- $labels | nindent 4 }}
+    app.kubernetes.io/component: seaweedfs
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "ei.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: seaweedfs
+  template:
+    metadata:
+      labels:
+        {{- $labels | nindent 8 }}
+        app.kubernetes.io/component: seaweedfs
+    spec:
+      serviceAccountName: {{ include "ei.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        # Writes SeaweedFS's identity file from the same keys the API and worker read, so the credentials live in one Secret.
+        - name: identity
+          image: busybox:1.37
+          command:
+            - sh
+            - -c
+            - |
+              printf '{"identities":[{"name":"ei","credentials":[{"accessKey":"%s","secretKey":"%s"}],"actions":["Admin","Read","Write","List","Tagging"]}]}' "$EI_S3_ACCESS_KEY_ID" "$EI_S3_SECRET_ACCESS_KEY" > /config/s3.json
+          env:
+            - name: EI_S3_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "existingSecret is required with seaweedfs.enabled" .Values.existingSecret }}
+                  key: EI_S3_ACCESS_KEY_ID
+            - name: EI_S3_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.existingSecret }}
+                  key: EI_S3_SECRET_ACCESS_KEY
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /config
+      containers:
+        - name: seaweedfs
+          image: {{ printf "%s:%s" .Values.seaweedfs.image.repository .Values.seaweedfs.image.tag | quote }}
+          args: ["server", "-dir=/data", "-s3", "-s3.port=8333", "-s3.config=/config/s3.json", "-ip.bind=0.0.0.0"]
+          ports:
+            - name: s3
+              containerPort: 8333
+          readinessProbe:
+            tcpSocket:
+              port: s3
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: s3
+            periodSeconds: 20
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: config
+              mountPath: /config
+              readOnly: true
+            # SeaweedFS writes its socket files to /tmp, which the read-only root filesystem would refuse.
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ $name }}-data
+        - name: config
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- $labels | nindent 4 }}
+    app.kubernetes.io/component: seaweedfs
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: {{ include "ei.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: seaweedfs
+  ports:
+    - name: s3
+      port: 8333
+      targetPort: s3
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $name }}-bucket-{{ .Release.Revision }}
+  labels:
+    {{- $labels | nindent 4 }}
+    app.kubernetes.io/component: seaweedfs-bucket
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        {{- $labels | nindent 8 }}
+        app.kubernetes.io/component: seaweedfs-bucket
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ include "ei.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: create-bucket
+          image: {{ printf "%s:%s" .Values.seaweedfs.curlImage.repository .Values.seaweedfs.curlImage.tag | quote }}
+          env:
+            - name: EI_S3_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.existingSecret }}
+                  key: EI_S3_ACCESS_KEY_ID
+            - name: EI_S3_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.existingSecret }}
+                  key: EI_S3_SECRET_ACCESS_KEY
+          command:
+            - sh
+            - -c
+            - |
+              # Waits for the S3 port, then creates the bucket. 200 and 409 (already exists) both mean it is there.
+              for i in $(seq 1 60); do
+                code=$(curl -s -o /dev/null -w '%{http_code}' --aws-sigv4 "aws:amz:{{ .Values.artifactStore.region }}:s3" --user "$EI_S3_ACCESS_KEY_ID:$EI_S3_SECRET_ACCESS_KEY" -X PUT "http://{{ $name }}:8333/{{ .Values.artifactStore.bucket }}") || code=000
+                if [ "$code" = "200" ] || [ "$code" = "409" ]; then exit 0; fi
+                sleep 2
+              done
+              echo "the bucket was not created; last status $code" >&2
+              exit 1
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+{{- end }}

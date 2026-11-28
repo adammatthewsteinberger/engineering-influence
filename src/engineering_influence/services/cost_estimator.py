@@ -15,6 +15,8 @@ from engineering_influence.services.interfaces.cost_estimator_interface import (
     CostEstimatorInterface,
 )
 from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
+from engineering_influence.services.novel_recipes import NovelRecipes
+from engineering_influence.services.screenplay_recipes import ScreenplayRecipes
 
 
 class CostEstimator(CostEstimatorInterface):
@@ -46,11 +48,39 @@ class CostEstimator(CostEstimatorInterface):
     CONTEXT_PER_CHAPTER_TOKENS: ClassVar[int] = 200
     SUMMARY_OUTPUT_TOKENS: ClassVar[int] = 250
     EDIT_INSTRUCTION_TOKENS: ClassVar[int] = 1_500
+    # The editing passes of either kind: optional, and priced as one call per chapter.
+    EDITING_STAGES: ClassVar[frozenset[str]] = frozenset(
+        (
+            *NonfictionRecipes.REVISION_STAGES,
+            NonfictionRecipes.FACT_STAGE,
+            *NovelRecipes.REVISION_STAGES,
+        )
+    )
     NO_MODEL: ClassVar[frozenset[str]] = frozenset(
         {
             NonfictionRecipes.ASSEMBLE_STAGE,
             NonfictionRecipes.AUDIT_STAGE,
             NonfictionRecipes.BUILD_STAGE,
+            NonfictionRecipes.AUDIOBOOK_STAGE,
+            NonfictionRecipes.NARRATION_STAGE,
+            ScreenplayRecipes.ASSEMBLE_STAGE,
+            ScreenplayRecipes.LOCK_STAGE,
+            ScreenplayRecipes.REPORT_STAGE,
+            ScreenplayRecipes.CANON_STAGE,
+            ScreenplayRecipes.RENDER_STAGE,
+            ScreenplayRecipes.EPUB_STAGE,
+        }
+    )
+    # Optional stages: a run that runs out of money leaves them out. The ACX export is one of them, and so is the
+    # screenplay revision, which keeps each drafted scene when its call is not paid for.
+    OPTIONAL_STAGES: ClassVar[frozenset[str]] = frozenset(
+        {
+            NonfictionRecipes.AUDIOBOOK_STAGE,
+            NonfictionRecipes.NARRATION_STAGE,
+            ScreenplayRecipes.REVISE_STAGE,
+            ScreenplayRecipes.STRUCTURE_STAGE,
+            ScreenplayRecipes.DIALOGUE_STAGE,
+            ScreenplayRecipes.VIDEO_STAGE,
         }
     )
 
@@ -75,12 +105,48 @@ class CostEstimator(CostEstimatorInterface):
         stages = []
         for stage in plan.stages:
             cost = self._stage(brief.kind, stage, chapters, chapter_tokens)
-            stages.append((stage, cost, stage not in NonfictionRecipes.REVISION_STAGES))
+            stages.append(
+                (
+                    stage,
+                    cost,
+                    stage not in self.EDITING_STAGES and stage not in self.OPTIONAL_STAGES,
+                )
+            )
         return CostEstimate(tuple(stages))
 
+    # A screenplay's drafting is one call per scene: the scene count is not known until the cards exist, so the
+    # estimate assumes the three-hour target (about 180 scenes), a planning figure the budget cap then enforces.
+    SCREENPLAY_SCENES: ClassVar[int] = 180
+    SCENE_INPUT_TOKENS: ClassVar[int] = 4_000
+    SCENE_OUTPUT_TOKENS: ClassVar[int] = 1_500
+    # Digesting is one call per source file. The file count is not known from the brief, so the estimate assumes one
+    # file per sol of a film (about 90), each about a page of logs.
+    SOURCE_DIGESTS: ClassVar[int] = 90
+    DIGEST_INPUT_TOKENS: ClassVar[int] = 2_000
+    DIGEST_OUTPUT_TOKENS: ClassVar[int] = 1_500
+    # The video stage is priced by its shot list, not by a model's tokens: about 1,604 USD for a 90-minute film with a
+    # 80/15/5 model mix and three takes per kept second (docs/research/screenplay-to-video.md, ADR 0015).
+    SCREENPLAY_VIDEO_MICRO_USD: ClassVar[int] = 1_604_000_000
+
     def _stage(self, kind: BookKind, stage: str, chapters: int, chapter_tokens: int) -> int:
+        if kind is BookKind.SCREENPLAY and stage == ScreenplayRecipes.VIDEO_STAGE:
+            return self.SCREENPLAY_VIDEO_MICRO_USD
         if stage in self.NO_MODEL:
             return 0
+        if kind is BookKind.SCREENPLAY and stage in (
+            ScreenplayRecipes.DRAFT_STAGE,
+            ScreenplayRecipes.REVISE_STAGE,
+            ScreenplayRecipes.STRUCTURE_STAGE,
+            ScreenplayRecipes.DIALOGUE_STAGE,
+        ):
+            # Drafting, revision and each pass are one call per scene.
+            return self.SCREENPLAY_SCENES * self._call(
+                self.SCENE_INPUT_TOKENS, self.SCENE_OUTPUT_TOKENS
+            )
+        if kind is BookKind.SCREENPLAY and stage == ScreenplayRecipes.DIGEST_STAGE:
+            return self.SOURCE_DIGESTS * self._call(
+                self.DIGEST_INPUT_TOKENS, self.DIGEST_OUTPUT_TOKENS
+            )
         if stage == NonfictionRecipes.DRAFT_STAGE:
             return sum(
                 self._call(
@@ -90,7 +156,7 @@ class CostEstimator(CostEstimatorInterface):
                 + self._call(chapter_tokens, self.SUMMARY_OUTPUT_TOKENS)
                 for number in range(chapters)
             )
-        if stage in NonfictionRecipes.REVISION_STAGES:
+        if stage in self.EDITING_STAGES:
             return chapters * self._call(
                 chapter_tokens + self.EDIT_INSTRUCTION_TOKENS, chapter_tokens
             )

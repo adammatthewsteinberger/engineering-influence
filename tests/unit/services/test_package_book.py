@@ -1,3 +1,6 @@
+from collections.abc import Iterator
+from contextlib import contextmanager
+
 """Packaging a book for KDP: only a passing release, with every file present, is written; the hashes match the bytes."""
 
 import argparse
@@ -11,6 +14,7 @@ import pytest
 from engineering_influence.errors.typesetting.book_build_error import BookBuildError
 from engineering_influence.infrastructure.publishing.directory_publisher import DirectoryPublisher
 from engineering_influence.interfaces.artifact_inventory_interface import ArtifactInventoryInterface
+from engineering_influence.interfaces.keep_awake_interface import KeepAwakeInterface
 from engineering_influence.models.book_metadata import BookMetadata
 from engineering_influence.models.kdp_bundle_file import KdpBundleFile
 from engineering_influence.models.kdp_listing import KdpListing
@@ -78,6 +82,12 @@ def packager(
     layout: ProjectLayout, present: tuple[str, ...] = ("output/herbs.pdf", "output/herbs.epub")
 ) -> PackageBook:
     return PackageBook(layout, Inventory(layout, present), DirectoryPublisher())
+
+
+class NoAwake(KeepAwakeInterface):
+    @contextmanager
+    def hold(self) -> Iterator[None]:
+        yield
 
 
 def test_it_is_a_package_book_port() -> None:
@@ -284,7 +294,17 @@ def test_the_cli_prints_the_package_summary_it_is_given(
             return f"[{slug}] packaged 2 files and the listing in build/{slug}/release/kdp"
 
     argv = argparse.Namespace(book_command="package", root=tmp_path, slugs=["herbs"])
-    assert BookCli(lambda root: Stub(), lambda state, settings: None).run(argv) == 0
+    assert (
+        BookCli(
+            lambda root: Stub(),
+            lambda state, settings: None,
+            NoAwake(),
+            lambda folder: (),
+            lambda folder: (),
+            lambda folder: None,
+        ).run(argv)
+        == 0
+    )
     assert (
         capsys.readouterr().out
         == "[herbs] packaged 2 files and the listing in build/herbs/release/kdp\n"

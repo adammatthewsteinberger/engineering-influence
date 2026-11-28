@@ -12,6 +12,7 @@ from pathlib import Path
 
 from local_server import LocalServer, Reply, Seen
 from smoke_run import SmokeRun
+from smoke_screenplay import answer as screenplay_answer
 
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interfaces.manuscript_builder_interface import ManuscriptBuilderInterface
@@ -30,6 +31,11 @@ Beats:
 Purpose: Explain watering.
 Beats:
 - Drainage
+
+## Chapter 3: Feeding
+Purpose: Explain feeding.
+Beats:
+- Compost
 """
 LISTING = (
     "Title: Herbs Indoors\nSubtitle: A calm guide to windowsill herbs\nDescription:\n"
@@ -65,9 +71,16 @@ Leads to: The road begins.
 Purpose: Ana finds shelter.
 Beats:
 - Ana reaches the inn
+Leads to: The road turns cold.
+
+## Chapter 3: The Snow
+Purpose: Ana crosses the pass.
+Beats:
+- Ana climbs
 """
 CHAPTER = re.compile(r'<untrusted name="chapter">\n(.*?)\n</untrusted>', re.DOTALL)
 NUMBER = re.compile(r"Write chapter (\d+) of")
+SECTION = re.compile(r"Write section \d+ of \d+ of chapter (\d+) of")
 CATALOG = """
 [[model]]
 provider = "local"
@@ -116,6 +129,9 @@ class NoSecrets(SecretProviderInterface):
 
 
 def answer(user: str) -> str:
+    scripted = screenplay_answer(user)
+    if scripted is not None:
+        return scripted
     if user.startswith("Write the brief"):
         return "BRIEF: a practical guide to growing herbs indoors."
     if user.startswith("Write the positioning"):
@@ -131,17 +147,24 @@ def answer(user: str) -> str:
         return NOVEL_OUTLINE if novel else OUTLINE
     if user.startswith("Write the store listing"):
         return NOVEL_LISTING if novel else LISTING
+    if user.startswith("Find the checkable claims"):
+        return "[]"
     if user.startswith("Summarise this chapter"):
         return "Herbs need light and drainage."
-    for edit in ("Revise the structure", "Line-edit", "Copy-edit"):
+    for edit in ("Revise the structure", "Revise the story", "Line-edit", "Copy-edit"):
         if user.startswith(edit):
             found = CHAPTER.search(user)
             assert found is not None
             return found.group(1) + " Edited."
+    if SECTION.search(user) is not None:
+        line = (
+            "Ana walks the salt road." if "## The novel" in user else "Herbs like a bright window."
+        )
+        return " ".join([line] * 32)
     chapter = NUMBER.search(user)
     assert chapter is not None, user[:80]
     return f"# Chapter {chapter.group(1)}: Title\n\n" + " ".join(
-        ["Herbs like a bright window."] * 12
+        ["Herbs like a bright window."] * 32
     )
 
 

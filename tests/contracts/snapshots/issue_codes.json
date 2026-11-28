@@ -1,11 +1,18 @@
 [
+  "ACX_AUDIO_FAILED",
+  "ACX_AUDIO_REJECTED",
+  "ACX_EMPTY_CHAPTER",
+  "DRAFT_SHORT",
   "REFUSED",
   "TOOL_LOOP_EXHAUSTED",
   "TRUNCATED",
   "budget-exceeded",
+  "canon-finding",
   "retries-exhausted",
+  "revision-kept-draft",
   "revision-rejected",
   "revision-skipped-budget",
   "revision-unchanged",
+  "screenplay-length",
   "stage-failed"
 ]

@@ -15,6 +15,9 @@ from engineering_influence.infrastructure.prompt_library.toml_prompt_library imp
 )
 from engineering_influence.interfaces.prompt_library_interface import PromptLibraryInterface
 from engineering_influence.interfaces.stage_executor_interface import StageExecutorInterface
+from engineering_influence.interfaces.stage_output_check_interface import (
+    StageOutputCheckInterface,
+)
 from engineering_influence.models.book_brief import BookBrief
 from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.book_run import BookRun
@@ -81,6 +84,7 @@ class World:
         brief: BookBrief | None = None,
         prompts: PromptLibraryInterface | None = None,
         plan: StagePlan | None = None,
+        checks: StageOutputCheckInterface | None = None,
     ) -> None:
         self.store = InMemoryArtifactStore()
         self.asker = Asker(*answers)
@@ -97,7 +101,7 @@ class World:
             registry,
             LockToolGrants(ToolLock()),
             NoStageGuidance(),
-            NoOutputChecks(),
+            checks or NoOutputChecks(),
             self._guard,
         )
         self.run = BookRun(
@@ -212,9 +216,38 @@ def test_a_later_stage_reads_the_earlier_answers_as_untrusted_text() -> None:
     assert '<untrusted name="brief">\nBRIEF caf\u00e9 text\n</untrusted>' in request.prompt
     assert '<untrusted name="positioning">\nPOSITIONING text\n</untrusted>' in request.prompt
     assert '<untrusted name="research">\nRESEARCH text\n</untrusted>' in request.prompt
-    assert request.max_output_tokens == 4_000
-    assert request.prompt_version == "stage_outline@4"
+    assert request.max_output_tokens == 8_192
+    assert request.prompt_version == "stage_outline@5"
     assert world.store.get("run-1", "outline.md") == b"A fine answer."
+
+
+class RecordingChecks(StageOutputCheckInterface):
+    def __init__(self) -> None:
+        self.seen: list[tuple[str, int | None]] = []
+
+    def check(self, stage: str, text: str, target_words: int | None) -> None:
+        self.seen.append((stage, target_words))
+
+
+def test_the_outline_prompt_asks_for_the_chapters_the_target_gives() -> None:
+    brief = BookBrief(BookKind.NONFICTION, "How to keep bees", CAP, target_words=100_000)
+    world = World("outline", stored=earlier("outline"), brief=brief)
+    world.execute()
+    assert "with exactly 29 chapters, as markdown" in world.request().system
+
+
+def test_the_outline_prompt_leaves_the_chapter_count_to_the_model_without_a_target() -> None:
+    world = World("outline", stored=earlier("outline"))
+    world.execute()
+    assert "with as many chapters as the book needs, as markdown" in world.request().system
+
+
+def test_the_check_is_given_the_target_so_it_can_count_the_chapters() -> None:
+    checks = RecordingChecks()
+    brief = BookBrief(BookKind.NONFICTION, "How to keep bees", CAP, target_words=100_000)
+    world = World("outline", stored=earlier("outline"), brief=brief, checks=checks)
+    world.execute()
+    assert checks.seen == [("outline", 100_000)]
 
 
 def test_a_stage_whose_input_was_never_stored_asks_nothing() -> None:
@@ -308,7 +341,7 @@ def test_a_template_without_a_part_is_refused(missing: str) -> None:
 
 
 @pytest.mark.parametrize(
-    ("stage", "cap"), [("brief", 1_500), ("positioning", 2_000), ("outline", 4_000)]
+    ("stage", "cap"), [("brief", 1_500), ("positioning", 2_000), ("outline", 8_192)]
 )
 def test_each_stage_asks_for_the_cap_its_recipe_gives(stage: str, cap: int) -> None:
     inputs = RECIPES.recipe(stage).input_artifacts().values()

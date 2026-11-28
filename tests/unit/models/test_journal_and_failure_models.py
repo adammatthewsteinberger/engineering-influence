@@ -97,3 +97,16 @@ def test_an_entry_refuses_what_cannot_have_happened(
 ) -> None:
     with pytest.raises(ValueError, match=message):
         entry(**changes)
+
+
+def test_a_part_that_contains_the_separator_is_refused() -> None:
+    with pytest.raises(ValueError):
+        key(model="claude\x1fx")
+    with pytest.raises(ValueError):
+        key(prompt_version="v\x1f3")
+
+
+def test_the_digest_of_an_ordinary_key_keeps_its_stored_format() -> None:
+    import hashlib
+
+    assert key().digest() == hashlib.sha256(b"claude-x-2026\x1fp1\x1fv3\x1fc1").hexdigest()

@@ -7,6 +7,7 @@ from collections.abc import Callable
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.errors.spend_consent_needed_error import SpendConsentNeededError
 from engineering_influence.interfaces.artifact_store_interface import ArtifactStoreInterface
+from engineering_influence.interfaces.draft_checks_interface import DraftChecksInterface
 from engineering_influence.interfaces.prompt_library_interface import PromptLibraryInterface
 from engineering_influence.interfaces.stage_executor_interface import StageExecutorInterface
 from engineering_influence.interfaces.stage_guidance_interface import StageGuidanceInterface
@@ -52,6 +53,12 @@ class RevisionStageExecutor(StageExecutorInterface):
     ``revision-unchanged`` issue. Both are worked out from the stored files so a redelivery reports the same,
     and the stage's own artifact, ``<stage>.md``, lists every chapter's length before and after.
 
+    **A long chapter is revised in parts.** A chapter above ``MAX_CALL_WORDS`` (4,000) is cut at its blank lines into
+    parts no longer than that, and each part is one call with its own length bounds, so no answer has to fit more words
+    than the model can write in one reply. Most chapters are one part and are unaffected. A part whose answer is
+    implausible keeps its own text, and the report counts the rejected parts. The structure pass therefore reorders and
+    cuts only within a part; material does not move between parts.
+
     **A revision is optional, so a pass that runs out of money does not stop the run.** When a call would pass the
     cap, that chapter and every later one in the pass keep the text they had (it is stored unchanged, so the next pass
     reads it as usual; the chapter it stopped at is kept in ``<stage>_skipped.md`` so a redelivery reports the same), the
@@ -64,6 +71,7 @@ class RevisionStageExecutor(StageExecutorInterface):
     with the numbers; nothing is cut to make it fit.
     """
 
+    MAX_CALL_WORDS = 4_000
     TOKENS_PER_WORD = 1.6
     OUTPUT_ROOM = 400
     INPUT_MARGIN = 512
@@ -81,10 +89,14 @@ class RevisionStageExecutor(StageExecutorInterface):
         context_window: int,
         max_output_tokens: int,
         tools: ToolRegistryInterface,
+        voice_source: str = "positioning.md",
+        checks: DraftChecksInterface | None = None,
     ) -> None:
         if context_window < 1 or max_output_tokens < 1:
             raise ValueError("a model has a window and an output limit")
         self._pass = revision
+        self._voice_source = voice_source
+        self._checks = checks
         self._artifacts = artifacts
         self._prompts = prompts
         self._outlines = outlines
@@ -97,7 +109,7 @@ class RevisionStageExecutor(StageExecutorInterface):
 
     async def execute(self, run: BookRun, attempt: int) -> StageReport:
         """Revise the chapters that are not done, then write the list."""
-        outline_text, voice = await self._opening(run)
+        outline_text, shared = await self._opening(run)
         outline = self._outlines.parse(outline_text)
         sources = await self._sources(run, outline)
         summaries = await self._summaries(run, outline)
@@ -110,51 +122,110 @@ class RevisionStageExecutor(StageExecutorInterface):
                     # The money ran out earlier in this pass: nothing more is asked of the model.
                     await self._store(run, self._name(self._pass.output, chapter.number), source)
                     continue
-                values = {
-                    "voice": voice,
+                base = {
+                    **shared,
                     "outline": outline_text,
                     "summaries": self._others(summaries, chapter.number),
                     "beats": chapter.render(),
-                    "chapter": source,
-                    **self._length(source),
                 }
-                request = self._request(run, source, values)
                 try:
-                    outcome = await self._ask(guard, run, attempt, request)
-                    if outcome.complete and not self._plausible(source, outcome.text):
-                        # What was wrong goes in the prompt, so this is a new request and not a replay of the first.
-                        again = await self._ask(
-                            guard,
-                            run,
-                            attempt,
-                            self._request(run, source, values, len(outcome.text.split())),
-                        )
-                        outcome = again if again.complete else outcome
+                    kept, rejected = await self._revise(guard, run, attempt, chapter, source, base)
                 except SpendConsentNeededError:
                     # Recorded first, so a redelivery after this knows where the pass stopped and reports the same list.
                     first_skipped = chapter.number
                     await self._store(run, f"{self._pass.stage}_skipped.md", str(first_skipped))
                     await self._store(run, self._name(self._pass.output, chapter.number), source)
                     continue
-                if not outcome.complete:
-                    # An unfinished answer always carries the reasons (see ToolLoopResult).
-                    why = "; ".join(f"{i.code}: {i.detail}" for i in outcome.issues)
-                    raise self._unusable(chapter.number, why)
-                plausible = self._plausible(source, outcome.text)
-                if not plausible:
+                if rejected:
                     # Recorded before the chapter is stored, so a redelivery reports the same rejection.
-                    await self._reject(run, chapter.number, len(outcome.text.split()))
-                kept = outcome.text if plausible else source
+                    await self._reject(run, chapter.number, rejected)
                 await self._store(run, self._name(self._pass.output, chapter.number), kept)
         return await self._report(run, outline, sources, first_skipped)
 
-    async def _opening(self, run: BookRun) -> tuple[str, str]:
-        wanted = ["outline.md"] + (["positioning.md"] if "voice" in self._pass.blanks else [])
+    async def _revise(
+        self,
+        guard: SpendGuardInterface,
+        run: BookRun,
+        attempt: int,
+        chapter: ChapterOutline,
+        source: str,
+        base: dict[str, str],
+    ) -> tuple[str, int]:
+        """The chapter revised part by part, and how many parts kept their source because the answer was implausible.
+
+        A chapter of up to ``MAX_CALL_WORDS`` is one part, so most chapters are one call as before. A longer chapter is
+        cut at its paragraph breaks into parts no longer than that, each revised in its own call, so no answer has to fit
+        more than the model's reply can carry. The parts are joined with the blank lines they were cut at.
+        """
+        kept: list[str] = []
+        rejected = 0
+        for part in self._parts(source):
+            values = {**base, "chapter": part, **self._length(part)}
+            answer = await self._part(guard, run, attempt, chapter, part, values)
+            if answer is None:
+                rejected += 1
+                kept.append(part)
+            else:
+                kept.append(answer)
+        return "\n\n".join(kept), rejected
+
+    async def _part(
+        self,
+        guard: SpendGuardInterface,
+        run: BookRun,
+        attempt: int,
+        chapter: ChapterOutline,
+        part: str,
+        values: dict[str, str],
+    ) -> str | None:
+        """One part's revision, or None when the answer is implausible and the part keeps its text."""
+        outcome = await self._ask(guard, run, attempt, self._request(run, part, values))
+        if outcome.complete and not self._plausible(part, outcome.text):
+            # What was wrong goes in the prompt, so this is a new request and not a replay of the first.
+            again = await self._ask(
+                guard,
+                run,
+                attempt,
+                self._request(run, part, values, len(outcome.text.split())),
+            )
+            outcome = again if again.complete else outcome
+        if not outcome.complete:
+            # An unfinished answer always carries the reasons (see ToolLoopResult).
+            why = "; ".join(f"{i.code}: {i.detail}" for i in outcome.issues)
+            raise self._unusable(chapter.number, why)
+        return outcome.text if self._plausible(part, outcome.text) else None
+
+    def _parts(self, source: str) -> tuple[str, ...]:
+        """The chapter cut at its blank lines into parts of at most ``MAX_CALL_WORDS`` words, or one part when it fits."""
+        parts: list[str] = []
+        current: list[str] = []
+        words = 0
+        for paragraph in source.split("\n\n"):
+            count = len(paragraph.split())
+            if current and words + count > self.MAX_CALL_WORDS:
+                parts.append("\n\n".join(current))
+                current, words = [], 0
+            current.append(paragraph)
+            words += count
+        parts.append("\n\n".join(current))
+        return tuple(parts)
+
+    async def _opening(self, run: BookRun) -> tuple[str, dict[str, str]]:
+        """The outline, and the voice and the story bible when the pass asks for them."""
+        wanted = ["outline.md"]
+        if "voice" in self._pass.blanks:
+            wanted.append(self._voice_source)
+        if "bible" in self._pass.blanks:
+            wanted.append("story_bible.md")
         texts = {name: await self._read(run, name) for name in wanted}
         missing = [name for name, text in texts.items() if text is None]
         if missing:
             raise self._missing(run, missing)
-        return texts["outline.md"] or "", texts.get("positioning.md") or ""
+        shared = {
+            "voice": texts.get(self._voice_source) or "",
+            "bible": texts.get("story_bible.md") or "",
+        }
+        return texts["outline.md"] or "", shared
 
     async def _sources(self, run: BookRun, outline: Outline) -> dict[int, str]:
         texts = {
@@ -255,25 +326,28 @@ class RevisionStageExecutor(StageExecutorInterface):
         lines = [f"# Revision: {self._pass.stage}", ""]
         issues = []
         rejected = await self._rejected(run, outline)
+        revised_texts: list[str] = []
         for chapter in outline.chapters:
             number = chapter.number
             revised = await self._read(run, self._name(self._pass.output, number)) or ""
+            revised_texts.append(revised)
             before, after = len(sources[number].split()), len(revised.split())
+            parts = len(self._parts(sources[number]))
             if self._was_skipped(number, first_skipped):
                 note = ", not revised: out of budget"
             elif number in rejected:
-                low, high = self._pass.min_ratio * before, self._pass.max_ratio * before
-                note = (
-                    f", answer rejected: {rejected[number]:,} words, outside {low:,.0f} to {high:,.0f}, "
-                    "kept as it was"
-                )
-                issues.append(self._rejected_issue(run, chapter, rejected[number], low, high))
+                note = f", {rejected[number]} of {parts} parts rejected, kept as they were"
+                issues.append(self._rejected_issue(run, chapter, rejected[number], parts))
             elif revised == sources[number]:
                 note = ", unchanged"
                 issues.append(self._unchanged(run, chapter))
             else:
                 note = ""
             lines.append(f"- {chapter.heading()} ({before:,} to {after:,} words{note})")
+        if self._checks is not None:
+            # The edited chapters are read again against the bible: an edit can rename a character or move an event.
+            bible = await self._read(run, "story_bible.md") or ""
+            issues.extend(self._checks.issues({"story_bible": bible}, tuple(revised_texts)))
         if first_skipped is not None:
             issues.append(
                 QualityIssue(
@@ -295,9 +369,9 @@ class RevisionStageExecutor(StageExecutorInterface):
         marker = await self._read(run, f"{self._pass.stage}_skipped.md")
         return None if marker is None else int(marker)
 
-    async def _reject(self, run: BookRun, number: int, words: int) -> None:
+    async def _reject(self, run: BookRun, number: int, parts: int) -> None:
         # One file per chapter: run artifacts are written once, so a shared list could not be extended.
-        await self._store(run, self._rejection_name(number), f"{words}\n")
+        await self._store(run, self._rejection_name(number), f"{parts}\n")
 
     async def _rejected(self, run: BookRun, outline: Outline) -> dict[int, int]:
         found = {}
@@ -311,13 +385,13 @@ class RevisionStageExecutor(StageExecutorInterface):
         return self._name(f"{self._pass.stage}_rejected", number)
 
     def _rejected_issue(
-        self, run: BookRun, chapter: ChapterOutline, words: int, low: float, high: float
+        self, run: BookRun, chapter: ChapterOutline, parts: int, of: int
     ) -> QualityIssue:
         return QualityIssue(
             run.stage,
             "revision-rejected",
-            f"chapter {chapter.number}'s answer from {run.stage} had {words:,} words, outside the "
-            f"{low:,.0f} to {high:,.0f} the chapter allows, so the chapter was kept as it was",
+            f"chapter {chapter.number}: {parts} of {of} parts of the answer from {run.stage} fell outside the "
+            "bounds the chapter allows, so those parts were kept as they were",
             blocking=False,
         )
 

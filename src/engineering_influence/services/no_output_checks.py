@@ -9,5 +9,5 @@ from engineering_influence.interfaces.stage_output_check_interface import (
 class NoOutputChecks(StageOutputCheckInterface):
     """Accepts every answer, for stages whose output nothing parses."""
 
-    def check(self, stage: str, text: str) -> None:
+    def check(self, stage: str, text: str, target_words: int | None) -> None:
         """Accept the answer."""

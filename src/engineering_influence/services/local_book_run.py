@@ -9,9 +9,11 @@ from typing import ClassVar
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interfaces.run_repository_interface import RunRepositoryInterface
 from engineering_influence.models.advance_outcome import AdvanceOutcome
+from engineering_influence.models.bible_card import BibleCard
 from engineering_influence.models.book_brief import BookBrief
 from engineering_influence.models.book_run import BookRun
 from engineering_influence.models.run_status import RunStatus
+from engineering_influence.models.source_entry import SourceEntry
 from engineering_influence.services.interfaces.advance_run_interface import AdvanceRunInterface
 from engineering_influence.services.interfaces.create_run_interface import CreateRunInterface
 from engineering_influence.services.interfaces.local_book_run_interface import (
@@ -61,15 +63,39 @@ class LocalBookRun(LocalBookRunInterface):
         self._resolver = resolver
         self._runs = runs
 
-    def start(self, brief: BookBrief, progress: Callable[[str], None]) -> BookRun:
-        """Create the run for the brief and drive it."""
+    def start(
+        self,
+        brief: BookBrief,
+        progress: Callable[[str], None],
+        sources: tuple[SourceEntry, ...] = (),
+        previous_lock: str | None = None,
+        stop_after: str | None = None,
+        mode: str = "book",
+        bible: tuple[BibleCard, ...] = (),
+        title: str | None = None,
+        previous_script: str | None = None,
+        revision: int = 1,
+        revision_date: str | None = None,
+    ) -> BookRun:
+        """Create the run for the brief, with its source files, and drive it."""
         if self._runs.run_ids():
             raise ApplicationError(
                 code="LOCAL_RUN_EXISTS",
                 message="this folder already holds a run; resume it, or start in a new folder",
                 http_status=409,
             )
-        run = self._creator.create(brief)
+        run = self._creator.create(
+            brief,
+            sources,
+            previous_lock,
+            stop_after,
+            mode,
+            bible=bible,
+            title=title,
+            previous_script=previous_script,
+            revision=revision,
+            revision_date=revision_date,
+        )
         return self._drive(run.run_id, progress)
 
     def resume(self, approve_spend: bool, progress: Callable[[str], None]) -> BookRun:

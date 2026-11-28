@@ -28,7 +28,7 @@ The research stage of a non-fiction run reads the brief, the positioning and any
 >
 > **Professor Feynman:** It could. And notice what I said: told, not forced. A librarian can check your bag at
 > the door; nothing here checks the notes against the pages. That is the limit, and it is why a person still reads
-> the book. A claim checker that compares a sentence with the page it cites is not built.
+> the book. A claim checker that compares a sentence with the page it cites is built (ADR 0013): it accepts only a quotation the code found on that page.
 >
 > **Daniel:** So the model has real pages in front of it and firm instructions, the checking is still mine, and
 > I should confirm a search works before the run with `ei doctor --search`.
@@ -106,6 +106,6 @@ itself has only been run against local servers written for the tests (the adapte
 
 ## What is not built
 
-- A claim-checking stage and a fact tracker across chapters (the research notes list "Not found" claims for a person to source).
+- A fact tracker across chapters (the research notes list "Not found" claims for a person to source).
 - Search for any stage but research. The metadata stage could look for comparable titles; that is a separate decision.
 - Any check of how good a methodology skill makes the notes.

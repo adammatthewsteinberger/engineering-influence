@@ -140,6 +140,16 @@ class Stack:
         self.fleet = ToolServerFleet(self.launcher, McpToolFactory())
 
 
+def start_all(stack: Any, lock: Any) -> tuple[Any, ...]:
+    """Verify the lock, then start each server on first use, as a stage that needs them would."""
+    stack.fleet.verify(lock)
+    return tuple(
+        tool
+        for entry in sorted(lock.servers, key=lambda server: server.name)
+        for tool in stack.fleet.activate(entry)
+    )
+
+
 def locked(stack: Stack, path: Path, bearer_env: str = "DOCS_TOKEN") -> ToolLock:
     """What ``ei tools add --url`` and ``ei tools grant`` do, then what a run reads back."""
     store = TomlToolLockStore()
@@ -165,8 +175,7 @@ def test_a_remote_server_is_locked_granted_started_called_and_ended(
 
     running = Server(sse=sse)
     stack = Stack(running)
-    stack.fleet.start(lock)
-    echo, shout = stack.fleet.tools()
+    echo, shout = start_all(stack, lock)
     assert [echo.definition().name, shout.definition().name] == ["docs__echo", "docs__shout"]
     assert echo.invoke({"text": "hi"}) == "echo: hi"
     assert shout.invoke({"text": "hey"}) == "shout: hey"
@@ -207,17 +216,17 @@ def test_a_server_that_reworded_a_tool_after_locking_is_refused_and_its_session_
     changed = Server(tools=poisoned)
     stack = Stack(changed)
     with pytest.raises(ApplicationError) as error:
-        stack.fleet.start(lock)
+        start_all(stack, lock)
     assert error.value.code == "TOOL_LOCK_MISMATCH"
     assert "tools the server advertises have changed" in error.value.message
-    assert changed.deleted is True and stack.fleet.tools() == ()
+    assert changed.deleted is True and stack.fleet.running() == ()
 
 
 def test_a_server_that_updated_itself_after_locking_is_refused(tmp_path: Path) -> None:
     lock = locked(Stack(Server()), tmp_path / "lock.toml")
     stack = Stack(Server(version="2.0.0"))
     with pytest.raises(ApplicationError, match="the server is now version '2.0.0', not '1.0.0'"):
-        stack.fleet.start(lock)
+        start_all(stack, lock)
 
 
 def test_a_credential_the_server_refuses_stops_the_start_without_repeating_it(
@@ -226,7 +235,7 @@ def test_a_credential_the_server_refuses_stops_the_start_without_repeating_it(
     lock = locked(Stack(Server()), tmp_path / "lock.toml")
     stack = Stack(Server(token="a-different-token"))
     with pytest.raises(ApplicationError) as error:
-        stack.fleet.start(lock)
+        start_all(stack, lock)
     assert (error.value.code, error.value.http_status) == ("MCP_AUTH_REFUSED", 503)
     assert error.value.message == (
         "locked server 'docs' could not be started: mcp.example.com refused the credentials (401)"
@@ -239,7 +248,7 @@ def test_an_address_that_resolves_to_the_inside_is_never_contacted(tmp_path: Pat
     scripted = Server()
     stack = Stack(scripted, resolves=INWARD)
     with pytest.raises(ApplicationError) as error:
-        stack.fleet.start(lock)
+        start_all(stack, lock)
     assert (error.value.code, error.value.http_status) == ("MCP_URL_REFUSED", 503)
     assert error.value.message == (
         "locked server 'docs' could not be started: mcp.example.com refused: non_public_address"

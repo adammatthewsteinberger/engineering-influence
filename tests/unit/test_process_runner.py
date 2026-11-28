@@ -283,7 +283,10 @@ def test_a_tool_exactly_at_a_limit_is_not_over_it(tmp_path: Path) -> None:
 
 
 def test_a_tool_that_really_allocates_too_much_is_stopped() -> None:
-    code = "import time; data = b'x' * (400 * 1024 * 1024); print('allocated', flush=True); time.sleep(60)"
+    code = (
+        "import time; data = bytearray(400 * 1024 * 1024); print('allocated', flush=True)\n"
+        "while True: data[::4096] = bytes([1]) * len(range(0, len(data), 4096)); time.sleep(0.1)"
+    )
     started = time.monotonic()
     with pytest.raises(BookBuildError, match="of memory, over its limit of 150 MiB"):
         ProcessRunner().run(python(code), limits(60, memory=150 * MIB))

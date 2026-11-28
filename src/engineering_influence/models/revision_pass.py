@@ -17,13 +17,13 @@ class RevisionPass(RevisionPassInterface):
     A pass reads ``<source>_NN.md`` for each chapter and writes ``<output>_NN.md``. ``blanks`` are the pieces the
     prompt is filled from, each one of ``voice``, ``outline``, ``summaries``, ``beats``, ``chapter``, ``words`` (the chapter's
     length), and ``floor`` and ``ceiling`` (the length the model is asked to stay between), and ``chapter`` is always one of
-    them. A revised chapter whose length, in words, is not between ``min_ratio`` and ``max_ratio`` of the
+    them. ``bible`` is a novel's story bible, so a pass can keep names and spellings. A revised chapter whose length, in words, is not between ``min_ratio`` and ``max_ratio`` of the
     chapter it was made from is not kept (see ``RevisionStageExecutor``).
     """
 
     NAME: ClassVar[re.Pattern[str]] = re.compile(r"[a-z][a-z0-9_]*")
     KNOWN: ClassVar[frozenset[str]] = frozenset(
-        {"voice", "outline", "summaries", "beats", "chapter", "words", "floor", "ceiling"}
+        {"voice", "bible", "outline", "summaries", "beats", "chapter", "words", "floor", "ceiling"}
     )
 
     stage: str

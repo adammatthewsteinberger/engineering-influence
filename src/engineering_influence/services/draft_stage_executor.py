@@ -3,6 +3,7 @@
 
 import asyncio
 from collections.abc import Callable
+from dataclasses import replace
 
 from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.interfaces.artifact_store_interface import ArtifactStoreInterface
@@ -22,6 +23,10 @@ from engineering_influence.models.quality_issue import QualityIssue
 from engineering_influence.models.stage_report import StageReport
 from engineering_influence.models.tool_definition import ToolDefinition
 from engineering_influence.models.tool_loop_result import ToolLoopResult
+from engineering_influence.services.answer_screen import AnswerScreen
+from engineering_influence.services.interfaces.answer_screen_interface import (
+    AnswerScreenInterface,
+)
 from engineering_influence.services.interfaces.context_assembler_interface import (
     ContextAssemblerInterface,
 )
@@ -65,21 +70,29 @@ class DraftStageExecutor(StageExecutorInterface):
     NONFICTION = DraftRecipe(
         ("brief", "positioning", "research", "outline"),
         (("The author's brief", "brief"), ("The positioning", "positioning")),
-        (("The whole outline", "outline"), ("The research notes", "research")),
+        (("The chapter titles", "outline"), ("The research notes", "research")),
         "context_pack",
         "stage_summary",
-        "Write chapter {number} of {count} now, following the beats above, in about {words} words. "
-        "Begin with the chapter's heading line.",
+        "Write section {section} of {sections} of chapter {number} of {count} now, covering beat {section} "
+        "above, in about {words} words. Write only this section.",
+        sectioned=True,
     )
     NO_CHECKS = NoDraftChecks()
+    SCREEN = AnswerScreen()
+    REFUSAL_NOTE = (
+        "The book is ordinary non-fiction written for its readers, and the material is lawful. Write the part asked for "
+        "as the next part of the book, with no preface, apology or explanation of why you are writing it."
+    )
     REPORTED_ISSUES = 50
     CONTINUITY = "continuity.md"
     DEFAULT_WORDS = 2_500
     MIN_WORDS = 300
     MAX_WORDS = 6_000
+    MIN_SECTION_WORDS = 150
+    MAX_SECTION_WORDS = 3_000
     TOKENS_PER_WORD = 1.6
     OUTPUT_ROOM = 400
-    SUMMARY_TOKENS = 400
+    SUMMARY_TOKENS = 1_000
     INPUT_MARGIN = 512
     CHARACTERS_PER_TOKEN = 3
 
@@ -97,6 +110,7 @@ class DraftStageExecutor(StageExecutorInterface):
         tools: ToolRegistryInterface,
         recipe: DraftRecipe = NONFICTION,
         checks: DraftChecksInterface = NO_CHECKS,
+        screen: AnswerScreenInterface = SCREEN,
     ) -> None:
         if context_window < 1 or max_output_tokens < 1:
             raise ValueError("a model has a window and an output limit")
@@ -112,6 +126,7 @@ class DraftStageExecutor(StageExecutorInterface):
         self._tools = tools
         self._recipe = recipe
         self._checks = checks
+        self._screen = screen
 
     async def execute(self, run: BookRun, attempt: int) -> StageReport:
         """Draft the chapters that are not done, then write the index."""
@@ -127,7 +142,8 @@ class DraftStageExecutor(StageExecutorInterface):
         outline = self._outlines.parse(texts["outline"])
         guidance = self._guidance.for_stage(run.stage)
         words = self._words(run.brief.target_words, outline.count())
-        output_cap = min(int(words * self.TOKENS_PER_WORD) + self.OUTPUT_ROOM, self._max_output)
+        per_call = self.MAX_SECTION_WORDS if self._recipe.sectioned else words
+        output_cap = min(int(per_call * self.TOKENS_PER_WORD) + self.OUTPUT_ROOM, self._max_output)
         input_cap = (
             self._window
             - output_cap
@@ -139,7 +155,7 @@ class DraftStageExecutor(StageExecutorInterface):
                 code="STAGE_MODEL_TOO_SMALL",
                 message=(
                     f"the model's window of {self._window} tokens leaves no room to write "
-                    f"{words} words ({output_cap} tokens) and read what came before; "
+                    f"{per_call} words ({output_cap} tokens) and read what came before; "
                     "use a model with a larger window or a smaller target"
                 ),
                 http_status=422,
@@ -149,7 +165,7 @@ class DraftStageExecutor(StageExecutorInterface):
             await self._chapter(
                 run, attempt, guard, outline, chapter, texts, words, output_cap, input_cap
             )
-        issues = await self._issues(run, outline, texts)
+        issues = await self._issues(run, outline, texts, words)
         await self._index(run, outline, issues)
         return StageReport(issues=issues[: self.REPORTED_ISSUES])
 
@@ -166,16 +182,12 @@ class DraftStageExecutor(StageExecutorInterface):
         input_cap: int,
     ) -> None:
         number = chapter.number
-        written = await self._read(run, self._chapter_name(number))
-        if written is None:
-            request = await asyncio.to_thread(
-                self._draft_request, run, outline, chapter, texts, words, output_cap, input_cap
+        if await self._read(run, self._chapter_name(number)) is None:
+            written = await self._written(
+                run, attempt, guard, outline, chapter, texts, words, output_cap, input_cap
             )
-            outcome = await asyncio.to_thread(
-                self._loop.run, guard, run.run_id, run.stage, attempt, request
-            )
-            written = self._usable(outcome, f"chapter {number}")
             await self._store(run, self._chapter_name(number), written)
+        written = await self._text(run, self._chapter_name(number))
         if await self._read(run, self._summary_name(number)) is None:
             outcome = await asyncio.to_thread(
                 self._loop.run,
@@ -189,6 +201,140 @@ class DraftStageExecutor(StageExecutorInterface):
                 run, self._summary_name(number), self._usable(outcome, f"summary {number}")
             )
 
+    async def _written(
+        self,
+        run: BookRun,
+        attempt: int,
+        guard: SpendGuardInterface,
+        outline: Outline,
+        chapter: ChapterOutline,
+        texts: dict[str, str],
+        words: int,
+        output_cap: int,
+        input_cap: int,
+    ) -> str:
+        """The chapter's text: one call for an unsectioned draft, else each beat's section joined under the heading."""
+        if not self._recipe.sectioned:
+            return await self._call(
+                run,
+                attempt,
+                guard,
+                self._draft_request(
+                    run, outline, chapter, texts, words, output_cap, input_cap, 1, 1
+                ),
+                f"chapter {chapter.number}",
+                words,
+            )
+        sections = len(chapter.beats)
+        parts = [
+            await self._section(
+                run, attempt, guard, outline, chapter, section, texts, words, output_cap, input_cap
+            )
+            for section in range(1, sections + 1)
+        ]
+        return "\n\n".join([f"# {chapter.heading()}", *parts])
+
+    async def _section(
+        self,
+        run: BookRun,
+        attempt: int,
+        guard: SpendGuardInterface,
+        outline: Outline,
+        chapter: ChapterOutline,
+        section: int,
+        texts: dict[str, str],
+        words: int,
+        output_cap: int,
+        input_cap: int,
+    ) -> str:
+        """One beat's section, stored as ``chapter_NN_sKK.md`` once written, so a redelivery skips it."""
+        name = self._section_name(chapter.number, section)
+        written = await self._read(run, name)
+        if written is not None:
+            return written
+        text = await self._call(
+            run,
+            attempt,
+            guard,
+            self._draft_request(
+                run,
+                outline,
+                chapter,
+                texts,
+                words,
+                output_cap,
+                input_cap,
+                section,
+                len(chapter.beats),
+            ),
+            f"chapter {chapter.number} section {section}",
+            self._section_words(words, len(chapter.beats)),
+        )
+        await self._store(run, name, text)
+        return text
+
+    async def _call(
+        self,
+        run: BookRun,
+        attempt: int,
+        guard: SpendGuardInterface,
+        request: ModelRequest,
+        what: str,
+        asked_words: int,
+    ) -> str:
+        """One answer for a chapter or section, screened: a refusal is asked again in other words, and a
+        section well under its length is asked again for the full length, keeping the longer answer.
+
+        The retries change the prompt, so the journal does not replay the refused or short answer. A second
+        refusal stops the stage with ``DRAFT_REFUSED``; a short answer that stays short is kept, and the
+        report records it as ``DRAFT_SHORT``.
+        """
+        text = await self._answer(run, attempt, guard, request, what)
+        if self._screen.refused(text):
+            text = await self._answer(
+                run, attempt, guard, self._reworded(request, self.REFUSAL_NOTE, "reworded"), what
+            )
+            if self._screen.refused(text):
+                raise ApplicationError(
+                    code="DRAFT_REFUSED",
+                    message=(
+                        f"{self.STAGE}: {what}: the model declined to write it twice; "
+                        "check the brief and the outline for material it will not write"
+                    ),
+                    http_status=502,
+                )
+            return text
+        if self._screen.short(text, asked_words):
+            note = f"Write the part asked for at its full length, about {asked_words} words, not a summary."
+            longer = await self._answer(
+                run, attempt, guard, self._reworded(request, note, "longer"), what
+            )
+            if not self._screen.refused(longer) and len(longer.split()) > len(text.split()):
+                return longer
+        return text
+
+    async def _answer(
+        self,
+        run: BookRun,
+        attempt: int,
+        guard: SpendGuardInterface,
+        request: ModelRequest,
+        what: str,
+    ) -> str:
+        outcome = await asyncio.to_thread(
+            self._loop.run, guard, run.run_id, run.stage, attempt, request
+        )
+        return self._usable(outcome, what)
+
+    @staticmethod
+    def _reworded(request: ModelRequest, note: str, tag: str) -> ModelRequest:
+        """The same request with a note added after its prompt, under a version that says so."""
+        return replace(
+            request,
+            prompt=f"{request.prompt}\n\n{note}",
+            prompt_version=f"{request.prompt_version}+{tag}",
+        )
+
     def _draft_request(
         self,
         run: BookRun,
@@ -198,6 +344,8 @@ class DraftStageExecutor(StageExecutorInterface):
         words: int,
         output_cap: int,
         input_cap: int,
+        section: int,
+        sections: int,
     ) -> ModelRequest:
         number = chapter.number
         summaries = tuple(
@@ -205,20 +353,21 @@ class DraftStageExecutor(StageExecutorInterface):
             + " ".join(self._stored(run, self._summary_name(earlier)).split())
             for earlier in range(1, number)
         )
-        tail = self._stored(run, self._chapter_name(number - 1)) if number > 1 else ""
         plan = ContextPlan(
             style=self._recipe.style_text(texts),
-            grounding=self._recipe.grounding_text(texts),
+            grounding=self._recipe.grounding_text({**texts, "outline": self._titles(outline)}),
             beats=chapter.render(),
             instruction=self._recipe.instruction_text(
                 number,
                 outline.count(),
-                words,
+                self._section_words(words, sections) if self._recipe.sectioned else words,
                 run.brief.violence or "not given",
                 run.brief.heat or "not given",
+                section,
+                sections,
             ),
             prior_summaries=summaries,
-            previous_tail=tail,
+            previous_tail=self._tail(run, number, section),
         )
         assembled = self._contexts.assemble(plan, input_cap)
         guidance = self._guidance.for_stage(run.stage)
@@ -256,8 +405,18 @@ class DraftStageExecutor(StageExecutorInterface):
         shared = target // chapters if target else self.DEFAULT_WORDS
         return max(self.MIN_WORDS, min(self.MAX_WORDS, shared))
 
+    def _section_words(self, chapter_words: int, sections: int) -> int:
+        """The words one section should run to: the chapter's share, kept inside one call's reach."""
+        return max(self.MIN_SECTION_WORDS, min(self.MAX_SECTION_WORDS, chapter_words // sections))
+
+    def _tail(self, run: BookRun, number: int, section: int) -> str:
+        """The end of the text before this section: the section before, or the chapter before for section 1."""
+        if section > 1:
+            return self._stored(run, self._section_name(number, section - 1))
+        return self._stored(run, self._chapter_name(number - 1)) if number > 1 else ""
+
     async def _issues(
-        self, run: BookRun, outline: Outline, texts: dict[str, str]
+        self, run: BookRun, outline: Outline, texts: dict[str, str], words: int
     ) -> tuple[QualityIssue, ...]:
         chapters = tuple(
             [await self._text(run, self._chapter_name(item.number)) for item in outline.chapters]
@@ -266,7 +425,38 @@ class DraftStageExecutor(StageExecutorInterface):
         if found:
             lines = ["# Continuity", ""] + [f"- {item.detail}" for item in found]
             await self._store(run, self.CONTINUITY, "\n".join(lines) + "\n")
-        return found
+        return (*found, *await self._short(run, outline, words))
+
+    async def _short(self, run: BookRun, outline: Outline, words: int) -> tuple[QualityIssue, ...]:
+        """Sections (or chapters) that stayed well under the length asked for, after their retry."""
+        found: list[QualityIssue] = []
+        for chapter in outline.chapters:
+            if self._recipe.sectioned:
+                asked = self._section_words(words, len(chapter.beats))
+                for section in range(1, len(chapter.beats) + 1):
+                    text = await self._text(run, self._section_name(chapter.number, section))
+                    if self._screen.short(text, asked):
+                        found.append(
+                            self._short_issue(
+                                f"chapter {chapter.number} section {section}",
+                                len(text.split()),
+                                asked,
+                            )
+                        )
+            else:
+                text = await self._text(run, self._chapter_name(chapter.number))
+                if self._screen.short(text, words):
+                    found.append(
+                        self._short_issue(f"chapter {chapter.number}", len(text.split()), words)
+                    )
+        return tuple(found)
+
+    def _short_issue(self, where: str, got: int, asked: int) -> QualityIssue:
+        return QualityIssue(
+            stage=self.STAGE,
+            code="DRAFT_SHORT",
+            detail=f"{where} has {got} words where about {asked} were asked",
+        )
 
     async def _index(
         self, run: BookRun, outline: Outline, issues: tuple[QualityIssue, ...]
@@ -308,9 +498,18 @@ class DraftStageExecutor(StageExecutorInterface):
         await asyncio.to_thread(self._artifacts.put, run.run_id, name, text.encode("utf-8"))
 
     @staticmethod
+    def _titles(outline: Outline) -> str:
+        """Every chapter's heading, one a line: where the book is going, without the beats of the other chapters."""
+        return "\n".join(chapter.heading() for chapter in outline.chapters)
+
+    @staticmethod
     def _chapter_name(number: int) -> str:
         return f"chapter_{number:02d}.md"
 
     @staticmethod
     def _summary_name(number: int) -> str:
         return f"summary_{number:02d}.md"
+
+    @staticmethod
+    def _section_name(number: int, section: int) -> str:
+        return f"chapter_{number:02d}_s{section:02d}.md"

@@ -43,8 +43,8 @@ def test_a_non_fiction_book_is_made_from_its_brief_and_written_out(tmp_path: Pat
         finally:
             creator.close()
     assert run.status is RunStatus.COMPLETED
-    assert heard[0] == "brief: advanced" and heard[-1] == "build: completed"
-    assert len(heard) == 12 and summary.files > 10
+    assert heard[0] == "brief: advanced" and heard[-1] == "narration: completed"
+    assert len(heard) == 15 and summary.files > 10
     out = tmp_path / "out"
     assert (out / "books" / "herbs-indoors.toml").is_file()
     assert (out / "src" / "chapter_02.md").is_file()
@@ -200,7 +200,7 @@ def chapters_of(out: Path) -> dict[str, str]:
 
 @pytest.mark.parametrize(
     ("kind", "stages"),
-    [(BookKind.NONFICTION, 12), (BookKind.NOVEL, 9)],
+    [(BookKind.NONFICTION, 15), (BookKind.NOVEL, 12)],
     ids=["nonfiction", "novel"],
 )
 def test_a_run_killed_after_any_stage_ends_where_an_uninterrupted_run_ends_and_pays_for_nothing_twice(

@@ -1,17 +1,26 @@
 """``ei book create``: the arguments become a brief, the run is made or continued, and the exit status says how it ended."""
 
 import argparse
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterator, Mapping
+from contextlib import contextmanager
 from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
 from engineering_influence.errors.application_error import ApplicationError
+from engineering_influence.infrastructure.bible_library.filesystem_bible_library import (
+    FilesystemBibleLibrary,
+)
+from engineering_influence.infrastructure.source_library.filesystem_source_library import (
+    FilesystemSourceLibrary,
+)
 from engineering_influence.interactions.cli.book_cli import BookCli
+from engineering_influence.interfaces.keep_awake_interface import KeepAwakeInterface
 from engineering_influence.interfaces.local_book_creator_interface import (
     LocalBookCreatorInterface,
 )
+from engineering_influence.models.bible_card import BibleCard
 from engineering_influence.models.book_brief import BookBrief
 from engineering_influence.models.book_kind import BookKind
 from engineering_influence.models.book_run import BookRun
@@ -21,8 +30,12 @@ from engineering_influence.models.cost_estimate import CostEstimate
 from engineering_influence.models.export_summary import ExportSummary
 from engineering_influence.models.quality_issue import QualityIssue
 from engineering_influence.models.run_status import RunStatus
+from engineering_influence.models.source_entry import SourceEntry
 from engineering_influence.models.spend_request import SpendRequest
 from engineering_influence.models.stage_plan import StagePlan
+from engineering_influence.services.bible_card_parser import BibleCardParser
+from engineering_influence.services.bible_intake import BibleIntake
+from engineering_influence.services.source_intake import SourceIntake
 
 PLAN = StagePlan(BookKind.NONFICTION, ("brief", "build"))
 
@@ -38,8 +51,14 @@ class Creator(LocalBookCreatorInterface):
         self.outcome = outcome
         self.planned = plan
         self.started: list[BookBrief] = []
+        self.sources: list[tuple[SourceEntry, ...]] = []
+        self.bibles: list[tuple[BibleCard, ...]] = []
+        self.previous_locks: list[str | None] = []
+        self.stops: list[str | None] = []
+        self.modes: list[str] = []
         self.resumed: list[bool] = []
         self.exported: list[Path] = []
+        self.titles: list[str | None] = []
         self.closed = 0
 
     def _result(self) -> BookRun:
@@ -50,8 +69,27 @@ class Creator(LocalBookCreatorInterface):
     def plan(self, brief: BookBrief) -> BudgetPlan | None:
         return self.planned
 
-    def start(self, brief: BookBrief, progress: Callable[[str], None]) -> BookRun:
+    def start(
+        self,
+        brief: BookBrief,
+        progress: Callable[[str], None],
+        sources: tuple[object, ...] = (),
+        previous_lock: str | None = None,
+        stop_after: str | None = None,
+        mode: str = "book",
+        bible: tuple[object, ...] = (),
+        title: str | None = None,
+        previous_script: str | None = None,
+        revision: int = 1,
+        revision_date: str | None = None,
+    ) -> BookRun:
         self.started.append(brief)
+        self.titles.append(title)
+        self.modes.append(mode)
+        self.sources.append(sources)
+        self.bibles.append(bible)
+        self.previous_locks.append(previous_lock)
+        self.stops.append(stop_after)
         progress("brief: advanced")
         return self._result()
 
@@ -67,6 +105,18 @@ class Creator(LocalBookCreatorInterface):
         self.closed += 1
 
 
+class Awake(KeepAwakeInterface):
+    """Counts the holds, so a test can tell whether the run was kept awake."""
+
+    def __init__(self) -> None:
+        self.holds = 0
+
+    @contextmanager
+    def hold(self) -> Iterator[None]:
+        self.holds += 1
+        yield
+
+
 class Harness:
     def __init__(
         self,
@@ -75,6 +125,7 @@ class Harness:
         plan: BudgetPlan | None = None,
     ) -> None:
         self.creator = Creator(outcome, plan)
+        self.awake = Awake()
         self.made: list[tuple[Path, Mapping[str, str]]] = []
         self._refuse = refuse
 
@@ -85,14 +136,50 @@ class Harness:
         return self.creator
 
     def run(self, *argv: str) -> int:
-        cli = BookCli(lambda root: None, self.creator_for)  # type: ignore[arg-type, return-value]
+        cli = BookCli(
+            lambda root: None,  # type: ignore[arg-type, return-value]
+            self.creator_for,
+            self.awake,
+            lambda folder: SourceIntake(FilesystemSourceLibrary()).intake(folder),
+            lambda folder: BibleIntake(FilesystemBibleLibrary(), BibleCardParser()).intake(folder),
+            lambda folder: None,
+        )
         parser = argparse.ArgumentParser()
         cli.register(parser.add_subparsers(dest="command", required=True))
         return cli.run(parser.parse_args(["book", "create", *argv]))
 
 
+def test_the_run_is_held_awake_unless_the_author_turns_that_off(tmp_path: Path) -> None:
+    harness = Harness(run_in(RunStatus.COMPLETED))
+    assert harness.run("how to keep bees", *create(tmp_path)) == 0
+    assert harness.awake.holds == 1
+    other = Harness(run_in(RunStatus.COMPLETED))
+    assert other.run("how to keep bees", *create(tmp_path), "--no-keep-awake") == 0
+    assert other.awake.holds == 0
+
+
 def create(tmp_path: Path, *extra: str) -> list[str]:
     return ["--kind", "nonfiction", "--budget-usd", "5", "--out", str(tmp_path / "out"), *extra]
+
+
+def test_a_previous_shooting_lock_file_is_passed_to_the_run_as_text(tmp_path: Path) -> None:
+    harness = Harness(run_in(RunStatus.COMPLETED))
+    lock = tmp_path / "shooting_lock.json"
+    lock.write_text('{"version": 1, "entries": []}', encoding="utf-8")
+    assert harness.run("a film", *create(tmp_path, "--previous-lock", str(lock))) == 0
+    assert harness.creator.previous_locks == ['{"version": 1, "entries": []}']
+
+
+def test_the_mode_reaches_the_run(tmp_path: Path) -> None:
+    harness = Harness(run_in(RunStatus.COMPLETED))
+    assert harness.run("a book", *create(tmp_path, "--mode", "audiobook")) == 0
+    assert harness.creator.modes == ["audiobook"]
+
+
+def test_stop_after_names_the_stage_the_run_ends_at(tmp_path: Path) -> None:
+    harness = Harness(run_in(RunStatus.COMPLETED))
+    assert harness.run("a film", *create(tmp_path, "--stop-after", "scene_cards")) == 0
+    assert harness.creator.stops == ["scene_cards"]
 
 
 def test_a_finished_book_is_written_and_the_command_succeeds(
@@ -410,3 +497,58 @@ def test_a_run_that_already_exists_is_reported_before_the_out_folder_is(
 
     assert Harness(run_in(RunStatus.COMPLETED)).run("bees", *create(tmp_path)) == 2
     assert "already holds a run; add --resume" in capsys.readouterr().err
+
+
+def test_source_files_in_the_folder_reach_the_run_in_name_order(tmp_path: Path) -> None:
+    folder = tmp_path / "source"
+    folder.mkdir()
+    (folder / "b.md").write_text("second", encoding="utf-8")
+    (folder / "a.md").write_text("first", encoding="utf-8")
+    harness = Harness(run_in(RunStatus.COMPLETED))
+    assert harness.run("bees", *create(tmp_path), "--source", str(folder)) == 0
+    assert [entry.text for entry in harness.creator.sources[0]] == ["first", "second"]
+
+
+def test_a_run_without_a_source_folder_is_given_no_sources(tmp_path: Path) -> None:
+    harness = Harness(run_in(RunStatus.COMPLETED))
+    assert harness.run("bees", *create(tmp_path)) == 0
+    assert harness.creator.sources == [()]
+
+
+def test_a_source_folder_that_is_missing_is_refused_before_the_run_starts(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    harness = Harness(run_in(RunStatus.COMPLETED))
+    assert harness.run("bees", *create(tmp_path), "--source", str(tmp_path / "nowhere")) == 2
+    assert harness.creator.started == []
+    assert capsys.readouterr().err.startswith("error: ")
+
+
+def test_a_bible_folder_is_checked_and_its_cards_reach_the_run(tmp_path: Path) -> None:
+    bible = tmp_path / "bible"
+    (bible / "character").mkdir(parents=True)
+    (bible / "character" / "ada.md").write_text(
+        '+++\nname = "Ada"\n+++\nKeeps the log.', encoding="utf-8"
+    )
+    harness = Harness(run_in(RunStatus.COMPLETED))
+    assert harness.run("bees", *create(tmp_path), "--bible", str(bible)) == 0
+    assert [card.id for card in harness.creator.bibles[0]] == ["ada"]
+
+
+def test_a_revision_without_a_date_is_dated_today() -> None:
+    from datetime import date
+
+    arguments = argparse.Namespace(revision_date=None, previous_script=Path("earlier.fountain"))
+    assert BookCli._revision_date(arguments) == date.today().isoformat()
+
+
+def test_a_revision_date_is_only_set_for_a_revision() -> None:
+    arguments = argparse.Namespace(revision_date=None, previous_script=None)
+    assert BookCli._revision_date(arguments) is None
+
+
+def test_a_revision_date_the_author_gives_is_kept_as_given() -> None:
+    arguments = argparse.Namespace(
+        revision_date="2026-01-02", previous_script=Path("earlier.fountain")
+    )
+    assert BookCli._revision_date(arguments) == "2026-01-02"

@@ -4,6 +4,6 @@
 from engineering_influence_sdk.async_client import AsyncEngineeringInfluenceClient
 from engineering_influence_sdk.client import EngineeringInfluenceClient
 
-__version__ = "1.0.0"
+__version__ = "0.1.0rc1"
 
 __all__ = ["AsyncEngineeringInfluenceClient", "EngineeringInfluenceClient"]
