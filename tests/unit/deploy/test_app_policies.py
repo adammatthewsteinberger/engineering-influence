@@ -105,3 +105,46 @@ def test_extra_egress_is_added_after_dns() -> None:
     )
     for policy in policies:
         assert [{"protocol": "TCP", "port": 5432}] == policy["spec"]["egress"][1]["ports"]
+
+
+@needs_helm
+def test_no_ingress_is_rendered_by_default() -> None:
+    assert of_kind(render(), "Ingress") == []
+
+
+@needs_helm
+def test_without_tls_the_ingress_routes_the_host_to_the_api_over_plain_http() -> None:
+    (ingress,) = of_kind(render("ingress.enabled=true", "ingress.host=api.example.test"), "Ingress")
+    assert "tls" not in ingress["spec"]
+    assert "annotations" not in ingress["metadata"]
+    assert ingress["spec"]["ingressClassName"] == "nginx"
+    (rule,) = ingress["spec"]["rules"]
+    assert rule["host"] == "api.example.test"
+    assert rule["http"]["paths"][0]["backend"]["service"] == {
+        "name": "ei-engineering-influence-api",
+        "port": {"name": "http"},
+    }
+
+
+@needs_helm
+def test_with_tls_the_ingress_uses_the_certificate_secret_it_is_given() -> None:
+    (ingress,) = of_kind(
+        render(
+            "ingress.enabled=true",
+            "ingress.host=api.example.test",
+            "ingress.tls=true",
+            "ingress.tlsSecretName=api-tls",
+        ),
+        "Ingress",
+    )
+    assert ingress["spec"]["tls"] == [{"hosts": ["api.example.test"], "secretName": "api-tls"}]
+
+
+@needs_helm
+def test_an_ingress_without_a_host_or_without_the_tls_secret_refuses_to_render() -> None:
+    for sets in (
+        ["ingress.enabled=true"],
+        ["ingress.enabled=true", "ingress.host=api.example.test", "ingress.tls=true"],
+    ):
+        with pytest.raises(subprocess.CalledProcessError):
+            render(*sets)

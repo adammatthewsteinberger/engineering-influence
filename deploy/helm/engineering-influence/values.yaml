@@ -9,6 +9,15 @@ image:
 # before the migration. Dev uses it with an OpenBao it does not deploy. false keeps them ordinary resources.
 secretsAsPreSync: false
 
+# The API's public Ingress. Off by default. Without TLS it serves plain HTTP, which sends the API keys unencrypted, so
+# leave it off until ingress.tls is true with a certificate you supply in ingress.tlsSecretName.
+ingress:
+  enabled: false
+  className: nginx
+  host: ""
+  tls: false
+  tlsSecretName: ""
+
 # NetworkPolicy and PodDisruptionBudget for the API and worker. Both are off by default: a policy that is too narrow stops
 # the app, so each environment turns the policy on with the egress it needs (Postgres, RabbitMQ, OpenBao, the object store).
 networkPolicy:

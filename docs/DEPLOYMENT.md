@@ -27,7 +27,7 @@ KEDA `ScaledObject` for the worker (`autoscaling.keda.enabled`); a NetworkPolicy
 (`networkPolicy.enabled`), which lets the API accept traffic only from the namespaces in `networkPolicy.apiIngressFrom` and
 the worker accept none, with DNS and the egress in `networkPolicy.egress` added; and a PodDisruptionBudget for each of them
 (`podDisruptionBudget.enabled`), allowing one pod down at a time. Both policy objects are off by default, because a policy
-that is too narrow stops the app. The chart has no Ingress or CronJob yet.
+that is too narrow stops the app. An Ingress for the API (`ingress.enabled`, off by default, with `ingress.host` required). Without TLS it serves plain HTTP, which sends the API keys unencrypted, so turn it on with `ingress.tls` only once you have a certificate, supplied in a Secret named by `ingress.tlsSecretName`. The chart has no CronJob yet.
 
 ## The Secret
 

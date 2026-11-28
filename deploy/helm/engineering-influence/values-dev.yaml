@@ -17,6 +17,11 @@ secretsAsPreSync: true
 postgres:
   enabled: false
 
+# The API's public Ingress is off until it has TLS with a certificate you supply (see the chart's values.yaml).
+ingress:
+  enabled: false
+  host: engineering-influence-dev.duckdns.org
+
 openbao:
   enabled: true
   devMode: false
