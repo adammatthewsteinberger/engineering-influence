@@ -22,9 +22,20 @@ class ScreenplayOutputChecks(StageOutputCheckInterface):
 
     MAX_PROBLEMS_SHOWN: ClassVar[int] = 5
     DEFAULT_TARGET_PAGES: ClassVar[int] = 180
+    # The five architecture stages: a broken answer gets one repair call with the findings, then stops with
+    # SCREENPLAY_<STAGE>_INVALID, which names the stage that could not be made to pass.
+    REPAIRABLE: ClassVar[frozenset[str]] = frozenset(
+        {"anchors", "audit", "beats", "scene_cards", "visual_grammar"}
+    )
 
     def __init__(self, target_pages: int = DEFAULT_TARGET_PAGES) -> None:
         self._target_pages = target_pages
+
+    def repairable(self, stage: str) -> bool:
+        return stage in self.REPAIRABLE
+
+    def final_code(self, stage: str) -> str:
+        return f"SCREENPLAY_{stage.upper()}_INVALID"
 
     def check(self, stage: str, text: str, target_words: int | None) -> None:
         """Return when the stage's answer is usable; raise when a mechanical check finds a problem."""

@@ -103,5 +103,10 @@ class PromptTemplate(PromptTemplateInterface):
         value = values[blank]
         if blank not in self.untrusted:
             return value
-        defused = self.UNTRUSTED_TAG.sub(lambda m: f"<\\{m.group(1)}{m.group(2)}", value)
-        return f'<untrusted name="{blank}">\n{defused}\n</untrusted>'
+        return self.frame(blank, value)
+
+    @classmethod
+    def frame(cls, name: str, value: str) -> str:
+        """``value`` as an ``<untrusted name="...">`` block, with any copy of the framing tags defused first."""
+        defused = cls.UNTRUSTED_TAG.sub(lambda m: f"<\\{m.group(1)}{m.group(2)}", value)
+        return f'<untrusted name="{name}">\n{defused}\n</untrusted>'
