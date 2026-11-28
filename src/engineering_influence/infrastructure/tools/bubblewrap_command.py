@@ -27,18 +27,9 @@ class BubblewrapCommand(McpServerSandboxInterface):
         self._home = home
         self._allowance = allowance
 
-    @staticmethod
-    def _ancestors_under_tmp(place: Path) -> tuple[str, ...]:
-        """Read-only directories for each ancestor of the working directory that lies inside the private /tmp."""
-        private = Path(PRIVATE_TMP)
-        ancestors = [p for p in place.parents if private in p.parents]
-        arguments: list[str] = []
-        for directory in reversed(ancestors):
-            arguments += ["--perms", "0555", "--dir", str(directory)]
-        return tuple(arguments)
-
     def wrap(self, command: tuple[str, ...], workdir: Path) -> tuple[str, ...]:
         place = str(workdir.resolve())
+        home = str(self._home.resolve())
         arguments: list[str] = [
             self._executable,
             "--die-with-parent",
@@ -56,25 +47,19 @@ class BubblewrapCommand(McpServerSandboxInterface):
             "/dev",
             "--proc",
             "/proc",
-            # /run, /tmp and the home directory are empty and read-only: a write anywhere but the working directory is
-            # refused, and the working directory is bound back in below as the one writable place.
-            "--perms",
-            "0555",
             "--tmpfs",
             "/run",
-            "--perms",
-            "0555",
             "--tmpfs",
             PRIVATE_TMP,
-            "--perms",
-            "0555",
             "--tmpfs",
-            str(self._home.resolve()),
+            home,
         ]
         for allowed in self._allowance.paths(command, self._home):
             arguments += ["--ro-bind", str(allowed), str(allowed)]
-        # Binding the working directory makes bubblewrap create its missing parents, with writable default permissions,
-        # inside the read-only /tmp. Create those parents here instead, read-only, from the top down.
-        arguments += self._ancestors_under_tmp(Path(place))
-        arguments += ["--bind", place, place, "--chdir", place, "--", *command]
+        # The working directory is the one writable mount. /run, /tmp and the home directory are bubblewrap's own
+        # tmpfs mounts, remounted read-only after it is bound: a remount is not recursive, so the bind stays writable,
+        # and every other write under those directories, including implicitly created parents, is refused.
+        arguments += ["--bind", place, place]
+        arguments += ["--remount-ro", "/run", "--remount-ro", PRIVATE_TMP, "--remount-ro", home]
+        arguments += ["--chdir", place, "--", *command]
         return tuple(arguments)
