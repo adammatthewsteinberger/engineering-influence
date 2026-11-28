@@ -98,9 +98,9 @@ first real-model run will be a manual one with `ei doctor --local` and the promp
 ## Screenplays are not in this test either
 
 The free rehearsal's scripted server answers screenplay prompts (`tests/smoke_screenplay.py`). One test,
-`tests/e2e/test_screenplay_rehearsal.py`, drives a screenplay plan from its two made-up sources to the locked script,
-including the revision passes. Nothing past the lock is tested: no revision log, canon check, render, EPUB or video. The
-paid harness takes only a non-fiction brief. A real screenplay reads its source and bible from the author's own folders
+`tests/e2e/test_screenplay_rehearsal.py`, drives a screenplay plan from its two made-up sources through every stage to
+the video stage, with a clean canon check and the revision log. Its render and EPUB stages run in the toolchain job, which
+prints a PDF and an EPUB from the same plan. The paid harness takes only a non-fiction brief. A real screenplay reads its source and bible from the author's own folders
 (see [SCREENPLAYS.md](SCREENPLAYS.md)), which this repository does not hold, so a real screenplay has no committed
 end-to-end check.
 
