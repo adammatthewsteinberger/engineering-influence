@@ -16,3 +16,4 @@ class AcpSessionRecord(AcpSessionRecordInterface, SQLModel, table=True):
     cwd: str
     run_id: str | None = None
     servers: str = "[]"
+    approved: str = "[]"

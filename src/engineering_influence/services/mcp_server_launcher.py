@@ -54,6 +54,10 @@ class McpServerLauncher(McpServerLauncherInterface):
         self._clients = clients
         self._verifier = verifier
 
+    def verify_files(self, entry: McpServerLock) -> None:
+        """The file check of step 1 alone: nothing is started."""
+        self._refuse(entry, self._verifier.check_files(entry))
+
     def start(self, entry: McpServerLock) -> McpConnectionInterface:
         """Check the files, start the server, check what it says, and return the connection."""
         self._refuse(entry, self._verifier.check_files(entry))

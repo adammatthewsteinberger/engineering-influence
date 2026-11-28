@@ -144,6 +144,9 @@ from engineering_influence.services.fountain_parser import FountainParser
 from engineering_influence.services.interfaces.cost_estimator_interface import (
     CostEstimatorInterface,
 )
+from engineering_influence.services.interfaces.tool_server_fleet_interface import (
+    ToolServerFleetInterface,
+)
 from engineering_influence.services.kind_stage_executor import KindStageExecutor
 from engineering_influence.services.local_default_model import LocalDefaultModel
 from engineering_influence.services.lock_shooting_script_stage_executor import (
@@ -212,6 +215,7 @@ from engineering_influence.services.screenplay_section_check import ScreenplaySe
 from engineering_influence.services.screenplay_title_parser import ScreenplayTitleParser
 from engineering_influence.services.scripture_checker import ScriptureChecker
 from engineering_influence.services.scripture_draft_checks import ScriptureDraftChecks
+from engineering_influence.services.server_activator import ServerActivator
 from engineering_influence.services.shooting_lock_codec import ShootingLockCodec
 from engineering_influence.services.shooting_lock_planner import ShootingLockPlanner
 from engineering_influence.services.shooting_revision_marks import ShootingRevisionMarks
@@ -307,11 +311,10 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         self._free = kind == "local"
         model = self._local_model() if self._free else self._model()
         guidance, skill_tools = self._guidance()
-        lock, locked_tools = self._locked_servers()
+        lock, fleet = self._locked_servers()
         search, fetcher = self._research()
-        tools = ToolRegistry(
-            (WebSearchTool(search), FetchUrlTool(fetcher), *locked_tools, *skill_tools)
-        )
+        tools = ToolRegistry((WebSearchTool(search), FetchUrlTool(fetcher), *skill_tools))
+        activator = None if fleet is None else ServerActivator(lock, fleet, tools)
         limits = ToolLoopLimits()
         runner = ToolRunner(tools, journal, limits)
         self._runner = runner
@@ -379,6 +382,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             guidance,
             NonfictionOutputChecks(outlines, metadata),
             SpendGuard,
+            activator,
         )
         novel = ContentPolicyStageExecutor(
             ModelStageExecutor(
@@ -391,6 +395,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
                 guidance,
                 NovelOutputChecks(StoryBibleParser(), outlines, metadata),
                 SpendGuard,
+                activator,
             ),
             ContentPolicy(),
             descriptor,
@@ -405,6 +410,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             guidance,
             ScreenplayOutputChecks(),
             SpendGuard,
+            activator,
         )
         revising: dict[str, dict[BookKind, StageExecutorInterface]] = {}
         for editing in revisions.passes():
@@ -808,15 +814,16 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         guidance = LockStageGuidance(lock, skills, TomlPromptLibrary().get("skill_guidance"))
         return guidance, (ReadSkillTool(skills),)
 
-    def _locked_servers(self) -> tuple[ToolLock, tuple[ToolInterface, ...]]:
-        """The servers in the lock that ``EI_TOOL_LOCK`` names, started and verified, and their tools.
+    def _locked_servers(self) -> tuple[ToolLock, ToolServerFleetInterface | None]:
+        """The servers in the lock that ``EI_TOOL_LOCK`` names: their files verified here, each started when a
+        stage first needs it.
 
         A lock is read only when it is named: a stray file in the working directory starts nothing.
         A server that is not what the lock approved stops the process at start.
         """
         named = self._environment.get("EI_TOOL_LOCK", "").strip()
         if not named:
-            return ToolLock(), ()
+            return ToolLock(), None
         lock = TomlToolLockStore().load(Path(named))
         if lock is None:
             raise ApplicationError(
@@ -846,9 +853,9 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
             ToolLockVerifier(Sha256FileHasher()),
         )
         fleet = ToolServerFleet(launcher, McpToolFactory())
-        fleet.start(lock)
+        fleet.verify(lock)
         self._fleet = fleet
-        return lock, fleet.tools()
+        return lock, fleet
 
     def _server_client(self) -> httpx.Client:
         """A client for one remote tool server: it owns its connection pool and is closed with the session."""

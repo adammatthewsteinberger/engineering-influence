@@ -149,6 +149,10 @@ ei tools verify [--lock PATH] [NAME …]
   enforced to within what the server can use in one interval. Only the working directory counts for disk.
 - **A line is bounded** (4 MiB) and a server that talks faster than it is read is slowed by a short queue.
   A line that is not a JSON object is refused. Its last 2,000 bytes of error output are quoted if it dies.
+- **Servers start on first use, once they are approved.** A run that boots verifies every locked server's files, and
+  starts nothing. A stage starts the servers its run selected and the lock grants the stage, and only then; an agent session
+  asks its person first, through `session/request_permission`, for each server it selected, and the run gets only the approved
+  ones. Starting a server verifies what it says (its name, version and tool hash), so a changed server stops the run that needs it.
 - **Each server runs inside a native sandbox, or it does not run.** The sandbox denies the network, lets the
   server write only in its own working directory, and hides the home directory: the server cannot read it except
   for the directories its own interpreter and the files it is started with live in (a virtual environment, and the

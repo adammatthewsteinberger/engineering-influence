@@ -16,11 +16,17 @@ class ToolRegistry(ToolRegistryInterface):
 
     def __init__(self, tools: Iterable[ToolInterface]) -> None:
         self._tools: dict[str, ToolInterface] = {}
+        self.register(tools)
+
+    def register(self, tools: Iterable[ToolInterface]) -> None:
+        """Add tools, all or none: a name already taken, or repeated, is refused before anything is added."""
+        added: dict[str, ToolInterface] = {}
         for tool in tools:
             name = tool.definition().name
-            if name in self._tools:
+            if name in self._tools or name in added:
                 raise ValueError(f"two tools are named {name!r}")
-            self._tools[name] = tool
+            added[name] = tool
+        self._tools.update(added)
 
     def lookup(self, name: str) -> ToolInterface | None:
         """The tool with this name, or None."""

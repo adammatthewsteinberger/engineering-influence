@@ -1,7 +1,8 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
-"""Starts all the servers in a tool lock, or none of them."""
+"""Verifies every locked server at boot, and starts each one on first use, once."""
 
 from engineering_influence.interfaces.tool_interface import ToolInterface
+from engineering_influence.models.mcp_server_lock import McpServerLock
 from engineering_influence.models.tool_lock import ToolLock
 from engineering_influence.services.interfaces.mcp_connection_interface import (
     McpConnectionInterface,
@@ -18,10 +19,13 @@ from engineering_influence.services.interfaces.tool_server_fleet_interface impor
 
 
 class ToolServerFleet(ToolServerFleetInterface):
-    """Servers start in name order. The first one that cannot be started stops the rest of the start.
+    """Verifying changes no process; starting runs a server.
 
-    A server that was started is stopped again if a later one fails, so a refused run leaves nothing
-    running. Closing stops them in the reverse order, and closing again does nothing.
+    ``verify`` checks each server's files against the lock, so a changed file stops the worker before
+    anything runs. ``activate`` starts one server, checks what it says, and returns its tools; a server
+    already running returns nothing. A server that cannot be started, or is not what was approved, raises,
+    and the servers already running stay running. Closing stops every running server in reverse order, and
+    closing again does nothing.
     """
 
     def __init__(
@@ -29,27 +33,32 @@ class ToolServerFleet(ToolServerFleetInterface):
     ) -> None:
         self._launcher = launcher
         self._factory = factory
-        self._connections: list[McpConnectionInterface] = []
-        self._tools: list[ToolInterface] = []
+        self._connections: dict[str, McpConnectionInterface] = {}
 
-    def start(self, lock: ToolLock) -> None:
-        """Start and verify each server; if any fails, stop the ones already started and raise."""
+    def verify(self, lock: ToolLock) -> None:
+        """Check the files of every server in the lock, in name order; start none."""
+        for entry in sorted(lock.servers, key=lambda server: server.name):
+            self._launcher.verify_files(entry)
+
+    def activate(self, entry: McpServerLock) -> tuple[ToolInterface, ...]:
+        """Start the server if it is not running, and return its tools; nothing if it already runs."""
+        if entry.name in self._connections:
+            return ()
+        connection = self._launcher.start(entry)
         try:
-            for entry in sorted(lock.servers, key=lambda server: server.name):
-                connection = self._launcher.start(entry)
-                self._connections.append(connection)
-                self._tools.extend(self._factory.create(connection))
+            tools = self._factory.create(connection)
         except BaseException:
-            self.close()
+            connection.close()
             raise
+        self._connections[entry.name] = connection
+        return tools
 
-    def tools(self) -> tuple[ToolInterface, ...]:
-        """The tools of every started server."""
-        return tuple(self._tools)
+    def running(self) -> tuple[str, ...]:
+        """The names of the servers running now, in the order they started."""
+        return tuple(self._connections)
 
     def close(self) -> None:
-        """Stop every server that was started. Safe to call twice."""
-        connections, self._connections = self._connections, []
-        self._tools = []
+        """Stop every running server. Safe to call twice."""
+        connections, self._connections = list(self._connections.values()), {}
         for connection in reversed(connections):
             connection.close()

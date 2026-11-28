@@ -17,6 +17,8 @@ class AcpSession(AcpSessionInterface):
     cwd: str
     run_id: str | None = None
     servers: tuple[str, ...] = ()
+    # The selected servers the person approved for this session, each once; a server is approved before it starts.
+    approved: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.session_id.strip():
@@ -27,3 +29,7 @@ class AcpSession(AcpSessionInterface):
             raise ValueError("a selected server name must be a locked server's name")
         if len(set(self.servers)) != len(self.servers):
             raise ValueError("a session selects each server once")
+        if not set(self.approved) <= set(self.servers) or len(set(self.approved)) != len(
+            self.approved
+        ):
+            raise ValueError("a session approves each selected server once, and no other")

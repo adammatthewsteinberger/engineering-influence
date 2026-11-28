@@ -26,7 +26,7 @@ TABLES = {
     "ledgereventrecord",
     "outboxrecord",
 }
-HEAD = "0003"
+HEAD = "0004"
 
 
 def fresh_url(tmp_path: Path) -> str:
@@ -173,5 +173,19 @@ def test_undoing_the_selection_column_tolerates_it_already_being_gone(tmp_path: 
     engine.dispose()
     command.downgrade(migrator._config(url), "0002")
     assert "servers" not in {
+        c["name"] for c in inspect(create_engine(url)).get_columns("acpsessionrecord")
+    }
+
+
+def test_undoing_the_approval_column_tolerates_it_already_being_gone(tmp_path: Path) -> None:
+    url = fresh_url(tmp_path)
+    migrator = SchemaMigrator()
+    migrator.upgrade(url)
+    engine = create_engine(url)
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE acpsessionrecord DROP COLUMN approved"))
+    engine.dispose()
+    command.downgrade(migrator._config(url), "0003")
+    assert "approved" not in {
         c["name"] for c in inspect(create_engine(url)).get_columns("acpsessionrecord")
     }

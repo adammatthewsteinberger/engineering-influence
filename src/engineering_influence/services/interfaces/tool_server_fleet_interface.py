@@ -8,22 +8,27 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from engineering_influence.interfaces.tool_interface import ToolInterface
+    from engineering_influence.models.mcp_server_lock import McpServerLock
     from engineering_influence.models.tool_lock import ToolLock
 
 
 class ToolServerFleetInterface(ABC):
-    """Every server in a lock, started for a run and stopped at its end."""
+    """Every server in a lock: verified at boot, started on first use, stopped at the end."""
 
     __slots__ = ()
 
     @abstractmethod
-    def start(self, lock: ToolLock) -> None:
-        """Start and verify each server; if any fails, stop the ones already started and raise."""
+    def verify(self, lock: ToolLock) -> None:
+        """Check the files of every server in the lock, starting none; raise if any differs."""
 
     @abstractmethod
-    def tools(self) -> tuple[ToolInterface, ...]:
-        """The tools of every started server."""
+    def activate(self, entry: McpServerLock) -> tuple[ToolInterface, ...]:
+        """Start the server if it is not running, and return its tools; nothing if it already runs."""
+
+    @abstractmethod
+    def running(self) -> tuple[str, ...]:
+        """The names of the servers running now."""
 
     @abstractmethod
     def close(self) -> None:
-        """Stop every server that was started. Safe to call twice."""
+        """Stop every running server. Safe to call twice."""
