@@ -26,7 +26,7 @@ TABLES = {
     "ledgereventrecord",
     "outboxrecord",
 }
-HEAD = "0002"
+HEAD = "0003"
 
 
 def fresh_url(tmp_path: Path) -> str:
@@ -161,3 +161,17 @@ def test_an_unreachable_database_is_reported_without_its_password() -> None:
         assert raised.value.code == "DATABASE_UNAVAILABLE"
         assert "hunter2" not in raised.value.message
         assert "OperationalError" in raised.value.message
+
+
+def test_undoing_the_selection_column_tolerates_it_already_being_gone(tmp_path: Path) -> None:
+    url = fresh_url(tmp_path)
+    migrator = SchemaMigrator()
+    migrator.upgrade(url)
+    engine = create_engine(url)
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE acpsessionrecord DROP COLUMN servers"))
+    engine.dispose()
+    command.downgrade(migrator._config(url), "0002")
+    assert "servers" not in {
+        c["name"] for c in inspect(create_engine(url)).get_columns("acpsessionrecord")
+    }

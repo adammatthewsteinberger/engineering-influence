@@ -89,6 +89,7 @@ from engineering_influence.interfaces.secret_provider_interface import SecretPro
 from engineering_influence.models.bible_card import BibleCard
 from engineering_influence.models.source_entry import SourceEntry
 from engineering_influence.models.tool_limits import ToolLimits
+from engineering_influence.models.tool_lock import ToolLock
 from engineering_influence.runtime.interfaces.cli_runtime_interface import CliRuntimeInterface
 from engineering_influence.runtime.interfaces.publishing_controller_factory_interface import (
     PublishingControllerFactoryInterface,
@@ -647,7 +648,16 @@ class CliRuntime(CliRuntimeInterface):
             SqlModelAcpSessionStore(
                 self._secret_provider().require("EI_DATABASE_URL"), pooled=False
             ),
+            locks=self._session_lock,
         )
+
+    @staticmethod
+    def _session_lock(cwd: str) -> ToolLock:
+        """The operator's lock for a session: EI_TOOL_LOCK, else ei-tools.lock.toml in the session's folder, the file the
+        ``tools`` command reads. With no lock, the session can select no server."""
+        configured = os.environ.get("EI_TOOL_LOCK", "").strip()
+        path = Path(configured) if configured else Path(cwd) / "ei-tools.lock.toml"
+        return TomlToolLockStore().load(path) or ToolLock()
 
     def _cancel_run(self) -> CancelRunInterface:
         """Build the cancel service; it needs only the database."""

@@ -17,6 +17,7 @@ from engineering_influence.interactions.acp.interfaces.application_interface imp
 from engineering_influence.interfaces.acp_session_store_interface import AcpSessionStoreInterface
 from engineering_influence.models.acp_session import AcpSession
 from engineering_influence.models.run_status import RunStatus
+from engineering_influence.models.tool_lock import ToolLock
 from engineering_influence.services.interfaces.brief_reader_interface import BriefReaderInterface
 from engineering_influence.services.interfaces.cancel_run_interface import CancelRunInterface
 from engineering_influence.services.interfaces.create_run_interface import CreateRunInterface
@@ -26,6 +27,7 @@ from engineering_influence.services.interfaces.resolve_spend_consent_interface i
 from engineering_influence.services.interfaces.run_progress_interface import RunProgressInterface
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from typing import TextIO
 
     from engineering_influence.models.book_run import BookRun
@@ -41,9 +43,9 @@ class AcpApplication(AcpApplicationInterface):
 
     Sessions are stored beside the runs, so ``session/load`` re-attaches one from any process, and a run outlives its
     session: a new session can find it with ``ei run status``. A run that would spend past its cap asks the client
-    through ``session/request_permission``, and the answer decides the run. MCP servers are not connected:
-    ``session/new`` refuses a non-empty ``mcpServers`` list, since a server the client names would run commands this
-    agent has not locked.
+    through ``session/request_permission``, and the answer decides the run. ``session/new`` may select MCP servers, but
+    only by the name of a server the operator's lock already has: a client cannot name a command or a URL. Connecting
+    the selected servers to the run is a later change.
     """
 
     PROTOCOL_VERSION: ClassVar[int] = 1
@@ -73,6 +75,7 @@ class AcpApplication(AcpApplicationInterface):
         progress: RunProgressInterface,
         resolver: ResolveSpendConsentInterface,
         sessions: AcpSessionStoreInterface,
+        locks: Callable[[str], ToolLock] | None = None,
     ) -> None:
         self._creator = creator
         self._canceller = canceller
@@ -80,6 +83,9 @@ class AcpApplication(AcpApplicationInterface):
         self._progress = progress
         self._resolver = resolver
         self._store = sessions
+        # The operator's lock for a session's folder. Without one, a session selects no servers at all.
+        self._locks = locks or self._no_locks
+        self._servers: dict[str, tuple[str, ...]] = {}
         self._cwds: dict[str, str] = {}
         # Permission requests sent and not yet answered: request id -> (session id, run id).
         self._open_requests: dict[str, tuple[str, str]] = {}
@@ -88,6 +94,11 @@ class AcpApplication(AcpApplicationInterface):
         self._sessions: dict[str, str | None] = {}
         # For each session whose run is still followed: the run's id and the (status, stage) last reported.
         self._reported: dict[str, tuple[str, tuple[str, str]]] = {}
+
+    @staticmethod
+    def _no_locks(cwd: str) -> ToolLock:
+        """The lock used when none is given: it names no servers, so a session can select none."""
+        return ToolLock()
 
     def handle(self, message: Any) -> list[dict[str, Any]]:
         """The messages to send back for one incoming message; a notification gets none unless it fails."""
@@ -283,13 +294,32 @@ class AcpApplication(AcpApplicationInterface):
         cwd = params.get("cwd")
         if not isinstance(cwd, str) or not cwd.startswith("/"):
             raise self._refusal("ACP_INVALID_PARAMS", "cwd is an absolute path")
-        if params.get("mcpServers", []) != []:
-            raise self._refusal("ACP_INVALID_PARAMS", "this agent does not connect MCP servers yet")
+        servers = self._selected(params.get("mcpServers", []), cwd)
         session_id = f"sess_{uuid.uuid4().hex}"
         self._sessions[session_id] = None
         self._cwds[session_id] = cwd
-        self._store.save(AcpSession(session_id, cwd, None))
+        self._servers[session_id] = servers
+        self._store.save(AcpSession(session_id, cwd, None, servers))
         return {"sessionId": session_id}
+
+    def _selected(self, entries: Any, cwd: str) -> tuple[str, ...]:
+        """The names of the locked servers a session selects. An entry names a server the operator's lock already has;
+        it cannot carry a command or a URL, so a client cannot start code the operator has not locked."""
+        if not isinstance(entries, list):
+            raise self._refusal("ACP_INVALID_PARAMS", "mcpServers is a list")
+        lock = self._locks(cwd)
+        names: list[str] = []
+        for entry in entries:
+            name = entry.get("name") if isinstance(entry, dict) else None
+            if not isinstance(name, str) or lock.server(name) is None:
+                shown = str(name)[:40]
+                raise self._refusal(
+                    "ACP_INVALID_PARAMS", f"the MCP server {shown!r} is not in the operator's lock"
+                )
+            if name in names:
+                raise self._refusal("ACP_INVALID_PARAMS", f"the MCP server {name!r} is named twice")
+            names.append(name)
+        return tuple(names)
 
     def _prompt(self, request_id: Any, params: dict[str, Any]) -> list[dict[str, Any]]:
         session_id = self._session(params)
@@ -301,7 +331,9 @@ class AcpApplication(AcpApplicationInterface):
         text = self._text(params.get("prompt"))
         run = self._creator.create(self._briefs.read_text(text, "the prompt"))
         self._sessions[session_id] = run.run_id
-        self._store.save(AcpSession(session_id, self._cwds[session_id], run.run_id))
+        self._store.save(
+            AcpSession(session_id, self._cwds[session_id], run.run_id, self._servers[session_id])
+        )
         self._reported[session_id] = (run.run_id, (run.status.value, run.stage))
         notice = self._update(
             session_id,
@@ -324,6 +356,7 @@ class AcpApplication(AcpApplicationInterface):
             )
         self._sessions[session_id] = stored.run_id
         self._cwds[session_id] = stored.cwd
+        self._servers[session_id] = stored.servers
         messages: list[dict[str, Any]] = []
         if stored.run_id is not None:
             run = self._progress.current(stored.run_id)
