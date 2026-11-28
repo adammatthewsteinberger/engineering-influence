@@ -1,0 +1,47 @@
+{{- if .Values.networkPolicy.enabled }}
+# The API accepts traffic only from the namespaces listed in networkPolicy.apiIngressFrom. The worker accepts none.
+# Both may send DNS and whatever networkPolicy.egress lists (Postgres, RabbitMQ, OpenBao, the object store).
+# An ingress rule with no `from` allows every source, so with no namespaces listed the API gets no ingress rule.
+{{- range $component := list "api" "worker" }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "ei.fullname" $ }}-{{ $component }}
+  labels:
+    {{- include "ei.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $component }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "ei.name" $ }}
+      app.kubernetes.io/instance: {{ $.Release.Name }}
+      app.kubernetes.io/component: {{ $component }}
+  policyTypes: ["Ingress", "Egress"]
+  {{- if and (eq $component "api") $.Values.networkPolicy.apiIngressFrom }}
+  ingress:
+    - from:
+        {{- range $.Values.networkPolicy.apiIngressFrom }}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ . | quote }}
+        {{- end }}
+      ports:
+        - protocol: TCP
+          port: {{ $.Values.api.port }}
+  {{- end }}
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    {{- with $.Values.networkPolicy.egress }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+{{- end }}
+{{- end }}
