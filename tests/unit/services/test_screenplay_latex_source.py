@@ -60,3 +60,25 @@ def test_characters_that_mean_something_to_latex_are_escaped() -> None:
 
 def test_the_title_value_is_escaped_too() -> None:
     assert "Fish \\& Chips" in render("Title: Fish & Chips\n\nFADE IN:\n")
+
+
+def test_a_revision_script_prints_its_revision_and_date_in_the_running_header() -> None:
+    tex = render("Title: T\nRevision: Pink (2026-11-27)\n\nFADE IN:\n")
+    assert "\\pagestyle{fancy}" in tex
+    assert "\\fancyhead[R]{\\small Revision: Pink (2026-11-27)}" in tex
+
+
+def test_the_title_page_of_a_revision_script_carries_no_header() -> None:
+    tex = render("Title: T\nRevision: Pink (2026-11-27)\n\nFADE IN:\n")
+    assert tex.index("\\thispagestyle{empty}") < tex.index("\\centering")
+
+
+def test_an_ordinary_script_has_no_running_header() -> None:
+    tex = render("Title: T\n\nFADE IN:\n")
+    assert "\\pagestyle{empty}" in tex
+    assert "fancyhead" not in tex
+
+
+def test_the_revision_text_in_the_header_is_escaped_like_the_rest_of_the_page() -> None:
+    tex = render("Title: T\nRevision: Pink (A & B)\n\nFADE IN:\n")
+    assert "\\fancyhead[R]{\\small Revision: Pink (A \\& B)}" in tex
