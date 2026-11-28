@@ -26,7 +26,7 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       latexmk texlive-luatex texlive-latex-recommended texlive-latex-extra \
       texlive-pictures texlive-fonts-recommended texlive-plain-generic \
-      texlive-extra-utils poppler-utils epubcheck default-jre-headless zip tidy \
+      texlive-extra-utils poppler-utils epubcheck default-jre-headless zip tidy fonts-texgyre \
  && rm -rf /var/lib/apt/lists/*
 RUN useradd --system --uid 10001 --no-create-home --shell /usr/sbin/nologin app
 COPY --from=build /app/.venv /app/.venv
@@ -40,7 +40,7 @@ ENTRYPOINT ["ei"]
 CMD ["serve", "worker"]
 
 # The slim image. Last, so it stays the default target.
-FROM python:3.13-slim
+FROM python:3.13-slim AS runtime
 # procps provides ps, which the worker uses to measure a tool's memory; the slim base does not include it. The upgrade
 # applies Debian's security fixes to the base packages (the trivy gate in CI fails on fixable HIGH and CRITICAL findings).
 RUN apt-get update \

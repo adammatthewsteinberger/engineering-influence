@@ -178,7 +178,7 @@ else
   as_root apt-get update
   as_root apt-get install -y --no-install-recommends \
     latexmk texlive-luatex texlive-latex-recommended texlive-latex-extra texlive-pictures \
-    texlive-fonts-recommended texlive-plain-generic texlive-extra-utils poppler-utils epubcheck \
+    texlive-fonts-recommended texlive-plain-generic texlive-extra-utils poppler-utils epubcheck fonts-texgyre \
     default-jre-headless zip tidy
 fi
 

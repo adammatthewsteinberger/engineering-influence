@@ -1,1 +1,0 @@
-The locked scene numbers now print. When the lock stage has stored a shooting script, the PDF and the EPUB use it: the PDF puts each scene's number at the right margin of its heading, and the EPUB floats it to the right. Without a locked script, both outputs are built as before. Compatible: no command, code or stage changed; the PDF and EPUB are the same except for the numbers.

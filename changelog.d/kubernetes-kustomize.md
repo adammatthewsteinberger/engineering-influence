@@ -1,1 +1,0 @@
-Kustomize overlays in `deploy/kustomize/` apply the same Kubernetes objects as the Helm chart without Helm: a base generated from the chart's defaults, and `dev` and `prod` overlays that set the namespace, replicas and image tag. A test fails if the base drifts from the chart. Compatible: nothing changes for Helm installs.

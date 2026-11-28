@@ -1,1 +1,0 @@
-A revised scene that copies its sources into dialogue is now refused, as a drafted scene already was. The revision stage keeps the drafted scene in that case, the same as for a revision that breaks the format or the length rule, so no run stops. Compatible: no stored artifact or option changes; a run whose revisions already pass is unaffected.

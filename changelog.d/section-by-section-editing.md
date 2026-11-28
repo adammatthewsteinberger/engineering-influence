@@ -1,1 +1,0 @@
-A chapter longer than 4,000 words is revised in parts at its paragraph breaks, one call each, so a long chapter no longer gets cut off by the reply limit. Chapters of up to 4,000 words are unchanged. A rejected part keeps its own text and the report counts the rejected parts. Compatible: no codes or contracts change.

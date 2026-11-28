@@ -15,6 +15,7 @@ CI_TOOLCHAIN = {
     "texlive-latex-extra",
     "texlive-pictures",
     "texlive-fonts-recommended",
+    "fonts-texgyre",
     "texlive-plain-generic",
     "texlive-extra-utils",
     "epubcheck",
