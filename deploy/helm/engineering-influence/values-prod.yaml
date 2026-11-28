@@ -22,7 +22,7 @@ api:
 
 ingress:
   enabled: true
-  host: engineering-influence
+  host: engineering-influence.duckdns.org
   issuer: letsencrypt-prod
 
 # One pod at a time may be taken down by a drain (see the chart's PodDisruptionBudget).
