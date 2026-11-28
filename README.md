@@ -111,6 +111,7 @@ installs `ei` alone. It is not on PyPI yet. The extras are `api`, `webhooks`, `r
 | Read | For |
 |---|---|
 | [Getting started](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/GETTING_STARTED.md) | Install, check, write your first book, then run the stack |
+| [Documentation index](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/README.md) | Every page, by audience, with its owner and the date it was last verified |
 | [Driving it from an agent](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/AGENTS_DRIVING.md) | Claude Code or another LLM as the driver |
 | [Books and KDP](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/BOOKS_AND_KDP.md) | What a finished package is, what is built and what is not |
 | [Novels](https://github.com/adammatthewsteinberger/engineering-influence/blob/main/docs/NOVELS.md) | The novel stages, from brief to a built book |
