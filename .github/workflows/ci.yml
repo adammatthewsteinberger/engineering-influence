@@ -172,7 +172,7 @@ jobs:
           PACKAGES: >-
             latexmk texlive-luatex texlive-latex-recommended texlive-latex-extra
             texlive-pictures texlive-fonts-recommended texlive-plain-generic
-            texlive-extra-utils epubcheck default-jre-headless poppler-utils tex-gyre
+            texlive-extra-utils epubcheck default-jre-headless poppler-utils fonts-texgyre
         run: |
           set -eu
           mkdir -p "$ARCHIVES"
