@@ -21,7 +21,7 @@ postgres:
 # that resolves to the cluster's ingress controller before its certificate can be issued.
 ingress:
   enabled: true
-  host: engineering-influence-dev
+  host: engineering-influence-dev.duckdns.org
   issuer: letsencrypt-staging
 
 openbao:

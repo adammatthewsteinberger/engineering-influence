@@ -20,5 +20,5 @@ openbao:
 
 ingress:
   enabled: true
-  host: engineering-influence-staging
+  host: engineering-influence-staging.duckdns.org
   issuer: letsencrypt-staging
