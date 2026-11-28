@@ -273,18 +273,21 @@ jobs:
           # Dependabot's exact noreply address; a name that merely contains "dependabot" does not match.
           is_dependabot() { [ "$1" = '49699333+dependabot[bot]@users.noreply.github.com' ]; }
           skipped=0
-          for sha in $(git rev-list --reverse "$COMMITS"); do
+          while read -r sha; do
             if is_dependabot "$(git log -1 --format='%ae' "$sha")"; then skipped=$((skipped + 1)); continue; fi
             # A merge is skipped only when every commit it brings in is Dependabot's. Its own diff is not trusted.
-            set -- $(git log -1 --format='%P' "$sha")
-            if [ "$#" -eq 2 ]; then
-              brought="$(git rev-list "$1..$2")"
+            read -r first second _ <<< "$(git log -1 --format='%P' "$sha")"
+            if [ -n "$second" ]; then
+              brought=0
               only=yes
-              for c in $brought; do is_dependabot "$(git log -1 --format='%ae' "$c")" || only=no; done
-              if [ -n "$brought" ] && [ "$only" = yes ]; then skipped=$((skipped + 1)); continue; fi
+              while read -r c; do
+                brought=$((brought + 1))
+                is_dependabot "$(git log -1 --format='%ae' "$c")" || only=no
+              done < <(git rev-list "$first..$second")
+              if [ "$brought" -gt 0 ] && [ "$only" = yes ]; then skipped=$((skipped + 1)); continue; fi
             fi
             uv run vibey-gh provenance-check --commits "$sha^..$sha"
-          done
+          done < <(git rev-list --reverse "$COMMITS")
           echo "skipped $skipped Dependabot commits or merges that brought only Dependabot commits"
       - if: github.event_name == 'pull_request'
         env:
