@@ -130,3 +130,25 @@ published standard. Every page after the title page of a revision carries a runn
 The revision pages' title page names the revision and its date, for example `Revision: Pink (2026-11-27)`. The date is
 `--revision-date`, or today when a baseline is given without one. It is kept with the run, so a resumed run prints the
 same date.
+
+## Video
+
+The video stage runs after the script is locked. It plans a shot list from the locked script (`shooting_script.fountain`
+when the lock stage stored one, otherwise `screenplay.fountain`) and always stores `video/manifest.json`. What happens
+next depends on `EI_VIDEO_PROVIDER` (see [Configuration](CONFIGURATION.md)):
+
+- **Unset, the default.** The stage spends nothing. The manifest has `"status": "not_generated"` and
+  `"ai_generated": false`, gives the reason, and lists the planned shots, so the run finishes with a record that no video
+  was made.
+- **`openrouter`.** The stage prices the shots not yet stored. If they cost more than the run's remaining budget, the run
+  stops and waits for your consent rather than spending past the cap. Otherwise it generates each missing shot as
+  `video/shot_NNN.mp4` and stores a manifest with `"status": "generated"` and `"ai_generated": true`, which marks the
+  film as AI-generated. A shot already stored is never generated again, so `--resume` after a failure pays only for the
+  shots still missing. A shot whose generation fails is not stored; the shots already made are kept.
+
+The stage's failures are `VIDEO_PROVIDER_UNAVAILABLE` (the provider is unknown, or its key is missing),
+`VIDEO_GENERATION_FAILED` (the service ended a shot's job as failed, cancelled or expired) and `VIDEO_REJECTED` (the
+service refused a request). [Troubleshooting](TROUBLESHOOTING.md) gives the fix for each.
+
+Each shot is a paid job. No paid run against a real video provider has been made yet: that pilot needs the maintainer's
+approval and a budget.
