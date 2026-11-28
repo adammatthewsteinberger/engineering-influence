@@ -1,0 +1,24 @@
+# The dev environment Argo CD syncs (deploy/argocd/application.yaml). Postgres, OpenBao and the object store are
+# provisioned for dev outside this chart, so nothing here deploys them.
+#
+# Before the first sync, set openbao.server to the address of that OpenBao, and seed the app's values into its KV
+# path secret/ei (the keys in openbao.keys) once. The ExternalSecret then copies them into ei-secrets, and the
+# migration (a PreSync hook) runs after that Secret exists.
+# 0.1.0rc2 is the first release whose images are in GHCR; rc1 never published its images.
+image:
+  tag: "0.1.0rc2"
+
+existingSecret: ei-secrets
+
+# The ExternalSecret and SecretStore are PreSync hooks (weight -10), ahead of the migration (weight -5).
+secretsAsPreSync: true
+
+# The in-cluster database is off, so the migration is a pre-install and pre-upgrade hook, which Argo CD runs as PreSync.
+postgres:
+  enabled: false
+
+openbao:
+  enabled: true
+  devMode: false
+  # Required: the address of the dev OpenBao. The chart refuses to render without it.
+  server: ""
