@@ -1,0 +1,1 @@
+The screenplay format check now refuses a (beat) parenthetical: a pause belongs in the action, and the message says how many a script has. The check is part of the architecture and drafting gates, so a script with them fails at the stage that wrote it. Compatible: scripts without (beat) parentheticals pass as before.

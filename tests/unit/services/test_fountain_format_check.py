@@ -98,3 +98,19 @@ def test_interior_thought_in_action_is_a_note_not_a_problem() -> None:
     text = script(body="Mara knows the truth.")
     assert checker().problems(text) == ()
     assert any("interior thought in action" in note for note in checker().notes(text))
+
+
+def test_a_beat_parenthetical_is_a_problem_because_a_pause_belongs_in_the_action() -> None:
+    text = script(body="MARA\n(beat)\nWe wait.\n")
+    assert any(
+        "(beat)" in p and "pause belongs in the action" in p for p in checker().problems(text)
+    )
+
+
+def test_the_beat_problem_counts_every_beat_parenthetical_in_the_script() -> None:
+    text = script(body="MARA\n(beat)\nWe wait.\n\nMARA\n(beat)\nWe stop.\n")
+    assert any(p.startswith("2 (beat) parentheticals") for p in checker().problems(text))
+
+
+def test_a_script_with_no_beat_parentheticals_has_no_beat_problem() -> None:
+    assert not any("(beat)" in p for p in checker().problems(script()))

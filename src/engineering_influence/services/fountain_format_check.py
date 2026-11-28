@@ -17,7 +17,8 @@ class FountainFormatCheck(FountainFormatCheckInterface):
     """What it refuses: a script that does not open with FADE IN: and close with FADE OUT. and THE END; a scene
     whose time of day is not on the allowed list; a camera direction in action (INSERT is allowed); digits in
     dialogue (numbers are spelled out); a parenthetical that does not lead into dialogue; parentheticals on more than
-    `MAX_PARENTHETICAL_RATIO` of the speeches; a year in a scene heading instead of (FLASHBACK).
+    `MAX_PARENTHETICAL_RATIO` of the speeches; more than `MAX_BEAT_PARENTHETICALS` (beat) parentheticals, since a pause
+    belongs in the action; a year in a scene heading instead of (FLASHBACK).
 
     Interior thought in action is a note, not a problem: a reader should look at it, but it does not fail the script.
     """
@@ -27,6 +28,10 @@ class FountainFormatCheck(FountainFormatCheckInterface):
     )
     MAX_PARENTHETICAL_RATIO: ClassVar[float] = 0.10
     MIN_SPEECHES_FOR_RATIO: ClassVar[int] = 10
+    # A pause is written in the action, not as a (beat) parenthetical. Zero is the rule; a count is kept so a
+    # different policy is one constant away, and the message always says how many were found.
+    MAX_BEAT_PARENTHETICALS: ClassVar[int] = 0
+    BEAT: ClassVar[re.Pattern[str]] = re.compile(r"\(?\s*beat\s*\)?", re.IGNORECASE)
     CAMERA: ClassVar[re.Pattern[str]] = re.compile(
         r"\b(CLOSE ON|CLOSE UP|POV|ANGLE ON|TRACKING SHOT|DOLLY IN|DOLLY OUT|PAN TO)\b"
     )
@@ -67,6 +72,15 @@ class FountainFormatCheck(FountainFormatCheckInterface):
             ):
                 found.append(f"a parenthetical must lead into dialogue: {block.text()!r}")
         found.extend(self._ratio_problems(blocks))
+        beats = sum(
+            1
+            for block in blocks
+            if block.kind == "parenthetical" and self.BEAT.fullmatch(block.text().strip())
+        )
+        if beats > self.MAX_BEAT_PARENTHETICALS:
+            found.append(
+                f"{beats} (beat) parentheticals: a pause belongs in the action, not in parentheses"
+            )
         return tuple(found)
 
     def notes(self, text: str) -> tuple[str, ...]:
