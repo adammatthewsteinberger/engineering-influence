@@ -273,7 +273,9 @@ jobs:
           # Dependabot's exact noreply address; a name that merely contains "dependabot" does not match.
           is_dependabot() { [ "$1" = '49699333+dependabot[bot]@users.noreply.github.com' ]; }
           skipped=0
-          while read -r sha; do
+          processed=0
+          while read -r sha <&3; do
+            processed=$((processed + 1))
             if is_dependabot "$(git log -1 --format='%ae' "$sha")"; then skipped=$((skipped + 1)); continue; fi
             # A merge is skipped only when every commit it brings in is Dependabot's. Its own diff is not trusted.
             read -r first second _ <<< "$(git log -1 --format='%P' "$sha")"
@@ -286,8 +288,10 @@ jobs:
               done < <(git rev-list "$first..$second")
               if [ "$brought" -gt 0 ] && [ "$only" = yes ]; then skipped=$((skipped + 1)); continue; fi
             fi
-            uv run vibey-gh provenance-check --commits "$sha^..$sha"
-          done < <(git rev-list --reverse "$COMMITS")
+            uv run vibey-gh provenance-check --commits "$sha^..$sha" </dev/null
+          done 3< <(git rev-list --reverse "$COMMITS")
+          total="$(git rev-list --count "$COMMITS")"
+          [ "$processed" -eq "$total" ] || { echo "checked $processed of $total commits" >&2; exit 1; }
           echo "skipped $skipped Dependabot commits or merges that brought only Dependabot commits"
       - if: github.event_name == 'pull_request' && github.event.pull_request.base.ref != 'main'
         env:
@@ -302,7 +306,9 @@ jobs:
           set -eu
           is_dependabot() { [ "$1" = '49699333+dependabot[bot]@users.noreply.github.com' ]; }
           skipped=0
-          while read -r sha; do
+          processed=0
+          while read -r sha <&3; do
+            processed=$((processed + 1))
             if is_dependabot "$(git log -1 --format='%ae' "$sha")"; then skipped=$((skipped + 1)); continue; fi
             read -r first second _ <<< "$(git log -1 --format='%P' "$sha")"
             if [ -n "$second" ]; then
@@ -314,8 +320,10 @@ jobs:
               done < <(git rev-list "$first..$second")
               if [ "$brought" -gt 0 ] && [ "$only" = yes ]; then skipped=$((skipped + 1)); continue; fi
             fi
-            uv run vibey-gh conventional-check --commits "$sha^..$sha"
-          done < <(git rev-list --reverse "$COMMITS")
+            uv run vibey-gh conventional-check --commits "$sha^..$sha" </dev/null
+          done 3< <(git rev-list --reverse "$COMMITS")
+          total="$(git rev-list --count "$COMMITS")"
+          [ "$processed" -eq "$total" ] || { echo "checked $processed of $total commits" >&2; exit 1; }
           echo "skipped $skipped Dependabot commits or merges that brought only Dependabot commits"
 
   compose-smoke:
