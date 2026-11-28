@@ -5,6 +5,10 @@ image:
   tag: "0.1.0"
   pullPolicy: IfNotPresent
 
+# true: the SecretStore and ExternalSecret are pre-install and pre-upgrade hooks, so Argo CD runs them as PreSync
+# before the migration. Dev uses it with an OpenBao it does not deploy. false keeps them ordinary resources.
+secretsAsPreSync: false
+
 # The one Secret the pods read. It must exist before install and hold these keys:
 #   EI_DATABASE_URL   SQLAlchemy URL for Postgres, e.g. postgresql+psycopg://user:pw@host:5432/db
 #   EI_RABBITMQ_URL   amqp://user:pw@host:5672/
