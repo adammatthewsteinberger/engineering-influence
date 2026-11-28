@@ -23,8 +23,11 @@ SeaweedFS for run files (`seaweedfs.enabled`, with its NetworkPolicy and bucket 
 objects that copy its values into `existingSecret` (`openbao.enabled`); Prometheus, Grafana and the Loki and Alloy log
 stack (`observability.enabled`, `logs.enabled`), with NetworkPolicies on Prometheus and Loki; Tempo for traces
 (`tracing.enabled`, with its NetworkPolicy); a HorizontalPodAutoscaler for the API (`autoscaling.api.enabled`); and a
-KEDA `ScaledObject` for the worker (`autoscaling.keda.enabled`). The chart has no Ingress, PodDisruptionBudget or
-CronJob yet.
+KEDA `ScaledObject` for the worker (`autoscaling.keda.enabled`); a NetworkPolicy for the API and the worker
+(`networkPolicy.enabled`), which lets the API accept traffic only from the namespaces in `networkPolicy.apiIngressFrom` and
+the worker accept none, with DNS and the egress in `networkPolicy.egress` added; and a PodDisruptionBudget for each of them
+(`podDisruptionBudget.enabled`), allowing one pod down at a time. Both policy objects are off by default, because a policy
+that is too narrow stops the app. The chart has no Ingress or CronJob yet.
 
 ## The Secret
 
