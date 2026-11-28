@@ -105,3 +105,41 @@ def test_extra_egress_is_added_after_dns() -> None:
     )
     for policy in policies:
         assert [{"protocol": "TCP", "port": 5432}] == policy["spec"]["egress"][1]["ports"]
+
+
+@needs_helm
+def test_no_ingress_is_rendered_by_default() -> None:
+    assert of_kind(render(), "Ingress") == []
+
+
+@needs_helm
+def test_the_ingress_routes_the_host_to_the_api_under_its_issuers_certificate() -> None:
+    (ingress,) = of_kind(
+        render(
+            "ingress.enabled=true",
+            "ingress.host=api.example.test",
+            "ingress.issuer=letsencrypt-staging",
+        ),
+        "Ingress",
+    )
+    assert ingress["metadata"]["annotations"] == {
+        "cert-manager.io/cluster-issuer": "letsencrypt-staging"
+    }
+    assert ingress["spec"]["ingressClassName"] == "nginx"
+    assert ingress["spec"]["tls"] == [{"hosts": ["api.example.test"], "secretName": "ei-api-tls"}]
+    (rule,) = ingress["spec"]["rules"]
+    assert rule["host"] == "api.example.test"
+    assert rule["http"]["paths"][0]["backend"]["service"] == {
+        "name": "ei-engineering-influence-api",
+        "port": {"name": "http"},
+    }
+
+
+@needs_helm
+def test_an_ingress_without_a_host_or_an_issuer_refuses_to_render() -> None:
+    for sets in (
+        ["ingress.enabled=true", "ingress.issuer=letsencrypt-staging"],
+        ["ingress.enabled=true", "ingress.host=api.example.test"],
+    ):
+        with pytest.raises(subprocess.CalledProcessError):
+            render(*sets)
