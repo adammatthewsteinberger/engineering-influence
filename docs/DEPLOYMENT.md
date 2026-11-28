@@ -65,6 +65,12 @@ helm template ei deploy/helm/engineering-influence --set existingSecret=ei-secre
 
 The chart's version is `0.1.0`, the same as the package's `__version__`.
 
+CI runs these checks on every push (the `kubernetes` job in `.github/workflows/ci.yml`): `helm lint` and a `kubeconform`
+validation of the render, once with the defaults and once with every optional object on; `kubectl kustomize` plus the same
+validation for the `dev` and `prod` overlays; and a Trivy scan of the image that fails on fixable HIGH and CRITICAL
+findings. `kubeconform` skips the CRDs it has no schema for (External Secrets, KEDA), so a typo in those objects is not
+caught by CI; check them with `kubectl apply --dry-run=server` against a cluster that has the CRDs.
+
 ## Object storage
 
 By default a run's files stay in Postgres. To keep them in a bucket, set `artifactStore.kind=s3`:

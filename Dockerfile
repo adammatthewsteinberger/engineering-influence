@@ -40,10 +40,18 @@ CMD ["serve", "worker"]
 
 # The slim image. Last, so it stays the default target.
 FROM python:3.13-slim
-# procps provides ps, which the worker uses to measure a tool's memory; the slim base does not include it.
+# procps provides ps, which the worker uses to measure a tool's memory; the slim base does not include it. The upgrade
+# applies Debian's security fixes to the base packages (the trivy gate in CI fails on fixable HIGH and CRITICAL findings).
 RUN apt-get update \
+ && apt-get upgrade -y --no-install-recommends \
  && apt-get install -y --no-install-recommends procps \
  && rm -rf /var/lib/apt/lists/*
+# The app runs from /app/.venv, so the base image's bundled pip and setuptools are not needed here. Removing them also
+# removes the copies of urllib3 and msgpack that pip vendors, which the scanner reports for the base image.
+RUN rm -rf /usr/local/lib/python3.13/ensurepip \
+ && rm -rf /usr/local/lib/python3.13/site-packages/pip /usr/local/lib/python3.13/site-packages/pip-*.dist-info \
+ && rm -rf /usr/local/lib/python3.13/site-packages/setuptools /usr/local/lib/python3.13/site-packages/setuptools-*.dist-info \
+ && rm -f /usr/local/bin/pip /usr/local/bin/pip3 /usr/local/bin/pip3.13
 RUN useradd --system --uid 10001 --no-create-home --shell /usr/sbin/nologin app
 COPY --from=build /app/.venv /app/.venv
 ENV PATH="/app/.venv/bin:${PATH}" PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1

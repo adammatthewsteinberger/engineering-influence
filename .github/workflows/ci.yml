@@ -37,6 +37,54 @@ jobs:
       - run: uv run mypy --strict src packages
       - run: uv run pytest --cov --cov-branch --cov-fail-under=100 -n auto
 
+  # Renders the Helm chart with default values and with every optional object on, validates each render against the
+  # Kubernetes schemas, and builds each Kustomize overlay the same way. Then it builds the image and scans it with Trivy
+  # for fixable HIGH and CRITICAL vulnerabilities. CRDs with no bundled schema (External Secrets, KEDA) are skipped, not failed.
+  kubernetes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
+        with:
+          version: v4.3.2
+      - name: Install kubeconform
+        run: |
+          set -euo pipefail
+          curl -fsSL -o kubeconform.tar.gz "https://github.com/yannh/kubeconform/releases/download/v0.8.0/kubeconform-linux-amd64.tar.gz"
+          echo "9bc2bffbf71f261128533edaf912153948b7ff238f9a531ae6d34466ec287883  kubeconform.tar.gz" | sha256sum --check
+          tar -xzf kubeconform.tar.gz kubeconform
+          sudo install -m 0755 kubeconform /usr/local/bin/kubeconform
+      - name: Lint and validate the chart, with defaults and with every optional object on
+        run: |
+          set -euo pipefail
+          chart=deploy/helm/engineering-influence
+          every=(--set existingSecret=ei-secrets --set openbao.enabled=true --set postgres.enabled=true
+            --set rabbitmq.enabled=true --set observability.enabled=true --set logs.enabled=true
+            --set tracing.enabled=true --set seaweedfs.enabled=true --set artifactStore.kind=s3
+            --set artifactStore.bucket=ei-artifacts --set autoscaling.api.enabled=true --set autoscaling.keda.enabled=true)
+          helm lint "$chart" --set existingSecret=ei-secrets
+          helm lint "$chart" "${every[@]}"
+          helm template ei "$chart" --set existingSecret=ei-secrets | kubeconform -strict -summary -ignore-missing-schemas
+          helm template ei "$chart" "${every[@]}" | kubeconform -strict -summary -ignore-missing-schemas
+      - name: Build each Kustomize overlay and validate it
+        run: |
+          set -euo pipefail
+          for overlay in dev prod; do
+            kubectl kustomize "deploy/kustomize/overlays/$overlay" | kubeconform -strict -summary -ignore-missing-schemas
+          done
+      - name: Build the image
+        run: docker build --tag "ei-ci:${{ github.sha }}" .
+      - name: Scan the image with Trivy
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ei-ci:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+
   # Builds a synthetic book with the real toolchain (LuaLaTeX, tex4ebook, epubcheck) and compares
   # the result with a checked-in structural snapshot. The runner image is pinned because the
   # snapshot depends on the TeX Live release; a deliberate change is accepted by re-running the
@@ -70,7 +118,7 @@ jobs:
           PACKAGES: >-
             latexmk texlive-luatex texlive-latex-recommended texlive-latex-extra
             texlive-pictures texlive-fonts-recommended texlive-plain-generic
-            texlive-extra-utils epubcheck default-jre-headless
+            texlive-extra-utils epubcheck default-jre-headless poppler-utils
         run: |
           set -eu
           mkdir -p "$ARCHIVES"
