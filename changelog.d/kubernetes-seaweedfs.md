@@ -1,1 +1,0 @@
-The Helm chart can run a single-replica SeaweedFS in the namespace (`seaweedfs.enabled=true`) and keep run files in its bucket (`artifactStore.kind=s3`), or point the API and worker at an external S3-compatible service. The default is still the database. The credentials are read from the same Secret the other keys come from. `docs/DEPLOYMENT.md` gives the options and the limits.

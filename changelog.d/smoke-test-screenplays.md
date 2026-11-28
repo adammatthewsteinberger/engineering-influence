@@ -1,1 +1,0 @@
-The live smoke test page now says plainly that screenplays have no end-to-end check: the free rehearsal's scripted server answers screenplay prompts, but no test runs a screenplay plan through it, and a screenplay's sources are the author's own folders. Documentation only; compatible.

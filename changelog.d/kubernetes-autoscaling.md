@@ -1,1 +1,0 @@
-The Helm chart can scale the API on CPU with a HorizontalPodAutoscaler (`autoscaling.api.enabled`) and the worker on its RabbitMQ queue depth with KEDA (`autoscaling.keda.enabled`, which needs KEDA installed in the cluster). Both are off by default, so an install without them is unchanged. `docs/DEPLOYMENT.md` gives the options.

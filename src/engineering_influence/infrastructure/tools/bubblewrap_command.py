@@ -29,6 +29,7 @@ class BubblewrapCommand(McpServerSandboxInterface):
 
     def wrap(self, command: tuple[str, ...], workdir: Path) -> tuple[str, ...]:
         place = str(workdir.resolve())
+        home = str(self._home.resolve())
         arguments: list[str] = [
             self._executable,
             "--die-with-parent",
@@ -51,9 +52,14 @@ class BubblewrapCommand(McpServerSandboxInterface):
             "--tmpfs",
             PRIVATE_TMP,
             "--tmpfs",
-            str(self._home.resolve()),
+            home,
         ]
         for allowed in self._allowance.paths(command, self._home):
             arguments += ["--ro-bind", str(allowed), str(allowed)]
-        arguments += ["--bind", place, place, "--chdir", place, "--", *command]
+        # The working directory is the one writable mount. /run, /tmp and the home directory are bubblewrap's own
+        # tmpfs mounts, remounted read-only after it is bound: a remount is not recursive, so the bind stays writable,
+        # and every other write under those directories, including implicitly created parents, is refused.
+        arguments += ["--bind", place, place]
+        arguments += ["--remount-ro", "/run", "--remount-ro", PRIVATE_TMP, "--remount-ro", home]
+        arguments += ["--chdir", place, "--", *command]
         return tuple(arguments)
