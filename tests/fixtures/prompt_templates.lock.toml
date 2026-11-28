@@ -33,6 +33,10 @@ fingerprint = "7fcfbaa16e3d3d2b7f4bde3d4f69779ad433bdbdd482cc80b7193c9a5c8cd1a5"
 version = 2
 fingerprint = "886b6d1bb7aaffd7056dbfb8901694b5644a48c04a79d634785ab33673fc766c"
 
+[novel_revise_continuity]
+version = 1
+fingerprint = "3981d167d19a8fdf3d77bcb1090af19ec86945bfe6fc052a1c030d822839172b"
+
 [novel_revise_lines]
 version = 1
 fingerprint = "d5ec52dad765847debe71cfdf9ff301ac27458bd411468d2b1fc5bf1c505084f"

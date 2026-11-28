@@ -347,7 +347,7 @@ def test_a_novel_is_assembled_from_its_draft_and_keeps_the_dashes_its_prose_has(
         store.put("run-1", "metadata.md", LISTING.encode())
         store.put(
             "run-1",
-            "copy_01.md",
+            "continuity_01.md",
             "# Chapter 1: The Road\n\n\u201cWait\u2014\u201d she said.".encode(),
         )
         asyncio.run(rt.build(store, InMemoryJournal()).execute(run, 1))
