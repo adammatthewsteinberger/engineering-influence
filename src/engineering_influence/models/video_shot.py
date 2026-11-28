@@ -17,6 +17,7 @@ class VideoShot(VideoShotInterface):
     prompt: str
 
     def __post_init__(self) -> None:
+        """Validate the shot's number, scene and duration (1 to 30 seconds) when it is built."""
         if type(self.number) is not int or self.number < 1:
             raise ValueError("a shot is numbered from 1")
         if type(self.scene) is not int or self.scene < 1:

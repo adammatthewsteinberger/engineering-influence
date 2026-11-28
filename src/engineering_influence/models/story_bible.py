@@ -34,6 +34,7 @@ class StoryBible(StoryBibleInterface):
     span_years: int = 0
 
     def __post_init__(self) -> None:
+        """Validate the bible's premise, names, places and events when it is built."""
         StoryText.line("the premise", self.premise, self.MAX_PREMISE)
         self._check_characters()
         self._check_places()

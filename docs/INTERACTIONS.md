@@ -73,6 +73,244 @@ A **book run** starts from a **brief** instead (`POST /v1/runs`, `ei run create`
 | `violence` | novels only: `none`, `mild`, `moderate` or `graphic` |
 | `heat` | novels only: `none`, `sweet`, `steamy` or `explicit` |
 
+## Contracts
+
+A contract is the shape a surface sends or returns. The classes below are the ones in `src/engineering_influence/contracts/`, with the version in the table where the module has one.
+
+| Contract | Class | What it is |
+|---|---|---|
+| project request | `ProjectRequest` | Validated project data accepted by an interaction. |
+| pipeline request | `PipelineRequest` | Validated request naming the project whose pipeline should start. |
+| pipeline response | `PipelineResponse` | Stable response shared by the API, MCP, CLI and SDK adapters. |
+| security verdict | `SecurityVerdict` | Accepted, or rejected with a short stable reason code. |
+| readiness report | `ReadinessReport` | Ready only when every dependency check is healthy. |
+| job outcome | `JobOutcome` | The terminal result of processing one job. |
+| brief v1: run input | `RunInputV1` | One block of text given to a run: a name, the text and where it came from. It is checked when the brief is read, not when the run starts. |
+| run v1: budget | `RunBudgetV1` | The cap, what has been spent, what in-flight calls hold, and what is left. |
+| run v1: grant | `RunGrantV1` | The body of a grant. Omit `micro_usd` to grant the amount a run waiting for consent asked for; a parked run needs an amount. |
+| run v1: issue | `RunIssueV1` | Where it happened, a stable code, a short detail, and whether it stops a release. |
+| book config v1: entry | `BookConfigEntryV1` | A manuscript file, written either as a bare name or as a table with a style. |
+| book config v1: part | `BookConfigPartV1` | A part's title and its chapter files, in reading order. |
+
+## Error codes
+
+Every error a surface returns carries a stable code, and the REST API sends its HTTP status with it. The table lists each code the source raises and the status or statuses it can carry; a code raised from more than one place lists each status. `SCREENPLAY_<STAGE>_INVALID` is one code for each stage of the screenplay plan, and the table lists them one by one.
+
+| Code | HTTP status |
+|---|---|
+| `ACP_INVALID_PARAMS` | 400 |
+| `ACP_INVALID_REQUEST` | 400 |
+| `ACP_METHOD_NOT_FOUND` | 400 |
+| `ARTIFACT_NOT_FOUND` | 404 |
+| `ARTIFACT_TOO_LARGE` | 413 |
+| `AUDIO_NO_TEXT` | 422 |
+| `AUDIO_RATE_CHANGED` | 502 |
+| `AUDIT_FAILED` | 422 |
+| `AUTHOR_PROFILE_INVALID` | 503 |
+| `AUTHOR_PROFILE_MISSING` | 503 |
+| `AUTHOR_PROFILE_REQUIRED` | 422 |
+| `BIBLE_CARD_INVALID` | 422 |
+| `BIBLE_DUPLICATE_ID` | 422 |
+| `BIBLE_FIELD_MISSING` | 422 |
+| `BIBLE_FOLDER_MISSING` | 422 |
+| `BIBLE_KIND_UNSUPPORTED` | 422 |
+| `BIBLE_LINK_UNKNOWN` | 422 |
+| `BIBLE_REAL_PERSON` | 422 |
+| `BIBLE_SCHEMA_INVALID` | 422 |
+| `BRIEF_INVALID` | 422 |
+| `BRIEF_UNREADABLE` | 422 |
+| `BUDGET_ABOVE_LIMIT` | 422 |
+| `BUILD_FAILED` | 422 |
+| `BUNDLE_HTTP_ERROR` | 422, 502 |
+| `BUNDLE_NEEDS_EXTRA` | 503 |
+| `BUNDLE_NOT_FOUND` | 422, 502 |
+| `BUNDLE_REDIRECT_REFUSED` | 422, 502 |
+| `BUNDLE_REPLY_INVALID` | 422, 502 |
+| `BUNDLE_TOO_LARGE` | 422, 502 |
+| `BUNDLE_URL_REFUSED` | 422, 502 |
+| `CASSETTE_INVALID` | 500 |
+| `CASSETTE_MISMATCH` | 500 |
+| `CASSETTE_UNRECORDABLE` | 500 |
+| `CONSENT_NOT_PENDING` | 409 |
+| `CONTENT_LEVEL_NOT_ALLOWED` | 422 |
+| `CONTEXT_TOO_LARGE` | 422 |
+| `DATABASE_UNAVAILABLE` | 503 |
+| `DRAFT_REFUSED` | 502 |
+| `EVALUATION_BUDGET_INVALID` | 422 |
+| `EVALUATION_FILE_INVALID` | 422 |
+| `EVALUATION_JUDGE_REQUIRED` | 422 |
+| `EVALUATION_OUT_NOT_EMPTY` | 409 |
+| `EXPORT_NAME_CLASH` | 500 |
+| `EXPORT_TARGET_NOT_EMPTY` | 409 |
+| `INVALID_JOB_PAYLOAD` | 422 |
+| `JUDGE_ANSWER_INVALID` | 502 |
+| `JUDGE_ANSWER_UNUSABLE` | 502 |
+| `JUDGE_BUDGET_EXHAUSTED` | 422 |
+| `JUDGE_INPUT_TOO_LARGE` | 422 |
+| `LOCAL_RUN_EXISTS` | 409 |
+| `LOCAL_RUN_MISSING` | 404 |
+| `LOCAL_SERVER_UNREACHABLE` | 503 |
+| `MANUSCRIPT_TEXT_REFUSED` | 422 |
+| `MARKETPLACE_INVALID` | 422 |
+| `MCP_AUTH_REFUSED` | 502, 503 |
+| `MCP_HTTP_ERROR` | 502, 503 |
+| `MCP_NO_REPLY` | 502, 503 |
+| `MCP_PROTOCOL_UNSUPPORTED` | 502 |
+| `MCP_REDIRECT_REFUSED` | 502, 503 |
+| `MCP_REPLY_INVALID` | 502, 503 |
+| `MCP_SERVER_CLOSED` | 502 |
+| `MCP_SERVER_ERROR` | 502 |
+| `MCP_SERVER_GONE` | 502, 503 |
+| `MCP_SERVER_LIMIT` | 502 |
+| `MCP_SERVER_START_FAILED` | 502 |
+| `MCP_SESSION_ENDED` | 502, 503 |
+| `MCP_SESSION_EXPIRED` | 502, 503 |
+| `MCP_TOOL_ERROR` | 502 |
+| `MCP_URL_REFUSED` | 502, 503 |
+| `METADATA_INVALID` | 422 |
+| `MODEL_CATALOG_INVALID` | 503 |
+| `MODEL_PROBE_FAILED` | 502 |
+| `MODEL_PROFILE_INVALID` | 503 |
+| `MODEL_REJECTED` | 502 |
+| `MODEL_RESPONSE_UNEXPECTED` | 502 |
+| `MODEL_UNPRICED` | 503 |
+| `NARRATION_FAILED` | 502 |
+| `NARRATOR_UNAVAILABLE` | 503 |
+| `OUTLINE_CHAPTER_COUNT` | 422 |
+| `OUTLINE_INVALID` | 422 |
+| `OUTSTANDING_BUDGET_EXCEEDED` | 422 |
+| `PATH_ESCAPE` | 400 |
+| `PLUGIN_ALREADY_INSTALLED` | 409, 422 |
+| `PLUGIN_FILE_EXISTS` | 409, 422 |
+| `PLUGIN_FILE_MISSING` | 409, 422 |
+| `PLUGIN_FOLDER_INVALID` | 422 |
+| `PLUGIN_HASH_MISMATCH` | 409, 422 |
+| `PLUGIN_IMPORT_EMPTY` | 422 |
+| `PLUGIN_IMPORT_INVALID` | 422 |
+| `PLUGIN_INDEX_INVALID` | 422 |
+| `PLUGIN_INDEX_MISSING` | 409, 422 |
+| `PLUGIN_INDEX_REFUSED` | 409, 422 |
+| `PLUGIN_INVALID` | 409, 422 |
+| `PLUGIN_LOCK_INVALID` | 422 |
+| `PLUGIN_NOT_IN_INDEX` | 409, 422 |
+| `PLUGIN_SKILL_CONFLICT` | 409, 422 |
+| `PLUGIN_UNKNOWN` | 409, 422 |
+| `PLUGIN_VERSION_MISMATCH` | 409, 422 |
+| `PRICING_REQUIRED` | 422 |
+| `PROMPT_TEMPLATE_INVALID` | 503 |
+| `RATE_LIMITED` | 429 |
+| `RUN_CHANGED` | 409 |
+| `RUN_FINISHED` | 409 |
+| `RUN_HAS_NO_ARTIFACTS` | 409 |
+| `RUN_INPUT_INVALID` | 422 |
+| `RUN_KIND_UNSUPPORTED` | 422 |
+| `RUN_MODE_UNKNOWN` | 422 |
+| `RUN_NOT_FOUND` | 404 |
+| `RUN_REVISION_DATE_INVALID` | 422 |
+| `RUN_REVISION_INVALID` | 422 |
+| `SANDBOX_UNAVAILABLE` | 503 |
+| `SCENE_CARDS_UNREADABLE` | 422 |
+| `SCHEMA_OUT_OF_DATE` | 503 |
+| `SCREENPLAY_ANCHORS_INVALID` | 422 |
+| `SCREENPLAY_ASSEMBLE_SCRIPT_INVALID` | 422 |
+| `SCREENPLAY_AUDIT_INVALID` | 422 |
+| `SCREENPLAY_BEATS_INVALID` | 422 |
+| `SCREENPLAY_BRIEF_INVALID` | 422 |
+| `SCREENPLAY_BUILD_EPUB_INVALID` | 422 |
+| `SCREENPLAY_CHECK_CANON_INVALID` | 422 |
+| `SCREENPLAY_DIALOGUE_SCENES_INVALID` | 422 |
+| `SCREENPLAY_DIGEST_SOURCES_INVALID` | 422 |
+| `SCREENPLAY_DRAFT_INVALID` | 422 |
+| `SCREENPLAY_LOCK_SCRIPT_INVALID` | 422 |
+| `SCREENPLAY_LOG_REVISIONS_INVALID` | 422 |
+| `SCREENPLAY_NO_SCENES` | 422 |
+| `SCREENPLAY_NO_SOURCES` | 422 |
+| `SCREENPLAY_NO_TITLE` | 422 |
+| `SCREENPLAY_RENDER_SCRIPT_INVALID` | 422 |
+| `SCREENPLAY_REVISE_SCENES_INVALID` | 422 |
+| `SCREENPLAY_SCENE_CARDS_INVALID` | 422 |
+| `SCREENPLAY_SCENE_INVALID` | 422 |
+| `SCREENPLAY_STRUCTURE_SCENES_INVALID` | 422 |
+| `SCREENPLAY_TITLE_INVALID` | 422 |
+| `SCREENPLAY_VIDEO_INVALID` | 422 |
+| `SCREENPLAY_VISUAL_GRAMMAR_INVALID` | 422 |
+| `SEARCH_QUERY_INVALID` | 502 |
+| `SECRET_MISSING` | 503 |
+| `SHOOTING_LOCK_UNREADABLE` | 422 |
+| `SKILL_ALREADY_LOCKED` | 409, 422 |
+| `SKILL_FILE_EXISTS` | 409 |
+| `SKILL_FILE_MISSING` | 409, 422 |
+| `SKILL_FILE_UNUSABLE` | 422 |
+| `SKILL_IMPORT_INVALID` | 422 |
+| `SKILL_IMPORT_TOO_LARGE` | 422 |
+| `SKILL_INVALID` | 409, 422 |
+| `SKILL_LOCK_INVALID` | 409, 422 |
+| `SKILL_LOCK_MISMATCH` | 503 |
+| `SKILL_LOCK_MISSING` | 503 |
+| `SKILL_MARKDOWN_INVALID` | 422 |
+| `SKILL_NOT_ENABLED` | 409, 422 |
+| `SKILL_NOT_FOUND` | 404 |
+| `SKILL_SECTION_NOT_FOUND` | 404 |
+| `SKILL_SOURCE_INVALID` | 422 |
+| `SKILL_STAGE_UNKNOWN` | 409, 422 |
+| `SKILL_TARGET_EXISTS` | 409 |
+| `SKILL_UNKNOWN` | 409, 422 |
+| `SOURCES_NOT_STORED` | 500 |
+| `SOURCE_EMPTY` | 422 |
+| `SOURCE_FOLDER_MISSING` | 422 |
+| `SOURCE_NOT_FOUND` | 422 |
+| `SOURCE_TOO_COMPLEX` | 422 |
+| `SOURCE_TOO_LARGE` | 422 |
+| `SOURCE_TOO_MANY_REDIRECTS` | 422 |
+| `SOURCE_UNAVAILABLE` | 422 |
+| `SOURCE_UNSUPPORTED_ENCODING` | 422 |
+| `SOURCE_UNSUPPORTED_TYPE` | 422 |
+| `SOURCE_URL_REFUSED` | 422 |
+| `STAGE_ANSWER_UNUSABLE` | 502 |
+| `STAGE_EXECUTOR_UNKNOWN` | 503 |
+| `STAGE_HAS_NO_RECIPE` | 422 |
+| `STAGE_INPUT_MISSING` | 409, 422 |
+| `STAGE_KIND_UNSUPPORTED` | 422 |
+| `STAGE_LOCAL_MODEL_INVALID` | 503 |
+| `STAGE_MODEL_KEY_IN_CLEAR` | 503 |
+| `STAGE_MODEL_NOT_CONFIGURED` | 503 |
+| `STAGE_MODEL_PROFILE_UNKNOWN` | 503 |
+| `STAGE_MODEL_TOO_SMALL` | 422 |
+| `STAGE_OUTPUT_INVALID` | 422 |
+| `STAGE_OUT_OF_ORDER` | 409 |
+| `STAGE_SEARCH_NOT_CONFIGURED` | 503 |
+| `STAGE_SEARXNG_URL_INVALID` | 503 |
+| `STAGE_TEMPLATE_MISMATCH` | 500 |
+| `STAGE_TOOL_UNKNOWN` | 500 |
+| `STOP_STAGE_UNKNOWN` | 422 |
+| `STORY_BIBLE_INVALID` | 422 |
+| `TOOL_COMMAND_NOT_FOUND` | 422 |
+| `TOOL_COMMAND_REFUSED` | 422 |
+| `TOOL_ENV_INVALID` | 422 |
+| `TOOL_ENV_MISSING` | 422 |
+| `TOOL_ENV_RESERVED` | 422 |
+| `TOOL_FILE_UNREADABLE` | 422 |
+| `TOOL_GRANT_INVALID` | 422 |
+| `TOOL_GRANT_UNKNOWN` | 422 |
+| `TOOL_LOCK_EXISTS` | 422 |
+| `TOOL_LOCK_INVALID` | 422 |
+| `TOOL_LOCK_MISMATCH` | 503 |
+| `TOOL_LOCK_MISSING` | 503 |
+| `TOOL_NAME_INVALID` | 422 |
+| `TOOL_RELATIVE_SCRIPT` | 422 |
+| `TOOL_REMOTE_NEEDS_EXTRA` | 503 |
+| `TOOL_SERVER_UNAVAILABLE` | 503 |
+| `TOOL_SERVER_UNKNOWN` | 422 |
+| `TOOL_SERVER_UNRESPONSIVE` | 502 |
+| `TOOL_URL_REFUSED` | 422 |
+| `UNAUTHORIZED` | 401 |
+| `UNKNOWN_JOB_KIND` | 422 |
+| `UNKNOWN_STAGE` | 422 |
+| `VIDEO_GENERATION_FAILED` | 502 |
+| `VIDEO_PROVIDER_UNAVAILABLE` | 503 |
+| `VIDEO_REJECTED` | 502 |
+| `WEBHOOK_TARGET_REJECTED` | 400 |
+
 ## REST API
 
 Run it with `ei serve api` (see [CONFIGURATION.md](CONFIGURATION.md#running-the-stack)); the

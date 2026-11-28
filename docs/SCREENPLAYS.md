@@ -130,3 +130,45 @@ published standard. Every page after the title page of a revision carries a runn
 The revision pages' title page names the revision and its date, for example `Revision: Pink (2026-11-27)`. The date is
 `--revision-date`, or today when a baseline is given without one. It is kept with the run, so a resumed run prints the
 same date.
+
+## Video
+
+The video stage runs after the script is locked. It plans a shot list from the locked script (`shooting_script.fountain`
+when the lock stage stored one, otherwise `screenplay.fountain`) and always stores `video/manifest.json`. What happens
+next depends on `EI_VIDEO_PROVIDER` (see [Configuration](CONFIGURATION.md)):
+
+- **Unset, the default.** The stage spends nothing. The manifest has `"status": "not_generated"` and
+  `"ai_generated": false`, gives the reason, and lists the planned shots, so the run finishes with a record that no video
+  was made.
+- **`openrouter`.** The stage prices the shots not yet stored. If they cost more than the run's remaining budget, the run
+  stops and waits for your consent rather than spending past the cap. Otherwise it generates each missing shot as
+  `video/shot_NNN.mp4` and stores a manifest with `"status": "generated"` and `"ai_generated": true`, which marks the
+  film as AI-generated. A shot already stored is never generated again, so `--resume` after a failure pays only for the
+  shots still missing. A shot whose generation fails is not stored; the shots already made are kept.
+
+The stage's failures are `VIDEO_PROVIDER_UNAVAILABLE` (the provider is unknown, or its key is missing),
+`VIDEO_GENERATION_FAILED` (the service ended a shot's job as failed, cancelled or expired) and `VIDEO_REJECTED` (the
+service refused a request). [Troubleshooting](TROUBLESHOOTING.md) gives the fix for each.
+
+Each shot is a paid job. No paid run against a real video provider has been made yet: that pilot needs the maintainer's
+approval and a budget.
+
+## The stages this page does not describe above
+
+These stages run in a screenplay's order, after the scene cards (see the plan in `ScreenplayRecipes`). The stages marked
+"no model call" are deterministic.
+
+| Stage | Writes | What it does |
+|---|---|---|
+| `anchors` | `anchors.md` | Writes the anchors of the screenplay adapted from its source: the spine, the opening and closing images, All Is Lost, what can and cannot be lost, and the structural mode. |
+| `visual_grammar` | `visual_grammar.md` | Writes the light, colour and texture of each primary set, and a visual signature for each major character. |
+| `digest_sources` | `digest/NNN.md` | Condenses each `source/NNN.md` into a digest. A digest already stored is kept, so a run that stops and resumes condenses only what is missing. No digest is written for a source the model has not finished. |
+| `revise_scenes` | `revised/NNN.md` | Revises each drafted scene in one call. A revision is kept only if it passes the same section check as the draft and is within the allowed length range of the draft; otherwise the drafted scene is stored unchanged. |
+| `structure_scenes` | the structured scene | The structure pass over each revised scene: the card's event must happen on screen and turn the story toward its next beat. The same events, about the same length. |
+| `dialogue_scenes` | the dialogue scene | The dialogue pass over each structured scene: cut lines that explain what the audience can see, keep the lines that carry the plot. The same events, about the same length. |
+| `assemble_script` | the assembled script | No model call. Each card's revised scene becomes one scene; a scene with two headings is refused. The whole script must pass the Fountain format rules, and the beats must fall where the beat sheet puts them, measured in the script's length. |
+| `lock_script` | `shooting_lock.json` | No model call. Each scene card is one scene of the script, in card order, and the stage stops when the two disagree, naming both counts. Scene numbers are planned from a previous lock when the run was given one as `previous_shooting_lock.json`. |
+| `log_revisions` | `revision_log.md`, `source_mapping.md` | No model call. A scene whose stored revision is the draft unchanged is recorded as not used, which is what the revision stage stores when it rejects a revision or runs out of money. The stage stops when the lock and the cards disagree. |
+| `render_script` | `screenplay.pdf`, `render.md` | Typesets the script with LaTeX and checks the PDF against the KDP print layout and the length ceiling. A script that does not typeset, or a PDF that breaks the layout, stops the stage. |
+| `build_epub` | `screenplay.epub` | Builds the EPUB and checks it with epubcheck. An EPUB that fails the check is not stored, and the stage stops with the first findings. |
+| `video` | `video/shot_NNN.mp4`, `video/manifest.json` | Plans the shots from the script and, when a video provider is configured, generates the missing ones. See [Video](#video). |

@@ -18,6 +18,7 @@ class SourceFile(SourceFileInterface):
     body: str
 
     def __post_init__(self) -> None:
+        """Refuse a file name that is a path, and text with control characters other than tabs and line breaks."""
         if not self.name or "/" in self.name or "\\" in self.name or self.name in (".", ".."):
             raise ValueError("a source file is named by its file name, not a path")
         if self.CONTROL.search(self.body):

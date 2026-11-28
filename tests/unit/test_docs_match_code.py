@@ -116,6 +116,7 @@ LAYERED = (
 )
 PLAIN = (
     "AGENTS.md",
+    "docs/README.md",
     "docs/DEPLOYMENT.md",
     "docs/MINIKUBE.md",
     "docs/TEST_PERFORMANCE.md",

@@ -29,6 +29,7 @@ class ModelSourceDigester(SourceDigesterInterface):
         loop: RunToolLoopInterface,
         guards: Callable[[Budget], SpendGuardInterface],
     ) -> None:
+        """Remember the prompts, the tool loop and the spend guard for each source digest."""
         self._prompts = prompts
         self._loop = loop
         self._guards = guards

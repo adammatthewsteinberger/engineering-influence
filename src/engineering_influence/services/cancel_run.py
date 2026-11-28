@@ -20,6 +20,7 @@ class CancelRun(CancelRunInterface):
     ATTEMPTS = 5
 
     def __init__(self, runs: RunRepositoryInterface) -> None:
+        """Remember the run repository the cancellation is recorded in."""
         self._runs = runs
 
     def cancel(self, run_id: str) -> BookRun:

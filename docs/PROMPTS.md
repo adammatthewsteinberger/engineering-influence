@@ -103,6 +103,7 @@ its shape (`BookMetadata`). Em and en dashes in it are rewritten before it is re
 | `novel_revise_story` | 1 | Revises the story of one drafted chapter of a novel: scenes, goals, pacing and the order of its beats |
 | `novel_revise_lines` | 1 | Line-edits one drafted chapter of a novel for rhythm, dialogue and point of view, in the book's voice |
 | `novel_copy_edit` | 1 | Copy-edits one drafted chapter of a novel for spelling, grammar and consistency with the story bible |
+| `novel_revise_continuity` | 1 | Corrects one drafted chapter of a novel where it contradicts the story bible or the outline: names, ages, places, dates and the order of events |
 | `skill_guidance` | 2 | Frames the installed skills added to the end of a stage's prompt |
 | `eval_judge` | 1 | Scores a finished book on each dimension of the evaluation rubric, with a reason for every score |
 

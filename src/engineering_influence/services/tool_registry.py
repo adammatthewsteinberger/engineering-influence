@@ -15,6 +15,7 @@ class ToolRegistry(ToolRegistryInterface):
     """
 
     def __init__(self, tools: Iterable[ToolInterface]) -> None:
+        """Register the tools given; a name taken twice is refused."""
         self._tools: dict[str, ToolInterface] = {}
         self.register(tools)
 

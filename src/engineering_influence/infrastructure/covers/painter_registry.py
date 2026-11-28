@@ -12,6 +12,7 @@ class PainterRegistry(PainterRegistryInterface):
     """Maps the painter name in a style to the painter that draws it."""
 
     def __init__(self) -> None:
+        """Start with no painters registered."""
         self._painters: dict[str, CoverPainterInterface] = {}
 
     def register(self, name: str, painter: CoverPainterInterface) -> None:

@@ -25,6 +25,7 @@ class TexText(TexTextInterface):
     PDF_INFO_UNSAFE = re.compile(r"[\\{}%#^~\x00-\x1f\x7f]")
 
     def __init__(self) -> None:
+        """Nothing to configure: the escaping rules are fixed."""
         self._parser = MarkdownParser()
         self._inline = InlineRenderer()
         self._escaper = LatexEscaper()

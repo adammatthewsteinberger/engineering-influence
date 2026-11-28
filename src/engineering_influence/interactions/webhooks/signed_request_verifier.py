@@ -21,6 +21,7 @@ class SignedRequestVerifier(WebhookVerifierInterface):
         clock: Callable[[], float] = time.time,
         dedup: WebhookDedup | None = None,
     ) -> None:
+        """Remember the signer, the time tolerance in seconds, the clock, and the de-duplication store."""
         if tolerance_seconds < 1:
             raise ValueError("tolerance_seconds must be at least 1")
         self._signer = signer

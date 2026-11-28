@@ -20,6 +20,7 @@ class HttpOllamaServer(OllamaServerInterface):
     MAX_MODELS = 500
 
     def __init__(self, client: httpx.Client, base_url: str) -> None:
+        """Remember the HTTP client and the Ollama server's address."""
         self._client = client
         self._base_url = base_url.rstrip("/")
 

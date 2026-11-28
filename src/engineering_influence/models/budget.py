@@ -21,6 +21,7 @@ class Budget(BudgetInterface):
     reserved: int = 0
 
     def __post_init__(self) -> None:
+        """Validate the budget's cap, spending and reservations when it is built."""
         if min(self.cap, self.spent, self.reserved) < 0:
             raise ValueError("budget amounts cannot be negative")
         if self.spent + self.reserved > self.cap:

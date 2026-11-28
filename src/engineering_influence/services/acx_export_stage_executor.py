@@ -71,6 +71,7 @@ class AcxExportStageExecutor(StageExecutorInterface):
         narrator: NarratorInterface | None,
         gate: NarrationGateInterface,
     ) -> None:
+        """Remember the artifacts, outlines, text, metadata and author the export is written from."""
         self._artifacts = artifacts
         self._outlines = outlines
         self._text = text

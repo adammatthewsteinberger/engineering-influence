@@ -47,6 +47,7 @@ class HttpBundleFetcher(BundleFetcherInterface):
         request_seconds: float = 30.0,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
+        """Remember the HTTP client, the address pinner, the request time limit and the clock."""
         if request_seconds <= 0:
             raise ValueError("a download gets some time")
         self._client = client

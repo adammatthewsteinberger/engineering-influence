@@ -25,6 +25,7 @@ class NonfictionOutputChecks(StageOutputCheckInterface):
     METADATA = "metadata"
 
     def __init__(self, outlines: OutlineParserInterface, metadata: MetadataParserInterface) -> None:
+        """Remember the outline and metadata parsers the output is checked with."""
         self._outlines = outlines
         self._metadata = metadata
 

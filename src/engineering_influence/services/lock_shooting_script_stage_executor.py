@@ -58,6 +58,7 @@ class LockShootingScriptStageExecutor(StageExecutorInterface):
         renderer: ShootingScriptRendererInterface,
         marks: ShootingRevisionMarksInterface,
     ) -> None:
+        """Remember the artifacts, scene cards, parser, lock planner and codec the lock stage uses."""
         self._artifacts = artifacts
         self._cards = cards
         self._parser = parser

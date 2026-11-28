@@ -14,6 +14,7 @@ class ArtifactInventory(ArtifactInventoryInterface):
     """Lists required artifacts and reports the ones that are missing."""
 
     def __init__(self, layout: ProjectLayout) -> None:
+        """Remember the project layout whose required artifacts are listed."""
         self._layout = layout
         self._relativizer = PathRelativizer(layout.root)
 

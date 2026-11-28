@@ -13,6 +13,7 @@ class TracedStartPipeline(StartPipelineInterface):
     """Record latency and errors for every start, without logging the project."""
 
     def __init__(self, inner: StartPipelineInterface) -> None:
+        """Wrap the start operation so that each start is timed and its errors recorded."""
         self._inner = inner
 
     @traced(operation="service.start_pipeline", sensitive_args=("project",))

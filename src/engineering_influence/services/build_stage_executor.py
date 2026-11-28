@@ -46,6 +46,7 @@ class BuildStageExecutor(StageExecutorInterface):
         quality: QualityReportInterface,
         estimator: CostEstimatorInterface | None = None,
     ) -> None:
+        """Remember the artifacts, builder, project, quality report and the rest of the build inputs."""
         self._artifacts = artifacts
         self._builder = builder
         self._project = project

@@ -15,6 +15,7 @@ class PrintPdfVerifier(PrintPdfVerifierInterface):
     """A single unencrypted page of exact size holding one flattened RGB image."""
 
     def __init__(self, max_mb: float = Kdp.PDF_MAX_MB) -> None:
+        """Remember the largest print PDF size allowed, in megabytes."""
         self._max_mb = max_mb
 
     def run(self, path: Path, width_in: float, height_in: float) -> list[str]:

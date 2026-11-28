@@ -18,6 +18,7 @@ class ProjectController(ProjectControllerInterface):
     """Maps a validated project request to the shared application service."""
 
     def __init__(self, start_pipeline: StartPipelineInterface) -> None:
+        """Remember the service that starts a pipeline for each project request."""
         self._start_pipeline = start_pipeline
 
     def start(self, request: ProjectRequest) -> PipelineResponse:

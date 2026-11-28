@@ -14,6 +14,7 @@ class TracedRunPhase(RunPhaseInterface):
     """Record latency and errors for every phase; the context holds manuscript text."""
 
     def __init__(self, inner: RunPhaseInterface) -> None:
+        """Wrap the phase so that each run is timed and its errors recorded."""
         self._inner = inner
 
     @traced_async(

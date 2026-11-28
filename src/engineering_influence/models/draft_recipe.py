@@ -40,6 +40,7 @@ class DraftRecipe(DraftRecipeInterface):
     sectioned: bool = False
 
     def __post_init__(self) -> None:
+        """Validate the recipe's inputs, parts and templates when it is built."""
         if "outline" not in self.inputs or len(set(self.inputs)) != len(self.inputs):
             raise ValueError("a draft reads the outline, and each input once")
         for pairs in (self.style, self.grounding):

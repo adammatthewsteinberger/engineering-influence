@@ -13,6 +13,7 @@ class StartPipeline(StartPipelineInterface):
     """Coordinates the first durable pipeline event and job."""
 
     def __init__(self, ledger: LedgerInterface, queue: QueueInterface) -> None:
+        """Remember the ledger and the queue the pipeline events go to."""
         self._ledger = ledger
         self._queue = queue
 

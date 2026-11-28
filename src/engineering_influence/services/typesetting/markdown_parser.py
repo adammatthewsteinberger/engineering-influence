@@ -16,6 +16,7 @@ class MarkdownParser(MarkdownParserInterface):
     """
 
     def __init__(self) -> None:
+        """Nothing to configure: the Markdown dialect is fixed."""
         self._md = MarkdownIt("commonmark", {"typographer": True})
         self._md.enable(["smartquotes", "table", "strikethrough"])
 

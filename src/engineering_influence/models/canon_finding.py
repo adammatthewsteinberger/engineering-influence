@@ -18,6 +18,7 @@ class CanonFinding(CanonFindingInterface):
     message: str
 
     def __post_init__(self) -> None:
+        """Refuse a severity other than ERROR or WARN."""
         if self.severity not in self.SEVERITIES:
             raise ValueError(f"a canon finding is ERROR or WARN, not {self.severity!r}")
         for name, value in (("where", self.where), ("rule", self.rule), ("message", self.message)):

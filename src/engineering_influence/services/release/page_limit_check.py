@@ -13,6 +13,7 @@ class PageLimitCheck(PageLimitCheckInterface):
     """Compares a built interior's page count with the limit."""
 
     def __init__(self, pdfs: PdfInspectorInterface) -> None:
+        """Remember the PDF inspector used to count pages."""
         self._pdfs = pdfs
 
     def run(self, path: Path, *, label: str, maximum: int) -> str | None:

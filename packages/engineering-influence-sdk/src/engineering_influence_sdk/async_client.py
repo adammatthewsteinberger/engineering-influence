@@ -16,6 +16,7 @@ class AsyncEngineeringInfluenceClient(AsyncEngineeringInfluenceClientInterface):
     """Async counterpart to the synchronous typed client."""
 
     def __init__(self, base_url: str, api_key: str | None = None, transport: Any = None) -> None:
+        """Create a client for the API at base_url, sending api_key when one is given."""
         headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
         self._client = httpx.AsyncClient(base_url=base_url, headers=headers, transport=transport)
 

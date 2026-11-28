@@ -25,6 +25,7 @@ class SkillLockVerifier(SkillLockVerifierInterface):
     """
 
     def __init__(self, files: SkillFilesInterface, parser: SkillParserInterface) -> None:
+        """Remember the skill files and parser the lock's hashes are checked with."""
         self._files = files
         self._parser = parser
 

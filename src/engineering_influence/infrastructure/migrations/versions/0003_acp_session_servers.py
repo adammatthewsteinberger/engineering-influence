@@ -14,6 +14,7 @@ depends_on = None
 
 def upgrade() -> None:
     # Revision 0002 creates the table before this runs, so only the column needs checking.
+    """Add the servers column to the ACP session table when it is missing."""
     inspector = sa.inspect(op.get_bind())
     if "servers" not in {column["name"] for column in inspector.get_columns("acpsessionrecord")}:
         op.add_column(
@@ -23,6 +24,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    """Drop the servers column from the ACP session table when it is present."""
     inspector = sa.inspect(op.get_bind())
     if not inspector.has_table("acpsessionrecord"):
         return

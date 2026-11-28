@@ -21,6 +21,7 @@ class McpServerInfo(McpServerInfoInterface):
     protocol_version: str
 
     def __post_init__(self) -> None:
+        """Validate the server's reported name, version and protocol when it is built."""
         for label, value in (
             ("name", self.name),
             ("version", self.version),

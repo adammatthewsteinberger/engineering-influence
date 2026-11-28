@@ -20,6 +20,7 @@ class ToolResult(ToolResultInterface):
     is_error: bool = False
 
     def __post_init__(self) -> None:
+        """Validate the result's call id and text when it is built."""
         if not self.call_id.strip():
             raise ValueError("a tool result answers a call by its id")
 

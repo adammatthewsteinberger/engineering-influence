@@ -68,6 +68,7 @@ class ClassInventory:
     """Walks the package once and reports a ClassFacts per class."""
 
     def __init__(self, root: Path) -> None:
+        """Remember the package root to walk for class facts."""
         self._source = root / "src" / PACKAGE
 
     def run(self) -> list[ClassFacts]:

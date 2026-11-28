@@ -14,6 +14,7 @@ class CoverCheck(CoverCheckInterface):
     """The Kindle Publishing Guidelines require an internal cover declared in the OPF."""
 
     def __init__(self, inspector: EpubCoverInspectorInterface) -> None:
+        """Remember the inspector that reads the EPUB's cover."""
         self._inspector = inspector
 
     def run(self, contents: EpubContents) -> list[str]:

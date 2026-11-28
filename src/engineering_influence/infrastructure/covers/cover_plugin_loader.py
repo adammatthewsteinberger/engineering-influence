@@ -26,6 +26,7 @@ class CoverPluginLoader(CoverPluginLoaderInterface):
     GROUP = "engineering_influence.covers"
 
     def __init__(self, discover: Callable[..., Iterable[EntryPoint]] = entry_points) -> None:
+        """Remember the function that finds the plugin entry points."""
         self._discover = discover
 
     def load(self, registry: PainterRegistry, root: Path | None = None) -> dict[str, CoverStyle]:

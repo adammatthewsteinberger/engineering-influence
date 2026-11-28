@@ -21,9 +21,11 @@ class ShootingScriptRenderer(ShootingScriptRendererInterface):
     OMITTED: ClassVar[str] = "OMITTED"
 
     def __init__(self, parser: FountainParserInterface) -> None:
+        """Remember the Fountain parser the script is rendered with."""
         self._parser = parser
 
     def render(self, script: str, cards: tuple[int, ...], lock: ShootingLock) -> str:
+        """The script with each scene given its locked number, and each omitted scene marked."""
         front, chunks = self._parser.scene_chunks(script)
         if len(chunks) != len(cards):
             raise ValueError("each scene card is one scene of the script")

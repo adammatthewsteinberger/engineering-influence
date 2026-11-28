@@ -33,6 +33,7 @@ class ToolEnvironment(ToolEnvironmentInterface):
     PREFIXES = ("LC_", "TEXMF", "TEXINPUTS", "OSFONTDIR", "TEX4HT", "LUAINPUTS", "TTFONTS")
 
     def __init__(self, environ: Mapping[str, str] | None = None) -> None:
+        """Remember the environment the build tools inherit; by default, none of the parent's secrets."""
         self._environ = os.environ if environ is None else environ
 
     def build(self, source_date_epoch: int | None = None) -> dict[str, str]:

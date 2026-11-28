@@ -17,6 +17,7 @@ class ServeCli(ServeCliInterface):
     """
 
     def __init__(self, starter: ServeStarterInterface) -> None:
+        """Remember the starter that runs the long-running process."""
         self._starter = starter
 
     def register(self, subparsers: "argparse._SubParsersAction[argparse.ArgumentParser]") -> None:

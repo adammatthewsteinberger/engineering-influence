@@ -47,9 +47,12 @@ def verify(secret: bytes, body: bytes, signature: str, timestamp: str) -> str:
 
 
 class Receiver(BaseHTTPRequestHandler):
+    """Answers each signed event POST; the secret is set once by main before the server starts."""
+
     secret = b""
 
     def do_POST(self) -> None:
+        """Verify the signature of a posted event and answer with the outcome: accepted, or refused with a reason."""
         body = self.rfile.read(int(self.headers.get("Content-Length", "0")))
         reason = verify(
             self.secret,
@@ -74,10 +77,12 @@ class Receiver(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def log_message(self, format: str, *args: object) -> None:
-        pass  # we print our own, shorter line
+        """Suppress the default request log, which the receiver replaces with its own shorter line."""
+        # We print our own, shorter line, so the default log is left out.
 
 
 def main() -> int:
+    """Run the example webhook receiver, which refuses to start without EI_WEBHOOK_SECRET."""
     secret = os.environ.get("EI_WEBHOOK_SECRET")
     if not secret:
         print("set EI_WEBHOOK_SECRET (the receiver refuses to run unsigned)", file=sys.stderr)

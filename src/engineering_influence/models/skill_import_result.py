@@ -24,5 +24,6 @@ class SkillImportResult(SkillImportResultInterface):
     description_shortened: bool
 
     def __post_init__(self) -> None:
+        """Validate the import result's fields when it is built."""
         if not self.path.strip() or not self.sections:
             raise ValueError("an import wrote a file and used at least one section")

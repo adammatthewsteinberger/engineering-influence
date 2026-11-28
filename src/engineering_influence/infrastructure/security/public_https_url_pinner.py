@@ -37,6 +37,7 @@ class PublicHttpsUrlPinner(OutboundUrlPinnerInterface):
     def __init__(
         self, policy: OutboundUrlPolicyInterface, resolver: Resolver | None = None
     ) -> None:
+        """Remember the URL policy and the resolver that pins each address."""
         self._policy = policy
         self._resolve = resolver or self._system_resolve
 

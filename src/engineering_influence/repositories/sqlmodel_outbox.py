@@ -16,6 +16,7 @@ class SqlModelOutbox(OutboxInterface):
     """Persist idempotent webhook intents with retry metadata."""
 
     def __init__(self, database_url: str) -> None:
+        """Remember the database that holds the webhook intents."""
         connect_args = {"check_same_thread": False} if database_url.startswith("sqlite") else {}
         self._engine = create_engine(database_url, connect_args=connect_args)
 
@@ -26,6 +27,7 @@ class SqlModelOutbox(OutboxInterface):
         event_name: str,
         payload: dict[str, object],
     ) -> None:
+        """Queue an event for delivery to a URL, unless an event with the same id is already queued."""
         with Session(self._engine) as session:
             existing = session.exec(
                 select(OutboxRecord).where(OutboxRecord.event_id == event_id)
@@ -42,6 +44,7 @@ class SqlModelOutbox(OutboxInterface):
                 session.commit()
 
     def pending(self) -> list[tuple[str, str, str, dict[str, object], int]]:
+        """The events not yet delivered or dead, in queue order, with their attempts so far."""
         with Session(self._engine) as session:
             records = session.exec(
                 select(OutboxRecord)
@@ -61,6 +64,7 @@ class SqlModelOutbox(OutboxInterface):
         ]
 
     def mark_delivered(self, event_id: str) -> None:
+        """Record that the event was delivered, counting the attempt."""
         with Session(self._engine) as session:
             record = session.exec(
                 select(OutboxRecord).where(OutboxRecord.event_id == event_id)
@@ -71,6 +75,7 @@ class SqlModelOutbox(OutboxInterface):
             session.commit()
 
     def mark_failed(self, event_id: str) -> int:
+        """Count a failed delivery attempt and return the attempts so far."""
         with Session(self._engine) as session:
             record = session.exec(
                 select(OutboxRecord).where(OutboxRecord.event_id == event_id)
@@ -81,6 +86,7 @@ class SqlModelOutbox(OutboxInterface):
             return record.attempts
 
     def mark_dead(self, event_id: str) -> None:
+        """Mark the event dead: it will not be delivered again."""
         with Session(self._engine) as session:
             record = session.exec(
                 select(OutboxRecord).where(OutboxRecord.event_id == event_id)

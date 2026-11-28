@@ -36,6 +36,7 @@ class SkillLockEditor(SkillLockEditorInterface):
         parser: SkillParserInterface,
         verifier: SkillLockVerifierInterface,
     ) -> None:
+        """Remember the skill files, parser and lock verifier the edits use."""
         self._files = files
         self._parser = parser
         self._verifier = verifier

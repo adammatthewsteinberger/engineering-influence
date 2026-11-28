@@ -12,6 +12,7 @@ class RunProgress(RunProgressInterface):
     """Read-only: the worker saves every stage's outcome, and this only reads what was saved."""
 
     def __init__(self, runs: RunRepositoryInterface) -> None:
+        """Remember the run repository the progress is read from."""
         self._runs = runs
 
     def current(self, run_id: str) -> BookRun | None:

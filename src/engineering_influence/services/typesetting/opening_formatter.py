@@ -16,6 +16,7 @@ class OpeningFormatter(OpeningFormatterInterface):
     """
 
     def __init__(self, min_chars: int = 0) -> None:
+        """Remember the minimum length, in characters, of text the formatter will change."""
         self._min_chars = min_chars
 
     def format(self, latex: str) -> str:

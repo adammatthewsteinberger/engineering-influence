@@ -17,6 +17,7 @@ class EbookCoverVerifier(EbookCoverVerifierInterface):
     """Size, format, colour, compression, and the gray border on a light cover."""
 
     def __init__(self, max_mb: float = Kdp.EBOOK_MAX_MB) -> None:
+        """Remember the largest ebook cover file size allowed, in megabytes."""
         self._max_mb = max_mb
 
     def run(self, path: Path) -> list[str]:

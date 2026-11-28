@@ -18,6 +18,7 @@ class ApiGuard(ApiGuardInterface):
     """
 
     def __init__(self, verifier: ApiKeyVerifierInterface, limiter: RateLimiterInterface) -> None:
+        """Remember the key verifier and the rate limiter."""
         self._verifier = verifier
         self._limiter = limiter
 

@@ -33,6 +33,7 @@ class ProcessJob(ProcessJobInterface):
     def __init__(
         self, run_phase: RunPhaseInterface, ledger: LedgerInterface, queue: QueueInterface
     ) -> None:
+        """Remember the run phase, ledger and queue the job is processed with."""
         self._run_phase = run_phase
         self._ledger = ledger
         self._queue = queue

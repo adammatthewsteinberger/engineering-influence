@@ -19,6 +19,7 @@ class VideoCost(VideoCostInterface):
     GENERATION_RATIO: ClassVar[int] = 3
 
     def cost_micro_usd(self, shots: tuple[VideoShot, ...]) -> int:
+        """The estimated cost of the shots, in micro-dollars."""
         return sum(
             self.GENERATION_RATIO * self.MICRO_USD_PER_SECOND[shot.model()] * shot.seconds()
             for shot in shots

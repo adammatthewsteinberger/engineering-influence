@@ -45,6 +45,7 @@ class ScreenplayDraftStageExecutor(StageExecutorInterface):
         shareable: frozenset[int] = frozenset(),
         bible: ScreenplayBibleContextInterface | None = None,
     ) -> None:
+        """Remember the artifacts, drafter, scene cards, section checks and dialogue check the drafts use."""
         self._artifacts = artifacts
         self._drafter = drafter
         self._cards = cards

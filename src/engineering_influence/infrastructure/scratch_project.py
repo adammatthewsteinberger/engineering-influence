@@ -12,6 +12,7 @@ class ScratchProject(ScratchProjectInterface):
 
     @staticmethod
     def write(root: Path, files: Mapping[str, bytes]) -> None:
+        """Write each file under the project root, refusing any name that would leave the project."""
         for name, data in files.items():
             target = (root / name).resolve()
             if not target.is_relative_to(root) or target == root:

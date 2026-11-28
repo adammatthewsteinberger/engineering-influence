@@ -31,6 +31,7 @@ class RabbitMqJobConsumer(RabbitMqJobConsumerInterface):
         retry_seconds: float = 2.0,
         sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
     ) -> None:
+        """Remember the broker address, the job handler, the topology and the connection hooks."""
         if connect_attempts < 1:
             raise ValueError("connect_attempts must be at least 1")
         self._url = url

@@ -23,6 +23,7 @@ class PinnedTarget(PinnedTargetInterface):
     sni_hostname: str = ""
 
     def __post_init__(self) -> None:
+        """Validate the pinned target's address when it is built."""
         if not self.url or not self.host_header:
             raise ValueError("a pinned target has an address to connect to and a host to ask for")
 

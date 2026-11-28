@@ -17,6 +17,7 @@ class ToolchainHealthCheck(HealthCheckInterface):
         locator: Callable[[str], str | None] = shutil.which,
         name: str = "tex-toolchain",
     ) -> None:
+        """Remember the executables to look for, how to locate them, and the check's name."""
         self._executables = executables
         self._locate = locator
         self._name = name

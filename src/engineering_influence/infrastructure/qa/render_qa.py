@@ -22,6 +22,7 @@ class RenderQa(RenderQaInterface):
     the contact sheets."""
 
     def __init__(self, root: Path, rasterizer: PageRasterizer | None = None) -> None:
+        """Remember the project root and the rasterizer that renders the pages."""
         self._relativizer = PathRelativizer(root)
         self._rasterizer = rasterizer or PageRasterizer()
 

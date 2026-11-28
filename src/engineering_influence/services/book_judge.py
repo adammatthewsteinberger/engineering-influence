@@ -44,6 +44,7 @@ class BookJudge(BookJudgeInterface):
         rubric: Rubric,
         guard: SpendGuardInterface,
     ) -> None:
+        """Remember the model, prompts, score parser, rubric and spend guard the judge uses."""
         self._model = model
         self._prompts = prompts
         self._parser = parser

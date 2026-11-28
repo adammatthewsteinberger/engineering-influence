@@ -19,6 +19,7 @@ class ShootingLockCodec(ShootingLockCodecInterface):
     VERSION: ClassVar[int] = 1
 
     def encode(self, lock: ShootingLock) -> str:
+        """The lock as a JSON document."""
         entries = [
             {"card": entry.card, "label": entry.label, "omitted": entry.omitted}
             for entry in lock.entries
@@ -26,6 +27,7 @@ class ShootingLockCodec(ShootingLockCodecInterface):
         return json.dumps({"version": self.VERSION, "entries": entries}, indent=2) + "\n"
 
     def decode(self, text: str) -> ShootingLock:
+        """The lock read back from its JSON document; raise SHOOTING_LOCK_INVALID when it is not one."""
         try:
             data = json.loads(text)
         except json.JSONDecodeError as error:

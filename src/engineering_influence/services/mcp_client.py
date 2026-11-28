@@ -71,6 +71,7 @@ class McpClient(McpClientInterface):
         client_version: str,
         timeout_seconds: float = 30.0,
     ) -> None:
+        """Remember the transport, the client name and version, and the request time limit."""
         if timeout_seconds <= 0:
             raise ValueError("a request timeout is more than zero")
         self._transport = transport

@@ -16,6 +16,7 @@ class LazyBundleFetcher(BundleFetcherInterface):
     """
 
     def __init__(self, build: Callable[[], BundleFetcherInterface]) -> None:
+        """Remember the function that builds the real fetcher, to call it on first use."""
         self._build = build
         self._fetcher: BundleFetcherInterface | None = None
 

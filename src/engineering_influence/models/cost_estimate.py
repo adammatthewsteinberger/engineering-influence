@@ -22,6 +22,7 @@ class CostEstimate(CostEstimateInterface):
     stages: tuple[tuple[str, int, bool], ...]
 
     def __post_init__(self) -> None:
+        """Validate the estimated costs when the estimate is built."""
         if not isinstance(self.stages, tuple) or not self.stages:
             raise ValueError("an estimate has at least one stage")
         names = [name for name, _, _ in self.stages]

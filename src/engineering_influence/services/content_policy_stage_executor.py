@@ -24,6 +24,7 @@ class ContentPolicyStageExecutor(StageExecutorInterface):
         policy: ContentPolicyInterface,
         model: ProviderDescriptor,
     ) -> None:
+        """Remember the stage executor it wraps, the content policy and the model's descriptor."""
         self._inner = inner
         self._policy = policy
         self._model = model

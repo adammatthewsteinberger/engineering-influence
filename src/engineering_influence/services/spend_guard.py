@@ -19,6 +19,7 @@ class SpendGuard(SpendGuardInterface):
     """
 
     def __init__(self, budget: Budget) -> None:
+        """Remember the budget the calls spend from."""
         self._budget = budget
         self._lock = threading.Lock()
 

@@ -29,6 +29,7 @@ class ChapterLoader(ChapterLoaderInterface):
         strict: bool = True,
         policy: TextPolicy | None = None,
     ) -> None:
+        """Remember the path relativizer, whether unfinished markers are refused, and the text policy."""
         self._relativizer = relativizer
         self._strict = strict
         fiction = policy is not None and policy.allows_em_dash

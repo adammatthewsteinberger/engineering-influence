@@ -200,7 +200,7 @@ def chapters_of(out: Path) -> dict[str, str]:
 
 @pytest.mark.parametrize(
     ("kind", "stages"),
-    [(BookKind.NONFICTION, 15), (BookKind.NOVEL, 12)],
+    [(BookKind.NONFICTION, 15), (BookKind.NOVEL, 13)],
     ids=["nonfiction", "novel"],
 )
 def test_a_run_killed_after_any_stage_ends_where_an_uninterrupted_run_ends_and_pays_for_nothing_twice(

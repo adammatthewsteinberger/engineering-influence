@@ -30,6 +30,7 @@ class EvaluationCase(EvaluationCaseInterface):
     trim_size: str | None = None
 
     def __post_init__(self) -> None:
+        """Validate the case's name and kind when it is built."""
         if not self.NAME.fullmatch(self.name):
             raise ValueError("a case's name is lowercase letters, digits and hyphens")
         if not self.idea.strip():

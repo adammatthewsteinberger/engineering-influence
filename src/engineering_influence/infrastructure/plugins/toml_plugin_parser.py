@@ -27,6 +27,7 @@ class TomlPluginParser(PluginParserInterface):
     SERVER_KEYS = frozenset({"name", "command", "env", "url", "bearer_env"})
 
     def __init__(self, skills: SkillParserInterface) -> None:
+        """Remember the skill parser the plugin's skills are read with."""
         self._skills = skills
 
     def parse(self, data: bytes, name: str) -> Plugin:

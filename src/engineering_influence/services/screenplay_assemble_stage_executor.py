@@ -52,6 +52,7 @@ class ScreenplayAssembleStageExecutor(StageExecutorInterface):
         positions: ScreenplayBeatPositionCheckInterface,
         titles: ScreenplayTitleParserInterface,
     ) -> None:
+        """Remember the artifacts, scene cards, assembler and parser the script is built with."""
         self._artifacts = artifacts
         self._cards = cards
         self._assembler = assembler

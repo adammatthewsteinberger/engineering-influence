@@ -35,6 +35,7 @@ class RevisionPass(RevisionPassInterface):
     max_ratio: float
 
     def __post_init__(self) -> None:
+        """Validate the pass's stage, template, files and lengths when it is built."""
         for label, value in (
             ("stage", self.stage),
             ("template", self.template),

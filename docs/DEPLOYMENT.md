@@ -116,10 +116,62 @@ The command-line book commands and the MCP server still read the database, as th
 (which must be installed, with its CRDs). `openbao.devMode=true` (the default) deploys one in-memory OpenBao with a root
 token from `openbao.bootstrapTokenSecret`: a local cluster only, and its data does not survive a restart. In production,
 set `openbao.devMode=false` and `openbao.server` to an OpenBao you run; the chart then deploys no OpenBao and refuses to
-render without a server. The SecretStore authenticates with the token from `bootstrapTokenSecret` unless `openbao.auth` is `kubernetes`. Outside dev,
-set `openbao.auth: kubernetes`: the operator then logs in as the chart's ServiceAccount through the OpenBao kubernetes auth
+render without a server. Outside dev, the SecretStore must authenticate with `openbao.auth: kubernetes`, and the chart refuses to render with the
+token. Dev, staging and prod all set it: the operator then logs in as the chart's ServiceAccount through the OpenBao kubernetes auth
 mount `openbao.kubernetes.mountPath` and role `openbao.kubernetes.role`. The platform configures that mount and role in OpenBao,
 binding the role to the `ei-engineering-influence` ServiceAccount in the app's namespace. No root token is stored in the cluster.
+
+### Setting up the kubernetes auth
+
+This is the sequence the platform runs for an OpenBao the chart does not deploy, verified on minikube with OpenBao 2.1.0.
+The OpenBao pod must check the app's tokens, so it needs a reviewer: a ServiceAccount with the `system:auth-delegator`
+role and a token. The chart deploys OpenBao with no service-account token mounted, so the reviewer is a separate account.
+
+```bash
+kubectl -n ei create serviceaccount ei-openbao-reviewer
+kubectl create clusterrolebinding ei-openbao-reviewer --clusterrole=system:auth-delegator \
+  --serviceaccount=ei:ei-openbao-reviewer
+kubectl -n ei apply -f - <<'YAML'
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ei-openbao-reviewer-token
+  annotations:
+    kubernetes.io/service-account.name: ei-openbao-reviewer
+type: kubernetes.io/service-account-token
+YAML
+```
+
+The reviewer token is long-lived: rotate it. Then, with the OpenBao root token in the pod's environment, enable the
+mount and write the configuration. The configuration goes in on standard input, so the token and the CA stay out of
+command arguments and shell history:
+
+```bash
+kubectl -n ei exec deploy/ei-engineering-influence-openbao -- sh -c 'BAO_ADDR=http://127.0.0.1:8200 \
+  BAO_TOKEN="$EI_OPENBAO_ROOT_TOKEN" bao auth enable -path=kubernetes kubernetes'
+# Write {"kubernetes_host", "token_reviewer_jwt", "kubernetes_ca_cert", "disable_local_ca_jwt": true} to a private file,
+# then pipe it in:  kubectl -n ei exec -i deploy/ei-engineering-influence-openbao -- sh -c 'cat > /tmp/cfg.json && bao write auth/kubernetes/config @/tmp/cfg.json'
+```
+
+The policy grants read on the app's values only. Save it as `ei-app.hcl` in the pod, then write it and bind the role to
+the app's ServiceAccount:
+
+```hcl
+path "secret/data/ei" {
+  capabilities = ["read"]
+}
+```
+
+```bash
+bao policy write ei-app ei-app.hcl
+bao write auth/kubernetes/role/engineering-influence bound_service_account_names=ei-engineering-influence \
+  bound_service_account_namespaces=ei policies=ei-app ttl=1h
+```
+
+Check the whole path with a token for the app's ServiceAccount: exchange it at `auth/kubernetes/login` for a client
+token, then read `secret/ei` with that token. Set `openbao.server` to the address the app reaches OpenBao at: inside
+the cluster that is `http://<release>-engineering-influence-openbao.<namespace>.svc:8200` for the chart's OpenBao. The
+dev, staging and prod values files still leave `openbao.server` empty, because their OpenBao addresses are not in this repository.
 
 ## Autoscaling
 

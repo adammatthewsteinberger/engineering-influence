@@ -38,6 +38,7 @@ class HttpMcpTransportFactory(McpRemoteTransportFactoryInterface):
         session_seconds: float = 4 * 3600.0,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
+        """Remember the client factory, the address pinner, the environment and the request and session time limits."""
         self._clients = clients
         self._pinner = pinner
         self._environ = environ

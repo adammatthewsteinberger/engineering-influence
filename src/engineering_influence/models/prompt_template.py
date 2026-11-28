@@ -43,6 +43,7 @@ class PromptTemplate(PromptTemplateInterface):
     description: str = ""
 
     def __post_init__(self) -> None:
+        """Validate the template's parts and version when it is built."""
         if not self.NAME.fullmatch(self.name):
             raise ValueError("a template name is lowercase letters, digits and underscores")
         if isinstance(self.version, bool) or not isinstance(self.version, int) or self.version < 1:

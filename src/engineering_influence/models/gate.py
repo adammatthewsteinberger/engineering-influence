@@ -16,5 +16,6 @@ class Gate(GateInterface):
     rubric: str
 
     def __post_init__(self) -> None:
+        """Validate the gate's name and artifact when it is built."""
         if not self.name.strip() or not self.rubric.strip():
             raise ValueError("gate name and rubric are required")

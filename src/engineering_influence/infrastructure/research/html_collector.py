@@ -37,6 +37,7 @@ class HtmlCollector(HTMLParser, HtmlCollectorInterface):
     HIDDEN_STYLE = re.compile(r"(?:display\s*:\s*none|visibility\s*:\s*hidden)", re.IGNORECASE)
 
     def __init__(self) -> None:
+        """Start with an empty parse of one page."""
         super().__init__(convert_charrefs=True)
         self._parts: list[str] = []
         self._title: list[str] = []

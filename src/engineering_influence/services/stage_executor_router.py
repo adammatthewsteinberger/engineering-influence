@@ -18,6 +18,7 @@ class StageExecutorRouter(StageExecutorInterface):
     def __init__(
         self, default: StageExecutorInterface, special: Mapping[str, StageExecutorInterface]
     ) -> None:
+        """Remember the default executor and the executors for specific stages."""
         self._default = default
         self._special = dict(special)
 

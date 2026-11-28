@@ -13,6 +13,7 @@ class RevisionReportWriter(RevisionReportWriterInterface):
     lock has given. A scene the lock keeps and no revision describes is refused: the report would have a gap."""
 
     def revision_log(self, lock: ShootingLock, scenes: tuple[SceneRevision, ...]) -> str:
+        """The revision log: a table of each scene with its draft and revised lengths."""
         by_card = self._by_card(lock, scenes)
         rows = [
             "| Scene | Card | Status | Draft words | Revised words |",
@@ -30,6 +31,7 @@ class RevisionReportWriter(RevisionReportWriterInterface):
         return self._document("Revision log", rows)
 
     def source_mapping(self, lock: ShootingLock, scenes: tuple[SceneRevision, ...]) -> str:
+        """The source mapping: a table of each scene with its beat and the sources it uses."""
         by_card = self._by_card(lock, scenes)
         rows = ["| Scene | Card | Beat | Sources |", "| --- | --- | --- | --- |"]
         for entry in lock.entries:

@@ -19,6 +19,7 @@ class SqlModelRunRepository(RunRepositoryInterface):
     """Persist runs through SQLite or PostgreSQL, one row per run, replaced on every save."""
 
     def __init__(self, database_url: str, pooled: bool = True) -> None:
+        """Remember the database; each run is one row, replaced on every save."""
         connect_args = {"check_same_thread": False} if database_url.startswith("sqlite") else {}
         self._engine = create_engine(
             database_url, connect_args=connect_args, **({} if pooled else {"poolclass": NullPool})
@@ -26,9 +27,11 @@ class SqlModelRunRepository(RunRepositoryInterface):
         self._codec = BookRunCodec()
 
     def save(self, run: BookRun) -> None:
+        """Save the run, replacing any saved under the same id."""
         self.save_with_events(run, ())
 
     def save_with_events(self, run: BookRun, events: tuple[OutboxEvent, ...]) -> None:
+        """Save the run and queue each event whose key has not been queued before."""
         with Session(self._engine) as session:
             record = session.exec(
                 select(BookRunRecord).where(BookRunRecord.run_id == run.run_id)
@@ -61,11 +64,13 @@ class SqlModelRunRepository(RunRepositoryInterface):
                 )
 
     def swap(self, expected: BookRun, replacement: BookRun) -> bool:
+        """Replace the saved run with the replacement only if it is still the expected run; return whether it was replaced."""
         return self.swap_with_events(expected, replacement, ())
 
     def swap_with_events(
         self, expected: BookRun, replacement: BookRun, events: tuple[OutboxEvent, ...]
     ) -> bool:
+        """Replace the saved run only if it is still the expected run, and queue the events in the same transaction."""
         if replacement.run_id != expected.run_id:
             raise ValueError("a swap cannot change the run id")
         with Session(self._engine) as session:
@@ -88,6 +93,7 @@ class SqlModelRunRepository(RunRepositoryInterface):
             return True
 
     def get(self, run_id: str) -> BookRun | None:
+        """The saved run with this id, or None."""
         with Session(self._engine) as session:
             record = session.exec(
                 select(BookRunRecord).where(BookRunRecord.run_id == run_id)
@@ -95,6 +101,7 @@ class SqlModelRunRepository(RunRepositoryInterface):
         return None if record is None else self._codec.decode(record.document_json)
 
     def run_ids(self) -> list[str]:
+        """The ids of every saved run, sorted."""
         with Session(self._engine) as session:
             return list(
                 session.exec(select(BookRunRecord.run_id).order_by(col(BookRunRecord.run_id))).all()

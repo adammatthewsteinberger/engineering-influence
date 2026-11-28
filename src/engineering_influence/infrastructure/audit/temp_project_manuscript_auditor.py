@@ -26,6 +26,7 @@ class TempProjectManuscriptAuditor(ManuscriptAuditorInterface):
     REPORTS = ("manuscript-audit.json", "release-readiness.json", "publication-report.json")
 
     def __init__(self, pipelines: Callable[[Path], PublishPipelineInterface]) -> None:
+        """Remember the function that builds the publishing pipeline for a folder."""
         self._pipelines = pipelines
 
     def audit(self, files: Mapping[str, bytes], slug: str) -> ManuscriptAudit:

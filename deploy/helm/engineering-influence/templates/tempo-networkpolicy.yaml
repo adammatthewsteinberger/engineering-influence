@@ -26,6 +26,13 @@ spec:
               app.kubernetes.io/name: {{ include "ei.name" . }}
               app.kubernetes.io/instance: {{ .Release.Name }}
               app.kubernetes.io/component: worker
+        {{- if .Values.otelCollector.enabled }}
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ include "ei.name" . }}
+              app.kubernetes.io/instance: {{ .Release.Name }}
+              app.kubernetes.io/component: otel-collector
+        {{- end }}
       ports:
         - protocol: TCP
           port: 4318

@@ -23,9 +23,11 @@ class BookRunCodec(BookRunCodecInterface):
     """Encodes through ``asdict`` and rebuilds each model, so the models re-check their own rules."""
 
     def encode(self, run: BookRun) -> str:
+        """The run as a JSON document, with its keys sorted."""
         return json.dumps(asdict(run), sort_keys=True)
 
     def decode(self, text: str) -> BookRun:
+        """The run read back from its JSON document."""
         document: dict[str, Any] = json.loads(text)
         brief = document["brief"]
         plan = document["plan"]

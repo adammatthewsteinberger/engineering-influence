@@ -40,6 +40,17 @@ spec:
           port: 53
         - protocol: TCP
           port: 53
+    {{- if $.Values.otelCollector.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ include "ei.name" $ }}
+              app.kubernetes.io/instance: {{ $.Release.Name }}
+              app.kubernetes.io/component: otel-collector
+      ports:
+        - protocol: TCP
+          port: 4318
+    {{- end }}
     {{- with $.Values.networkPolicy.egress }}
     {{- toYaml . | nindent 4 }}
     {{- end }}

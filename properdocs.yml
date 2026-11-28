@@ -42,6 +42,7 @@ validation:
 nav:
   - Home: index.md
   - Start:
+      - Documentation index: readme.md
       - Getting started: getting-started.md
       - Driving it from another AI: agents-driving.md
       - Books and KDP: books-and-kdp.md

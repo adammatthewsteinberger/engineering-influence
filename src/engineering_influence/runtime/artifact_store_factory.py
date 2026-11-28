@@ -17,6 +17,7 @@ class ArtifactStoreFactory(ArtifactStoreFactoryInterface):
     """
 
     def build(self, settings: AppSettings) -> SqlModelArtifactStore | S3ArtifactStore:
+        """The artifact store the settings choose: S3 when configured, otherwise the database."""
         if settings.artifact_store == "s3":
             from engineering_influence.infrastructure.object_storage.boto3_s3_client import (
                 Boto3S3Client,

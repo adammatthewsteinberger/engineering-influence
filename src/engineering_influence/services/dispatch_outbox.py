@@ -29,6 +29,7 @@ class DispatchOutbox(DispatchOutboxInterface):
         alerts: AlertInterface,
         max_attempts: int = 5,
     ) -> None:
+        """Remember the outbox, delivery, metrics and alerts, and the attempts allowed before a dead letter."""
         if max_attempts < 1:
             raise ValueError("max_attempts must be at least 1")
         self._outbox = outbox

@@ -15,6 +15,7 @@ class ScreenplayBibleContext(ScreenplayBibleContextInterface):
     Matching is case-blind, so the bible's spelling is the only one that has to be right."""
 
     def __init__(self, artifacts: ArtifactStoreInterface) -> None:
+        """Remember the artifacts the bible cards are read from."""
         self._artifacts = artifacts
 
     def for_scene(self, run_id: str, text: str) -> str:

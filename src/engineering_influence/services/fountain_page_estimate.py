@@ -20,6 +20,7 @@ class FountainPageEstimate(FountainPageEstimateInterface):
     ACTION_WIDTH: ClassVar[int] = 61
 
     def __init__(self, parser: FountainParserInterface) -> None:
+        """Remember the Fountain parser the page estimate reads."""
         self._parser = parser
 
     def lines(self, text: str) -> int:

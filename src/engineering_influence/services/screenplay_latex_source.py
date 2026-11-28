@@ -57,6 +57,7 @@ class ScreenplayLatexSource(ScreenplayLatexSourceInterface):
     }
 
     def __init__(self, parser: FountainParserInterface) -> None:
+        """Remember the Fountain parser the LaTeX source is built from."""
         self._parser = parser
 
     def render(self, script: str) -> str:

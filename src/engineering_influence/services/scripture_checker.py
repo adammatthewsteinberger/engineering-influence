@@ -42,6 +42,7 @@ class ScriptureChecker(ScriptureCheckerInterface):
     def __init__(
         self, scripture: ScriptureIndexInterface, references: ReferenceParserInterface
     ) -> None:
+        """Remember the scripture index and the reference parser the quotations are checked with."""
         self._scripture = scripture
         self._references = references
 

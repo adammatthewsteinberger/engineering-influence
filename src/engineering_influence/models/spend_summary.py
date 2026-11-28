@@ -20,6 +20,7 @@ class SpendSummary(SpendSummaryInterface):
     estimated_high: int | None = None
 
     def __post_init__(self) -> None:
+        """Validate the spend summary's cap, spending and estimate when it is built."""
         amounts: tuple[tuple[str, int | None], ...] = (
             ("cap", self.cap),
             ("spent", self.spent),

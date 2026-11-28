@@ -45,6 +45,7 @@ class SkillsCli(SkillsCliInterface):
         environment: Mapping[str, str],
         importer: SkillImporterInterface,
     ) -> None:
+        """Remember the editor, verifier, lock store, environment and importer the skill commands use."""
         self._editor = editor
         self._verifier = verifier
         self._store = store

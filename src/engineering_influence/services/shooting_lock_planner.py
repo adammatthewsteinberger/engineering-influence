@@ -22,6 +22,7 @@ class ShootingLockPlanner(ShootingLockPlannerInterface):
     START: ClassVar[tuple[int, str]] = (0, "")
 
     def plan(self, previous: ShootingLock, cards: tuple[int, ...]) -> ShootingLock:
+        """The lock for the cards in their script order, keeping the scene numbers of the previous lock."""
         if len(set(cards)) != len(cards):
             raise ValueError("a scene card appears once in the script")
         locked = previous.numbered_cards()

@@ -21,6 +21,7 @@ class ModelTurn(ModelTurnInterface):
     results: tuple[ToolResult, ...]
 
     def __post_init__(self) -> None:
+        """Validate the turn's tool calls and results when it is built."""
         if not isinstance(self.calls, tuple) or not self.calls:
             raise ValueError("a turn called at least one tool, in a tuple")
         if not isinstance(self.results, tuple):

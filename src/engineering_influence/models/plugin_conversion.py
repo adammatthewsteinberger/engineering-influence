@@ -23,6 +23,7 @@ class PluginConversion(PluginConversionInterface):
     set_aside: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
+        """Validate the conversion's bundle and notes when it is built."""
         if not isinstance(self.plugin, Plugin):
             raise TypeError("a conversion holds a plugin")
         for label, lines in (

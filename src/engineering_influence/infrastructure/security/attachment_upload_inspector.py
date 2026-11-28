@@ -21,6 +21,7 @@ class AttachmentUploadInspector(UploadInspectorInterface):
         max_zip_entries: int = 100,
         max_zip_uncompressed_bytes: int = 524_288_000,
     ) -> None:
+        """Remember the classifier and the limits on zip entries and uncompressed bytes."""
         self._classifier = classifier or AttachmentClassifier()
         self._max_entries = max_zip_entries
         self._max_bytes = max_zip_uncompressed_bytes

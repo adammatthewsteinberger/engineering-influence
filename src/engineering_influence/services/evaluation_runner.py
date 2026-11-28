@@ -20,6 +20,7 @@ class EvaluationRunner(EvaluationRunnerInterface):
     """
 
     def __init__(self, maker: BookMakerInterface, judge: BookJudgeInterface) -> None:
+        """Remember the book maker and the judge used for each case in the set."""
         self._maker = maker
         self._judge = judge
 

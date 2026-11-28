@@ -18,6 +18,7 @@ class ControllerPublishPipeline(PublishPipelineInterface):
     """
 
     def __init__(self, controller: PublishingControllerInterface) -> None:
+        """Remember the publishing controller whose publish runs the pipeline."""
         self._controller = controller
 
     def publish(

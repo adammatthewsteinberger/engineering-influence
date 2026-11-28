@@ -18,6 +18,7 @@ class FormulaCheck(FormulaCheckInterface):
     """Warns when a formula such as 'the question is not' is overused."""
 
     def __init__(self, files: ManuscriptSourceInterface) -> None:
+        """Remember the source files the formula check reads."""
         self._files = files
 
     def run(

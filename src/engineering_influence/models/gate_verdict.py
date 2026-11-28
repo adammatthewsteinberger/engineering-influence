@@ -16,6 +16,7 @@ class GateVerdict(GateVerdictInterface):
     issues: tuple[QualityIssue, ...] = ()
 
     def __post_init__(self) -> None:
+        """Validate the verdict's gate and issues when it is built."""
         if not self.gate.strip():
             raise ValueError("gate verdict needs the gate's name")
         if not self.passed and not self.issues:

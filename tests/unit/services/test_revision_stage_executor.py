@@ -607,7 +607,7 @@ def test_a_part_whose_answer_is_implausible_keeps_its_own_text_and_the_rest_is_r
     assert "1 of 2 parts" in report.issues[0].detail
 
 
-NOVEL_STORY, NOVEL_LINES, NOVEL_COPY = NovelRevisionPasses.PASSES
+NOVEL_STORY, NOVEL_LINES, NOVEL_COPY, NOVEL_CONTINUITY = NovelRevisionPasses.PASSES
 
 
 def test_a_novel_pass_is_told_the_brief_as_its_voice_and_the_bible() -> None:
@@ -668,11 +668,31 @@ def test_the_continuity_checks_read_the_edited_chapters_against_the_bible() -> N
     ]
 
 
-def test_the_novel_passes_are_three_and_the_book_is_assembled_from_the_last() -> None:
-    assert [editing.stage for editing in (NOVEL_STORY, NOVEL_LINES, NOVEL_COPY)] == [
-        "revise_story",
-        "revise_lines",
-        "copy_edit",
-    ]
-    assert NovelRevisionPasses().final() == "copy"
+def test_the_novel_passes_are_four_and_the_book_is_assembled_from_the_last() -> None:
+    assert [
+        editing.stage for editing in (NOVEL_STORY, NOVEL_LINES, NOVEL_COPY, NOVEL_CONTINUITY)
+    ] == ["revise_story", "revise_lines", "copy_edit", "revise_continuity"]
+    assert NovelRevisionPasses().final() == "continuity"
     assert "bible" in NOVEL_COPY.blanks and "voice" in NOVEL_STORY.blanks
+
+
+def test_the_continuity_pass_reads_the_copy_edit_and_is_told_the_bible_outline_and_other_chapters() -> (
+    None
+):
+    stored = {
+        "outline.md": OUTLINE,
+        "story_bible.md": "BIBLE: Ana, aged 30",
+        **{f"copy_{n:02d}.md": text for n, text in SOURCES.items()},
+        **{f"summary_{n:02d}.md": text for n, text in SUMMARIES.items()},
+    }
+    world = World(
+        NOVEL_CONTINUITY,
+        *(done(SOURCES[n]) for n in (1, 2, 3)),
+        stored=stored,
+        plan=NovelRecipes().plan(),
+    )
+    world.execute()
+    prompt = world.loop.calls[0][4].prompt
+    assert "BIBLE: Ana, aged 30" in prompt
+    assert SOURCES[1] in prompt
+    assert SUMMARIES[2] in prompt

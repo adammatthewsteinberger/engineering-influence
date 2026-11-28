@@ -15,6 +15,7 @@ class SourceEntry(SourceEntryInterface):
     digest: str
 
     def __post_init__(self) -> None:
+        """Validate the source's number and digest when it is built."""
         if type(self.number) is not int or self.number < 1:
             raise ValueError("a source entry is numbered from 1")
         if len(self.digest) != 64:

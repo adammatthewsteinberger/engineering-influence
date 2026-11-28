@@ -27,6 +27,7 @@ class BudgetPlan(BudgetPlanInterface):
     estimate: CostEstimate
 
     def __post_init__(self) -> None:
+        """Validate the cap against the estimate when the plan is built."""
         if type(self.cap) is not int or self.cap < 1:
             raise ValueError("a cap is a whole number of micro-dollars above zero")
 

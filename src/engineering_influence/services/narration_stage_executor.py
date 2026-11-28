@@ -53,6 +53,7 @@ class NarrationStageExecutor(StageExecutorInterface):
         text: NarrationTextInterface,
         gate: NarrationGateInterface,
     ) -> None:
+        """Remember the artifacts, outlines, narrator, text and gate the narration uses."""
         self._artifacts = artifacts
         self._outlines = outlines
         self._narrator = narrator

@@ -20,6 +20,7 @@ class BookLoader(BookLoaderInterface):
     """Reads every configured file, numbers the chapters, and rejects unlisted sources."""
 
     def __init__(self, root: Path, strict: bool = True) -> None:
+        """Remember the project root, and whether unlisted sources are rejected (strict by default)."""
         self._root = root
         self._relativizer = PathRelativizer(root)
         self._strict = strict

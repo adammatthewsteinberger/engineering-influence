@@ -29,6 +29,7 @@ class CassetteRecordingTransport(httpx.BaseTransport, CassetteRecorderInterface)
         redactor: SecretRedactorInterface,
         store: CassetteStoreInterface,
     ) -> None:
+        """Remember the real transport, the redactor and the cassette store."""
         self._inner = inner
         self._redactor = redactor
         self._store = store

@@ -18,6 +18,7 @@ class OtelTracing(OtelTracingInterface):
     TRACES_PATH = "/v1/traces"
 
     def attach(self, app: Any, endpoint: str, service: str) -> None:
+        """Instrument the app and install the tracer provider, when an endpoint is configured."""
         provider = self._provider(endpoint, service)
         if provider is None:
             return
@@ -25,6 +26,7 @@ class OtelTracing(OtelTracingInterface):
         self._install(provider)
 
     def start(self, endpoint: str, service: str) -> None:
+        """Install the tracer provider for this process, when an endpoint is configured."""
         provider = self._provider(endpoint, service)
         if provider is not None:
             self._install(provider)

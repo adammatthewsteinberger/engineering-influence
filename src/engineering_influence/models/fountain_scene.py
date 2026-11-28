@@ -18,6 +18,7 @@ class FountainScene(FountainSceneInterface):
     blocks: tuple[FountainBlock, ...]
 
     def __post_init__(self) -> None:
+        """Validate the scene's heading notes when it is built."""
         if type(self.number) is not int or self.number < 1:
             raise ValueError("a scene is numbered from 1")
         if not self.heading.strip():

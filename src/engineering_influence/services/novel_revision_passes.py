@@ -1,5 +1,5 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
-"""The editing passes of a novel: story, then lines, then copy."""
+"""The editing passes of a novel: story, then lines, then copy, then continuity."""
 
 from typing import ClassVar
 
@@ -10,14 +10,17 @@ from engineering_influence.models.revision_pass import RevisionPass
 
 
 class NovelRevisionPasses(RevisionPassesInterface):
-    """Three passes over a drafted novel, each narrower than the one before, and each keeping the story bible's names.
+    """Four passes over a drafted novel, each narrower than the one before, and each keeping the story bible's names.
 
     **Story** sees the voice, the story bible, the whole outline, the beats, a line on every other chapter and this
     chapter, and may tighten scenes, sharpen goals and fix pacing, a fifth either way. **Lines** sees the voice and the
     chapter and edits sentence by sentence for rhythm, dialogue and point of view, a tenth either way. **Copy** sees the
-    bible and the chapter and corrects spelling, grammar and consistency with the bible, a twentieth either way. Unlike a
-    non-fiction book, a novel keeps its dashes: nothing here removes them. The first pass reads the drafted
-    ``chapter_NN.md``, each next reads what the last wrote, and the book is assembled from the last.
+    bible and the chapter and corrects spelling, grammar and consistency with the bible, a twentieth either way.
+    **Continuity** sees the bible, the outline, a line on every other chapter and this chapter, and corrects what
+    contradicts them (a name, an age, a place, a date, the order of events) to agree with the bible, a twentieth either
+    way; a chapter with nothing to correct comes back unchanged. Unlike a non-fiction book, a novel keeps its dashes:
+    nothing here removes them. The first pass reads the drafted ``chapter_NN.md``, each next reads what the last wrote,
+    and the book is assembled from the last.
     """
 
     PASSES: ClassVar[tuple[RevisionPass, ...]] = (
@@ -55,6 +58,15 @@ class NovelRevisionPasses(RevisionPassesInterface):
             "lines",
             "copy",
             ("bible", "chapter", "words", "floor", "ceiling"),
+            0.95,
+            1.05,
+        ),
+        RevisionPass(
+            "revise_continuity",
+            "novel_revise_continuity",
+            "copy",
+            "continuity",
+            ("bible", "outline", "summaries", "chapter", "words", "floor", "ceiling"),
             0.95,
             1.05,
         ),

@@ -92,6 +92,7 @@ class RevisionStageExecutor(StageExecutorInterface):
         voice_source: str = "positioning.md",
         checks: DraftChecksInterface | None = None,
     ) -> None:
+        """Remember the revision pass and the artifacts, prompts, outlines and tool loop it runs with."""
         if context_window < 1 or max_output_tokens < 1:
             raise ValueError("a model has a window and an output limit")
         self._pass = revision

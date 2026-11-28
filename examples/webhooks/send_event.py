@@ -50,11 +50,13 @@ def delivery(secret: bytes, event_id: str, sent_at: int) -> tuple[bytes, dict[st
 
 
 def post(label: str, body: bytes, headers: dict[str, str]) -> None:
+    """Post one signed event to the example receiver and print the status it answers with."""
     answer = requests.post(URL, data=body, headers=headers, timeout=5)
     print(f"{label}: {answer.status_code} {answer.json()['status']}")
 
 
 def main() -> int:
+    """Send the example events to the receiver, signed with EI_WEBHOOK_SECRET; return 2 without it."""
     raw = os.environ.get("EI_WEBHOOK_SECRET")
     if not raw:
         print("set EI_WEBHOOK_SECRET to the receiver's secret", file=sys.stderr)

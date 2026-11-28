@@ -16,6 +16,7 @@ class ExportSummary(ExportSummaryInterface):
     book_files: int
 
     def __post_init__(self) -> None:
+        """Validate the file counts when the summary is built."""
         if type(self.files) is not int or type(self.book_files) is not int:
             raise TypeError("an export counts whole files")
         if not 0 <= self.book_files <= self.files or self.files < 1:

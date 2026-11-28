@@ -50,6 +50,7 @@ def test_a_novel_runs_from_the_brief_to_a_built_book() -> None:
         "revise_story",
         "revise_lines",
         "copy_edit",
+        "revise_continuity",
         "assemble",
         "audit",
         "build",

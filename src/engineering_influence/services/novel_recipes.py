@@ -18,7 +18,7 @@ class NovelRecipes(StageRecipesInterface):
     ``StoryBibleParser`` reads and the chapter outline is the same markdown ``OutlineParser`` reads, so the stages
     after them (drafting, which checks each chapter against the bible) walk the same chapters a non-fiction book has.
     The draft writes each chapter one beat at a time (``sectioned``), so a long chapter is not one reply. After the draft
-    the three editing passes (story, lines, copy; see ``NovelRevisionPasses``) revise every chapter, and the plan then
+    the four editing passes (story, lines, copy, continuity; see ``NovelRevisionPasses``) revise every chapter, and the plan then
     assembles, audits and builds the book. The metadata stage writes the store listing in the format ``MetadataParser``
     reads, so ``assemble`` can write the book's config.
     """

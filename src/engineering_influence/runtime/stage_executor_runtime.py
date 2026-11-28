@@ -282,6 +282,7 @@ class StageExecutorRuntime(StageExecutorRuntimeInterface):
         builder: ManuscriptBuilderInterface | None = None,
         sandbox: McpServerSandboxInterface | None = None,
     ) -> None:
+        """Remember the environment, secrets, date, timeout and builder the stage executors are wired with."""
         self._environment = environment
         self._sandbox = sandbox or McpServerSandbox(sys.platform, shutil.which, Path.home())
         self._secrets = secrets

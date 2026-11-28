@@ -18,6 +18,7 @@ class ContactSheetBuilder(ContactSheetBuilderInterface):
     """Page labels use the bundled DejaVu Serif, so sheets look the same on every machine."""
 
     def __init__(self, relativizer: PathRelativizer) -> None:
+        """Remember the relativizer that shortens paths shown on the sheets."""
         self._relativizer = relativizer
 
     def clear(self, directory: Path) -> None:

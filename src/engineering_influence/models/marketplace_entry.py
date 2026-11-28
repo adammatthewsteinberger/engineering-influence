@@ -31,6 +31,7 @@ class MarketplaceEntry(MarketplaceEntryInterface):
     local: str = ""
 
     def __post_init__(self) -> None:
+        """Validate the entry's name, description and source when it is built."""
         for label, value, limit in (
             ("name", self.name, self.MAX_NAME_CHARS),
             ("description", self.description, self.MAX_DESCRIPTION_CHARS),

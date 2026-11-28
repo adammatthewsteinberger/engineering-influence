@@ -39,6 +39,7 @@ class ModelProfile(ModelProfileInterface):
     reasoning_effort: str = ""
 
     def __post_init__(self) -> None:
+        """Validate the profile's address and settings when it is built."""
         if not self.name.strip() or not self.provider.strip() or not self.model.strip():
             raise ValueError("a profile needs a name, a provider and a model")
         if self.adapter not in ADAPTERS:

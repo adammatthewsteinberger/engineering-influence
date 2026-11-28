@@ -20,6 +20,7 @@ class ScreenplayLength(ScreenplayLengthInterface):
     THREE_HOURS_PAGES: ClassVar[int] = 180
 
     def __init__(self, ceiling_pages: int = CEILING_PAGES) -> None:
+        """Remember the page ceiling; a script over it is refused."""
         if ceiling_pages < 1:
             raise ValueError("a screenplay's page ceiling is a positive number of pages")
         self._ceiling = ceiling_pages

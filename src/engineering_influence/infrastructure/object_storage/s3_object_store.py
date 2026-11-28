@@ -14,16 +14,20 @@ class S3ObjectStore(S3ObjectStoreInterface):
     """The bucket operations, over whichever S3 client the runtime gave it."""
 
     def __init__(self, client: Boto3S3ClientInterface) -> None:
+        """Remember the client that talks to S3."""
         self._client = client
 
     def put(self, bucket: str, key: str, body: bytes) -> None:
+        """Store the body under the key in the bucket."""
         self._client.put_object(bucket, key, body)
 
     def get(self, bucket: str, key: str) -> bytes | None:
+        """The bytes stored under the key, or None when the key is missing."""
         try:
             return self._client.get_object(bucket, key)
         except MissingKeyError:
             return None
 
     def keys(self, bucket: str, prefix: str) -> list[str]:
+        """Every key in the bucket that starts with the prefix, sorted."""
         return sorted(self._client.list_keys(bucket, prefix))

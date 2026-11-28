@@ -25,6 +25,7 @@ class ScreenplayBeatPositionCheck(ScreenplayBeatPositionCheckInterface):
     ALLOWED_DRIFT: ClassVar[float] = 0.05
 
     def __init__(self, estimate: FountainPageEstimateInterface, target_pages: int) -> None:
+        """Remember the page estimate and the target page count the beats are placed in."""
         if target_pages < 1:
             raise ValueError("a film has a positive number of pages")
         self._estimate = estimate

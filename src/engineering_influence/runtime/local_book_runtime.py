@@ -60,6 +60,7 @@ class LocalBookRuntime(LocalBookCreatorInterface):
         today: date | None = None,
         builder: ManuscriptBuilderInterface | None = None,
     ) -> None:
+        """Remember the state folder, environment, secrets, date and optional builder the local runs use."""
         self._stages = StageExecutorRuntime(
             environment, secrets, today or date.today(), builder=builder
         )

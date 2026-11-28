@@ -20,6 +20,7 @@ class BibleFile(BibleFileInterface):
     text: str
 
     def __post_init__(self) -> None:
+        """Refuse a kind or id that the bible's folder and file-name rules do not allow."""
         if self.KIND.fullmatch(self.kind) is None:
             raise ValueError(f"a bible kind is a lowercase identifier, not {self.kind!r}")
         if self.ID.fullmatch(self.id) is None:

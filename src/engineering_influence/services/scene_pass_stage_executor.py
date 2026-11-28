@@ -40,6 +40,7 @@ class ScenePassStageExecutor(StageExecutorInterface):
         input_name: Callable[[SceneCard], str],
         output_name: Callable[[SceneCard], str],
     ) -> None:
+        """Remember the artifacts, the stage name, the scene reviser, the scene cards and the section checks."""
         self._artifacts = artifacts
         self._stage = stage
         self._passer = passer

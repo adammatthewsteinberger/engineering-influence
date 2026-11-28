@@ -10,13 +10,16 @@ class InMemoryRunRepository(RunRepositoryInterface):
     """Keeps the last saved state of each run in a dictionary, and the events queued with it."""
 
     def __init__(self) -> None:
+        """Start with no runs and no queued events."""
         self._runs: dict[str, BookRun] = {}
         self._events: dict[str, OutboxEvent] = {}
 
     def save(self, run: BookRun) -> None:
+        """Save the run, replacing any saved under the same id."""
         self._runs[run.run_id] = run
 
     def save_with_events(self, run: BookRun, events: tuple[OutboxEvent, ...]) -> None:
+        """Save the run, and queue each event whose key has not been queued before."""
         self._runs[run.run_id] = run
         for event in events:
             self._events.setdefault(event.record_key(), event)
@@ -26,6 +29,7 @@ class InMemoryRunRepository(RunRepositoryInterface):
         return tuple(self._events.values())
 
     def swap(self, expected: BookRun, replacement: BookRun) -> bool:
+        """Replace the saved run with the replacement only if it is still the expected run; return whether it was replaced."""
         if replacement.run_id != expected.run_id:
             raise ValueError("a swap cannot change the run id")
         if self._runs.get(expected.run_id) != expected:
@@ -44,7 +48,9 @@ class InMemoryRunRepository(RunRepositoryInterface):
         return True
 
     def get(self, run_id: str) -> BookRun | None:
+        """The saved run with this id, or None."""
         return self._runs.get(run_id)
 
     def run_ids(self) -> list[str]:
+        """The ids of every saved run, sorted."""
         return sorted(self._runs)

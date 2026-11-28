@@ -24,6 +24,7 @@ class AudiobookOutlineStageExecutor(StageExecutorInterface):
     SENTENCE: ClassVar[re.Pattern[str]] = re.compile(r"(?<=[.!?])\s+")
 
     def __init__(self, artifacts: ArtifactStoreInterface) -> None:
+        """Remember the artifacts the audiobook outline is read from and written to."""
         self._artifacts = artifacts
 
     async def execute(self, run: BookRun, attempt: int) -> StageReport:

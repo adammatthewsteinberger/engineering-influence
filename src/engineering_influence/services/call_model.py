@@ -47,6 +47,7 @@ class CallModel(CallModelInterface):
     """
 
     def __init__(self, model: ModelInterface, journal: JournalInterface) -> None:
+        """Remember the model and the journal every stage's call is recorded in."""
         self._model = model
         self._journal = journal
 

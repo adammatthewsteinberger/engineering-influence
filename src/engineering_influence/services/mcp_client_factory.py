@@ -15,6 +15,7 @@ class McpClientFactory(McpClientFactoryInterface):
     def __init__(
         self, client_name: str, client_version: str, timeout_seconds: float = 30.0
     ) -> None:
+        """Remember the client name, version and request time limit every client is made with."""
         self._name = client_name
         self._version = client_version
         self._timeout = timeout_seconds

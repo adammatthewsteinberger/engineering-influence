@@ -65,6 +65,7 @@ class CreateRun(CreateRunInterface):
         ceiling: SpendCeilingInterface | None = None,
         artifacts: ArtifactStoreInterface | None = None,
     ) -> None:
+        """Remember the run repository, the queue, the plans per kind and the id source."""
         self._runs = runs
         self._queue = queue
         self._plans = dict(self.PLANS if plans is None else plans)

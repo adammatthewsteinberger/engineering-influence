@@ -56,6 +56,7 @@ class AssembleStageExecutor(StageExecutorInterface):
         profile: AuthorProfile | None,
         source: str,
     ) -> None:
+        """Remember the artifacts, outlines, metadata, chapter cleaner and config the assembled book is written from."""
         self._artifacts = artifacts
         self._outlines = outlines
         self._metadata = metadata

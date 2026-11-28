@@ -49,6 +49,7 @@ class ScreenplayBeatSheetCheck(ScreenplayBeatSheetCheckInterface):
     ALL_IS_LOST_HIGH: ClassVar[float] = 0.80
 
     def __init__(self, target_pages: int) -> None:
+        """Remember the target page count the beat sheet is checked against."""
         if target_pages < 1:
             raise ValueError("a film has a positive number of pages")
         self._target = target_pages

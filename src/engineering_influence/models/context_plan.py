@@ -26,6 +26,7 @@ class ContextPlan(ContextPlanInterface):
     previous_tail: str = ""
 
     def __post_init__(self) -> None:
+        """Validate the prompt's parts when the plan is built."""
         for name in ("style", "beats", "instruction"):
             if not getattr(self, name).strip():
                 raise ValueError(f"a context plan needs {name}")

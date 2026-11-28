@@ -44,6 +44,7 @@ class AuthorProfile(AuthorProfileInterface):
     pricing: BookPricing | None = None
 
     def __post_init__(self) -> None:
+        """Validate the author's details when the profile is built."""
         for label, value in (
             ("author", self.author),
             ("publisher", self.publisher),

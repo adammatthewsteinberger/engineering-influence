@@ -36,6 +36,7 @@ class BookMetadata(BookMetadataInterface):
     categories: tuple[str, ...]
 
     def __post_init__(self) -> None:
+        """Validate the listing's fields against the store's limits when it is built."""
         self._line("the title", self.title, self.MAX_TITLE_CHARS)
         self._line("the subtitle", self.subtitle, self.MAX_SUBTITLE_CHARS)
         self._description()

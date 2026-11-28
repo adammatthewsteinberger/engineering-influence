@@ -36,6 +36,7 @@ class ChapterCleaner(ChapterCleanerInterface):
     FENCE: ClassVar[re.Pattern[str]] = re.compile(r"^\s*(```|~~~)")
 
     def __init__(self, dashes: DashRewriterInterface) -> None:
+        """Remember the dash rewriter used when cleaning the drafted chapters."""
         self._dashes = dashes
 
     def clean(self, number: int, title: str, text: str) -> str:

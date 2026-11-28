@@ -82,3 +82,53 @@ def test_the_cnpg_sample_is_a_cluster_with_the_app_database_and_owner() -> None:
     ]
     assert cluster["apiVersion"] == "postgresql.cnpg.io/v1" and cluster["kind"] == "Cluster"
     assert cluster["spec"]["bootstrap"]["initdb"] == {"database": "ei", "owner": "ei"}
+
+
+def _policy(docs: list[dict[str, Any]], name: str) -> dict[str, Any]:
+    (policy,) = [d for d in docs if d["kind"] == "NetworkPolicy" and d["metadata"]["name"] == name]
+    spec: dict[str, Any] = policy["spec"]
+    return spec
+
+
+def _components(rules: list[dict[str, Any]]) -> set[str]:
+    return {
+        peer["podSelector"]["matchLabels"]["app.kubernetes.io/component"]
+        for rule in rules
+        for peer in rule.get("from", rule.get("to", []))
+        if "podSelector" in peer
+    }
+
+
+@needs_helm
+def test_the_collector_admits_only_the_api_and_the_worker_on_otlp() -> None:
+    spec = _policy(
+        render("otelCollector.enabled=true", "tracing.enabled=true"),
+        "ei-engineering-influence-otel-collector",
+    )
+    assert _components(spec["ingress"]) == {"api", "worker"}
+    assert spec["ingress"][0]["ports"] == [{"protocol": "TCP", "port": 4318}]
+    assert "egress" not in spec["policyTypes"]
+
+
+@needs_helm
+def test_tempo_admits_the_collector_only_when_the_collector_forwards_to_it() -> None:
+    with_collector = _policy(
+        render("otelCollector.enabled=true", "tracing.enabled=true"),
+        "ei-engineering-influence-tempo",
+    )
+    assert "otel-collector" in _components(with_collector["ingress"][0:1])
+    without = _policy(render("tracing.enabled=true"), "ei-engineering-influence-tempo")
+    assert "otel-collector" not in _components(without["ingress"][0:1])
+
+
+@needs_helm
+def test_the_apps_egress_reaches_the_collector_when_both_policies_are_on() -> None:
+    api = _policy(
+        render(
+            "otelCollector.enabled=true",
+            "otelCollector.exporter.endpoint=https://traces.example.test",
+            "networkPolicy.enabled=true",
+        ),
+        "ei-engineering-influence-api",
+    )
+    assert "otel-collector" in _components(api["egress"])

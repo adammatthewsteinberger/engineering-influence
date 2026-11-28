@@ -22,6 +22,7 @@ class CassetteRedactor(SecretRedactorInterface):
     SHAPE: ClassVar[re.Pattern[str]] = re.compile(r"(?<![A-Za-z0-9_])sk-[A-Za-z0-9_-]{16,}")
 
     def __init__(self, secrets: Iterable[str] = ()) -> None:
+        """Remember the secrets to mask."""
         named = sorted(set(secrets), key=len, reverse=True)
         for secret in named:
             if len(secret.strip()) < self.MINIMUM_LENGTH or secret != secret.strip():

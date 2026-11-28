@@ -30,6 +30,7 @@ class WebhookDelivery(WebhookDeliveryInterface):
         clock: Callable[[], float] = time.time,
         correlation: CorrelationInterface | None = None,
     ) -> None:
+        """Remember the HTTP client, the URL policy, the clock and the correlation for each delivery."""
         self._client = client
         self._url_policy = url_policy
         self._clock = clock

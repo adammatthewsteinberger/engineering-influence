@@ -25,6 +25,7 @@ class DbCli(DbCliInterface):
         migrator: Callable[[], SchemaMigratorInterface],
         secrets: Callable[[], SecretProviderInterface],
     ) -> None:
+        """Remember how to build the schema migrator and the secret provider."""
         self._migrator = migrator
         self._secrets = secrets
 

@@ -13,6 +13,7 @@ class PublicationFindings(PublicationFindingsInterface):
 
     @staticmethod
     def errors(result: dict[str, Any]) -> tuple[str, ...]:
+        """The error findings of a publication result, as 'CODE: message' lines: the manuscript audit's issues and the release readiness findings marked as errors."""
         audit = result["manuscript_audit"]
         found = [f"{issue['code']}: {issue['message']}" for issue in audit["issues"]]
         found += [
@@ -24,6 +25,7 @@ class PublicationFindings(PublicationFindingsInterface):
 
     @staticmethod
     def warnings(result: dict[str, Any]) -> tuple[str, ...]:
+        """The warning findings of a publication result: the manuscript audit's warnings and every release readiness finding that is not an error."""
         audit = result["manuscript_audit"]
         found = [f"{issue['code']}: {issue['message']}" for issue in audit["warnings"]]
         found += [

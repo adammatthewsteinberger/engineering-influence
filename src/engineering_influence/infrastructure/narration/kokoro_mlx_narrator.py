@@ -37,12 +37,14 @@ class KokoroMlxNarrator(NarratorInterface):
         runner: ProcessRunnerInterface | None = None,
         python: str = sys.executable,
     ) -> None:
+        """Remember the voice, language code, process runner and Python interpreter the narrator uses."""
         self._voice = voice
         self._lang_code = lang_code
         self._runner = runner or ProcessRunner()
         self._python = python
 
     def narrate(self, text: str) -> Narration:
+        """Narrate the text with Kokoro through MLX audio, in a temporary folder, and return the narration."""
         with tempfile.TemporaryDirectory(prefix="kokoro-") as folder:
             command = [
                 self._python,

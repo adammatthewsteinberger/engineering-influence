@@ -14,6 +14,7 @@ class StepRecorder(StepRecorderInterface):
     """A step passes when it returns and fails when it raises; either way it is logged."""
 
     def __init__(self, relativizer: PathRelativizer, clock: ClockInterface) -> None:
+        """Remember the path relativizer and the clock used to log each step."""
         self._relativizer = relativizer
         self._clock = clock
 

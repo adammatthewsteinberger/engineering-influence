@@ -1,0 +1,33 @@
+{{- if .Values.otelCollector.enabled }}
+# The collector's OTLP receiver has no authentication, so only the API and the worker may send to it. Its egress is left
+# open: it must reach the trace backend, which may be outside the namespace.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "ei.fullname" . }}-otel-collector
+  labels:
+    {{- include "ei.labels" . | nindent 4 }}
+    app.kubernetes.io/component: otel-collector
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "ei.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: otel-collector
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ include "ei.name" . }}
+              app.kubernetes.io/instance: {{ .Release.Name }}
+              app.kubernetes.io/component: api
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ include "ei.name" . }}
+              app.kubernetes.io/instance: {{ .Release.Name }}
+              app.kubernetes.io/component: worker
+      ports:
+        - protocol: TCP
+          port: 4318
+{{- end }}

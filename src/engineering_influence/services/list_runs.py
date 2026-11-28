@@ -10,6 +10,7 @@ class ListRuns(ListRunsInterface):
     """Reads every run id, then each run; a run deleted between the two reads is skipped."""
 
     def __init__(self, runs: RunRepositoryInterface) -> None:
+        """Remember the run repository the runs are listed from."""
         self._runs = runs
 
     def runs(self) -> tuple[BookRun, ...]:

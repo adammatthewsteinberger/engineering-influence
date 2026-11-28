@@ -21,6 +21,7 @@ class ToolLockAuditor(ToolLockAuditorInterface):
     """
 
     def __init__(self, probe: McpServerProbeInterface) -> None:
+        """Remember the probe that starts each server to audit it."""
         self._probe = probe
 
     def audit(self, lock: ToolLock, only: Collection[str]) -> tuple[ToolLockFinding, ...]:

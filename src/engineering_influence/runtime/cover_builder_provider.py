@@ -17,6 +17,7 @@ class CoverBuilderProvider(CoverBuilderProviderInterface):
     """Plugins can be slow to import and can fail, so they load only when covers are built."""
 
     def __init__(self, config: ProjectConfig) -> None:
+        """Remember the project config the cover builder is set up for."""
         self._config = config
 
     def provide(self) -> CoverBuilderInterface:

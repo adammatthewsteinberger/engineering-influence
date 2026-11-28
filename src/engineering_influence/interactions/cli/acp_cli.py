@@ -25,6 +25,7 @@ class AcpCli(AcpCliInterface):
         reader: TextIO,
         writer: TextIO,
     ) -> None:
+        """Remember how to build the application, and the text streams the protocol reads and writes."""
         self._application = application
         self._reader = reader
         self._writer = writer

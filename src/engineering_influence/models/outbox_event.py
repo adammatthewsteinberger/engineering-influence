@@ -16,6 +16,7 @@ class OutboxEvent(OutboxEventInterface):
     payload: dict[str, object] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
+        """Validate the event's id and fields when it is built."""
         for name, value in (
             ("event id", self.event_id),
             ("url", self.url),

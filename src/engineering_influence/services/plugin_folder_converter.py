@@ -37,6 +37,7 @@ class PluginFolderConverter(PluginFolderConverterInterface):
     def __init__(
         self, markdown: SkillMarkdownParserInterface, skills: SkillConverterInterface
     ) -> None:
+        """Remember the Markdown parser and the skill converter."""
         self._markdown = markdown
         self._skills = skills
 

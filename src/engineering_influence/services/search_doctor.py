@@ -29,6 +29,7 @@ class SearchDoctor(SearchDoctorInterface):
     HOST: ClassVar[re.Pattern[str]] = re.compile(r"[A-Za-z0-9.\-]{1,253}|[0-9A-Fa-f:.]{2,45}")
 
     def __init__(self, providers: tuple[tuple[str, SearchProviderInterface], ...]) -> None:
+        """Remember the search providers, each checked on its own."""
         self._providers = providers
 
     def check(self, query: str) -> tuple[DoctorFinding, ...]:

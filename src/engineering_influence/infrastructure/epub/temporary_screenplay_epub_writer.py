@@ -20,10 +20,12 @@ class TemporaryScreenplayEpubWriter(ScreenplayEpubWriterInterface):
     DATE_TIME: ClassVar[tuple[int, int, int, int, int, int]] = (2000, 1, 1, 0, 0, 0)
 
     def __init__(self, package: EpubPackageInterface, validator: EpubcheckInterface) -> None:
+        """Remember the EPUB package writer and the epubcheck validator."""
         self._package = package
         self._validator = validator
 
     def write(self, entries: tuple[tuple[str, bytes, bool], ...]) -> tuple[bytes, tuple[str, ...]]:
+        """Write the members to a temporary EPUB, validate it, and return its bytes with the problems the validator reports."""
         with tempfile.TemporaryDirectory(prefix="screenplay-epub-") as scratch:
             path = Path(scratch) / self.NAME
             self._package.write_members(path, entries, self.DATE_TIME)

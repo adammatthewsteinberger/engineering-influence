@@ -30,6 +30,7 @@ class ToolLoopResult(ToolLoopResultInterface):
     transcript: tuple[ModelTurn, ...]
 
     def __post_init__(self) -> None:
+        """Validate the loop's result when it is built."""
         if self.complete and self.issues:
             raise ValueError("a finished loop has no issues")
         if not self.complete and not self.issues:
