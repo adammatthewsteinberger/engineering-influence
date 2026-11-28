@@ -64,7 +64,17 @@ jobs:
       - run: uv run bandit -q -r src packages
       - run: uv run pip-audit
       - run: uv run mypy --strict src packages
-      - run: uv run pytest --cov --cov-branch --cov-fail-under=100 -n auto
+      # Linux runs each locked MCP server under bubblewrap (see docs/TOOL_LOCK.md). Ubuntu 24.04 restricts the
+      # unprivileged user namespaces bubblewrap needs, so this ephemeral runner allows them.
+      - name: Install bubblewrap for the native MCP sandbox
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Run the tests (the native sandbox must run here)
+        run: uv run pytest --cov --cov-branch --cov-fail-under=100 -n auto
+        env:
+          EI_REQUIRE_NATIVE_SANDBOX: "1"
 
   # Renders the Helm chart with default values and with every optional object on, validates each render against the
   # Kubernetes schemas, and builds each Kustomize overlay the same way. Then it builds the image and scans it with Trivy

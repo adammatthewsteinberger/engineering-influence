@@ -92,6 +92,7 @@ recorded cassettes) and need no action from you.
 | `SCHEMA_OUT_OF_DATE` | `the database schema is not at the latest revision; run ei db upgrade` | Run `ei db upgrade` |
 | `TOOL_URL_REFUSED` | the address was refused by the URL policy | A remote tool server must be a public `https` address. See [TOOL_LOCK.md](TOOL_LOCK.md) |
 | `TOOL_ENV_MISSING` | `the environment variable NAME is not set` | Set the variable the tool server's configuration names, then start again |
+| `SANDBOX_UNAVAILABLE` | `this system has no native sandbox for MCP servers ...` | Install bubblewrap on Linux (`bwrap` on the path); macOS ships `sandbox-exec`. A locked server is not started without one |
 | `WEBHOOK_TARGET_REJECTED` | `webhook destination refused: REASON` | The webhook's address was refused: it must be public `https` |
 | `SKILL_IMPORT_TOO_LARGE` | `the chosen text is N characters and a part holds at most M; choose sections with --section` | Pick fewer reference sections with `--section`. The message lists each section and its length |
 | `SOURCE_TOO_COMPLEX` | `the page nests elements more than N deep` | A fetched web page is too deeply nested to read safely. The research stage skips it; no action needed |
