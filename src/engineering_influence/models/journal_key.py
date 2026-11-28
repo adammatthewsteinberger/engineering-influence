@@ -19,6 +19,11 @@ class JournalKey(JournalKeyInterface):
     def __post_init__(self) -> None:
         if not all(part.strip() for part in self._parts()):
             raise ValueError("every part of a journal key is required")
+        # The digest joins the parts with the unit separator, so a part that contains it could make two different
+        # requests share a digest. The model and prompt version come from configuration, and this refuses the one
+        # character that would make them ambiguous.
+        if any("\x1f" in part for part in self._parts()):
+            raise ValueError("a journal key part cannot contain the unit separator")
 
     def digest(self) -> str:
         """A stable SHA-256 of the four parts; the same request always gives the same digest."""

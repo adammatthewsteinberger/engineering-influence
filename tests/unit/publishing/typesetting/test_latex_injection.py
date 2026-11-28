@@ -351,3 +351,18 @@ def test_an_http_address_or_a_bare_host_is_accepted(address: str) -> None:
 def test_anything_else_is_refused_including_every_script_url_and_host_port(address: str) -> None:
     with pytest.raises(ManuscriptError, match="http or https"):
         TEXT.web_url(address)
+
+
+def test_every_metadata_key_the_documents_read_is_escaped_text_or_reviewed_as_not_text() -> None:
+    """A key a document reads is either passed through TexText, or named in NOT_TEXT by a person who checked it.
+
+    A new key that is read but missing from both lists fails here, so it cannot reach the TeX unescaped by accident.
+    """
+    root = Path(__file__).resolve().parents[4] / "src/engineering_influence/services/typesetting"
+    read: set[str] = set()
+    for module in ("print_document.py", "ebook_document.py"):
+        read |= set(
+            re.findall(r'\bm(?:\.get\(|\[)"(\w+)"', (root / module).read_text(encoding="utf-8"))
+        )
+    NOT_TEXT = {"year", "number_chapters", "kind", "trim_size", "also_by"}
+    assert read - set(TEXT_FIELDS) - NOT_TEXT == set()

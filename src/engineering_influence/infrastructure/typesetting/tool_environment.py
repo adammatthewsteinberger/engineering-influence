@@ -36,12 +36,14 @@ class ToolEnvironment(ToolEnvironmentInterface):
         self._environ = os.environ if environ is None else environ
 
     def build(self, source_date_epoch: int | None = None) -> dict[str, str]:
-        """The allow-listed variables, plus SOURCE_DATE_EPOCH when one is given."""
+        """The allow-listed variables, shell escape off, and SOURCE_DATE_EPOCH when one is given."""
         kept = {
             name: value
             for name, value in self._environ.items()
             if name in self.NAMES or name.startswith(self.PREFIXES)
         }
+        # Model-written text reaches TeX, and shell escape would let it run a command. It is set here, never inherited.
+        kept["shell_escape"] = "f"
         if source_date_epoch is not None:
             kept["SOURCE_DATE_EPOCH"] = str(source_date_epoch)
         return kept
