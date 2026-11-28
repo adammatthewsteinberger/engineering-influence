@@ -14,8 +14,11 @@ class SandboxAllowance(SandboxAllowanceInterface):
     (a virtual environment's interpreter often resolves into the installed Python, under the home directory).
 
     Only directories strictly below the home directory are returned. A path outside it adds nothing, and
-    the home directory itself is never allowed, so no allowance can re-open the whole of it.
+    the home directory itself is never allowed, so no allowance can re-open the whole of it. An allowance is
+    refused when it is a credential directory, inside one, or an ancestor of one.
     """
+
+    SECRET_DIRECTORIES = (".ssh", ".aws", ".gnupg", ".kube", ".config/gcloud", "Library/Keychains")
 
     def paths(self, command: tuple[str, ...], home: Path) -> tuple[Path, ...]:
         found: set[Path] = set()
@@ -29,4 +32,12 @@ class SandboxAllowance(SandboxAllowanceInterface):
                     for option in (candidate, candidate.resolve()):
                         if option != real_home and real_home in option.parents:
                             found.add(option)
-        return tuple(sorted(found))
+        return tuple(sorted(path for path in found if not self._secret(path, real_home)))
+
+    def _secret(self, path: Path, home: Path) -> bool:
+        """True when the path is a credential directory, inside one, or an ancestor of one."""
+        for name in self.SECRET_DIRECTORIES:
+            secret = home / name
+            if path == secret or secret in path.parents or path in secret.parents:
+                return True
+        return False

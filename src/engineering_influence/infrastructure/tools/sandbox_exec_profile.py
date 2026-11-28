@@ -9,6 +9,7 @@ from engineering_influence.infrastructure.tools.interfaces.mcp_server_sandbox_in
 from engineering_influence.infrastructure.tools.interfaces.sandbox_allowance_interface import (
     SandboxAllowanceInterface,
 )
+from engineering_influence.infrastructure.tools.sandbox_allowance import SandboxAllowance
 
 
 class SandboxExecProfile(McpServerSandboxInterface):
@@ -44,6 +45,10 @@ class SandboxExecProfile(McpServerSandboxInterface):
             f"(deny file-read* (subpath {self._quote(str(self._home.resolve()))}))",
         ]
         rules += [f"(allow file-read* (subpath {self._quote(str(p))}))" for p in allowed]
+        rules += [
+            f"(deny file-read* (subpath {self._quote(str((self._home / name).resolve()))}))"
+            for name in SandboxAllowance.SECRET_DIRECTORIES
+        ]
         rules += [
             f"(allow file-read* (subpath {self._quote(str(workdir.resolve()))}))",
             f"(allow file-write* (subpath {self._quote(str(workdir.resolve()))}))",

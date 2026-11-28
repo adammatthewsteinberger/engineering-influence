@@ -47,3 +47,19 @@ def test_the_allowance_is_in_name_order_and_each_directory_once(tmp_path: Path) 
     paths = SandboxAllowance().paths((str(home / "a" / "x"), str(home / "a" / "y")), home)
     assert paths == tuple(sorted(set(paths)))
     assert paths.count(home / "a") == 1
+
+
+def test_a_credential_directory_is_never_allowed(tmp_path: Path) -> None:
+    home = tmp_path / "home"
+    (home / ".ssh").mkdir(parents=True)
+    key = home / ".ssh" / "id_ed25519"
+    assert SandboxAllowance().paths((str(key), "--stdio"), home) == ()
+
+
+def test_an_ancestor_of_a_credential_directory_is_never_allowed(tmp_path: Path) -> None:
+    home = tmp_path / "home"
+    (home / ".config" / "gcloud").mkdir(parents=True)
+    script = home / ".config" / "tool.py"
+    script.parent.mkdir(exist_ok=True)
+    script.write_text("")
+    assert (home / ".config").resolve() not in SandboxAllowance().paths((str(script),), home)

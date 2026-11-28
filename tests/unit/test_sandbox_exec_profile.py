@@ -63,3 +63,12 @@ def test_a_quote_or_backslash_in_a_path_cannot_end_the_quoted_string() -> None:
     odd = Path('/tmp/a"b\\c')
     profile = profile_for(odd)
     assert 'a\\"b\\\\c"))' in profile
+
+
+def test_credential_directories_are_denied_after_every_allowance() -> None:
+    venv = HOME / "proj" / ".venv"
+    profile = profile_for(Path("/tmp/w"), (venv,))
+    allowed = profile.index(f'(allow file-read* (subpath "{venv}"))')
+    for name in SandboxAllowance.SECRET_DIRECTORIES:
+        denial = f'(deny file-read* (subpath "{HOME / name}"))'
+        assert profile.index(denial) > allowed
