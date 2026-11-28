@@ -446,7 +446,9 @@ def test_a_remote_server_whose_token_is_set_in_the_runtimes_environment_reaches_
     world: World,
 ) -> None:
     lock_a_remote_server(world, bearer_env="DOCS_TOKEN")
-    rt = StageExecutorRuntime({**world.environment(), "DOCS_TOKEN": "a-token"}, NoSecrets(), TODAY)
+    rt = StageExecutorRuntime(
+        {**world.environment(), "DOCS_TOKEN": "a-token"}, NoSecrets(), TODAY, sandbox=Unconfined()
+    )
     with pytest.raises(ApplicationError) as error:
         rt.build(world.store, world.journal)
     rt.close()

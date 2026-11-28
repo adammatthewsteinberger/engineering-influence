@@ -33,14 +33,20 @@ except OSError:
     out.append("outside-refused")
 open("inside.txt", "w").write("ok")
 out.append("inside-written")
+try:
+    open(sys.argv[3]).read()
+    out.append("secret-read")
+except OSError:
+    out.append("secret-refused")
 print(" ".join(out))
 """
 
 
-def native_sandbox(tmp_path: Path) -> McpServerSandbox | None:
-    sandbox = McpServerSandbox(sys.platform, shutil.which, Path.home())
+def native_sandbox(tmp_path: Path, home: Path) -> McpServerSandbox | None:
+    sandbox = McpServerSandbox(sys.platform, shutil.which, home)
     probe = tmp_path / "probe"
     probe.mkdir()
+    home.mkdir(exist_ok=True)
     try:
         wrapped = sandbox.wrap((sys.executable, "-c", "pass"), probe)
         result = subprocess.run(wrapped, cwd=probe, timeout=30, capture_output=True, check=False)  # nosec B603
@@ -52,7 +58,11 @@ def native_sandbox(tmp_path: Path) -> McpServerSandbox | None:
 def test_a_confined_child_cannot_reach_the_network_or_write_outside_its_directory(
     tmp_path: Path,
 ) -> None:
-    sandbox = native_sandbox(tmp_path)
+    home = tmp_path / "home"
+    secret = home / "credentials.txt"
+    home.mkdir(exist_ok=True)
+    secret.write_text("token", encoding="utf-8")
+    sandbox = native_sandbox(tmp_path, home)
     if sandbox is None:
         if os.environ.get("EI_REQUIRE_NATIVE_SANDBOX"):
             pytest.fail("EI_REQUIRE_NATIVE_SANDBOX is set, but no native sandbox runs here")
@@ -65,13 +75,20 @@ def test_a_confined_child_cannot_reach_the_network_or_write_outside_its_director
     listener.listen(1)
     try:
         port = listener.getsockname()[1]
-        wrapped = sandbox.wrap((sys.executable, "-c", CHILD, str(port), str(outside)), work)
+        wrapped = sandbox.wrap(
+            (sys.executable, "-c", CHILD, str(port), str(outside), str(secret)), work
+        )
         result = subprocess.run(  # nosec B603
             wrapped, cwd=work, timeout=60, capture_output=True, text=True, check=False
         )
     finally:
         listener.close()
     assert result.returncode == 0, result.stderr
-    assert result.stdout.split() == ["network-closed", "outside-refused", "inside-written"]
+    assert result.stdout.split() == [
+        "network-closed",
+        "outside-refused",
+        "inside-written",
+        "secret-refused",
+    ]
     assert not outside.exists()
     assert (work / "inside.txt").read_text() == "ok"

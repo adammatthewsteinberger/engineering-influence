@@ -9,6 +9,7 @@ from engineering_influence.infrastructure.tools.bubblewrap_command import Bubble
 from engineering_influence.infrastructure.tools.interfaces.mcp_server_sandbox_interface import (
     McpServerSandboxInterface,
 )
+from engineering_influence.infrastructure.tools.sandbox_allowance import SandboxAllowance
 from engineering_influence.infrastructure.tools.sandbox_exec_profile import SandboxExecProfile
 
 
@@ -37,8 +38,8 @@ class McpServerSandbox(McpServerSandboxInterface):
     ) -> McpServerSandboxInterface | None:
         if platform == "darwin":
             found = locate("sandbox-exec")
-            return None if found is None else SandboxExecProfile(found, home)
+            return None if found is None else SandboxExecProfile(found, home, SandboxAllowance())
         if platform.startswith("linux"):
             found = locate("bwrap")
-            return None if found is None else BubblewrapCommand(found)
+            return None if found is None else BubblewrapCommand(found, home, SandboxAllowance())
         return None

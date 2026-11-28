@@ -183,8 +183,9 @@ other sections refer to the later gaps by number.
    not pin a server's installed dependencies or what it fetches at run time; a file could change between the
    check and the start; and a server is run with a bare environment, a throwaway home and resource limits,
    inside a native sandbox (`sandbox-exec` on macOS, bubblewrap on Linux: no network, writes only in its own
-   directory, and on macOS no reads of the credential directories); where there is none, it is not started.
-   Reads elsewhere on macOS are still allowed, so a server can read any other file the user can. Its answers are
+   directory, and the home directory hidden except the server's own interpreter and files); where there is none,
+   it is not started. Outside the home directory, reads on macOS are still allowed, so a server can read system
+   files the user can. Its answers are
    untrusted text like any tool's, and its tool descriptions are the place a hostile server would hide
    instructions, which the lock's hash of the tools is there to catch only if the server changes after
    review: **a server that was hostile when it was locked is trusted as locked.** The grant is the
