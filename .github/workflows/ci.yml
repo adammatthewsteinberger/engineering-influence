@@ -8,7 +8,34 @@ on:
 permissions:
   contents: read
 
+# A new push to a pull request cancels the run it supersedes. A push to a branch that is not a pull request runs to the end,
+# so every commit that lands on develop is checked.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
+  # Decides whether the jobs that build, test or package the code run. A change that touches only docs, README files
+  # or changelog fragments skips them. The unit suite (which holds the docs tests) and the repository-level gates
+  # (leak-scan, provenance, workflows) always run. A skipped job counts as passing for a required check.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: filter
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          filters: |
+            code:
+              - '**'
+              - '!docs/**'
+              - '!**/*.md'
+              - '!changelog.d/**'
+
   # Every supported Python runs every gate. The image, the distribution build and the release use
   # 3.13; the lock resolves 3.12 to 3.14 (pyproject.toml, [tool.uv] environments).
   checks:
@@ -24,6 +51,8 @@ jobs:
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           version: "0.12.6"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ matrix.python }}
@@ -41,6 +70,8 @@ jobs:
   # Kubernetes schemas, and builds each Kustomize overlay the same way. Then it builds the image and scans it with Trivy
   # for fixable HIGH and CRITICAL vulnerabilities. CRDs with no bundled schema (External Secrets, KEDA) are skipped, not failed.
   kubernetes:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -75,8 +106,17 @@ jobs:
           for overlay in dev prod; do
             kubectl kustomize "deploy/kustomize/overlays/$overlay" | kubeconform -strict -summary -ignore-missing-schemas
           done
+      # BuildKit with the GitHub Actions cache: a rebuild reuses the layers of the last build on this branch, and the
+      # image is loaded into the daemon for the Trivy scan below, so it is built once per run.
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Build the image
-        run: docker build --tag "ei-ci:${{ github.sha }}" .
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          load: true
+          tags: ei-ci:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
       - name: Scan the image with Trivy
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -90,6 +130,8 @@ jobs:
   # snapshot depends on the TeX Live release; a deliberate change is accepted by re-running the
   # test with EI_UPDATE_SNAPSHOT=1 and committing the new file (see docs/TESTING.md).
   toolchain:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -99,6 +141,8 @@ jobs:
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           version: "0.12.6"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
@@ -174,6 +218,8 @@ jobs:
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           version: "0.12.6"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
       - run: uv sync --locked --extra runtime
       # Every source file must carry the fingerprint header.
       - run: uv run vibey-gh check --ci
@@ -212,6 +258,8 @@ jobs:
         run: uv run vibey-gh conventional-check --commits "$COMMITS"
 
   compose-smoke:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -228,6 +276,8 @@ jobs:
   # run that finishes through the stack however its workers die. EI_REQUIRE_INTEGRATION turns a
   # missing stack into a failure instead of a skip, so this job cannot pass with nothing tested.
   integration:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -239,6 +289,8 @@ jobs:
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           version: "0.12.6"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.13"
@@ -254,6 +306,8 @@ jobs:
 
   # The same build the release uses, so a tag can only publish what CI has been building all along.
   distribution:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     permissions:
       contents: read
     uses: ./.github/workflows/build-distribution.yml
@@ -268,6 +322,8 @@ jobs:
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           version: "0.12.6"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
       - run: uvx --from actionlint-py==1.7.12.25 actionlint
       - run: uvx zizmor==1.32.0 --no-progress --min-severity medium .github
 
