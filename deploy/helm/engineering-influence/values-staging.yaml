@@ -14,6 +14,9 @@ postgres:
 openbao:
   enabled: true
   devMode: false
+  # The operator logs in as the chart's ServiceAccount, not with the dev root token. The platform configures the
+  # OpenBao kubernetes auth mount and role (openbao.kubernetes in values.yaml).
+  auth: kubernetes
   # Required: the address of the staging OpenBao. The chart refuses to render without it.
   server: ""
 

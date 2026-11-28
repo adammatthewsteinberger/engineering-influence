@@ -50,3 +50,19 @@ def test_kubernetes_auth_logs_in_as_the_charts_service_account_with_no_stored_to
             "serviceAccountRef": {"name": "ei-engineering-influence"},
         }
     }
+
+
+@needs_helm
+def test_outside_dev_the_root_token_is_refused_and_the_chart_does_not_render() -> None:
+    with pytest.raises(subprocess.CalledProcessError):
+        secret_store(
+            "openbao.enabled=true",
+            "openbao.devMode=false",
+            "openbao.server=https://bao.example.test",
+        )
+
+
+def test_dev_staging_and_prod_log_in_with_kubernetes_auth() -> None:
+    for env in ("dev", "staging", "prod"):
+        values = yaml.safe_load((CHART / f"values-{env}.yaml").read_text(encoding="utf-8"))
+        assert values["openbao"]["auth"] == "kubernetes", env
