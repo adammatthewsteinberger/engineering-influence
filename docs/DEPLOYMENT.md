@@ -27,7 +27,7 @@ KEDA `ScaledObject` for the worker (`autoscaling.keda.enabled`); a NetworkPolicy
 (`networkPolicy.enabled`), which lets the API accept traffic only from the namespaces in `networkPolicy.apiIngressFrom` and
 the worker accept none, with DNS and the egress in `networkPolicy.egress` added; and a PodDisruptionBudget for each of them
 (`podDisruptionBudget.enabled`), allowing one pod down at a time. Both policy objects are off by default, because a policy
-that is too narrow stops the app. An Ingress for the API (`ingress.enabled`, with `ingress.host` and `ingress.issuer` required), which uses a cert-manager ClusterIssuer the platform creates once from `deploy/cert-manager/clusterissuers.yaml`: `letsencrypt-staging` for dev and `letsencrypt-prod` for prod. The chart has no CronJob yet.
+that is too narrow stops the app. An Ingress for the API (`ingress.enabled`, off by default, with `ingress.host` required). Without TLS it serves plain HTTP, which sends the API keys unencrypted, so turn it on with `ingress.tls` only once you have a certificate, supplied in a Secret named by `ingress.tlsSecretName`. The chart has no CronJob yet.
 
 ## The Secret
 
@@ -188,8 +188,8 @@ runs before the new pods start. `secretsAsPreSync` in `values-dev.yaml` turns th
 it, the chart creates the ExternalSecret as an ordinary resource, as the minikube install expects.
 
 The Application runs in the `engineering-influence` AppProject (`deploy/argocd/project.yaml`), which bounds it: it may
-sync only this repository, deploy only into `ei-dev`, create no cluster-scoped objects, and create only the eight kinds the
-dev render makes (ConfigMap, Service, ServiceAccount, Deployment, Job, Ingress, and the External Secrets SecretStore and
+sync only this repository, deploy only into `ei-dev`, create no cluster-scoped objects, and create only the seven kinds the
+dev render makes (ConfigMap, Service, ServiceAccount, Deployment, Job, and the External Secrets SecretStore and
 ExternalSecret). If the chart gains a kind, add it to the project's `namespaceResourceWhitelist` first, or the sync fails.
 Because the sync is automated, `develop` should require reviewed pull requests, since a merge there reaches the cluster.
 

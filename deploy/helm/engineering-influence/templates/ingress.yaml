@@ -2,11 +2,12 @@
 {{- if not .Values.ingress.host }}
 {{- fail "ingress.host is required when ingress.enabled is true" }}
 {{- end }}
-{{- if not .Values.ingress.issuer }}
-{{- fail "ingress.issuer names the cert-manager ClusterIssuer that signs the API's certificate" }}
+{{- if and .Values.ingress.tls (not .Values.ingress.tlsSecretName) }}
+{{- fail "ingress.tlsSecretName names the Secret that holds the certificate when ingress.tls is true" }}
 {{- end }}
-# The API's public entry point. cert-manager issues its certificate from the ClusterIssuer named in ingress.issuer,
-# which the platform creates once (deploy/cert-manager/). The API has a NetworkPolicy allowing this namespace, ingress-nginx.
+# The API's public entry point. Without TLS it serves plain HTTP, which sends the API keys unencrypted, so keep ingress
+# disabled until ingress.tls is on with a certificate in ingress.tlsSecretName. The API has a NetworkPolicy allowing
+# this namespace, ingress-nginx.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -14,14 +15,14 @@ metadata:
   labels:
     {{- include "ei.labels" . | nindent 4 }}
     app.kubernetes.io/component: api
-  annotations:
-    cert-manager.io/cluster-issuer: {{ .Values.ingress.issuer | quote }}
 spec:
   ingressClassName: {{ .Values.ingress.className | quote }}
+  {{- if .Values.ingress.tls }}
   tls:
     - hosts:
         - {{ .Values.ingress.host | quote }}
       secretName: {{ .Values.ingress.tlsSecretName | quote }}
+  {{- end }}
   rules:
     - host: {{ .Values.ingress.host | quote }}
       http:

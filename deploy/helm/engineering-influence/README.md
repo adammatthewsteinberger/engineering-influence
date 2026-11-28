@@ -15,7 +15,7 @@ create, `existingSecret`, that holds the app's settings. See `docs/DEPLOYMENT.md
 | Logs | `logs.enabled` deploys Loki and Grafana Alloy | Leave it off, and ship the JSON logs to your own system. |
 | Metrics and dashboards | `observability.enabled` deploys Prometheus and Grafana | Leave it off, and scrape `/metrics` on the API with your own Prometheus. |
 | Traces | `tracing.enabled` deploys Tempo and sets `EI_OTLP_ENDPOINT` | Leave it off, and set `EI_OTLP_ENDPOINT` in the config to your OTLP receiver. |
-| Ingress and TLS | `ingress.enabled` with `ingress.issuer` names a cert-manager ClusterIssuer | Leave it off, and route to the `ei-…-api` Service with your own ingress or gateway. The ClusterIssuers are in `deploy/cert-manager/`. |
+| Ingress and TLS | `ingress.enabled` routes the host to the API. Plain HTTP unless `ingress.tls` is true with a certificate in `ingress.tlsSecretName`. | Leave it off, and route to the `ei-…-api` Service with your own ingress or gateway. Never serve the API over plain HTTP on a public address. |
 | Autoscaling | `autoscaling.api` (HorizontalPodAutoscaler) and `autoscaling.keda` (KEDA for the worker) | Leave them off and set replica counts. |
 
 Each external service is one URL or one set of keys, so swapping it does not change the application. Anything the chart
