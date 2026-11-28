@@ -29,15 +29,19 @@ class SandboxAllowance(SandboxAllowanceInterface):
             named = Path(text)
             for start in (named, named.resolve()):
                 for candidate in (start.parent, start.parent.parent):
-                    for option in (candidate, candidate.resolve()):
-                        if option != real_home and real_home in option.parents:
-                            found.add(option)
-        return tuple(sorted(path for path in found if not self._secret(path, real_home)))
+                    # Only the resolved directory is kept: binding a symlink would expose its target.
+                    resolved = candidate.resolve()
+                    if resolved == real_home or real_home not in resolved.parents:
+                        continue
+                    if not self._secret(resolved, real_home):
+                        found.add(resolved)
+        return tuple(sorted(found))
 
     def _secret(self, path: Path, home: Path) -> bool:
-        """True when the path is a credential directory, inside one, or an ancestor of one."""
+        """True when the resolved path is a credential directory, inside one, or an ancestor of one."""
         for name in self.SECRET_DIRECTORIES:
-            secret = home / name
-            if path == secret or secret in path.parents or path in secret.parents:
-                return True
+            plain = home / name
+            for secret in {plain, plain.resolve()}:
+                if path == secret or secret in path.parents or path in secret.parents:
+                    return True
         return False

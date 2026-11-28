@@ -56,6 +56,31 @@ def test_a_credential_directory_is_never_allowed(tmp_path: Path) -> None:
     assert SandboxAllowance().paths((str(key), "--stdio"), home) == ()
 
 
+def test_a_symlink_into_a_credential_directory_is_never_allowed(tmp_path: Path) -> None:
+    home = tmp_path / "home"
+    (home / ".ssh").mkdir(parents=True)
+    (home / ".ssh" / "id_ed25519").write_text("")
+    (home / "proj").mkdir()
+    (home / "proj" / "keys").symlink_to(home / ".ssh", target_is_directory=True)
+    allowed = SandboxAllowance().paths((str(home / "proj" / "keys" / "id_ed25519"),), home)
+    assert (
+        home / "proj"
+    ).resolve() in allowed  # the project is readable; its symlink is not followed into .ssh
+    assert all(
+        path != (home / ".ssh").resolve() and (home / ".ssh").resolve() not in path.parents
+        for path in allowed
+    )
+
+
+def test_only_resolved_directories_are_returned(tmp_path: Path) -> None:
+    home = tmp_path / "home"
+    (home / "real").mkdir(parents=True)
+    (home / "real" / "tool").write_text("")
+    (home / "link").symlink_to(home / "real", target_is_directory=True)
+    paths = SandboxAllowance().paths((str(home / "link" / "tool"),), home)
+    assert paths == ((home / "real").resolve(),)
+
+
 def test_an_ancestor_of_a_credential_directory_is_never_allowed(tmp_path: Path) -> None:
     home = tmp_path / "home"
     (home / ".config" / "gcloud").mkdir(parents=True)
