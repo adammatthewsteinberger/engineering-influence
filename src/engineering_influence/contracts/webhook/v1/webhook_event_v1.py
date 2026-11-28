@@ -31,6 +31,7 @@ class WebhookEventV1(WebhookEventV1Interface, BaseModel):
         "phase.completed": ("artifact_id", "job_id", "phase", "project_slug"),
         "gate.awaiting": ("gate", "job_id", "phase", "project_slug"),
         "pipeline.completed": ("project_slug",),
+        "pipeline.failed": ("code", "project_slug", "stage"),
     }
     HEADERS: ClassVar[tuple[str, ...]] = (
         "Content-Type",

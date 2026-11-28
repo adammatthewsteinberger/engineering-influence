@@ -59,3 +59,9 @@ def test_the_completion_payload_is_the_project() -> None:
     (event,) = RunEventBuilder(("https://a.example",)).completed(RUN)
     assert event.event_name == "pipeline.completed"
     assert event.payload == {"project_slug": "run-1"}
+
+
+def test_the_failure_payload_names_the_code_and_the_stage_but_not_the_detail() -> None:
+    (event,) = RunEventBuilder(("https://a.example",)).failed(RUN, "stage-failed")
+    assert event.event_name == "pipeline.failed"
+    assert event.payload == {"code": "stage-failed", "project_slug": "run-1", "stage": RUN.stage}

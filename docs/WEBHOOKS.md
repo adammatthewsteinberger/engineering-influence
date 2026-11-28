@@ -11,9 +11,10 @@ worker sends each event to each of them. With no receiver set, nothing is sent a
 | `phase.completed` | a stage finishes | `artifact_id`, `job_id`, `phase`, `project_slug` |
 | `gate.awaiting` | a run waits for a spend decision | `gate`, `job_id`, `phase`, `project_slug` |
 | `pipeline.completed` | every stage has finished | `project_slug` |
+| `pipeline.failed` | a run stops for a reason it cannot recover from, or overspends its budget | `code`, `project_slug`, `stage` |
 
 `project_slug` is the run's id. `job_id` is `<run>/<stage>`, and `artifact_id` is `<run>/<stage>.md`.
-A failed run sends no event: no event in the catalogue names a failure.
+`code` is why the run stopped: `stage-failed` (the stage's error cannot be retried), `retries-exhausted` (a transient error after the last attempt), or `budget-exceeded` (the journal records more spend than the cap). The event carries the code and never the error text, since a stage's error can quote its input. A run that is parked for a capacity limit, or waits for a spend decision, sends no failure event; it sends `gate.awaiting` for the decision.
 
 ## Headers and body
 

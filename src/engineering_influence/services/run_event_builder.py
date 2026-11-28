@@ -63,6 +63,16 @@ class RunEventBuilder(RunEventBuilderInterface):
         """pipeline.completed."""
         return self._events(run, "pipeline.completed", "", {"project_slug": run.run_id})
 
+    def failed(self, run: BookRun, code: str) -> tuple[OutboxEvent, ...]:
+        """pipeline.failed: the run has stopped at ``run.stage`` for ``code``. The payload carries the code, never the
+        detail, since a stage's error text can quote its input."""
+        return self._events(
+            run,
+            "pipeline.failed",
+            run.stage,
+            {"code": code, "project_slug": run.run_id, "stage": run.stage},
+        )
+
     def _events(
         self, run: BookRun, name: str, stage: str, payload: dict[str, object]
     ) -> tuple[OutboxEvent, ...]:

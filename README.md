@@ -150,7 +150,7 @@ Read these before you depend on it.
 - **A novel gets three editing passes** (story, lines and copy) before its audit and build. It has no continuity repair
   pass yet.
 - **On the stack**, delivery is at least once (a crash can re-run a stage), run events go to any receivers you
-  configure (see [WEBHOOKS.md](docs/WEBHOOKS.md)), but a failed run sends no event, and the example compose file runs the worker on placeholder text
+  configure (see [WEBHOOKS.md](docs/WEBHOOKS.md)), and a run that fails sends `pipeline.failed`; the example compose file runs the worker on placeholder text
   (`EI_STAGE_EXECUTOR=deterministic`) until you point it at a model. A worker started any other way uses the free
   local model by default. `ei pipeline start` and the example MCP server only plan work; `ei serve mcp` reaches the stack.
 - **The schema is managed by `ei db upgrade`**; run it before starting a new release on the stack.
