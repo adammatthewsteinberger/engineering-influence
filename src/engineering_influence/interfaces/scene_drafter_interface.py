@@ -18,6 +18,17 @@ class SceneDrafterInterface(ABC):
 
     @abstractmethod
     def draft(
-        self, run: BookRun, card: SceneCard, anchors: str, beats: str, sources: str, try_number: int
+        self,
+        run: BookRun,
+        card: SceneCard,
+        anchors: str,
+        beats: str,
+        sources: str,
+        try_number: int,
+        findings: str = "",
     ) -> str:
-        """The scene as Fountain: its heading and its elements. Raise an ApplicationError when no scene can be drafted."""
+        """The scene as Fountain: its heading and its elements. Raise an ApplicationError when no scene can be drafted.
+
+        ``findings`` is empty for a first draft. On a second draft it names the problems the first one failed, so the
+        model can correct them; it is text the model wrote, and an adapter must send it as evidence, not instructions.
+        """

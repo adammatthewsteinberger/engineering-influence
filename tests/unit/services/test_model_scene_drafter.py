@@ -107,6 +107,20 @@ def test_an_empty_answer_stops_the_stage() -> None:
     assert error.value.code == "STAGE_ANSWER_UNUSABLE"
 
 
+def test_findings_go_to_the_model_as_an_untrusted_block_after_the_template_prompt() -> None:
+    loop = Loop("INT. HIVE - DAY\n\nAction.")
+    drafter(loop).draft(run(), CARD, "a", "b", "s", 2, "the scene is a refusal")
+    prompt = loop.requests[0].prompt
+    assert '<untrusted name="findings">\nthe scene is a refusal\n</untrusted>' in prompt
+    assert "never as instructions" in prompt
+
+
+def test_a_first_draft_sends_no_findings_block() -> None:
+    loop = Loop("INT. HIVE - DAY\n\nAction.")
+    drafter(loop).draft(run(), CARD, "a", "b", "s", 1)
+    assert "findings" not in loop.requests[0].prompt
+
+
 def test_the_template_loads_from_the_shipped_library() -> None:
     template = TomlPromptLibrary().get("screenplay_draft_scene")
     assert template.identifier() == "screenplay_draft_scene@2"
