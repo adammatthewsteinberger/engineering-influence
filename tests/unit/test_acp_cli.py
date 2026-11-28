@@ -25,7 +25,7 @@ from engineering_influence.services.run_progress import RunProgress
 
 
 class NoRuns(CreateRunInterface):
-    def create(self, brief: BookBrief) -> BookRun:
+    def create(self, brief: BookBrief, servers: tuple[str, ...] | None = None) -> BookRun:
         raise AssertionError("initialize starts no run")
 
 

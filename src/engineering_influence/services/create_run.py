@@ -110,6 +110,7 @@ class CreateRun(CreateRunInterface):
         previous_script: str | None = None,
         revision: int = 1,
         revision_date: str | None = None,
+        servers: tuple[str, ...] | None = None,
     ) -> BookRun:
         """Save a new pending run for the brief and queue its first stage; return the run. A previous shooting script
         lock, when given, is kept as the run's previous lock, so the run's scene numbers carry over from it."""
@@ -194,7 +195,13 @@ class CreateRun(CreateRunInterface):
         with nullcontext() if self._ceiling is None else self._ceiling.hold():
             if self._ceiling is not None:
                 self._ceiling.admit_new(brief.budget_micro_usd)
-            run = BookRun(self._new_id(), brief, plan, Budget(cap=brief.budget_micro_usd))
+            run = BookRun(
+                self._new_id(),
+                brief,
+                plan,
+                Budget(cap=brief.budget_micro_usd),
+                servers=servers,
+            )
             self._store_sources(run.run_id, sources)
             if self._artifacts is not None:
                 self._store_bible(self._artifacts, run.run_id, bible)

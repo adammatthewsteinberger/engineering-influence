@@ -31,12 +31,17 @@ class BookRun(BookRunInterface):
     issues: tuple[QualityIssue, ...] = ()
     # Set while the run waits for the person to grant more budget; None otherwise.
     consent: SpendRequest | None = None
+    # The locked MCP servers this run may use: None for every granted server (the default for
+    # runs made by the command line), or the names a session selected, possibly none.
+    servers: tuple[str, ...] | None = None
 
     def __post_init__(self) -> None:
         if not self.run_id.strip():
             raise ValueError("a run needs an id")
         if self.plan.kind is not self.brief.kind:
             raise ValueError("the plan is for a different kind of book")
+        if self.servers is not None and len(set(self.servers)) != len(self.servers):
+            raise ValueError("a run names each of its servers once")
         if not self.stage:
             object.__setattr__(self, "stage", self.plan.first())
         elif self.stage not in self.plan.stages:

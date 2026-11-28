@@ -12,5 +12,9 @@ class ToolGrantsInterface(ABC):
     __slots__ = ()
 
     @abstractmethod
-    def for_stage(self, stage: str) -> tuple[str, ...]:
-        """The model names of the tools granted to the stage; none when it has no grant."""
+    def for_stage(self, stage: str, servers: tuple[str, ...] | None = None) -> tuple[str, ...]:
+        """The model names of the tools granted to the stage; none when it has no grant.
+
+        ``servers`` limits the grant to the named servers, so a run that selected some servers is
+        offered only their tools; ``None`` offers every granted tool.
+        """

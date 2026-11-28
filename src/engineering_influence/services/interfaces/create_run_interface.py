@@ -31,5 +31,6 @@ class CreateRunInterface(ABC):
         previous_script: str | None = None,
         revision: int = 1,
         revision_date: str | None = None,
+        servers: tuple[str, ...] | None = None,
     ) -> BookRun:
         """Save a new pending run for the brief and queue its first stage; return the run."""
