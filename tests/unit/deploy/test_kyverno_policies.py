@@ -30,3 +30,14 @@ def test_the_app_pods_must_set_a_memory_limit_and_are_denied_without_one() -> No
 def test_the_stack_pods_are_only_reported_until_they_set_a_limit() -> None:
     policy = policies()["ei-audit-resources"]["spec"]
     assert policy["validationActions"] == ["Audit"]
+
+
+def test_release_images_are_verified_against_the_release_workflow_identity_in_audit() -> None:
+    policy = policies()["ei-verify-release-images"]
+    assert policy["kind"] == "ImageValidatingPolicy"
+    assert policy["spec"]["validationActions"] == ["Audit"]
+    (identity,) = policy["spec"]["attestors"][0]["cosign"]["keyless"]["identities"]
+    assert identity["subject"] == (
+        "https://github.com/adammatthewsteinberger/engineering-influence/"
+        ".github/workflows/release.yml@refs/heads/main"
+    )
