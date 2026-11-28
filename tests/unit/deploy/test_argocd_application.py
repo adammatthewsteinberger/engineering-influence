@@ -1,6 +1,6 @@
 # Made with ❤️ by [Vibey](https://the-vibey-project.github.io/vibey/), Developed by [Adam Matthew Steinberger](https://vibewithadam.matthewsteinberger.com/) ([@adammatthewsteinberger](https://github.com/adammatthewsteinberger/)).
 
-"""The Argo CD Application: it syncs an overlay that exists, into that overlay's namespace, under the Kyverno label."""
+"""The Argo CD Application: it syncs the dev chart and its values, which exist, into ei-dev, under the Kyverno label."""
 
 from pathlib import Path
 from typing import Any
@@ -16,10 +16,16 @@ def application() -> dict[str, Any]:
     return loaded
 
 
-def overlay_kustomization(app: dict[str, Any]) -> dict[str, Any]:
-    path = ROOT / app["spec"]["source"]["path"] / "kustomization.yaml"
-    loaded: dict[str, Any] = yaml.safe_load(path.read_text(encoding="utf-8"))
-    return loaded
+# The kinds `helm template` renders from the chart with values-dev.yaml (checked by hand when it changes).
+DEV_RENDERED_KINDS = {
+    ("", "ConfigMap"),
+    ("", "Service"),
+    ("", "ServiceAccount"),
+    ("apps", "Deployment"),
+    ("batch", "Job"),
+    ("external-secrets.io", "ExternalSecret"),
+    ("external-secrets.io", "SecretStore"),
+}
 
 
 def test_it_is_an_argo_cd_application_in_the_argocd_namespace() -> None:
@@ -29,13 +35,16 @@ def test_it_is_an_argo_cd_application_in_the_argocd_namespace() -> None:
     assert app["metadata"]["namespace"] == "argocd"
 
 
-def test_it_syncs_an_overlay_that_exists_in_this_repository() -> None:
-    assert (ROOT / application()["spec"]["source"]["path"] / "kustomization.yaml").is_file()
-
-
-def test_its_destination_is_the_namespace_the_overlay_names() -> None:
+def test_it_syncs_a_chart_and_the_dev_values_that_exist_in_this_repository() -> None:
     app = application()
-    assert app["spec"]["destination"]["namespace"] == overlay_kustomization(app)["namespace"]
+    chart = ROOT / app["spec"]["source"]["path"]
+    assert (chart / "Chart.yaml").is_file()
+    for values in app["spec"]["source"]["helm"]["valueFiles"]:
+        assert (chart / values).is_file(), values
+
+
+def test_its_destination_is_the_dev_namespace() -> None:
+    assert application()["spec"]["destination"]["namespace"] == "ei-dev"
 
 
 def test_it_prunes_and_heals_so_git_is_the_source_of_truth() -> None:
@@ -63,7 +72,7 @@ def test_it_runs_in_a_project_that_bounds_it_to_this_repository_and_namespace() 
     ]
 
 
-def test_the_project_creates_no_cluster_scoped_objects_and_only_the_kinds_the_base_renders() -> (
+def test_the_project_creates_no_cluster_scoped_objects_and_only_the_kinds_the_dev_render_makes() -> (
     None
 ):
     scoped = project()
@@ -71,14 +80,7 @@ def test_the_project_creates_no_cluster_scoped_objects_and_only_the_kinds_the_ba
     allowed = {
         (entry["group"], entry["kind"]) for entry in scoped["spec"]["namespaceResourceWhitelist"]
     }
-    rendered = {
-        ("" if doc["apiVersion"] == "v1" else doc["apiVersion"].split("/")[0], doc["kind"])
-        for doc in yaml.safe_load_all(
-            (ROOT / "deploy/kustomize/base/resources.yaml").read_text(encoding="utf-8")
-        )
-        if doc
-    }
-    assert allowed == rendered
+    assert allowed == DEV_RENDERED_KINDS
 
 
 def test_the_namespace_it_creates_carries_the_label_the_kyverno_policies_match() -> None:

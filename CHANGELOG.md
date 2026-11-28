@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## 0.1.0rc3
+
+- The release images are signed by digest, keyless, with the release workflow's identity, so a cluster can check that an image came from a release.
+- OpenBao can be reached with a Kubernetes login (`openbao.auth: kubernetes`), so no root token is stored in the cluster. The default is still the dev token.
+- The app's pods (API, worker, migration) are refused without a memory limit; the stack's pods are still only reported.
+- The API's Ingress exists, off by default; it serves plain HTTP unless `ingress.tls` is set with a certificate you supply.
+- A NetworkPolicy and a PodDisruptionBudget for the API and worker, off by default.
+- An optional OpenTelemetry collector, which admits traces only from the API and the worker.
+- A CloudNativePG cluster sample in `deploy/cnpg/`, provisioned outside the chart.
+
 ## 0.1.0rc2
 
 - The runtime image's final stage is named `runtime`, as the release workflow's image job expects. 0.1.0rc1 has no images in GHCR, because that job could not find the stage; 0.1.0rc2 is the first release whose images are published.

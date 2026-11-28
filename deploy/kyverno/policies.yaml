@@ -49,3 +49,33 @@ spec:
         object.spec.containers.all(c,
           has(c.resources) && has(c.resources.limits) && has(c.resources.limits.memory))
       message: "containers should set a memory limit"
+---
+# The app's own pods must set a memory limit, so a rollout that drops it is refused. The stack's pods (Postgres,
+# RabbitMQ, OpenBao, the observability services) do not set one yet, so the audit policy above keeps reporting them.
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: ei-app-memory-limits
+spec:
+  validationActions: ["Deny"]
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["pods"]
+    namespaceSelector:
+      matchLabels:
+        policy.ei/restricted: "true"
+    objectSelector:
+      matchExpressions:
+        - key: app.kubernetes.io/component
+          operator: In
+          values: ["api", "worker", "migration"]
+  validations:
+    - expression: >-
+        object.spec.containers.all(c,
+          has(c.resources) && has(c.resources.limits) && has(c.resources.limits.memory))
+        && (has(object.spec.initContainers) ? object.spec.initContainers : []).all(c,
+          has(c.resources) && has(c.resources.limits) && has(c.resources.limits.memory))
+      message: "the app's containers must set a memory limit"

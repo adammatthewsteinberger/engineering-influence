@@ -25,6 +25,9 @@ spec:
         - name: wait-for-postgres
           image: busybox:1.37
           command: ["sh", "-c", "until nc -z {{ include "ei.fullname" . }}-postgres 5432; do sleep 2; done"]
+          resources:
+            requests: { cpu: 10m, memory: 16Mi }
+            limits: { memory: 64Mi }
           securityContext:
             {{- toYaml .Values.containerSecurityContext | nindent 12 }}
       {{- end }}
