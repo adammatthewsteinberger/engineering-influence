@@ -79,3 +79,44 @@ spec:
         && (has(object.spec.initContainers) ? object.spec.initContainers : []).all(c,
           has(c.resources) && has(c.resources.limits) && has(c.resources.limits.memory))
       message: "the app's containers must set a memory limit"
+---
+# The release's images are signed by digest, keyless, by the release workflow on main (see .github/workflows/release.yml).
+# This policy checks that signature for every image of the app in the restricted namespaces. It runs in Audit: an image
+# the release did not sign is reported, not refused, until the signed release images are in use everywhere and the
+# policy has been seen in Audit reports. Needs a Kyverno version that serves policies.kyverno.io/v1 ImageValidatingPolicy.
+apiVersion: policies.kyverno.io/v1
+kind: ImageValidatingPolicy
+metadata:
+  name: ei-verify-release-images
+spec:
+  validationActions: ["Audit"]
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["pods"]
+    namespaceSelector:
+      matchLabels:
+        policy.ei/restricted: "true"
+  matchImageReferences:
+    # One glob covers tags, digests (@sha256:...) and the bare name, so no reference form skips the check.
+    - glob: "ghcr.io/adammatthewsteinberger/engineering-influence*"
+  attestors:
+    - name: release
+      cosign:
+        keyless:
+          identities:
+            - issuer: "https://token.actions.githubusercontent.com"
+              subject: "https://github.com/adammatthewsteinberger/engineering-influence/.github/workflows/release.yml@refs/heads/main"
+          ctlog:
+            url: "https://rekor.sigstore.dev"
+  validations:
+    - expression: >-
+        images.containers.map(image, verifyImageSignatures(image, [attestors.release])).all(e, e > 0)
+        && (has(images.initContainers) ? images.initContainers : {}).map(image,
+          verifyImageSignatures(image, [attestors.release])).all(e, e > 0)
+        && (has(images.ephemeralContainers) ? images.ephemeralContainers : {}).map(image,
+          verifyImageSignatures(image, [attestors.release])).all(e, e > 0)
+      message: "the image is not signed by the release workflow on main"
