@@ -31,3 +31,7 @@ class RunEventBuilderInterface(ABC):
     @abstractmethod
     def completed(self, run: BookRun) -> tuple[OutboxEvent, ...]:
         """The run has finished every stage: pipeline.completed."""
+
+    @abstractmethod
+    def failed(self, run: BookRun, code: str) -> tuple[OutboxEvent, ...]:
+        """The run has stopped for ``code``, and carries no detail: pipeline.failed."""

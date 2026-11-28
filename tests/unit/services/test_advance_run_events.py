@@ -4,6 +4,7 @@
 
 import asyncio
 
+from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.infrastructure.in_memory_journal import InMemoryJournal
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
 from engineering_influence.infrastructure.in_memory_run_repository import InMemoryRunRepository
@@ -63,3 +64,27 @@ def test_with_no_receiver_no_event_is_queued() -> None:
     runs.save(a_pending_run())
     asyncio.run(advance_run(runs, ()).advance("run-1", "brief", 1))
     assert runs.queued() == ()
+
+
+class Breaks(StageExecutorInterface):
+    """The first stage cannot run: its error is one the run cannot recover from."""
+
+    async def execute(self, run: BookRun, attempt: int) -> StageReport:
+        raise ApplicationError(code="STAGE_OUTPUT_INVALID", message="brief: bad", http_status=422)
+
+
+def test_a_stage_that_cannot_run_queues_a_failure_event_with_its_code() -> None:
+    runs = InMemoryRunRepository()
+    runs.save(a_pending_run())
+    advance = AdvanceRun(
+        runs,
+        InMemoryJournal(),
+        Breaks(),
+        InMemoryQueue(),
+        FailureClassifier(),
+        events=RunEventBuilder(("https://hook.example/in",)),
+    )
+    outcome = asyncio.run(advance.advance("run-1", "brief", 1))
+    assert outcome is AdvanceOutcome.FAILED
+    (failure,) = [event for event in runs.queued() if event.event_name == "pipeline.failed"]
+    assert failure.payload["code"] == "stage-failed"

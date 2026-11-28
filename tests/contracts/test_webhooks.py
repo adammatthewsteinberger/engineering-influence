@@ -8,18 +8,31 @@ from snapshot import Snapshot
 
 from engineering_influence.contracts.job_message import JobMessage
 from engineering_influence.contracts.webhook.v1.webhook_event_v1 import WebhookEventV1
+from engineering_influence.errors.application_error import ApplicationError
 from engineering_influence.infrastructure.deterministic_runner import DeterministicRunner
+from engineering_influence.infrastructure.in_memory_journal import InMemoryJournal
 from engineering_influence.infrastructure.in_memory_ledger import InMemoryLedger
 from engineering_influence.infrastructure.in_memory_queue import InMemoryQueue
+from engineering_influence.infrastructure.in_memory_run_repository import InMemoryRunRepository
 from engineering_influence.infrastructure.non_empty_artifact_gate import NonEmptyArtifactGate
 from engineering_influence.infrastructure.security.public_https_url_policy import (
     PublicHttpsUrlPolicy,
 )
 from engineering_influence.infrastructure.webhooks.delivery import WebhookDelivery
 from engineering_influence.infrastructure.webhooks.signer import WebhookSigner
+from engineering_influence.interfaces.stage_executor_interface import StageExecutorInterface
+from engineering_influence.models.book_brief import BookBrief
+from engineering_influence.models.book_kind import BookKind
+from engineering_influence.models.book_run import BookRun
+from engineering_influence.models.budget import Budget
 from engineering_influence.models.pipeline_stage import PipelineStage
 from engineering_influence.models.project import Project
+from engineering_influence.models.stage_report import StageReport
+from engineering_influence.services.advance_run import AdvanceRun
+from engineering_influence.services.failure_classifier import FailureClassifier
+from engineering_influence.services.nonfiction_recipes import NonfictionRecipes
 from engineering_influence.services.process_job import ProcessJob
+from engineering_influence.services.run_event_builder import RunEventBuilder
 from engineering_influence.services.run_phase import RunPhase
 from engineering_influence.services.start_pipeline import StartPipeline
 
@@ -116,7 +129,40 @@ def recorded() -> list[tuple[str, dict[str, object]]]:
             )
         )
     )
-    return ledger.events
+    return ledger.events + failure_events()
+
+
+class Breaks(StageExecutorInterface):
+    """A stage that cannot run, so the run stops and records pipeline.failed."""
+
+    async def execute(self, run: BookRun, attempt: int) -> StageReport:
+        raise ApplicationError(code="STAGE_OUTPUT_INVALID", message="brief: bad", http_status=422)
+
+
+def failure_events() -> list[tuple[str, dict[str, object]]]:
+    """The one event the run stops with, recorded by AdvanceRun rather than by the job."""
+    brief = BookBrief(BookKind.NONFICTION, "bees", 5_000_000)
+    runs = InMemoryRunRepository()
+    runs.save(
+        BookRun(
+            run_id="run-1",
+            brief=brief,
+            plan=NonfictionRecipes().plan(),
+            budget=Budget(cap=5_000_000),
+        )
+    )
+    advance = AdvanceRun(
+        runs,
+        InMemoryJournal(),
+        Breaks(),
+        InMemoryQueue(),
+        FailureClassifier(),
+        events=RunEventBuilder(("https://a.example",)),
+    )
+    asyncio.run(advance.advance("run-1", "brief", 1))
+    return [
+        (e.event_name, dict(e.payload)) for e in runs.queued() if e.event_name == "pipeline.failed"
+    ]
 
 
 def test_the_catalogue_is_exactly_the_events_the_services_record_with_exactly_their_keys() -> None:

@@ -57,6 +57,11 @@
     "pipeline.completed": [
       "project_slug"
     ],
+    "pipeline.failed": [
+      "code",
+      "project_slug",
+      "stage"
+    ],
     "pipeline.started": [
       "project_slug",
       "remaining_stages",

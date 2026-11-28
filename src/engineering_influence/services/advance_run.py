@@ -155,7 +155,12 @@ class AdvanceRun(AdvanceRunInterface):
         code = "stage-failed" if kind is FailureKind.UNRECOVERABLE else "retries-exhausted"
         detail = f"{type(error).__name__}: {error}"[:DETAIL_LIMIT]
         issue = QualityIssue(stage=run.stage, code=code, detail=detail, blocking=True)
-        return await self._commit(run, settled.with_issue(issue).fail(), AdvanceOutcome.FAILED)
+        return await self._commit(
+            run,
+            settled.with_issue(issue).fail(),
+            AdvanceOutcome.FAILED,
+            self._events.failed(run, code),
+        )
 
     async def _awaiting_consent(
         self, run: BookRun, error: SpendConsentNeededError
@@ -180,7 +185,12 @@ class AdvanceRun(AdvanceRunInterface):
             detail="the journal records more spend than the run's cap",
             blocking=True,
         )
-        return await self._commit(run, run.with_issue(issue).fail(), AdvanceOutcome.FAILED)
+        return await self._commit(
+            run,
+            run.with_issue(issue).fail(),
+            AdvanceOutcome.FAILED,
+            self._events.failed(run, "budget-exceeded"),
+        )
 
     async def _settled(self, run: BookRun) -> BookRun:
         entries = await asyncio.to_thread(self._journal.entries, run.run_id)
