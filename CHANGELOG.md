@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.1.0rc2
+
+- The runtime image's final stage is named `runtime`, as the release workflow's image job expects. 0.1.0rc1 has no images in GHCR, because that job could not find the stage; 0.1.0rc2 is the first release whose images are published.
+
 ## 0.1.0rc1
 
 - An Agent Client Protocol prompt starts a run that may use only the MCP servers its session selected. A session with no servers now gets none of the locked tools, where before its run was offered every tool the lock granted its stage. Runs started from the command line are unchanged. The run records its selection, and a run stored before this loads with no selection, as before. Starting each server in a sandbox and asking for approval first are a later change.
