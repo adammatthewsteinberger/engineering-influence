@@ -95,6 +95,19 @@ logs:
       tag: "v1.4.0"
 # Traces: the API and the worker export OpenTelemetry spans over OTLP/HTTP to Tempo, which Grafana reads. Off by default.
 # With tracing enabled, the ConfigMap sets EI_OTLP_ENDPOINT to Tempo's receiver. observability.enabled is needed for Grafana.
+# An OpenTelemetry collector between the API and its trace backend. Off by default. When on, the app sends OTLP to the
+# collector, which forwards to exporter.endpoint, or to Tempo when tracing.enabled is set and no endpoint is given.
+otelCollector:
+  enabled: false
+  image:
+    repository: otel/opentelemetry-collector
+    tag: "0.166.0"
+  exporter:
+    endpoint: ""
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { memory: 256Mi }
+
 tracing:
   enabled: false
   tempo:

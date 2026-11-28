@@ -29,6 +29,17 @@ the worker accept none, with DNS and the egress in `networkPolicy.egress` added;
 (`podDisruptionBudget.enabled`), allowing one pod down at a time. Both policy objects are off by default, because a policy
 that is too narrow stops the app. An Ingress for the API (`ingress.enabled`, off by default, with `ingress.host` required). Without TLS it serves plain HTTP, which sends the API keys unencrypted, so turn it on with `ingress.tls` only once you have a certificate, supplied in a Secret named by `ingress.tlsSecretName`. The chart has no CronJob yet.
 
+## OpenTelemetry collector and CloudNativePG
+
+`otelCollector.enabled` deploys an OpenTelemetry collector between the API and its trace backend, and points the app's
+`EI_OTLP_ENDPOINT` at it. It forwards traces to `otelCollector.exporter.endpoint`, or to Tempo when `tracing.enabled` is on
+and no endpoint is given. The chart refuses to render with the collector on and nowhere to send traces.
+
+CloudNativePG runs PostgreSQL outside the chart. `deploy/cnpg/cluster.yaml` is the sample Cluster. Its operator and the
+Cluster must exist before the first sync, because the migration is a PreSync hook and cannot wait for a database that
+the same sync creates. Copy the connection string CloudNativePG writes to the secret `ei-postgres-app` (key `uri`) into
+OpenBao as `EI_DATABASE_URL`, and the External Secrets Operator copies it into `ei-secrets`.
+
 ## The Secret
 
 Create the Secret before installing. It must hold:
