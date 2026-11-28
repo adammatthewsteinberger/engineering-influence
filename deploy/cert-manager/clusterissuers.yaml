@@ -1,7 +1,7 @@
 # Two ClusterIssuers for the API's Ingress (ingress.issuer in the chart). They are cluster-scoped, so the platform applies
 # them once, outside the Argo CD project (which creates no cluster-scoped objects):
 #   kubectl apply -f deploy/cert-manager/clusterissuers.yaml
-# Replace REPLACE_WITH_CONTACT_EMAIL before applying: Let's Encrypt sends expiry notices to it. Dev and staging use
+# The contact email receives Let's Encrypt's expiry notices. Dev and staging use
 # letsencrypt-staging, which issues certificates browsers do not trust but has no rate limits; prod uses letsencrypt-prod.
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -10,7 +10,7 @@ metadata:
 spec:
   acme:
     server: https://acme-staging-v02.api.letsencrypt.org/directory
-    email: REPLACE_WITH_CONTACT_EMAIL
+    email: adam@matthewsteinberger.com
     privateKeySecretRef:
       name: letsencrypt-staging-account
     solvers:
@@ -25,7 +25,7 @@ metadata:
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: REPLACE_WITH_CONTACT_EMAIL
+    email: adam@matthewsteinberger.com
     privateKeySecretRef:
       name: letsencrypt-prod-account
     solvers:

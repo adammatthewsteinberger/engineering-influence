@@ -17,6 +17,13 @@ secretsAsPreSync: true
 postgres:
   enabled: false
 
+# The API's public Ingress. The hostname is public; Let's Encrypt cannot issue for a bare name, so this needs a DNS name
+# that resolves to the cluster's ingress controller before its certificate can be issued.
+ingress:
+  enabled: true
+  host: engineering-influence-dev
+  issuer: letsencrypt-staging
+
 openbao:
   enabled: true
   devMode: false

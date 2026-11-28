@@ -188,8 +188,8 @@ runs before the new pods start. `secretsAsPreSync` in `values-dev.yaml` turns th
 it, the chart creates the ExternalSecret as an ordinary resource, as the minikube install expects.
 
 The Application runs in the `engineering-influence` AppProject (`deploy/argocd/project.yaml`), which bounds it: it may
-sync only this repository, deploy only into `ei-dev`, create no cluster-scoped objects, and create only the seven kinds the
-dev render makes (ConfigMap, Service, ServiceAccount, Deployment, Job, and the External Secrets SecretStore and
+sync only this repository, deploy only into `ei-dev`, create no cluster-scoped objects, and create only the eight kinds the
+dev render makes (ConfigMap, Service, ServiceAccount, Deployment, Job, Ingress, and the External Secrets SecretStore and
 ExternalSecret). If the chart gains a kind, add it to the project's `namespaceResourceWhitelist` first, or the sync fails.
 Because the sync is automated, `develop` should require reviewed pull requests, since a merge there reaches the cluster.
 

@@ -1,0 +1,24 @@
+# The staging environment. Like dev, its Postgres, OpenBao and object store are provisioned outside this chart, and
+# openbao.server must be set to the staging OpenBao's address before the chart renders. Staging uses Let's Encrypt's
+# staging issuer, which issues certificates browsers do not trust.
+image:
+  tag: "0.1.0rc2"
+
+existingSecret: ei-secrets
+
+# The ExternalSecret and SecretStore run as PreSync hooks, ahead of the migration, as in dev.
+secretsAsPreSync: true
+
+postgres:
+  enabled: false
+
+openbao:
+  enabled: true
+  devMode: false
+  # Required: the address of the staging OpenBao. The chart refuses to render without it.
+  server: ""
+
+ingress:
+  enabled: true
+  host: engineering-influence-staging
+  issuer: letsencrypt-staging
